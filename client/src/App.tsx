@@ -10,6 +10,9 @@ import Home from "./pages/Home";
 const Portfolio     = lazy(() => import("./pages/Portfolio"));
 const FAQ           = lazy(() => import("./pages/FAQ"));
 const Estimator     = lazy(() => import("./pages/Estimator"));
+const About         = lazy(() => import("./pages/About"));
+const Services      = lazy(() => import("./pages/Services"));
+const Contact       = lazy(() => import("./pages/Contact"));
 const NotFound      = lazy(() => import("./pages/NotFound"));
 
 // Auth pages
@@ -49,8 +52,11 @@ function Router() {
       <Switch>
         {/* Public */}
         <Route path="/"                           component={Home} />
+        <Route path="/about"                      component={About} />
+        <Route path="/services"                   component={Services} />
         <Route path="/portfolio"                  component={Portfolio} />
         <Route path="/faq"                        component={FAQ} />
+        <Route path="/contact"                    component={Contact} />
         <Route path="/estimator"                  component={Estimator} />
 
         {/* Auth */}

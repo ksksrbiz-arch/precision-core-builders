@@ -8,12 +8,11 @@ import { ArrowRight, Facebook, Mail, MapPin, Menu, Phone, Shield, X } from "luci
 import { useEffect, useState } from "react";
 
 const NAV_LINKS = [
-  { label: "About",    href: "/#about" },
-  { label: "Services", href: "/#services" },
-  { label: "Team",     href: "/#team" },
-  { label: "Our Work", href: "/portfolio" },
-  { label: "FAQ",      href: "/faq" },
-  { label: "Contact",  href: "/#contact" },
+  { label: "About",     href: "/about" },
+  { label: "Services",  href: "/services" },
+  { label: "Our Work",  href: "/portfolio" },
+  { label: "FAQ",       href: "/faq" },
+  { label: "Contact",   href: "/contact" },
 ];
 
 /* ─── Top Nav ───────────────────────────────────────────────── */
@@ -66,7 +65,7 @@ export function SiteNav() {
             {SITE.phone}
           </a>
           <a
-            href="/#contact"
+            href="/contact"
             className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
@@ -112,7 +111,7 @@ export function SiteNav() {
                 <Phone className="h-4 w-4" /> {SITE.phone}
               </a>
               <a
-                href="/#contact"
+                href="/contact"
                 onClick={() => setOpen(false)}
                 className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
                 style={{ fontFamily: "var(--font-condensed)" }}
@@ -156,7 +155,7 @@ export function MobileCTABar() {
           <Phone className="h-4 w-4" /> Call Now
         </a>
         <a
-          href="/#contact"
+          href="/contact"
           className="flex-1 flex items-center justify-center gap-2 py-4 text-[12px] font-bold tracking-widest uppercase bg-primary text-primary-foreground min-h-[56px] active:bg-primary/80"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
@@ -223,11 +222,11 @@ export function SiteFooter() {
             </p>
             <ul className="space-y-2.5">
               {[
-                { label: "About Us",   href: "/#about" },
-                { label: "Our Team",   href: "/#team" },
+                { label: "About Us",   href: "/about" },
+                { label: "Our Team",   href: "/about" },
                 { label: "Our Work",   href: "/portfolio" },
                 { label: "FAQ",        href: "/faq" },
-                { label: "Contact",    href: "/#contact" },
+                { label: "Contact",    href: "/contact" },
               ].map(l => (
                 <li key={l.href}>
                   <a href={l.href}
@@ -261,7 +260,7 @@ export function SiteFooter() {
               ))}
             </div>
             <a
-              href="/#contact"
+              href="/contact"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all hover:gap-3"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
