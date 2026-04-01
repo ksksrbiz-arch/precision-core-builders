@@ -34,9 +34,18 @@ const MaterialsView      = lazy(() => import("./pages/admin/MaterialsView"));
 const BillingView        = lazy(() => import("./pages/admin/BillingView"));
 const PortfolioAdmin     = lazy(() => import("./pages/admin/PortfolioAdmin"));
 const SetupWizard        = lazy(() => import("./pages/admin/SetupWizard"));
+const FieldReportsList   = lazy(() => import("./pages/admin/FieldReportsList"));
+const ClientsList        = lazy(() => import("./pages/admin/ClientsList"));
+const ClientDetail       = lazy(() => import("./pages/admin/ClientDetail"));
+const EstimatesList      = lazy(() => import("./pages/admin/EstimatesList"));
+const SubContractorsList = lazy(() => import("./pages/admin/SubContractorsList"));
+const LedgerView         = lazy(() => import("./pages/admin/LedgerView"));
 
 // Portal pages
 const PortalDashboard    = lazy(() => import("./pages/portal/PortalDashboard"));
+const PortalReports      = lazy(() => import("./pages/portal/PortalReports"));
+const PortalFinishes     = lazy(() => import("./pages/portal/PortalFinishes"));
+const PortalLedger       = lazy(() => import("./pages/portal/PortalLedger"));
 
 // Service pages
 const LazyResidential     = lazy(() => import("./pages/services/index").then(m => ({ default: m.Residential })));
@@ -78,7 +87,12 @@ function Router() {
         <Route path="/admin/projects"             component={ProjectsList} />
         <Route path="/admin/projects/:id"         component={ProjectDetail} />
         <Route path="/admin/field-reports/new"    component={FieldReportNew} />
-        <Route path="/admin/field-reports"        component={CommandCenter} />
+        <Route path="/admin/field-reports"        component={FieldReportsList} />
+        <Route path="/admin/clients/:id"          component={ClientDetail} />
+        <Route path="/admin/clients"              component={ClientsList} />
+        <Route path="/admin/estimates"            component={EstimatesList} />
+        <Route path="/admin/sub-contractors"      component={SubContractorsList} />
+        <Route path="/admin/ledger"               component={LedgerView} />
         <Route path="/admin/site-plans"           component={SitePlanBuilder} />
         <Route path="/admin/guides"               component={Guides} />
         <Route path="/admin/schedule"             component={ScheduleView} />
@@ -89,9 +103,9 @@ function Router() {
 
         {/* Client portal */}
         <Route path="/portal"                     component={PortalDashboard} />
-        <Route path="/portal/reports"             component={PortalDashboard} />
-        <Route path="/portal/finishes"            component={PortalDashboard} />
-        <Route path="/portal/ledger"              component={PortalDashboard} />
+        <Route path="/portal/reports"             component={PortalReports} />
+        <Route path="/portal/finishes"            component={PortalFinishes} />
+        <Route path="/portal/ledger"              component={PortalLedger} />
 
         {/* Service pages */}
         <Route path="/services/residential"       component={LazyResidential} />

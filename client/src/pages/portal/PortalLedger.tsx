@@ -1,0 +1,138 @@
+/**
+ * Client Portal — Decision Ledger
+ * Transparent record of all decisions, permits, inspections visible to this client.
+ */
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { ASSETS } from "@/const";
+import { motion } from "framer-motion";
+import { ArrowLeft, ArrowUpDown, CheckCircle, ClipboardCheck, DollarSign, FileText, Landmark, LogOut, Milestone, Shield, StickyNote } from "lucide-react";
+import { useLocation } from "wouter";
+
+const ENTRY_ICONS: Record<string, any> = {
+  decision: Landmark, change_order: ArrowUpDown, inspection: ClipboardCheck,
+  permit: Shield, milestone: Milestone, cost_adjustment: DollarSign, note: StickyNote,
+};
+const ENTRY_COLORS: Record<string, string> = {
+  decision: "text-blue-400 bg-blue-400/10", change_order: "text-amber-400 bg-amber-400/10",
+  inspection: "text-green-400 bg-green-400/10", permit: "text-purple-400 bg-purple-400/10",
+  milestone: "text-primary bg-primary/10", cost_adjustment: "text-red-400 bg-red-400/10",
+  note: "text-muted-foreground bg-muted-foreground/10",
+};
+
+function PortalNav() {
+  const { signOut } = useAuth();
+  return (
+    <header className="fixed top-0 inset-x-0 z-50 h-[64px] flex items-center border-b border-border/50 bg-background/95 backdrop-blur-md">
+      <div className="container flex items-center justify-between">
+        <a href="/" aria-label="Home"><img src={ASSETS.logo} alt="Precision Core Builders" className="h-8 w-auto" /></a>
+        <nav className="hidden sm:flex items-center gap-6">
+          {[{ label: "Overview", href: "/portal" }, { label: "Reports", href: "/portal/reports" }, { label: "Selections", href: "/portal/finishes" }, { label: "Ledger", href: "/portal/ledger" }].map(n => (
+            <a key={n.href} href={n.href} className="text-[11px] font-semibold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors" style={{ fontFamily: "var(--font-condensed)" }}>{n.label}</a>
+          ))}
+        </nav>
+        <button onClick={signOut} className="flex items-center gap-2 text-[11px] font-semibold tracking-widest uppercase text-muted-foreground hover:text-destructive transition-colors" style={{ fontFamily: "var(--font-condensed)" }}>
+          <LogOut className="h-3.5 w-3.5" /> Sign Out
+        </button>
+      </div>
+    </header>
+  );
+}
+
+export default function PortalLedger() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 1 }, { enabled: !!user });
+  const project = projects?.data?.[0];
+
+  const { data: entries, isLoading } = trpc.ledger.listVisible.useQuery(
+    { projectId: project?.id! }, { enabled: !!project?.id }
+  );
+
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  const fmtDelta = (n: number | null) => {
+    if (!n) return null;
+    return `${n > 0 ? "+" : ""}$${Math.abs(n).toLocaleString()}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <PortalNav />
+      <main className="pt-[64px]">
+        <div className="container py-10 max-w-3xl">
+          <button onClick={() => setLocation("/portal")}
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary mb-6 transition-colors"
+            style={{ fontFamily: "var(--font-condensed)" }}>
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to Portal
+          </button>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <p className="text-[11px] font-semibold tracking-[0.28em] uppercase text-primary mb-2" style={{ fontFamily: "var(--font-condensed)" }}>
+              Decision Ledger
+            </p>
+            <h1 className="text-3xl font-semibold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+              Project Record
+            </h1>
+            <p className="text-sm text-muted-foreground font-light mb-8">
+              A transparent, permanent record of every decision, inspection, permit, and cost change on your project.
+              <br />
+              <span className="text-xs text-muted-foreground/50">Entries cannot be edited or removed — this is your guarantee of accountability.</span>
+            </p>
+          </motion.div>
+
+          {isLoading ? (
+            <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">Loading…</div>
+          ) : !entries?.length ? (
+            <div className="bg-card border border-border/60 p-12 text-center">
+              <Shield className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-muted-foreground text-sm">No ledger entries yet. Eric will record decisions as your project progresses.</p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-5 top-0 bottom-0 w-px bg-border/40" />
+              <div className="space-y-0">
+                {entries.map((entry: any) => {
+                  const Icon = ENTRY_ICONS[entry.entry_type] ?? StickyNote;
+                  const color = ENTRY_COLORS[entry.entry_type] ?? ENTRY_COLORS.note;
+                  const delta = fmtDelta(entry.amount_delta);
+
+                  return (
+                    <motion.div key={entry.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                      className="relative pl-12 pb-6">
+                      <div className={`absolute left-2.5 top-1 h-5 w-5 rounded-full flex items-center justify-center ${color}`}>
+                        <Icon className="h-2.5 w-2.5" />
+                      </div>
+                      <div className="bg-card border border-border/60 p-4">
+                        <div className="flex items-start justify-between gap-3 mb-1.5">
+                          <div>
+                            <span className={`text-[9px] font-bold tracking-widest uppercase ${color.split(" ")[0]}`}
+                                  style={{ fontFamily: "var(--font-condensed)" }}>
+                              {entry.entry_type.replace("_", " ")}
+                            </span>
+                            <h3 className="text-sm font-semibold mt-0.5">{entry.title}</h3>
+                          </div>
+                          {delta && (
+                            <span className={`text-xs font-bold shrink-0 ${entry.amount_delta > 0 ? "text-red-400" : "text-green-400"}`}>{delta}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground font-light whitespace-pre-line">{entry.description}</p>
+                        {entry.document_url && (
+                          <a href={entry.document_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 mt-2 text-xs text-primary hover:underline">
+                            <FileText className="h-3 w-3" /> {entry.document_name ?? "View Document"}
+                          </a>
+                        )}
+                        <p className="text-[10px] text-muted-foreground/40 mt-2">{fmtDate(entry.created_at)}</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
