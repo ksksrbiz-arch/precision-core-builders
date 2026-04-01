@@ -13,6 +13,22 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+# PWA files — serve directly, don't redirect to SPA
+[[redirects]]
+  from = "/sw.js"
+  to = "/sw.js"
+  status = 200
+
+[[redirects]]
+  from = "/manifest.json"
+  to = "/manifest.json"
+  status = 200
+
+[[redirects]]
+  from = "/offline.html"
+  to = "/offline.html"
+  status = 200
+
 # Redirect all other traffic to index.html for client-side routing
 [[redirects]]
   from = "/*"
@@ -39,7 +55,33 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # Allow mic (voice reports), camera (site cam), geolocation (weather/site)
+    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self)"
+
+# PWA manifest — don't cache aggressively (needs to update)
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "application/manifest+json"
+
+# Service worker — MUST not be cached long
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+# Icons — cache for a week
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/apple-touch-icon.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
 
 [[headers]]
   for = "/assets/*"

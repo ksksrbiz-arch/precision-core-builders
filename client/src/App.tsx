@@ -3,6 +3,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { MobileBottomNav } from "./components/MobileBottomNav";
+import { NetworkStatus } from "./components/NetworkStatus";
+import { PWAInstallPrompt, IOSInstallHint } from "./components/PWAInstallPrompt";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 
@@ -102,8 +105,12 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
+          <NetworkStatus />
           <Toaster />
           <Router />
+          <MobileBottomNav />
+          <PWAInstallPrompt />
+          <IOSInstallHint />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

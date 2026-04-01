@@ -208,11 +208,25 @@ function DashboardLayoutContent({
 
       <SidebarInset>
         {isMobile && (
-          <div className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur sticky top-0 z-40">
-            <SidebarTrigger className="h-9 w-9 rounded" />
+          <div className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-3"
+               style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+            <SidebarTrigger className="h-10 w-10 rounded flex-shrink-0" />
+            <span
+              className="text-xs font-bold tracking-widest uppercase text-muted-foreground truncate flex-1"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Precision Core
+            </span>
+            <button
+              onClick={() => setLocation("/admin/field-reports/new")}
+              className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
+              aria-label="New field report"
+            >
+              <BookOpen className="h-4 w-4 text-primary" />
+            </button>
           </div>
         )}
-        <main className="flex-1 p-5 sm:p-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6">{children}</main>
       </SidebarInset>
     </>
   );
