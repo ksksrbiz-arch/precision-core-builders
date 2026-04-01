@@ -170,8 +170,165 @@ function Nav() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   HERO — real company video, full bleed cinematic
+   HERO — cinematic Ken Burns slideshow, 5 dramatic construction scenes
 ══════════════════════════════════════════════════════════════ */
+
+// 5 hand-picked dramatic construction/architecture shots
+// Each chosen for: golden light, scale, visual impact, Oregon-appropriate feel
+const HERO_SLIDES = [
+  {
+    // Sweeping aerial — partially-framed luxury home at golden hour
+    url: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=2000&q=90",
+    alt: "Luxury custom home under construction — golden hour aerial view",
+    // Ken Burns: slow zoom in from center
+    animation: "hero-zoom-in",
+  },
+  {
+    // Heavy timber framing — dramatic perspective looking up through rafters
+    url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=2000&q=90",
+    alt: "Heavy timber frame construction — dramatic rafter perspective",
+    // Ken Burns: slow drift right
+    animation: "hero-drift-right",
+  },
+  {
+    // Craftsman at work — carpenter precision detail shot, warm light
+    url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=2000&q=90",
+    alt: "Master carpenter precision work — warm workshop light",
+    // Ken Burns: slow pull back / zoom out
+    animation: "hero-zoom-out",
+  },
+  {
+    // Finished luxury home exterior — dramatic dusk sky, all lights on
+    url: "https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?auto=format&fit=crop&w=2000&q=90",
+    alt: "Completed custom home at dusk — lights glowing warm",
+    // Ken Burns: slow drift left
+    animation: "hero-drift-left",
+  },
+  {
+    // Interior framing — daylight streaming through window openings, dust motes
+    url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=2000&q=90",
+    alt: "Home framing interior — light streaming through window openings",
+    // Ken Burns: diagonal zoom
+    animation: "hero-zoom-diagonal",
+  },
+] as const;
+
+const SLIDE_DURATION = 6000; // ms each slide shows
+const FADE_DURATION  = 1200; // ms crossfade
+
+function HeroSlideshow() {
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev]       = useState<number | null>(null);
+  const [loaded, setLoaded]   = useState<Set<number>>(new Set([0]));
+
+  useEffect(() => {
+    // Preload next slide
+    const next = (current + 1) % HERO_SLIDES.length;
+    if (!loaded.has(next)) {
+      const img = new Image();
+      img.src = HERO_SLIDES[next].url;
+      img.onload = () => setLoaded(s => new Set([...s, next]));
+    }
+
+    const timer = setTimeout(() => {
+      setPrev(current);
+      setCurrent(n => (n + 1) % HERO_SLIDES.length);
+      setTimeout(() => setPrev(null), FADE_DURATION);
+    }, SLIDE_DURATION);
+
+    return () => clearTimeout(timer);
+  }, [current, loaded]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden" aria-hidden>
+      {/* CSS keyframes injected once */}
+      <style>{`
+        @keyframes hero-zoom-in {
+          from { transform: scale(1.0) translate(0, 0); }
+          to   { transform: scale(1.12) translate(0, 0); }
+        }
+        @keyframes hero-zoom-out {
+          from { transform: scale(1.14) translate(0, 0); }
+          to   { transform: scale(1.0) translate(0, 0); }
+        }
+        @keyframes hero-drift-right {
+          from { transform: scale(1.08) translateX(-2%); }
+          to   { transform: scale(1.08) translateX(2%); }
+        }
+        @keyframes hero-drift-left {
+          from { transform: scale(1.08) translateX(2%); }
+          to   { transform: scale(1.08) translateX(-2%); }
+        }
+        @keyframes hero-zoom-diagonal {
+          from { transform: scale(1.0) translate(1%, 1%); }
+          to   { transform: scale(1.13) translate(-1%, -1%); }
+        }
+        .hero-slide-img {
+          animation-timing-function: linear;
+          animation-fill-mode: both;
+          will-change: transform;
+        }
+      `}</style>
+
+      {/* Outgoing slide — fades out */}
+      {prev !== null && (
+        <div
+          className="absolute inset-0 transition-opacity"
+          style={{ opacity: 0, transitionDuration: `${FADE_DURATION}ms` }}
+        >
+          <img
+            src={HERO_SLIDES[prev].url}
+            alt=""
+            className={`hero-slide-img w-full h-full object-cover`}
+            style={{
+              animationName: HERO_SLIDES[prev].animation,
+              animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Current slide — fades in */}
+      <div
+        className="absolute inset-0 transition-opacity"
+        style={{
+          opacity: 1,
+          transitionDuration: `${FADE_DURATION}ms`,
+          transitionTimingFunction: "ease-in-out",
+        }}
+      >
+        <img
+          key={current}
+          src={HERO_SLIDES[current].url}
+          alt={HERO_SLIDES[current].alt}
+          className={`hero-slide-img w-full h-full object-cover`}
+          style={{
+            animationName: HERO_SLIDES[current].animation,
+            animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
+          }}
+          fetchPriority={current === 0 ? "high" : "auto"}
+        />
+      </div>
+
+      {/* Dot indicators — bottom center, subtle */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+        {HERO_SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => { setPrev(current); setCurrent(i); }}
+            aria-label={`Go to slide ${i + 1}`}
+            className={`transition-all duration-500 rounded-full ${
+              i === current
+                ? "w-6 h-1.5 bg-primary"
+                : "w-1.5 h-1.5 bg-white/30 hover:bg-white/60"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Hero() {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
@@ -180,27 +337,23 @@ function Hero() {
 
   return (
     <section ref={ref} className="relative min-h-screen flex items-center overflow-hidden" aria-label="Hero">
-      {/* VIDEO BACKGROUND */}
-      <div className="absolute inset-0">
-        <video
-          autoPlay muted loop playsInline
-          className="w-full h-full object-cover"
-          aria-hidden
-        >
-          <source src={ASSETS.heroVideo} type="video/mp4" />
-        </video>
-        {/* Multi-layer gradient overlay for dramatic depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/30 to-transparent" />
-        {/* Film grain texture */}
-        <div
-          className="absolute inset-0 opacity-[0.35] pointer-events-none mix-blend-overlay"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
-          }}
-          aria-hidden
-        />
-      </div>
+      {/* CINEMATIC SLIDESHOW */}
+      <HeroSlideshow />
+
+      {/* Multi-layer gradient — bottom dark pool for text, left vignette */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10 pointer-events-none" aria-hidden />
+      <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/25 to-transparent pointer-events-none" aria-hidden />
+      {/* Top fade so nav reads cleanly */}
+      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-background/60 to-transparent pointer-events-none" aria-hidden />
+
+      {/* Film grain */}
+      <div
+        className="absolute inset-0 opacity-25 pointer-events-none mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+        }}
+        aria-hidden
+      />
 
       {/* CONTENT */}
       <motion.div style={{ y: textY, opacity }} className="container relative z-10 pt-[72px]">
