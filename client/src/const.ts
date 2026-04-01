@@ -21,7 +21,6 @@ export const ASSETS = {
   team: {
     eric: "https://cdn.prod.website-files.com/65300180be390eef2e927062/6549796b57e65befc5e10986_eric%20headshot%20edited.png",
     mitch: "https://cdn.prod.website-files.com/65300180be390eef2e927062/65497a3de8180f1d95567276_mitch%20headshot%20edited.png",
-    cole: "https://cdn.prod.website-files.com/65300180be390eef2e927062/65497c0734eda80b5ad9d3ba_cole-herbst-2.png",
   },
   services: {
     residential:  "https://cdn.prod.website-files.com/65300180be390eef2e9270c0/6540368a9c07fb9523717f2c_Residential.webp",

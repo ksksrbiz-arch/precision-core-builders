@@ -1,7 +1,7 @@
 /**
  * Precision Core Builders — Home Page
  * Full rebrand using real company assets, photos, video, and team content.
- * Eric Tadlock + Mitch Tadlock + Cole Herbst | CCB #246527 | Eugene, OR
+ * Eric Tadlock + Mitch Tadlock | CCB #246527 | Eugene, OR
  */
 import { ASSETS, SITE } from "@/const";
 import { motion, useInView, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
@@ -608,14 +608,6 @@ const TEAM = [
     role: "Lead Carpenter",
     bio: "Eric's brother and veteran carpenter, Mitch brings 18 years of innovation and skilled craftsmanship to the family's construction legacy. His attention to detail sets the standard on every site.",
     photo: ASSETS.team.mitch,
-  },
-  {
-    name: "Cole Herbst",
-    role: "Founder",
-    bio: "With a decade of entrepreneurship and previous mastery in the custom homes space, Cole brings the business acumen and client focus that keeps every project on track and every client informed.",
-    photo: ASSETS.team.cole,
-    email: SITE.email,
-    emailHref: SITE.emailHref,
   },
 ] as const;
 
