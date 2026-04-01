@@ -29,7 +29,7 @@ This document primes AI assistants with the codebase structure, development work
 - `users` table in MySQL via Drizzle ORM
 - Basic page routing (Home, 404) with Wouter
 - 50+ shadcn/ui components pre-installed and ready to use
-- DashboardLayout, ErrorBoundary, AIChatBox, Map components
+- DashboardLayout, ErrorBoundary, Map components
 - Tailwind CSS 4 design system with custom theme
 - Netlify deployment configuration with security headers
 - One test file (`server/auth.logout.test.ts`)
@@ -54,7 +54,7 @@ This document primes AI assistants with the codebase structure, development work
 | **State/Data**     | tRPC 11 + React Query 5                                   | End-to-end type-safe API calls               |
 | **Backend**        | Node.js / Express 4 / tRPC                                | Single process, serves both API and static   |
 | **Database**       | MySQL (via mysql2 + Drizzle ORM)                          | **Not PostgreSQL/Supabase as originally planned** |
-| **Authentication** | Manus OAuth + JWT (jose)                                  | Cookie-based sessions (`app_session_id`)     |
+| **Authentication** | OAuth + JWT (jose)                                        | Cookie-based sessions (`app_session_id`)     |
 | **Forms**          | React Hook Form + Zod 4                                   | Type-safe validation                         |
 | **Charts**         | Recharts 2                                                | Data visualization                           |
 | **Deployment**     | GitHub → Netlify                                          | CI/CD with edge deployment                   |
@@ -105,7 +105,7 @@ appRouter = {
 ```
 users
 ├── id: int (auto-increment PK)
-├── openId: varchar(64) (unique, OAuth identifier)
+├── openId: varchar(64) (unique, OAuth identifier — legacy Manus field, to be replaced)
 ├── name: text
 ├── email: varchar(320)
 ├── loginMethod: varchar(64)
@@ -139,7 +139,6 @@ precision-core-builders/
 │   │   │   ├── AIChatBox.tsx    # AI chat interface
 │   │   │   ├── DashboardLayout.tsx
 │   │   │   ├── ErrorBoundary.tsx
-│   │   │   ├── ManusDialog.tsx
 │   │   │   └── Map.tsx          # Google Maps integration
 │   │   ├── contexts/            # ThemeContext.tsx
 │   │   ├── hooks/               # useMobile, useComposition, usePersistFn
@@ -342,10 +341,10 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 - Create REST endpoints — use tRPC procedures only
 - Manually manipulate cookies — use the auth system in `server/_core/`
 - Use PostgreSQL/Supabase syntax — the database is **MySQL**
+- Use or extend any Manus-specific code (`ManusDialog.tsx`, `client/public/__manus__/`, `manus-upload-file`, Manus OAuth SDK in `server/_core/sdk.ts`) — Manus is **not part of this build** and these files are legacy scaffolding to be replaced
 
 ### 8.2. DO
 
-- Upload assets via `manus-upload-file --webdev` and use returned CDN URLs
 - Store all secrets in environment variables (see `.env.example`)
 - Use tRPC `protectedProcedure` / `adminProcedure` for access control
 - Use shadcn/ui components from `client/src/components/ui/` before building custom ones
