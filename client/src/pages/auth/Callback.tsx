@@ -12,24 +12,30 @@ export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    /** Read role from public.users (set by trigger) and redirect accordingly. */
+    async function redirectByRole(userId: string) {
+      try {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", userId)
+          .single();
+        setLocation(profile?.role === "admin" ? "/admin" : "/portal");
+      } catch {
+        // Trigger may not have fired yet — retry once after short delay
+        setTimeout(async () => {
+          const { data: profile } = await supabase
+            .from("users").select("role").eq("id", userId).single();
+          setLocation(profile?.role === "admin" ? "/admin" : "/portal");
+        }, 800);
+      }
+    }
     // Supabase automatically handles the token from the URL hash.
     // We just wait for the session to be established.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
-          // Check role and redirect accordingly
-          const role = session.user.user_metadata?.role;
-          try {
-            const { data: profile } = await supabase
-              .from("users")
-              .select("role")
-              .eq("id", session.user.id)
-              .single();
-            const userRole = profile?.role ?? role ?? "user";
-            setLocation(userRole === "admin" ? "/admin" : "/portal");
-          } catch {
-            setLocation(role === "admin" ? "/admin" : "/portal");
-          }
+          await redirectByRole(session.user.id);
         } else if (event === "SIGNED_OUT") {
           setLocation("/auth/login");
         }
@@ -38,10 +44,7 @@ export default function AuthCallback() {
 
     // Fallback: if already signed in, redirect immediately
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        const role = data.session.user.user_metadata?.role ?? "user";
-        setLocation(role === "admin" ? "/admin" : "/portal");
-      }
+      if (data.session) redirectByRole(data.session.user.id);
     });
 
     // Handle error in URL hash
