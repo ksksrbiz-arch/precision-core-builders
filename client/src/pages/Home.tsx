@@ -1,14 +1,15 @@
 /**
  * Precision Core Builders — Home Page
- * Pure construction company site. No AI references, no tech buzzwords.
- * Eric Tadlock — 20+ years, CCB #246527, Eugene, Oregon.
+ * Full rebrand using real company assets, photos, video, and team content.
+ * Eric Tadlock + Mitch Tadlock + Cole Herbst | CCB #246527 | Eugene, OR
  */
-import { Button } from "@/components/ui/button";
-import { SITE } from "@/const";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { ASSETS, SITE } from "@/const";
+import { motion, useInView, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
+  CheckCircle2,
   ChevronDown,
+  Facebook,
   Mail,
   MapPin,
   Menu,
@@ -16,54 +17,55 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-/* ─── Animation presets ─────────────────────────────────────────── */
+/* ─── Motion config ───────────────────────────────────────────── */
+const ease = [0.22, 1, 0.36, 1] as const;
 const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease } },
 };
-const stagger = { visible: { transition: { staggerChildren: 0.13 } } };
-const fadeIn  = {
+const fadeIn = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.8 } },
+  visible: { opacity: 1, transition: { duration: 0.9 } },
 };
+const stagger = { visible: { transition: { staggerChildren: 0.12 } } };
+const staggerFast = { visible: { transition: { staggerChildren: 0.07 } } };
 
-const NAV = ["Services", "Work", "About", "Contact"];
+/* ─── Animated counter hook ──────────────────────────────────── */
+function useCounter(target: number, inView: boolean) {
+  const val = useMotionValue(0);
+  const spring = useSpring(val, { stiffness: 60, damping: 20 });
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    if (inView) val.set(target);
+  }, [inView, target, val]);
+  useEffect(() => spring.on("change", v => setDisplay(Math.round(v))), [spring]);
+  return display;
+}
 
-/* ─── Photo URLs ─────────────────────────────────────────────────
- * High-quality Unsplash stock — replace with Eric's real project
- * photos once available. All photos are free to use.
- */
-const PHOTOS = {
-  hero:     "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1920&q=85",
-  customHome: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80",
-  remodel:  "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80",
-  addition: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=900&q=80",
-  about:    "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80",
-  port1:    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-  port2:    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80",
-  port3:    "https://images.unsplash.com/photo-1416331108676-a22ccb276e35?auto=format&fit=crop&w=800&q=80",
-  port4:    "https://images.unsplash.com/photo-1571055107559-3e67626fa8be?auto=format&fit=crop&w=800&q=80",
-  port5:    "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&w=800&q=80",
-  port6:    "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80",
-} as const;
+const NAV = [
+  { label: "About",    href: "#about" },
+  { label: "Services", href: "#services" },
+  { label: "Team",     href: "#team" },
+  { label: "Our Work", href: "#work" },
+  { label: "Contact",  href: "#contact" },
+];
 
-/* ══════════════════════════════════════════════════════════════════
-   PAGE ROOT
-══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   ROOT
+══════════════════════════════════════════════════════════════ */
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
-      <Header />
+      <Nav />
       <main>
         <Hero />
-        <Stats />
-        <Services />
-        <Work />
+        <StatsBar />
         <About />
-        <Process />
-        <Testimonials />
+        <Services />
+        <Team />
+        <Work />
         <Contact />
       </main>
       <Footer />
@@ -71,74 +73,61 @@ export default function Home() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════════════════════════════ */
-function Header() {
+/* ══════════════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════════════ */
+function Nav() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">
-      <div className="container h-[68px] flex items-center justify-between">
+    <header
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
+        scrolled ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20" : "bg-transparent"
+      }`}
+    >
+      <div className="container h-[72px] flex items-center justify-between">
         {/* Logo */}
-        <a href="/" aria-label="Precision Core Builders home" className="flex items-center gap-3 group">
-          {/* Hex logo — mirrors business card */}
-          <svg width="32" height="36" viewBox="0 0 32 36" fill="none" aria-hidden>
-            <path
-              d="M16 1L30 9V27L16 35L2 27V9L16 1Z"
-              fill="#C8A84B"
-              fillOpacity="0.12"
-              stroke="#C8A84B"
-              strokeWidth="1.5"
-            />
-            <text
-              x="16" y="22"
-              textAnchor="middle"
-              fontFamily="Barlow Condensed, sans-serif"
-              fontWeight="700"
-              fontSize="13"
-              fill="#C8A84B"
-            >
-              PCB
-            </text>
-          </svg>
-          <div>
-            <span className="block text-sm font-semibold tracking-wide text-foreground leading-tight"
-              style={{ fontFamily: "var(--font-condensed)" }}>
-              PRECISION CORE BUILDERS
-            </span>
-            <span className="block text-[10px] text-primary tracking-widest uppercase leading-tight">
-              {SITE.license}
-            </span>
-          </div>
+        <a href="/" aria-label="Precision Core Builders — Home">
+          <img
+            src={ASSETS.logo}
+            alt="Precision Core Builders"
+            className="h-10 w-auto"
+            fetchPriority="high"
+          />
         </a>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
-          {NAV.map(item => (
+        <nav className="hidden lg:flex items-center gap-8" aria-label="Primary navigation">
+          {NAV.map(n => (
             <a
-              key={item}
-              href={`#${item.toLowerCase()}`}
-              className="text-sm font-medium tracking-wide text-muted-foreground hover:text-primary transition-colors duration-200"
+              key={n.label}
+              href={n.href}
+              className="text-[13px] font-medium tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              {item}
+              {n.label}
             </a>
           ))}
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button
-            size="sm"
-            className="hidden sm:flex bg-primary text-primary-foreground hover:bg-primary/90 font-semibold tracking-wide"
+          <a
+            href="#contact"
+            className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[12px] font-bold tracking-[0.12em] uppercase transition-all duration-200 hover:bg-primary/85 hover:gap-3"
             style={{ fontFamily: "var(--font-condensed)" }}
-            asChild
           >
-            <a href="#contact">FREE ESTIMATE</a>
-          </Button>
+            Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+          </a>
           <button
             onClick={() => setOpen(o => !o)}
-            className="md:hidden p-2 text-muted-foreground hover:text-foreground"
+            className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
             aria-label={open ? "Close menu" : "Open menu"}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -148,139 +137,141 @@ function Header() {
 
       {/* Mobile drawer */}
       {open && (
-        <div className="md:hidden border-t border-border bg-background/98 backdrop-blur-md">
-          <nav className="container py-6 flex flex-col gap-2" aria-label="Mobile navigation">
-            {NAV.map(item => (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
+        >
+          <nav className="container py-6 flex flex-col gap-1">
+            {NAV.map(n => (
               <a
-                key={item}
-                href={`#${item.toLowerCase()}`}
+                key={n.label}
+                href={n.href}
                 onClick={() => setOpen(false)}
-                className="py-3 text-base font-medium tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors"
+                className="py-3 text-sm font-semibold tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                {item}
+                {n.label}
               </a>
             ))}
-            <Button className="mt-4 w-full bg-primary text-primary-foreground font-semibold" asChild>
-              <a href="#contact" onClick={() => setOpen(false)}>FREE ESTIMATE</a>
-            </Button>
+            <a
+              href="#contact"
+              onClick={() => setOpen(false)}
+              className="mt-4 flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 text-sm font-bold tracking-widest uppercase"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Get Your Free Estimate <ArrowRight className="h-4 w-4" />
+            </a>
           </nav>
-        </div>
+        </motion.div>
       )}
     </header>
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   HERO — cinematic full-bleed photo, parallax scroll
-══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   HERO — real company video, full bleed cinematic
+══════════════════════════════════════════════════════════════ */
 function Hero() {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
   return (
-    <section
-      ref={ref}
-      className="relative min-h-screen flex items-end pb-20 pt-[68px] overflow-hidden"
-      aria-label="Hero"
-    >
-      {/* Parallax photo */}
-      <motion.div
-        style={{ y }}
-        className="absolute inset-0 scale-110"
-        aria-hidden
-      >
-        <img
-          src={PHOTOS.hero}
-          alt="Construction framing at dusk — Precision Core Builders"
+    <section ref={ref} className="relative min-h-screen flex items-center overflow-hidden" aria-label="Hero">
+      {/* VIDEO BACKGROUND */}
+      <div className="absolute inset-0">
+        <video
+          autoPlay muted loop playsInline
           className="w-full h-full object-cover"
-          fetchPriority="high"
+          aria-hidden
+        >
+          <source src={ASSETS.heroVideo} type="video/mp4" />
+        </video>
+        {/* Multi-layer gradient overlay for dramatic depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/30 to-transparent" />
+        {/* Film grain texture */}
+        <div
+          className="absolute inset-0 opacity-[0.35] pointer-events-none mix-blend-overlay"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+          }}
+          aria-hidden
         />
-        {/* Layered gradient — dark bottom for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-transparent" />
-      </motion.div>
+      </div>
 
-      {/* Grain texture */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
-        }}
-        aria-hidden
-      />
-
-      {/* Content */}
-      <div className="container relative z-10">
+      {/* CONTENT */}
+      <motion.div style={{ y: textY, opacity }} className="container relative z-10 pt-[72px]">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={stagger}
-          className="max-w-3xl"
+          className="max-w-4xl"
         >
           {/* Eyebrow */}
-          <motion.div variants={fadeUp} className="flex items-center gap-3 mb-7">
-            <div className="h-px w-10 bg-primary" aria-hidden />
+          <motion.div variants={fadeUp} className="flex items-center gap-4 mb-8">
+            <div className="h-px w-12 bg-primary" aria-hidden />
             <span
-              className="text-primary text-xs tracking-[0.25em] uppercase font-medium"
+              className="text-primary text-[11px] tracking-[0.3em] uppercase font-semibold"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Eugene, Oregon &nbsp;·&nbsp; Est. 2004
+              Eugene, Oregon &nbsp;·&nbsp; {SITE.license}
             </span>
           </motion.div>
 
-          {/* Headline */}
+          {/* Main headline — 3 lines for dramatic weight */}
           <motion.h1
             variants={fadeUp}
-            className="text-5xl sm:text-6xl lg:text-7xl font-semibold leading-[1.0] tracking-tight mb-7"
+            className="leading-[0.95] tracking-tight mb-8"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Built right.
-            <br />
-            <em className="text-primary not-italic">Built to last.</em>
+            <span className="block text-5xl sm:text-6xl lg:text-[82px] font-semibold text-foreground">
+              Precision
+            </span>
+            <span className="block text-5xl sm:text-6xl lg:text-[82px] font-semibold text-foreground">
+              Construction,
+            </span>
+            <span className="block text-5xl sm:text-6xl lg:text-[82px] font-semibold italic text-primary">
+              Core Values.
+            </span>
           </motion.h1>
 
-          {/* Sub */}
           <motion.p
             variants={fadeUp}
-            className="text-lg sm:text-xl text-muted-foreground max-w-lg leading-relaxed mb-10 font-light"
+            className="text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed font-light mb-10"
           >
-            Twenty years of precision construction in the Eugene area — custom
-            homes, full remodels, and additions built to Oregon code and beyond.
+            Two veteran brothers and a combined 38 years of hands-on experience,
+            building and restoring homes across the Eugene area with the kind of
+            craftsmanship that shows for decades.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
-            <Button
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-8 font-semibold tracking-wider"
+            <a
+              href="#contact"
+              className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 text-sm font-bold tracking-[0.12em] uppercase hover:bg-primary/90 transition-all duration-200 hover:gap-3"
               style={{ fontFamily: "var(--font-condensed)" }}
-              asChild
             >
-              <a href="#contact">
-                REQUEST A FREE ESTIMATE
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-foreground/20 text-foreground hover:bg-foreground/5 text-sm px-8 tracking-wider"
+              Get Your Free Estimate <ArrowRight className="h-4 w-4" />
+            </a>
+            <a
+              href="#work"
+              className="inline-flex items-center justify-center gap-2 border border-foreground/25 text-foreground px-8 py-4 text-sm font-semibold tracking-[0.12em] uppercase hover:border-primary hover:text-primary transition-all duration-200"
               style={{ fontFamily: "var(--font-condensed)" }}
-              asChild
             >
-              <a href="#work">VIEW OUR WORK</a>
-            </Button>
+              See Our Work
+            </a>
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
-      {/* Scroll cue */}
+      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.8 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground"
+        transition={{ delay: 2, duration: 1 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground/60"
         aria-hidden
       >
         <ChevronDown className="h-5 w-5 animate-bounce" />
@@ -289,261 +280,308 @@ function Hero() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   STATS BAND
-══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   STATS BAR — real numbers, animated counters
+══════════════════════════════════════════════════════════════ */
 const STATS = [
-  { value: "20+", label: "Years in Business" },
-  { value: "200+", label: "Projects Completed" },
-  { value: "CCB\u00a0#246527", label: "Oregon Licensed" },
-  { value: "Eugene", label: "Locally Rooted" },
+  { value: 20, suffix: "",   label: "Years Construction Experience" },
+  { value: 12, suffix: "",   label: "Years Business Experience" },
+  { value: 50, suffix: "+",  label: "Happy Customers" },
+  { value: 0,  suffix: "",   label: "Call Backs" },
 ] as const;
 
-function Stats() {
+function StatCell({ value, suffix, label }: typeof STATS[number]) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const count = useCounter(value, inView);
   return (
-    <section className="border-y border-border/60 bg-card/60" aria-label="Company statistics">
+    <div ref={ref} className="py-10 px-6 text-center">
+      <div
+        className="text-4xl sm:text-5xl font-bold text-primary mb-2 tabular-nums"
+        style={{ fontFamily: "var(--font-heading)" }}
+        aria-label={`${value}${suffix}`}
+      >
+        {count}{suffix}
+      </div>
+      <div
+        className="text-[11px] tracking-[0.18em] uppercase text-muted-foreground leading-tight"
+        style={{ fontFamily: "var(--font-condensed)" }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function StatsBar() {
+  return (
+    <section className="border-y border-border/50 bg-card/70" aria-label="Company credentials">
       <div className="container">
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border/40">
-          {STATS.map(({ value, label }) => (
-            <motion.div
-              key={label}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              className="py-10 px-6 text-center"
-            >
-              <div
-                className="text-3xl sm:text-4xl font-semibold text-primary mb-1"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                {value}
-              </div>
-              <div
-                className="text-xs tracking-widest uppercase text-muted-foreground"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                {label}
-              </div>
-            </motion.div>
-          ))}
+          {STATS.map(s => <StatCell key={s.label} {...s} />)}
         </div>
       </div>
     </section>
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   SERVICES
-══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   ABOUT — real company copy, two-column with accent elements
+══════════════════════════════════════════════════════════════ */
+function About() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-100px" });
+  return (
+    <section id="about" className="py-28 sm:py-36" ref={ref} aria-labelledby="about-heading">
+      <div className="container">
+        <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
+          {/* Left — stacked text with gold accent rule */}
+          <motion.div
+            initial="hidden"
+            animate={inView ? "visible" : "hidden"}
+            variants={stagger}
+          >
+            <motion.span
+              variants={fadeUp}
+              className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-5"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              About Us
+            </motion.span>
+            <motion.h2
+              id="about-heading"
+              variants={fadeUp}
+              className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.0] mb-2"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Reliable Hands
+            </motion.h2>
+            <motion.h2
+              variants={fadeUp}
+              className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.0] italic text-primary mb-8"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Crafting Your World.
+            </motion.h2>
+
+            {/* Gold rule */}
+            <motion.div variants={fadeUp} className="gold-rule mb-8" aria-hidden />
+
+            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-5">
+              Precision Core Builders represents a new standard in Eugene's construction
+              landscape — built on trust, respect, diligence, and over 20 years of
+              hands-on industry experience.
+            </motion.p>
+            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-5">
+              Founded by two veteran construction brothers and a seasoned business
+              professional, we bring the kind of exceptional service to our neighbors
+              that only comes from genuine craftsmanship and community commitment.
+            </motion.p>
+            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-10">
+              Our roots run deep in Eugene. Together, we&apos;re building a stronger,
+              more beautiful, and more efficient community — one project at a time.
+            </motion.p>
+
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
+              {[
+                { icon: Shield, text: SITE.license },
+                { icon: MapPin, text: SITE.location },
+              ].map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <Icon className="h-4 w-4 text-primary flex-shrink-0" aria-hidden />
+                  <span>{text}</span>
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Right — values grid */}
+          <motion.div
+            initial="hidden"
+            animate={inView ? "visible" : "hidden"}
+            variants={stagger}
+            className="grid grid-cols-1 gap-4"
+          >
+            {[
+              {
+                title: "Trust",
+                body: "You know where your project stands at every stage. We document every decision, every cost, and every milestone — no surprises, no runaround.",
+              },
+              {
+                title: "Respect",
+                body: "Your home is your most important investment. We treat every project with the same care we'd give our own — because your standards deserve nothing less.",
+              },
+              {
+                title: "Diligence",
+                body: "We show up on time, work clean, and don't cut corners. Every phase is completed to Oregon code standards and beyond, every single time.",
+              },
+            ].map((v, i) => (
+              <motion.div
+                key={v.title}
+                variants={fadeUp}
+                transition={{ delay: i * 0.1 }}
+                className="group flex gap-5 p-6 bg-card border border-border/60 hover:border-primary/30 transition-colors duration-300"
+              >
+                <div className="flex-shrink-0 mt-1">
+                  <div className="h-8 w-8 flex items-center justify-center border border-primary/40 group-hover:border-primary group-hover:bg-primary/5 transition-colors duration-300">
+                    <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />
+                  </div>
+                </div>
+                <div>
+                  <h3
+                    className="text-base font-bold tracking-[0.06em] uppercase mb-2 text-foreground"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    {v.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed font-light">{v.body}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SERVICES — all 8 real service photos
+══════════════════════════════════════════════════════════════ */
 const SERVICES = [
   {
-    num: "01",
-    title: "Custom Home Builds",
-    body: "From foundation to final finish, we manage every stage of your new home construction. We coordinate permits, subcontractors, materials, and inspections — so you get the home you envisioned, on time and on budget.",
-    photo: PHOTOS.customHome,
-    alt: "Custom luxury home exterior — Precision Core Builders",
+    title: "Residential",
+    desc: "With over 20 years of hands-on experience, our lead carpenters have honed their skills across every dimension of residential construction — from foundations to final finish.",
+    photo: ASSETS.services.residential,
+    href: "/services/residential",
   },
   {
-    num: "02",
-    title: "Full Remodels & Renovations",
-    body: "Kitchens, bathrooms, whole-home renovations. We strip it down and rebuild it right — new framing where needed, proper insulation, updated electrical and plumbing, and finish work that holds up for decades.",
-    photo: PHOTOS.remodel,
-    alt: "Luxury kitchen remodel — Precision Core Builders",
+    title: "Remodels & Renovations",
+    desc: "We transform outdated spaces into modern, functional areas for both residential and small business clients, working closely with you from vision to reality.",
+    photo: ASSETS.services.remodels,
+    href: "/services/remodels",
   },
   {
-    num: "03",
-    title: "Additions & ADUs",
-    body: "Second stories, room additions, attached or detached accessory dwelling units. We tie new construction seamlessly into your existing structure, matching materials and meeting every Oregon code requirement.",
-    photo: PHOTOS.addition,
-    alt: "Home addition — Precision Core Builders",
+    title: "New Construction",
+    desc: "From conceptualization to completion, we manage every phase of new construction with the expertise and confidence that only comes from decades on the job.",
+    photo: ASSETS.services.newConstruction,
+    href: "/services/new-construction",
+  },
+  {
+    title: "Restoration",
+    desc: "We breathe new life into damaged, aged, or deteriorated structures — preserving what makes a home special while bringing it back to its full potential.",
+    photo: ASSETS.services.restoration,
+    href: "/services/restoration",
+  },
+  {
+    title: "Outdoor Spaces",
+    desc: "Decks, patios, fencing, pergolas, and site work — we extend your living space outdoors with the same standard of craftsmanship we bring inside.",
+    photo: ASSETS.services.outdoor,
+    href: "/services/outdoor",
+  },
+  {
+    title: "Painting",
+    desc: "Interior and exterior painting done right — proper prep, quality materials, clean lines, and a finish that holds up to Oregon's climate for years.",
+    photo: ASSETS.services.painting,
+    href: "/services/painting",
+  },
+  {
+    title: "Roofing",
+    desc: "Roof replacements, repairs, and inspections handled by people who understand Oregon weather. We protect your home from the top down.",
+    photo: ASSETS.services.roofing,
+    href: "/services/roofing",
+  },
+  {
+    title: "Custom Cabinets",
+    desc: "Built-ins, kitchen cabinetry, bathroom vanities, and custom millwork — designed for your space, built to endure, finished to impress.",
+    photo: ASSETS.services.cabinets,
+    href: "/services/cabinets",
   },
 ] as const;
 
 function Services() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <section id="services" className="py-28 sm:py-36" aria-labelledby="services-heading">
+    <section id="services" className="py-28 sm:py-36 bg-card/30" ref={ref} aria-labelledby="services-heading">
       <div className="container">
         {/* Header */}
         <motion.div
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
+          animate={inView ? "visible" : "hidden"}
           variants={stagger}
-          className="max-w-xl mb-20"
+          className="mb-16"
         >
           <motion.span
             variants={fadeUp}
-            className="block text-primary text-xs tracking-[0.25em] uppercase mb-4 font-medium"
+            className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
-            What We Build
+            Construction Services
           </motion.span>
-          <motion.h2
-            id="services-heading"
-            variants={fadeUp}
-            className="text-4xl sm:text-5xl font-semibold leading-tight mb-5"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Decades of craft.<br />
-            <em className="text-primary">One standard.</em>
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-muted-foreground text-lg leading-relaxed font-light">
-            Every project we take on gets the same level of care — whether
-            it&apos;s a kitchen remodel or a ground-up custom home.
-          </motion.p>
-        </motion.div>
-
-        {/* Service cards */}
-        <div className="space-y-6">
-          {SERVICES.map((s, i) => (
-            <motion.div
-              key={s.num}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-60px" }}
-              variants={fadeUp}
-              className={`group grid md:grid-cols-2 gap-0 rounded-sm overflow-hidden border border-border/60 hover:border-primary/30 transition-colors duration-500 ${
-                i % 2 === 1 ? "md:[direction:rtl]" : ""
-              }`}
-            >
-              {/* Photo */}
-              <div className="relative h-72 md:h-auto overflow-hidden" style={i % 2 === 1 ? { direction: "ltr" } : {}}>
-                <img
-                  src={s.photo}
-                  alt={s.alt}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-background/20 group-hover:bg-background/10 transition-colors duration-500" />
-              </div>
-
-              {/* Text */}
-              <div
-                className="flex flex-col justify-center p-10 sm:p-14 bg-card"
-                style={i % 2 === 1 ? { direction: "ltr" } : {}}
-              >
-                <span
-                  className="text-primary/40 text-5xl font-bold mb-4 leading-none select-none"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                  aria-hidden
-                >
-                  {s.num}
-                </span>
-                <h3
-                  className="text-3xl sm:text-4xl font-semibold mb-5"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  {s.title}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed text-base font-light max-w-md">
-                  {s.body}
-                </p>
-                <div className="mt-8">
-                  <a
-                    href="#contact"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:gap-3 transition-all duration-200 group/link"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    <span className="tracking-wider uppercase">Discuss your project</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   WORK — PORTFOLIO GRID
-══════════════════════════════════════════════════════════════════ */
-const PORTFOLIO = [
-  { photo: PHOTOS.port1, title: "South Hills Custom Home",   cat: "Custom Build",  sf: "3,200 sq ft" },
-  { photo: PHOTOS.port2, title: "River Road Kitchen & Bath", cat: "Renovation",    sf: "850 sq ft"   },
-  { photo: PHOTOS.port3, title: "Crest Drive Addition",      cat: "Addition",      sf: "1,100 sq ft" },
-  { photo: PHOTOS.port4, title: "Friendly Area ADU",         cat: "ADU",           sf: "640 sq ft"   },
-  { photo: PHOTOS.port5, title: "Thurston Craftsman Remodel",cat: "Full Remodel",  sf: "1,900 sq ft" },
-  { photo: PHOTOS.port6, title: "West Eugene Custom Home",   cat: "Custom Build",  sf: "4,100 sq ft" },
-] as const;
-
-function Work() {
-  return (
-    <section id="work" className="py-28 sm:py-36 bg-card/30" aria-labelledby="work-heading">
-      <div className="container">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
-          variants={stagger}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-14"
-        >
-          <div>
-            <motion.span
-              variants={fadeUp}
-              className="block text-primary text-xs tracking-[0.25em] uppercase mb-4 font-medium"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Recent Work
-            </motion.span>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <motion.h2
-              id="work-heading"
+              id="services-heading"
               variants={fadeUp}
               className="text-4xl sm:text-5xl font-semibold"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Projects we&apos;re<br />
-              <em className="text-primary">proud to stand behind.</em>
+              Diverse Services,{" "}
+              <em className="text-primary italic">Consistent Quality.</em>
             </motion.h2>
+            <motion.p variants={fadeUp} className="text-muted-foreground font-light max-w-xs leading-relaxed text-sm sm:text-right">
+              Eight specialties, one standard of excellence.
+            </motion.p>
           </div>
-          <motion.div variants={fadeUp}>
-            <Button
-              variant="outline"
-              className="border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 tracking-wider text-xs"
-              style={{ fontFamily: "var(--font-condensed)" }}
-              asChild
-            >
-              <a href="/portfolio">VIEW FULL PORTFOLIO →</a>
-            </Button>
-          </motion.div>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {PORTFOLIO.map((p, i) => (
+        {/* 8-service grid — 4 cols desktop, 2 tablet, 1 mobile */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {SERVICES.map((s, i) => (
             <motion.article
-              key={p.title}
+              key={s.title}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-40px" }}
               variants={fadeIn}
-              transition={{ delay: i * 0.08 }}
-              className="group relative aspect-[4/3] overflow-hidden rounded-sm cursor-pointer"
-              aria-label={p.title}
+              transition={{ delay: i * 0.06 }}
+              className="group relative overflow-hidden cursor-pointer"
             >
-              <img
-                src={p.photo}
-                alt={`${p.title} — Precision Core Builders`}
-                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
-                loading="lazy"
-              />
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
-              <div className="absolute bottom-0 left-0 right-0 p-5 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-400">
-                <span
-                  className="block text-primary text-[10px] tracking-[0.2em] uppercase mb-1"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {p.cat} &nbsp;·&nbsp; {p.sf}
-                </span>
-                <h3
-                  className="text-white text-xl font-semibold"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  {p.title}
-                </h3>
+              {/* Photo */}
+              <div className="relative aspect-[3/4] overflow-hidden">
+                <img
+                  src={s.photo}
+                  alt={`${s.title} — Precision Core Builders`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  loading="lazy"
+                />
+                {/* Always-on gradient bottom */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
+
+                {/* Content pinned to bottom */}
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <h3
+                    className="text-base font-bold tracking-[0.05em] uppercase text-foreground mb-2 leading-tight"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    {s.title}
+                  </h3>
+                  {/* Description slides up on hover */}
+                  <div className="overflow-hidden h-0 group-hover:h-auto transition-all duration-300">
+                    <p className="text-[12px] text-muted-foreground leading-relaxed font-light pb-3">
+                      {s.desc}
+                    </p>
+                    <a
+                      href="#contact"
+                      className="inline-flex items-center gap-1 text-primary text-[11px] tracking-widest uppercase font-semibold"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Get Estimate <ArrowRight className="h-3 w-3" />
+                    </a>
+                  </div>
+                  {/* Gold line accent */}
+                  <div className="h-px bg-primary/60 group-hover:bg-primary transition-colors duration-300 mt-2" aria-hidden />
+                </div>
               </div>
             </motion.article>
           ))}
@@ -553,308 +591,128 @@ function Work() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   ABOUT ERIC
-══════════════════════════════════════════════════════════════════ */
-function About() {
-  return (
-    <section id="about" className="py-28 sm:py-36" aria-labelledby="about-heading">
-      <div className="container">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* Photo */}
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
-          >
-            <div className="relative aspect-[4/5] rounded-sm overflow-hidden">
-              <img
-                src={PHOTOS.about}
-                alt="New home construction — Precision Core Builders"
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
-            </div>
-            {/* Gold corner accent */}
-            <div
-              className="absolute -bottom-4 -right-4 w-24 h-24 border-b-2 border-r-2 border-primary opacity-40 rounded-sm"
-              aria-hidden
-            />
-            <div
-              className="absolute -top-4 -left-4 w-16 h-16 border-t-2 border-l-2 border-primary opacity-40 rounded-sm"
-              aria-hidden
-            />
-            {/* License badge */}
-            <div className="absolute top-5 left-5 bg-background/90 backdrop-blur-sm border border-primary/30 rounded-sm px-4 py-3">
-              <div
-                className="text-primary text-[10px] tracking-widest uppercase font-medium"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                Oregon Licensed
-              </div>
-              <div
-                className="text-foreground text-sm font-semibold"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                {SITE.license}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Text */}
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            variants={stagger}
-          >
-            <motion.span
-              variants={fadeUp}
-              className="block text-primary text-xs tracking-[0.25em] uppercase mb-4 font-medium"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              About Eric
-            </motion.span>
-            <motion.h2
-              id="about-heading"
-              variants={fadeUp}
-              className="text-4xl sm:text-5xl font-semibold leading-tight mb-6"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Twenty years
-              <br />
-              <em className="text-primary">behind the hammer.</em>
-            </motion.h2>
-
-            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-5 font-light text-base">
-              Eric Tadlock has been building in the Eugene area since 2004. What
-              started as a deep respect for the craft has grown into one of
-              the valley&apos;s most trusted residential construction companies.
-            </motion.p>
-            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-5 font-light text-base">
-              Every home Eric builds or remodels carries the same level of
-              attention — from the footings to the finish trim. He knows Oregon
-              codes inside out, works directly with homeowners from day one, and
-              doesn&apos;t hand off the important decisions to anyone else.
-            </motion.p>
-            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-10 font-light text-base">
-              Precision Core Builders is a small operation by design. That keeps
-              the quality where it belongs — on your project.
-            </motion.p>
-
-            {/* Credentials */}
-            <motion.div variants={fadeUp} className="grid sm:grid-cols-2 gap-4">
-              {[
-                { icon: Shield, label: SITE.license },
-                { icon: MapPin, label: "Eugene, Oregon" },
-                { icon: Phone, label: SITE.phone, href: SITE.phoneHref },
-                { icon: Mail,  label: SITE.email,  href: SITE.emailHref },
-              ].map(({ icon: Icon, label, href }) => (
-                <div key={label} className="flex items-center gap-3 py-3 border-b border-border/40">
-                  <Icon className="h-4 w-4 text-primary flex-shrink-0" aria-hidden />
-                  {href ? (
-                    <a
-                      href={href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors truncate"
-                    >
-                      {label}
-                    </a>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">{label}</span>
-                  )}
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   PROCESS
-══════════════════════════════════════════════════════════════════ */
-const STEPS = [
+/* ══════════════════════════════════════════════════════════════
+   TEAM — real headshots, real bios
+══════════════════════════════════════════════════════════════ */
+const TEAM = [
   {
-    num: "01",
-    title: "We Listen",
-    body: "We start with a free on-site consultation. You walk us through the project, we ask the right questions, and we get a real understanding of what you want built and what it will actually cost.",
+    name: "Eric Tadlock",
+    role: "Lead Carpenter & Owner",
+    bio: "A seasoned carpenter with over 20 years of hands-on construction experience. Eric's craftsmanship lies at the heart of every high-quality project we deliver — from framing to finish.",
+    photo: ASSETS.team.eric,
+    phone: SITE.phone,
+    phoneHref: SITE.phoneHref,
   },
   {
-    num: "02",
-    title: "We Plan",
-    body: "You get a detailed written estimate, a clear scope of work, and a realistic timeline. No surprises. Oregon permitting, subcontractor scheduling, and material lead times are all accounted for before we break ground.",
+    name: "Mitch Tadlock",
+    role: "Lead Carpenter",
+    bio: "Eric's brother and veteran carpenter, Mitch brings 18 years of innovation and skilled craftsmanship to the family's construction legacy. His attention to detail sets the standard on every site.",
+    photo: ASSETS.team.mitch,
   },
   {
-    num: "03",
-    title: "We Build",
-    body: "We show up when we say we will. You hear from us consistently throughout construction — site updates, photo documentation, and direct access to Eric. The job isn't done until everything is right.",
+    name: "Cole Herbst",
+    role: "Founder",
+    bio: "With a decade of entrepreneurship and previous mastery in the custom homes space, Cole brings the business acumen and client focus that keeps every project on track and every client informed.",
+    photo: ASSETS.team.cole,
+    email: SITE.email,
+    emailHref: SITE.emailHref,
   },
 ] as const;
 
-function Process() {
+function Team() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <section className="py-28 sm:py-36 bg-card/30" aria-labelledby="process-heading">
+    <section id="team" className="py-28 sm:py-36" ref={ref} aria-labelledby="team-heading">
       <div className="container">
         <motion.div
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
+          animate={inView ? "visible" : "hidden"}
           variants={stagger}
-          className="text-center mb-20 max-w-2xl mx-auto"
+          className="mb-16 text-center"
         >
           <motion.span
             variants={fadeUp}
-            className="block text-primary text-xs tracking-[0.25em] uppercase mb-4 font-medium"
+            className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
-            How We Work
+            Our Team
           </motion.span>
           <motion.h2
-            id="process-heading"
-            variants={fadeUp}
-            className="text-4xl sm:text-5xl font-semibold mb-5"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Straightforward from<br />
-            <em className="text-primary">start to finish.</em>
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-muted-foreground text-lg font-light leading-relaxed">
-            No runaround, no hidden surprises. Just clear communication and
-            honest work every step of the way.
-          </motion.p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {STEPS.map((step, i) => (
-            <motion.div
-              key={step.num}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-60px" }}
-              variants={fadeUp}
-              transition={{ delay: i * 0.12 }}
-              className="relative bg-card border border-border/60 rounded-sm p-10 hover:border-primary/30 transition-colors duration-400"
-            >
-              {/* Connecting line */}
-              {i < STEPS.length - 1 && (
-                <div
-                  className="hidden md:block absolute top-14 -right-3 w-6 h-px bg-primary/30"
-                  aria-hidden
-                />
-              )}
-              <span
-                className="block text-6xl font-bold text-primary/15 mb-5 leading-none select-none"
-                style={{ fontFamily: "var(--font-condensed)" }}
-                aria-hidden
-              >
-                {step.num}
-              </span>
-              <h3
-                className="text-2xl font-semibold mb-4"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                {step.title}
-              </h3>
-              <p className="text-muted-foreground leading-relaxed text-sm font-light">
-                {step.body}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   TESTIMONIALS
-══════════════════════════════════════════════════════════════════ */
-const TESTIMONIALS = [
-  {
-    quote:
-      "Eric finished our second-story addition exactly when he said he would and exactly on budget. He was on site every single day and was straight with us the whole way through. We won't use anyone else.",
-    name: "T. & K. Whitfield",
-    project: "Second Story Addition, South Eugene",
-  },
-  {
-    quote:
-      "We've done two projects with Precision Core Builders now — a kitchen remodel and a bathroom. The quality of work is exceptional. Eric's crew takes real pride in what they do. You can see it in every detail.",
-    name: "M. Larson",
-    project: "Kitchen & Bathroom Remodel, River Road",
-  },
-  {
-    quote:
-      "We went with Eric because he actually came out, looked at everything, and gave us a real number. Other contractors were throwing estimates around without even seeing the site. Night and day difference.",
-    name: "P. & D. Okonkwo",
-    project: "Home Addition, Thurston",
-  },
-] as const;
-
-function Testimonials() {
-  return (
-    <section className="py-28 sm:py-36" aria-labelledby="testimonials-heading">
-      <div className="container">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
-          variants={stagger}
-          className="text-center mb-16"
-        >
-          <motion.span
-            variants={fadeUp}
-            className="block text-primary text-xs tracking-[0.25em] uppercase mb-4 font-medium"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            Client Voices
-          </motion.span>
-          <motion.h2
-            id="testimonials-heading"
+            id="team-heading"
             variants={fadeUp}
             className="text-4xl sm:text-5xl font-semibold"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            What homeowners say.
+            Focused Team,{" "}
+            <em className="text-primary italic">Unmatched Ability.</em>
           </motion.h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {TESTIMONIALS.map((t, i) => (
-            <motion.blockquote
-              key={i}
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {TEAM.map((member, i) => (
+            <motion.div
+              key={member.name}
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
+              viewport={{ once: true, margin: "-60px" }}
               variants={fadeUp}
-              transition={{ delay: i * 0.1 }}
-              className="bg-card border border-border/60 rounded-sm p-8 flex flex-col hover:border-primary/20 transition-colors duration-400"
+              transition={{ delay: i * 0.14 }}
+              className="group"
             >
-              {/* Gold quote mark */}
-              <div
-                className="text-6xl text-primary/30 leading-none mb-4 select-none"
-                style={{ fontFamily: "var(--font-heading)" }}
-                aria-hidden
-              >
-                &ldquo;
+              {/* Headshot */}
+              <div className="relative aspect-[3/4] overflow-hidden mb-5">
+                <img
+                  src={member.photo}
+                  alt={`${member.name} — ${member.role}`}
+                  className="w-full h-full object-cover object-top group-hover:scale-103 transition-transform duration-700"
+                  loading="lazy"
+                />
+                {/* Subtle gold border bottom on hover */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-400 origin-left" aria-hidden />
               </div>
-              <p className="text-muted-foreground text-sm leading-relaxed mb-6 font-light flex-1">
-                {t.quote}
-              </p>
-              <footer className="border-t border-border/40 pt-5">
-                <div className="text-foreground text-sm font-semibold">{t.name}</div>
-                <div
-                  className="text-primary text-[10px] tracking-widest uppercase mt-1"
+
+              {/* Info */}
+              <div>
+                <h3
+                  className="text-lg font-bold tracking-[0.04em] uppercase text-foreground leading-tight"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  {t.project}
+                  {member.name}
+                </h3>
+                <p
+                  className="text-primary text-[11px] tracking-widest uppercase font-semibold mt-1 mb-3"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {member.role}
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed font-light mb-4">
+                  {member.bio}
+                </p>
+
+                {/* Contact links if present */}
+                <div className="flex flex-col gap-1.5">
+                  {"phone" in member && (
+                    <a
+                      href={member.phoneHref}
+                      className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-primary" aria-hidden />
+                      {member.phone}
+                    </a>
+                  )}
+                  {"email" in member && (
+                    <a
+                      href={member.emailHref}
+                      className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors truncate"
+                    >
+                      <Mail className="h-3.5 w-3.5 text-primary flex-shrink-0" aria-hidden />
+                      {member.email}
+                    </a>
+                  )}
                 </div>
-              </footer>
-            </motion.blockquote>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -862,9 +720,93 @@ function Testimonials() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   CONTACT
-══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   OUR WORK — all 12 real portfolio photos, magazine masonry layout
+══════════════════════════════════════════════════════════════ */
+function Work() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  // Layout: asymmetric grid — col 1: tall, col 2: two squares, col 3: tall (repeated)
+  const photos = ASSETS.portfolio;
+
+  return (
+    <section id="work" className="py-28 sm:py-36 bg-card/30" ref={ref} aria-labelledby="work-heading">
+      <div className="container">
+        {/* Header */}
+        <motion.div
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          variants={stagger}
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-14"
+        >
+          <div>
+            <motion.span
+              variants={fadeUp}
+              className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Our Work
+            </motion.span>
+            <motion.h2
+              id="work-heading"
+              variants={fadeUp}
+              className="text-4xl sm:text-5xl font-semibold"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Built in Eugene.{" "}
+              <em className="text-primary italic">Built to last.</em>
+            </motion.h2>
+          </div>
+          <motion.a
+            variants={fadeUp}
+            href="/portfolio"
+            className="flex items-center gap-2 text-[12px] font-semibold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            View Full Portfolio <ArrowRight className="h-4 w-4" />
+          </motion.a>
+        </motion.div>
+
+        {/* Masonry-style grid — 3 columns, alternating heights */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+          {/* Col span tricks for magazine feel */}
+          {photos.slice(0, 12).map((src, i) => {
+            // Positions 0, 5, 8 get tall treatment (row-span-2)
+            const isTall = [0, 5, 8].includes(i);
+            return (
+              <motion.div
+                key={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-30px" }}
+                variants={fadeIn}
+                transition={{ delay: i * 0.04 }}
+                className={`group relative overflow-hidden ${isTall ? "row-span-2" : ""}`}
+              >
+                <div className={`relative overflow-hidden ${isTall ? "h-full min-h-[320px]" : "aspect-square"}`}>
+                  <img
+                    src={src}
+                    alt={`Precision Core Builders project ${i + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                  />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-400 mix-blend-multiply" />
+                  <div className="absolute inset-0 border-2 border-primary/0 group-hover:border-primary/40 transition-colors duration-400" />
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CONTACT — real phone, email, functional Netlify Form
+══════════════════════════════════════════════════════════════ */
 type FormStatus = "idle" | "submitting" | "success" | "error";
 
 function Contact() {
@@ -873,11 +815,10 @@ function Contact() {
     name: "", email: "", phone: "", projectType: "", budget: "", message: "",
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => setFields(p => ({ ...p, [e.target.name]: e.target.value }));
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setFields(p => ({ ...p, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus("submitting");
     try {
@@ -892,60 +833,69 @@ function Contact() {
     } catch { setStatus("error"); }
   };
 
-  const inputCls = "w-full px-4 py-3 rounded-sm border border-border bg-input text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary transition-shadow";
+  const inputCls =
+    "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors duration-200";
+
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="contact" className="py-28 sm:py-36 bg-card/30" aria-labelledby="contact-heading">
+    <section id="contact" className="py-28 sm:py-36" ref={ref} aria-labelledby="contact-heading">
       <div className="container">
-        <div className="grid lg:grid-cols-[1fr_1.6fr] gap-16 items-start">
+        <div className="grid lg:grid-cols-[1fr_1.5fr] gap-16 items-start">
 
           {/* Left — info */}
           <motion.div
             initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
+            animate={inView ? "visible" : "hidden"}
             variants={stagger}
           >
             <motion.span
               variants={fadeUp}
-              className="block text-primary text-xs tracking-[0.25em] uppercase mb-4 font-medium"
+              className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-5"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Get in Touch
+              Contact Us
             </motion.span>
             <motion.h2
               id="contact-heading"
               variants={fadeUp}
-              className="text-4xl sm:text-5xl font-semibold leading-tight mb-6"
+              className="text-4xl sm:text-5xl font-semibold leading-tight mb-3"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Ready to start<br />
-              <em className="text-primary">your project?</em>
+              Let&apos;s Build
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-muted-foreground text-base leading-relaxed font-light mb-10">
-              Call Eric directly, send an email, or fill out the form. We get
-              back to every inquiry within one business day and come out for a
-              free on-site consultation before anything else.
+            <motion.h2
+              variants={fadeUp}
+              className="text-4xl sm:text-5xl font-semibold leading-tight italic text-primary mb-8"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Something Remarkable.
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed font-light mb-10 text-base">
+              Call Eric directly, send an email, or fill out the form. We come
+              to your site for a free consultation before anything else — because
+              every project deserves a real look before a real number.
             </motion.p>
 
-            <motion.div variants={stagger} className="space-y-6">
+            <motion.div variants={stagger} className="space-y-0">
               {[
-                { icon: Phone, label: "Call or text",       value: SITE.phone, href: SITE.phoneHref },
-                { icon: Mail,  label: "Email",              value: SITE.email, href: SITE.emailHref },
-                { icon: MapPin,label: "Service area",       value: "Eugene, Springfield & surrounding Lane County" },
-                { icon: Shield,label: "Oregon CCB License", value: SITE.license },
+                { icon: Phone, label: "Call Direct",  value: SITE.phone, href: SITE.phoneHref },
+                { icon: Mail,  label: "Email",        value: SITE.email, href: SITE.emailHref },
+                { icon: MapPin,label: "Service Area", value: "Eugene, Springfield & Lane County", href: undefined },
+                { icon: Shield,label: "Oregon CCB",   value: SITE.license, href: undefined },
               ].map(({ icon: Icon, label, value, href }) => (
                 <motion.div
                   key={label}
                   variants={fadeUp}
-                  className="flex items-start gap-4 pb-6 border-b border-border/40 last:border-0"
+                  className="flex items-start gap-4 py-5 border-b border-border/40 group"
                 >
-                  <div className="h-9 w-9 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="h-10 w-10 border border-primary/30 flex items-center justify-center flex-shrink-0 group-hover:border-primary group-hover:bg-primary/5 transition-colors duration-200 mt-0.5">
                     <Icon className="h-4 w-4 text-primary" aria-hidden />
                   </div>
                   <div>
                     <div
-                      className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-1"
+                      className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground/60 mb-1 font-medium"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
                       {label}
@@ -966,121 +916,146 @@ function Contact() {
           {/* Right — form */}
           <motion.div
             initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
+            animate={inView ? "visible" : "hidden"}
             variants={fadeUp}
           >
-            <div className="bg-card border border-border/60 rounded-sm p-8 sm:p-10">
+            <div className="bg-card border border-border/60 p-8 sm:p-10">
               {status === "success" ? (
                 <div className="text-center py-16">
-                  <div className="h-16 w-16 rounded-sm bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto mb-5">
-                    <Shield className="h-8 w-8 text-primary" aria-hidden />
+                  <div className="h-16 w-16 border border-primary/50 flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle2 className="h-8 w-8 text-primary" aria-hidden />
                   </div>
                   <h3
-                    className="text-2xl font-semibold mb-2"
+                    className="text-2xl font-semibold mb-3"
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Message received.
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    Eric will be in touch within one business day.
+                    We&apos;ll be in touch within one business day.
                   </p>
                 </div>
               ) : (
                 <>
                   <h3
-                    className="text-xl font-semibold mb-8"
+                    className="text-xl font-semibold mb-1"
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
-                    Free Project Consultation
+                    Get Your Free Estimate
                   </h3>
+                  <p className="text-sm text-muted-foreground mb-8 font-light">
+                    No obligation. We come to you.
+                  </p>
+
                   <form
                     name="project-inquiry"
                     method="POST"
                     data-netlify="true"
                     netlify-honeypot="bot-field"
-                    onSubmit={handleSubmit}
-                    className="space-y-5"
+                    onSubmit={onSubmit}
+                    className="space-y-4"
                     aria-label="Project inquiry form"
                   >
                     <input type="hidden" name="form-name" value="project-inquiry" />
                     <p className="hidden" aria-hidden>
-                      <label>Skip this: <input name="bot-field" tabIndex={-1} /></label>
+                      <label>Skip: <input name="bot-field" tabIndex={-1} /></label>
                     </p>
 
-                    <div className="grid sm:grid-cols-2 gap-5">
+                    <div className="grid sm:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="name" className="block text-xs tracking-wider uppercase text-muted-foreground mb-2"
-                          style={{ fontFamily: "var(--font-condensed)" }}>
-                          Your Name <span className="text-primary" aria-hidden>*</span>
+                        <label
+                          htmlFor="name"
+                          className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          Full Name <span className="text-primary" aria-hidden>*</span>
                         </label>
                         <input id="name" name="name" type="text" required autoComplete="name"
-                          value={fields.name} onChange={handleChange} className={inputCls} placeholder="Jane Smith" />
+                          value={fields.name} onChange={onChange}
+                          className={inputCls} placeholder="Jane Smith" />
                       </div>
                       <div>
-                        <label htmlFor="email" className="block text-xs tracking-wider uppercase text-muted-foreground mb-2"
-                          style={{ fontFamily: "var(--font-condensed)" }}>
+                        <label
+                          htmlFor="email"
+                          className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
                           Email <span className="text-primary" aria-hidden>*</span>
                         </label>
                         <input id="email" name="email" type="email" required autoComplete="email"
-                          value={fields.email} onChange={handleChange} className={inputCls} placeholder="jane@example.com" />
+                          value={fields.email} onChange={onChange}
+                          className={inputCls} placeholder="jane@email.com" />
                       </div>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-5">
+                    <div className="grid sm:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="phone" className="block text-xs tracking-wider uppercase text-muted-foreground mb-2"
-                          style={{ fontFamily: "var(--font-condensed)" }}>
+                        <label
+                          htmlFor="phone"
+                          className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
                           Phone
                         </label>
                         <input id="phone" name="phone" type="tel" autoComplete="tel"
-                          value={fields.phone} onChange={handleChange} className={inputCls} placeholder="(541) 555-0100" />
+                          value={fields.phone} onChange={onChange}
+                          className={inputCls} placeholder="(541) 555-0100" />
                       </div>
                       <div>
-                        <label htmlFor="projectType" className="block text-xs tracking-wider uppercase text-muted-foreground mb-2"
-                          style={{ fontFamily: "var(--font-condensed)" }}>
+                        <label
+                          htmlFor="projectType"
+                          className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
                           Project Type <span className="text-primary" aria-hidden>*</span>
                         </label>
                         <select id="projectType" name="projectType" required
-                          value={fields.projectType} onChange={handleChange}
-                          className={inputCls}
-                        >
+                          value={fields.projectType} onChange={onChange} className={inputCls}>
                           <option value="">Select…</option>
-                          <option value="new-home">New Home Build</option>
-                          <option value="full-remodel">Full Remodel</option>
-                          <option value="kitchen">Kitchen Remodel</option>
-                          <option value="bathroom">Bathroom Remodel</option>
-                          <option value="addition">Home Addition</option>
-                          <option value="adu">ADU / Second Unit</option>
+                          <option value="residential">Residential</option>
+                          <option value="remodel">Remodel / Renovation</option>
+                          <option value="new-construction">New Construction</option>
+                          <option value="restoration">Restoration</option>
+                          <option value="outdoor">Outdoor / Decking</option>
+                          <option value="roofing">Roofing</option>
+                          <option value="painting">Painting</option>
+                          <option value="cabinets">Custom Cabinets</option>
                           <option value="other">Other</option>
                         </select>
                       </div>
                     </div>
 
                     <div>
-                      <label htmlFor="budget" className="block text-xs tracking-wider uppercase text-muted-foreground mb-2"
-                        style={{ fontFamily: "var(--font-condensed)" }}>
+                      <label
+                        htmlFor="budget"
+                        className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
                         Approximate Budget
                       </label>
                       <select id="budget" name="budget"
-                        value={fields.budget} onChange={handleChange} className={inputCls}>
+                        value={fields.budget} onChange={onChange} className={inputCls}>
                         <option value="">Prefer not to say</option>
-                        <option value="under-50k">Under $50,000</option>
-                        <option value="50-150k">$50,000 – $150,000</option>
-                        <option value="150-350k">$150,000 – $350,000</option>
-                        <option value="350-750k">$350,000 – $750,000</option>
-                        <option value="750k-plus">$750,000+</option>
+                        <option value="under-25k">Under $25,000</option>
+                        <option value="25-75k">$25,000 – $75,000</option>
+                        <option value="75-200k">$75,000 – $200,000</option>
+                        <option value="200-500k">$200,000 – $500,000</option>
+                        <option value="500k-plus">$500,000+</option>
                       </select>
                     </div>
 
                     <div>
-                      <label htmlFor="message" className="block text-xs tracking-wider uppercase text-muted-foreground mb-2"
-                        style={{ fontFamily: "var(--font-condensed)" }}>
+                      <label
+                        htmlFor="message"
+                        className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
                         Project Description <span className="text-primary" aria-hidden>*</span>
                       </label>
                       <textarea id="message" name="message" required rows={4}
-                        value={fields.message} onChange={handleChange} className={`${inputCls} resize-none`}
-                        placeholder="Tell us about your project — location, what you're looking to build or change, and any timeline or specific requirements…" />
+                        value={fields.message} onChange={onChange}
+                        className={`${inputCls} resize-none`}
+                        placeholder="Tell us about your project — what you're building, where it is, and any timeline or specific requirements…" />
                     </div>
 
                     {status === "error" && (
@@ -1090,86 +1065,109 @@ function Contact() {
                       </p>
                     )}
 
-                    <Button
+                    <button
                       type="submit"
-                      size="lg"
                       disabled={status === "submitting"}
                       aria-busy={status === "submitting"}
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold tracking-wider text-sm"
+                      className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 text-sm font-bold tracking-[0.12em] uppercase hover:bg-primary/90 disabled:opacity-60 transition-all duration-200 hover:gap-3"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      {status === "submitting" ? "SENDING…" : "SEND INQUIRY"}
-                      {status !== "submitting" && <ArrowRight className="ml-2 h-4 w-4" />}
-                    </Button>
+                      {status === "submitting" ? "Sending…" : <>Send Inquiry <ArrowRight className="h-4 w-4" /></>}
+                    </button>
 
-                    <p className="text-xs text-muted-foreground text-center font-light">
-                      Free consultation · No obligation · {SITE.license} · Licensed &amp; insured
+                    <p className="text-[11px] text-muted-foreground/60 text-center font-light pt-1">
+                      Free consultation · No obligation · Licensed &amp; insured · {SITE.license}
                     </p>
                   </form>
                 </>
               )}
             </div>
           </motion.div>
-
         </div>
       </div>
     </section>
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════
    FOOTER
-══════════════════════════════════════════════════════════════════ */
+══════════════════════════════════════════════════════════════ */
 function Footer() {
   return (
-    <footer className="border-t border-border/40 bg-card/30">
+    <footer className="border-t border-border/40 bg-card/40">
       <div className="container py-12">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          {/* Brand */}
+        <div className="grid sm:grid-cols-[auto_1fr_auto] gap-8 items-start">
+          {/* Logo */}
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <svg width="24" height="28" viewBox="0 0 32 36" fill="none" aria-hidden>
-                <path d="M16 1L30 9V27L16 35L2 27V9L16 1Z" fill="#C8A84B" fillOpacity="0.1" stroke="#C8A84B" strokeWidth="1.5"/>
-                <text x="16" y="22" textAnchor="middle" fontFamily="Barlow Condensed" fontWeight="700" fontSize="13" fill="#C8A84B">PCB</text>
-              </svg>
-              <span className="text-sm font-semibold tracking-wider" style={{ fontFamily: "var(--font-condensed)" }}>
-                PRECISION CORE BUILDERS
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground ml-9">{SITE.license} &nbsp;·&nbsp; Eugene, Oregon</p>
-          </div>
-
-          {/* Links */}
-          <nav className="flex flex-wrap gap-x-8 gap-y-2 ml-9 md:ml-0" aria-label="Footer navigation">
-            {NAV.map(item => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase()}`}
-                className="text-xs tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                {item}
-              </a>
-            ))}
-            <a
-              href="/portfolio"
-              className="text-xs tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+            <img
+              src={ASSETS.logo}
+              alt="Precision Core Builders"
+              className="h-9 w-auto mb-3"
+            />
+            <p
+              className="text-[10px] tracking-widest uppercase text-muted-foreground"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Portfolio
-            </a>
+              {SITE.license} · Eugene, Oregon
+            </p>
+          </div>
+
+          {/* Nav */}
+          <nav
+            className="flex flex-wrap gap-x-8 gap-y-2 sm:justify-center sm:pt-1"
+            aria-label="Footer navigation"
+          >
+            {[...NAV, { label: "Portfolio", href: "/portfolio" }].map(n => (
+              <a
+                key={n.label}
+                href={n.href}
+                className="text-[11px] tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {n.label}
+              </a>
+            ))}
           </nav>
+
+          {/* Contact */}
+          <div className="flex flex-col gap-2 text-right">
+            <a
+              href={SITE.phoneHref}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              {SITE.phone}
+            </a>
+            <a
+              href={SITE.emailHref}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              {SITE.email}
+            </a>
+            <a
+              href={SITE.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Precision Core Builders on Facebook"
+              className="flex items-center justify-end gap-2 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Facebook className="h-4 w-4" />
+              <span className="text-xs" style={{ fontFamily: "var(--font-condensed)" }}>
+                Facebook
+              </span>
+            </a>
+          </div>
         </div>
 
         <div className="gold-rule my-8" aria-hidden />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground/60">
           <p>&copy; {new Date().getFullYear()} Precision Core Builders. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <a href={SITE.phoneHref} className="hover:text-primary transition-colors">{SITE.phone}</a>
-            <span aria-hidden>·</span>
-            <a href={SITE.emailHref} className="hover:text-primary transition-colors">{SITE.email}</a>
-          </div>
+          <p
+            className="tracking-widest uppercase"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            Powered by Precision Core
+          </p>
         </div>
       </div>
     </footer>
