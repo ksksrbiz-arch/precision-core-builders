@@ -2,13 +2,13 @@
 
 ## Agent Priming & Implementation Guardrails
 
-This document primes the Claude agent with the architectural vision, technical constraints, and implementation strategy for the Precision Core Builders platform. It ensures deterministic, high-velocity development aligned with the "Cathedral Principle."
+This document primes AI assistants with the codebase structure, development workflows, conventions, and architectural vision for the Precision Core Builders platform. It reflects the **actual current state** of the implementation alongside the target roadmap.
 
 ---
 
 ## 1. Project Vision & Core Mandate
 
-**Precision Core Builders** is a luxury construction management platform for Eric Tadlock (CCB #246527) that transforms how small-to-mid construction firms operate. The platform is not a static website; it is a **thinking operational engine** that automates field reporting, procurement, scheduling, and client communication.
+**Precision Core Builders** is a luxury construction management platform for Eric Tadlock (CCB #246527) that transforms how small-to-mid construction firms operate. The platform is a **thinking operational engine** that automates field reporting, procurement, scheduling, and client communication.
 
 **Core Values Embedded in Code:**
 
@@ -18,11 +18,259 @@ This document primes the Claude agent with the architectural vision, technical c
 
 ---
 
-## 2. Design System: "Quiet Luxury"
+## 2. Current Implementation Status
 
-The visual language is **"Warm Modern"**—minimalist, high-contrast, utilizing natural textures (wood, stone, steel) in the UI. This aesthetic reflects Eric's 20+ years of craftsmanship.
+> **Phase 1 is partially complete.** Auth, basic layout, design system foundations, and landing page exist. Feature routers, domain-specific pages, and Netlify Functions are all stubbed but not yet implemented.
 
-### 2.1. Color Palette (CSS Variables in `client/src/index.css`)
+### What's Built
+
+- OAuth authentication flow (login, logout, session management via JWT)
+- Role-based access control (`admin` / `user`) with tRPC middleware
+- `users` table in MySQL via Drizzle ORM
+- Basic page routing (Home, 404) with Wouter
+- 50+ shadcn/ui components pre-installed and ready to use
+- DashboardLayout, ErrorBoundary, AIChatBox, Map components
+- Tailwind CSS 4 design system with custom theme
+- Netlify deployment configuration with security headers
+- One test file (`server/auth.logout.test.ts`)
+
+### What's Stubbed / Not Yet Implemented
+
+- All feature routers (projects, clients, field reports, materials, etc.)
+- Database tables beyond `users` (projects, clients, field_reports, etc.)
+- Netlify Functions (voice-to-report, estimate-project, weather-schedule, etc.)
+- Domain pages (CommandCenter, ClientPortal, FieldReporting, Estimator, Portfolio)
+- AI/LLM integrations (Gemini, Whisper)
+- n8n automation workflows
+
+---
+
+## 3. Technical Architecture (Actual Stack)
+
+| Layer              | Technology                                                | Notes                                       |
+| :----------------- | :-------------------------------------------------------- | :------------------------------------------ |
+| **Frontend**       | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion       | shadcn/ui + Radix primitives for components  |
+| **Routing**        | Wouter 3.3                                                | Lightweight client-side router               |
+| **State/Data**     | tRPC 11 + React Query 5                                   | End-to-end type-safe API calls               |
+| **Backend**        | Node.js / Express 4 / tRPC                                | Single process, serves both API and static   |
+| **Database**       | MySQL (via mysql2 + Drizzle ORM)                          | **Not PostgreSQL/Supabase as originally planned** |
+| **Authentication** | Manus OAuth + JWT (jose)                                  | Cookie-based sessions (`app_session_id`)     |
+| **Forms**          | React Hook Form + Zod 4                                   | Type-safe validation                         |
+| **Charts**         | Recharts 2                                                | Data visualization                           |
+| **Deployment**     | GitHub → Netlify                                          | CI/CD with edge deployment                   |
+| **Storage**        | AWS S3 (via @aws-sdk/client-s3)                           | File storage with presigned URLs             |
+| **Package Manager**| pnpm 10.4.1                                               | Strict, fast, workspace-ready                |
+
+### 3.1. Server Architecture
+
+**Entry point:** `server/_core/index.ts`
+
+```
+Express app
+├── Body parser (50MB limit)
+├── OAuth callback: GET /api/oauth/callback
+├── tRPC middleware: POST /api/trpc/*
+├── Dev: Vite HMR middleware
+└── Prod: Static file serving from dist/public
+```
+
+**tRPC Router structure** (`server/routers.ts`):
+
+```typescript
+appRouter = {
+  system: { health, notifyOwner },
+  auth: { me, logout },
+  // Feature routers go here (not yet implemented)
+}
+```
+
+**Middleware levels:**
+- `publicProcedure` — No auth required
+- `protectedProcedure` — Requires authenticated user (throws UNAUTHORIZED)
+- `adminProcedure` — Requires `role = 'admin'` (throws FORBIDDEN)
+
+### 3.2. Authentication Flow
+
+1. User clicks login → redirects to OAuth portal (`VITE_OAUTH_PORTAL_URL`)
+2. OAuth redirects back to `/api/oauth/callback?code=...&state=...`
+3. Backend exchanges code for token, fetches user info
+4. Upserts user in DB, creates JWT session token (HS256)
+5. Sets `app_session_id` cookie (httpOnly, secure, sameSite=none, 1-year expiry)
+6. Redirects to home page
+
+### 3.3. Database Schema (MySQL via Drizzle)
+
+**Currently only one table exists:**
+
+```
+users
+├── id: int (auto-increment PK)
+├── openId: varchar(64) (unique, OAuth identifier)
+├── name: text
+├── email: varchar(320)
+├── loginMethod: varchar(64)
+├── role: enum('user', 'admin') default 'user'
+├── createdAt: timestamp
+├── updatedAt: timestamp (auto-update)
+└── lastSignedIn: timestamp
+```
+
+**Planned tables** (add to `drizzle/schema.ts` as features are built):
+- `projects` — Project metadata, budget, timeline, status
+- `clients` — Client contact info, project history
+- `field_reports` — Voice memos, transcriptions, summaries
+- `materials` — Inventory, vendors, pricing
+- `schedule_items` — Gantt chart tasks, dependencies
+- `estimates` — Project cost breakdowns
+- `ledger_entries` — Immutable decision/cost log
+- `portfolio_projects` — Completed project showcase
+
+---
+
+## 4. File Structure (Actual)
+
+```
+precision-core-builders/
+├── client/
+│   ├── src/
+│   │   ├── _core/hooks/         # useAuth.ts (core auth hook)
+│   │   ├── components/
+│   │   │   ├── ui/              # 50+ shadcn/ui components (button, card, dialog, etc.)
+│   │   │   ├── AIChatBox.tsx    # AI chat interface
+│   │   │   ├── DashboardLayout.tsx
+│   │   │   ├── ErrorBoundary.tsx
+│   │   │   ├── ManusDialog.tsx
+│   │   │   └── Map.tsx          # Google Maps integration
+│   │   ├── contexts/            # ThemeContext.tsx
+│   │   ├── hooks/               # useMobile, useComposition, usePersistFn
+│   │   ├── lib/
+│   │   │   ├── trpc.ts          # tRPC client setup
+│   │   │   └── utils.ts         # cn() utility (clsx + tailwind-merge)
+│   │   ├── pages/
+│   │   │   ├── Home.tsx         # Landing page
+│   │   │   ├── NotFound.tsx     # 404 page
+│   │   │   └── ComponentShowcase.tsx
+│   │   ├── App.tsx              # Router (Wouter)
+│   │   ├── main.tsx             # React + tRPC + React Query setup
+│   │   ├── const.ts             # getLoginUrl(), COOKIE_NAME
+│   │   └── index.css            # Tailwind theme + custom styles
+│   └── public/                  # Static assets
+├── server/
+│   ├── _core/
+│   │   ├── index.ts             # Express app entry point
+│   │   ├── trpc.ts              # Router, publicProcedure, protectedProcedure, adminProcedure
+│   │   ├── context.ts           # TrpcContext, createContext
+│   │   ├── oauth.ts             # OAuth callback handler
+│   │   ├── sdk.ts               # OAuthService, JWT session management
+│   │   ├── cookies.ts           # Session cookie options
+│   │   ├── env.ts               # Environment variable aggregation
+│   │   ├── vite.ts              # Vite dev server setup
+│   │   ├── systemRouter.ts      # health, notifyOwner endpoints
+│   │   ├── llm.ts               # LLM types (stubbed)
+│   │   ├── voiceTranscription.ts # Voice-to-text interface (stubbed)
+│   │   ├── imageGeneration.ts   # Image generation (stubbed)
+│   │   ├── notification.ts      # Notification delivery (stubbed)
+│   │   ├── map.ts               # Map utilities
+│   │   └── dataApi.ts           # Data API integration
+│   ├── routers.ts               # appRouter definition
+│   ├── db.ts                    # Drizzle ORM, user queries
+│   ├── storage.ts               # AWS S3 helpers (storagePut, storageGet)
+│   └── auth.logout.test.ts      # Test file
+├── shared/
+│   ├── _core/errors.ts          # HttpError, BadRequestError, UnauthorizedError, ForbiddenError
+│   ├── const.ts                 # COOKIE_NAME, ONE_YEAR_MS, AXIOS_TIMEOUT_MS, error messages
+│   └── types.ts                 # Shared TypeScript types
+├── drizzle/
+│   ├── schema.ts                # Database schema (users table)
+│   ├── relations.ts             # Table relationships
+│   └── 0000_rapid_donald_blake.sql  # Initial migration
+├── netlify/
+│   └── functions/               # Serverless functions (planned, not implemented)
+├── patches/                     # pnpm patches (wouter@3.7.1)
+├── .env.example                 # Environment variable template
+├── drizzle.config.ts            # Drizzle Kit config (MySQL dialect)
+├── vite.config.ts               # Vite config
+├── vitest.config.ts             # Test config
+├── tsconfig.json                # TypeScript config
+├── netlify.toml                 # Netlify deployment config
+├── components.json              # shadcn/ui config
+├── .prettierrc                  # 80 chars, 2 spaces, trailing commas
+└── package.json                 # Scripts, dependencies
+```
+
+### Path Aliases
+
+- `@/*` → `client/src/*`
+- `@shared/*` → `shared/*`
+
+---
+
+## 5. Development Workflows
+
+### 5.1. Common Commands
+
+```bash
+pnpm dev              # Start dev server (tsx watch, Vite HMR)
+pnpm build            # Production build (vite build + esbuild server)
+pnpm start            # Run production server
+
+pnpm check            # TypeScript type checking (tsc --noEmit)
+pnpm format           # Format code with Prettier
+pnpm format:check     # Check formatting
+pnpm lint             # Type check + format check
+
+pnpm test             # Run tests (vitest run)
+pnpm test:watch       # Watch mode tests
+pnpm test:coverage    # Tests with coverage report
+
+pnpm db:generate      # Generate Drizzle migration
+pnpm db:migrate       # Run Drizzle migration
+pnpm db:push          # Generate + migrate in one step
+pnpm db:studio        # Open Drizzle Studio GUI
+
+pnpm validate         # Full validation: lint + test + build
+pnpm clean            # Remove dist/, cache, logs
+```
+
+### 5.2. Adding a New Feature (End-to-End)
+
+1. **Schema:** Add table(s) to `drizzle/schema.ts`, run `pnpm db:push`
+2. **Server:** Add query helpers to `server/db.ts`
+3. **Router:** Add tRPC router in a new file, register in `server/routers.ts`
+4. **Client page:** Create page in `client/src/pages/`, add route in `App.tsx`
+5. **Components:** Use existing shadcn/ui components from `client/src/components/ui/`
+6. **Tests:** Add `*.test.ts` files in `server/` (Vitest, node environment)
+
+### 5.3. Adding a shadcn/ui Component
+
+The project uses shadcn/ui with the `components.json` config. 50+ components are already installed in `client/src/components/ui/`. Check there before adding new ones.
+
+### 5.4. Database Migrations
+
+Drizzle Kit manages schema changes:
+
+```bash
+# 1. Edit drizzle/schema.ts
+# 2. Generate SQL migration
+pnpm db:generate
+# 3. Apply migration
+pnpm db:migrate
+```
+
+### 5.5. Testing
+
+- Test files: `server/**/*.test.ts` or `server/**/*.spec.ts`
+- Environment: Node (not jsdom)
+- Framework: Vitest
+- Config: `vitest.config.ts`
+
+---
+
+## 6. Design System: "Quiet Luxury"
+
+The visual language is **"Warm Modern"** — minimalist, high-contrast, natural textures.
+
+### 6.1. Color Palette (in `client/src/index.css`)
 
 - **Primary (Warm Beige):** `#F5F1ED` (background), `#2D2D2D` (text)
 - **Accent (Warm Steel):** `#8B7355` (wood/bronze tones)
@@ -30,214 +278,143 @@ The visual language is **"Warm Modern"**—minimalist, high-contrast, utilizing 
 - **Success (Earthy Green):** `#6B8E23` (project milestones)
 - **Warning (Warm Amber):** `#D4A574` (alerts, budget impacts)
 
-### 2.2. Typography
+### 6.2. Typography
 
-- **Headings:** `font-family: 'Playfair Display', serif;` (luxury, editorial)
-- **Body:** `font-family: 'Inter', sans-serif;` (clean, modern)
-- **Monospace:** `font-family: 'Courier Prime', monospace;` (data, ledgers)
+- **Headings:** `'Playfair Display', serif` (luxury, editorial)
+- **Body:** `'Inter', sans-serif` (clean, modern)
+- **Monospace:** `'Courier Prime', monospace` (data, ledgers)
 
-### 2.3. Micro-Interactions
+### 6.3. Micro-Interactions
 
 - Smooth transitions (300ms easing) on all interactive elements.
 - Hover states: subtle scale (1.02x) and shadow elevation.
 - Loading states: animated gradient pulse (not spinners).
 - Tactile feedback: button press animations using Framer Motion.
 
-### 2.4. Imagery & Video
-
-- Full-bleed cinematic video backgrounds on landing and key pages.
-- High-fidelity project photography with subtle vignettes.
-- Before/After sliders with smooth transitions.
-- 360-degree project walkthroughs (if feasible via Three.js or similar).
-
 ---
 
-## 3. Technical Architecture
+## 7. Implementation Roadmap
 
-### 3.1. Stack
+### Phase 1: Foundation (Design System + Auth) — **In Progress**
 
-| Layer                   | Technology                                       | Rationale                                                    |
-| :---------------------- | :----------------------------------------------- | :----------------------------------------------------------- |
-| **Frontend**            | React 19 / Vite / Tailwind CSS 4 / Framer Motion | High-performance, SEO-optimized, tactile animations.         |
-| **Backend API**         | Node.js / Express.js / tRPC                      | Serverless-ready, type-safe end-to-end.                      |
-| **Database**            | Supabase (PostgreSQL)                            | Real-time subscriptions, Row-Level Security, Auth.           |
-| **Authentication**      | Supabase Auth (OAuth + Email)                    | Role-based access (admin/user), secure session management.   |
-| **AI/LLM**              | Gemini-2.5-Flash (via Netlify Functions)         | Field report generation, lead scoring, cost estimation.      |
-| **Voice Transcription** | Whisper API (via Netlify Functions)              | Voice-to-text for field memos.                               |
-| **Automation**          | n8n (self-hosted or cloud)                       | Orchestration of leads, notifications, sub-contractor comms. |
-| **Deployment**          | GitHub → Netlify                                 | CI/CD with automatic builds and edge deployment.             |
-| **Storage**             | Supabase Storage / Netlify Blob                  | Images, videos, documents, site-cam feeds.                   |
-
-### 3.2. Netlify Functions (Serverless Backend)
-
-All backend logic runs as Netlify Functions, replacing traditional Express.js server. Key functions:
-
-- **`/api/voice-to-report`:** Accepts audio file, transcribes with Whisper, generates field report with Gemini.
-- **`/api/estimate-project`:** Calculates real-time cost ranges based on project parameters.
-- **`/api/weather-schedule`:** Fetches Eugene, OR weather, adjusts Gantt chart priorities.
-- **`/api/material-procurement`:** Monitors project phases, drafts POs, checks vendor pricing.
-- **`/api/lead-score`:** AI-prioritizes incoming leads by project type, budget, location.
-
-### 3.3. Database Schema (Supabase PostgreSQL)
-
-Core tables:
-
-- **`users`:** Admin (Eric) and client accounts with role-based access.
-- **`projects`:** Project metadata, budget, timeline, status.
-- **`clients`:** Client contact info, project history, preferences.
-- **`field_reports`:** Voice memos, transcriptions, auto-generated summaries.
-- **`materials`:** Inventory, vendors, pricing, procurement status.
-- **`schedule_items`:** Gantt chart tasks, dependencies, weather-adjusted priorities.
-- **`estimates`:** Saved project estimates with cost breakdowns.
-- **`ledger_entries`:** Immutable log of all decisions, approvals, cost changes.
-- **`portfolio_projects`:** Completed projects with media, before/after, testimonials.
-
----
-
-## 4. Implementation Strategy: Phase-by-Phase
-
-### Phase 1: Foundation (Design System + Auth)
-
-1. Set up Tailwind CSS 4 with custom color palette and typography.
-2. Implement Supabase Auth with role-based access (admin/user).
-3. Create DashboardLayout for Eric's Command Center.
-4. Build landing page with "Quiet Luxury" aesthetic.
+- [x] Tailwind CSS 4 with custom color palette and typography
+- [x] OAuth authentication with role-based access (admin/user)
+- [x] DashboardLayout component
+- [ ] Landing page with full "Quiet Luxury" aesthetic (basic Home.tsx exists)
 
 ### Phase 2: Core Operations (Field Reporting + Scheduling)
 
-1. Implement voice-to-report system (Whisper + Gemini).
-2. Build Gantt chart component with weather-responsive logic.
-3. Create field report UI for Eric to review and publish.
-4. Integrate real-time updates to client portal.
+- [ ] Voice-to-report system (Whisper + Gemini via Netlify Functions)
+- [ ] Gantt chart component with weather-responsive logic
+- [ ] Field report UI for Eric to review and publish
+- [ ] Real-time updates to client portal
 
 ### Phase 3: Client Experience (Portal + Estimator)
 
-1. Build client portal with live project timeline.
-2. Create digital finish selection manager with budget impact display.
-3. Implement AI Project Estimator with real-time cost calculations.
-4. Add "Core Values" ledger for transparent decision tracking.
+- [ ] Client portal with live project timeline
+- [ ] Digital finish selection manager with budget impact display
+- [ ] AI Project Estimator with real-time cost calculations
+- [ ] "Core Values" ledger for transparent decision tracking
 
 ### Phase 4: Automation (Procurement + Sub-Contractors)
 
-1. Build material procurement system with vendor integration.
-2. Implement n8n workflows for sub-contractor scheduling and comms.
-3. Create automated billing and milestone-based invoicing.
-4. Add SMS/Email notification system.
+- [ ] Material procurement system with vendor integration
+- [ ] n8n workflows for sub-contractor scheduling and comms
+- [ ] Automated billing and milestone-based invoicing
+- [ ] SMS/Email notification system
 
 ### Phase 5: Analytics & Portfolio (Command Center + Showcase)
 
-1. Build owner Command Center dashboard with AI lead prioritization.
-2. Implement profitability tracking (estimated vs. actual costs).
-3. Create project portfolio showcase with 360 walkthroughs.
-4. Add LLM-powered search for operational queries.
+- [ ] Owner Command Center dashboard with AI lead prioritization
+- [ ] Profitability tracking (estimated vs. actual costs)
+- [ ] Project portfolio showcase with 360 walkthroughs
+- [ ] LLM-powered search for operational queries
 
 ---
 
-## 5. Critical Implementation Rules
+## 8. Critical Rules & Conventions
 
-### 5.1. Voice-to-Report Workflow
+### 8.1. Do NOT
+
+- Store images/videos in `client/public/` or `client/src/assets/`
+- Hardcode API keys or secrets in code
+- Use external map libraries — use the built-in `Map.tsx` component
+- Create REST endpoints — use tRPC procedures only
+- Manually manipulate cookies — use the auth system in `server/_core/`
+- Use PostgreSQL/Supabase syntax — the database is **MySQL**
+
+### 8.2. DO
+
+- Upload assets via `manus-upload-file --webdev` and use returned CDN URLs
+- Store all secrets in environment variables (see `.env.example`)
+- Use tRPC `protectedProcedure` / `adminProcedure` for access control
+- Use shadcn/ui components from `client/src/components/ui/` before building custom ones
+- Write Vitest tests for all critical procedures
+- Use Zod schemas for input validation on tRPC procedures
+- Follow Prettier formatting (80 chars, 2 spaces, trailing commas)
+- Use path aliases (`@/*`, `@shared/*`) for imports
+
+### 8.3. Code Style
+
+- **Formatting:** Prettier — 80 char width, 2-space indent, trailing commas, double quotes
+- **Types:** Leverage tRPC's end-to-end type safety; all procedures must have clear input/output types
+- **Errors:** Use error classes from `shared/_core/errors.ts` (HttpError, BadRequestError, etc.)
+- **Constants:** Shared constants go in `shared/const.ts`
+- **State management:** React Query (via tRPC) for server state; React context for UI state
+
+### 8.4. Environment Variables
+
+Key variables (see `.env.example` for full list):
 
 ```
-Eric records voice memo on mobile →
-Whisper transcribes →
-Gemini generates structured report →
-Auto-updates client portal + creates ledger entry →
-Flags material shortages to n8n for procurement
+VITE_APP_ID            # App identifier (VITE_ prefix = exposed to client)
+VITE_OAUTH_PORTAL_URL  # OAuth login portal URL
+JWT_SECRET             # JWT signing secret (32+ chars)
+OWNER_OPEN_ID          # Admin user's OAuth ID
+DATABASE_URL           # MySQL connection string
 ```
 
-### 5.2. Weather-Responsive Scheduling
-
-- Fetch Eugene, OR weather daily via OpenWeatherMap API.
-- If rain > 60% probability in next 24h: deprioritize outdoor tasks (roofing, painting).
-- Automatically shift interior tasks (cabinets, flooring) up in Gantt chart.
-- Notify Eric of changes via Command Center dashboard.
-
-### 5.3. Material Procurement
-
-- Track project phases and auto-generate PO drafts.
-- Monitor vendor pricing via API integrations (e.g., Home Depot, Lowe's APIs if available).
-- Flag budget impacts to Eric with alternative vendor suggestions.
-- Integrate with n8n for automated vendor outreach.
-
-### 5.4. Client Portal Real-Time Updates
-
-- Use Supabase Realtime subscriptions for live project timeline.
-- Every field report, milestone completion, or cost change updates the client view instantly.
-- Clients can approve change orders and make finish selections in real-time.
-
-### 5.5. Authentication & Security
-
-- Supabase Auth handles login/logout and session management.
-- Eric is `role = 'admin'`; clients are `role = 'user'`.
-- Row-Level Security (RLS) ensures clients see only their projects.
-- All financial data encrypted at rest and in transit.
+Only `VITE_`-prefixed variables are accessible in client code via `import.meta.env`.
 
 ---
 
-## 6. File Structure & Guardrails
+## 9. Netlify Deployment
 
-```
-precision-core-builders/
-├── client/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Home.tsx (Landing with "Quiet Luxury" aesthetic)
-│   │   │   ├── CommandCenter.tsx (Eric's admin dashboard)
-│   │   │   ├── ClientPortal.tsx (Client project view)
-│   │   │   ├── FieldReporting.tsx (Voice-to-report UI)
-│   │   │   ├── Estimator.tsx (AI Project Estimator)
-│   │   │   ├── Portfolio.tsx (Project showcase)
-│   │   │   └── ...
-│   │   ├── components/
-│   │   │   ├── GanttChart.tsx (Weather-responsive scheduling)
-│   │   │   ├── FinishSelector.tsx (Digital showroom)
-│   │   │   ├── CoreValuesLedger.tsx (Transparent log)
-│   │   │   ├── SiteCamViewer.tsx (Live camera feed)
-│   │   │   └── ...
-│   │   ├── lib/
-│   │   │   ├── trpc.ts (tRPC client)
-│   │   │   ├── supabase.ts (Supabase client)
-│   │   │   └── ...
-│   │   └── index.css (Design system: colors, typography, animations)
-│   └── public/
-│       ├── favicon.ico
-│       └── robots.txt
-├── server/
-│   ├── routers.ts (tRPC procedures for all features)
-│   ├── db.ts (Database query helpers)
-│   ├── functions/
-│   │   ├── voice-to-report.ts (Whisper + Gemini)
-│   │   ├── estimate-project.ts (Cost calculations)
-│   │   ├── weather-schedule.ts (Weather API integration)
-│   │   ├── material-procurement.ts (Vendor management)
-│   │   └── lead-score.ts (AI prioritization)
-│   └── ...
-├── drizzle/
-│   └── schema.ts (Database schema)
-├── CLAUDE.md (This file)
-├── README.md (Project overview)
-└── package.json
-```
+### Build Configuration (`netlify.toml`)
 
-### 6.1. Do NOT:
+- **Build command:** `pnpm install && pnpm build`
+- **Publish directory:** `dist/public`
+- **Node version:** 20
+- **API routing:** `/api/*` → Netlify Functions
 
-- Store images/videos in `client/public/` or `client/src/assets/`.
-- Hardcode API keys or secrets in code.
-- Use external map libraries; use the built-in Map component.
-- Create new REST endpoints; use tRPC procedures.
-- Manually manipulate cookies; use Supabase Auth.
+### Security Headers (auto-applied)
 
-### 6.2. DO:
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
 
-- Upload assets via `manus-upload-file --webdev` and use returned CDN URLs.
-- Store all secrets in environment variables via `webdev_request_secrets`.
-- Use Supabase Realtime for live updates.
-- Leverage Netlify Functions for serverless logic.
-- Write Vitest tests for all critical procedures.
+### Caching
+
+- JS/CSS assets: immutable, 1-year cache
+- Static files: 1-year cache
 
 ---
 
-## 7. Success Metrics
+## 10. Planned Netlify Functions
+
+These functions are documented in `netlify/functions/` but **not yet implemented**:
+
+| Function                 | Purpose                                          |
+| :----------------------- | :----------------------------------------------- |
+| `voice-to-report`        | Whisper transcription + Gemini report generation |
+| `estimate-project`       | Real-time cost calculation from project params   |
+| `weather-schedule`       | Eugene, OR weather → Gantt chart adjustments     |
+| `material-procurement`   | Phase tracking, PO drafts, vendor pricing        |
+| `lead-score`             | AI lead prioritization by type/budget/location   |
+
+---
+
+## 11. Success Metrics
 
 | Metric                  | Target                                                             |
 | :---------------------- | :----------------------------------------------------------------- |
@@ -246,17 +423,6 @@ precision-core-builders/
 | **Client Satisfaction** | 100% portal adoption rate for active projects.                     |
 | **Infrastructure Cost** | Maintain serverless "pay-as-you-go" efficiency.                    |
 | **Field Efficiency**    | Voice-to-report reduces daily reporting time from 30 min to 5 min. |
-
----
-
-## 8. Agent Execution Guidelines
-
-1. **Deterministic Development:** Follow the phase-by-phase roadmap. Each phase builds on the previous one.
-2. **Type Safety:** Leverage tRPC's end-to-end type safety. All procedures must have clear input/output types.
-3. **Testing:** Write Vitest tests for all critical procedures (voice transcription, cost calculations, scheduling logic).
-4. **Documentation:** Inline code comments for complex logic (AI prompts, scheduling algorithms, security rules).
-5. **Performance:** Optimize for edge deployment. Use Netlify Functions for compute-heavy tasks (AI, transcription).
-6. **Security:** Never expose API keys. Always validate inputs. Use Supabase RLS for data access control.
 
 ---
 
