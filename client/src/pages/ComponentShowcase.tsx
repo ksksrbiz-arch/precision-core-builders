@@ -171,7 +171,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast as sonnerToast } from "sonner";
-import { AIChatBox, type Message } from "@/components/AIChatBox";
+import AIChatBox from "@/components/AIChatBox";
+type Message = { role: "user" | "assistant"; content: string; };
 
 export default function ComponentsShowcase() {
   const { theme, toggleTheme } = useTheme();
@@ -189,7 +190,7 @@ export default function ComponentsShowcase() {
 
   // AI ChatBox demo state
   const [chatMessages, setChatMessages] = useState<Message[]>([
-    { role: "system", content: "You are a helpful assistant." },
+    { role: "assistant", content: "You are a helpful assistant." },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
 
@@ -1409,20 +1410,7 @@ export default function ComponentsShowcase() {
                       you'd connect it to a tRPC mutation.
                     </p>
                   </div>
-                  <AIChatBox
-                    messages={chatMessages}
-                    onSendMessage={handleChatSend}
-                    isLoading={isChatLoading}
-                    placeholder="Try sending a message..."
-                    height="500px"
-                    emptyStateMessage="How can I help you today?"
-                    suggestedPrompts={[
-                      "What is React?",
-                      "Explain TypeScript",
-                      "How to use tRPC?",
-                      "Best practices for web development",
-                    ]}
-                  />
+                  <AIChatBox />
                 </div>
               </CardContent>
             </Card>

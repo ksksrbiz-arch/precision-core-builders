@@ -1,28 +1,30 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import type { User } from "../../drizzle/schema";
-import { sdk } from "./sdk";
+
+export type UserRole = "user" | "admin";
+
+export type SessionUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: UserRole;
+};
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
-  user: User | null;
+  user: SessionUser | null;
 };
 
+/**
+ * Phase 1: No auth yet — user is always null.
+ * Phase 2: Replace this with Supabase JWT verification.
+ */
 export async function createContext(
-  opts: CreateExpressContextOptions
+  opts: CreateExpressContextOptions,
 ): Promise<TrpcContext> {
-  let user: User | null = null;
-
-  try {
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    // Authentication is optional for public procedures.
-    user = null;
-  }
-
   return {
     req: opts.req,
     res: opts.res,
-    user,
+    user: null,
   };
 }
