@@ -56,7 +56,10 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
     # Allow mic (voice reports), camera (site cam), geolocation (weather/site)
-    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self)"
+    # Uses structured-header syntax required by Chromium 116+
+    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self), interest-cohort=()"
+    # Legacy Feature-Policy fallback for older WebView / Safari < 16
+    Feature-Policy = "camera 'self'; microphone 'self'; geolocation 'self'"
 
 # PWA manifest — don't cache aggressively (needs to update)
 [[headers]]
