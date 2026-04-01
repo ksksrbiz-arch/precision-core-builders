@@ -66,15 +66,3 @@
 [context.branch-deploy]
   environment = { NODE_ENV = "development" }
 
-# Plugin configuration (optional)
-[[plugins]]
-  package = "@netlify/plugin-lighthouse"
-
-  [plugins.inputs]
-    output_path = "reports/lighthouse.html"
-
-[[plugins]]
-  package = "netlify-plugin-cache"
-
-  [plugins.inputs.paths]
-    paths = ["node_modules/.cache", ".pnpm-store"]
