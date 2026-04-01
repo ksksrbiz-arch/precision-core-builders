@@ -24,15 +24,21 @@ This document primes AI assistants with the codebase structure, development work
 
 ### What's Built
 
-- OAuth authentication flow (login, logout, session management via JWT)
-- Role-based access control (`admin` / `user`) with tRPC middleware
-- `users` table in MySQL via Drizzle ORM
 - Basic page routing (Home, 404) with Wouter
 - 50+ shadcn/ui components pre-installed and ready to use
 - DashboardLayout, ErrorBoundary, Map components
 - Tailwind CSS 4 design system with custom theme
 - Netlify deployment configuration with security headers
+- tRPC router scaffolding with role-based middleware (public/protected/admin)
 - One test file (`server/auth.logout.test.ts`)
+
+### What Needs Replacing (Legacy Manus Scaffolding)
+
+- Custom OAuth flow (`server/_core/oauth.ts`, `sdk.ts`) → replace with Netlify Identity
+- MySQL database + `users` table (`drizzle/schema.ts`, `server/db.ts`) → replace with Netlify DB extension
+- AWS S3 storage (`server/storage.ts`) → replace with Netlify Blobs
+- Express server entry point (`server/_core/index.ts`) → migrate to Netlify Functions
+- Manus-specific files (`ManusDialog.tsx`, `client/public/__manus__/`, `dataApi.ts`)
 
 ### What's Stubbed / Not Yet Implemented
 
@@ -52,29 +58,41 @@ This document primes AI assistants with the codebase structure, development work
 | **Frontend**       | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion       | shadcn/ui + Radix primitives for components  |
 | **Routing**        | Wouter 3.3                                                | Lightweight client-side router               |
 | **State/Data**     | tRPC 11 + React Query 5                                   | End-to-end type-safe API calls               |
-| **Backend**        | Node.js / Express 4 / tRPC                                | Single process, serves both API and static   |
-| **Database**       | MySQL (via mysql2 + Drizzle ORM)                          | **Not PostgreSQL/Supabase as originally planned** |
-| **Authentication** | OAuth + JWT (jose)                                        | Cookie-based sessions (`app_session_id`)     |
+| **Backend**        | Netlify Functions                                         | Serverless; Express scaffolding is legacy    |
+| **Database**       | Netlify extension (e.g., Neon Postgres, PlanetScale)      | Use whichever Netlify DB extension fits best |
+| **Authentication** | Netlify Identity                                          | Native Netlify auth extension                |
+| **Storage**        | Netlify Blobs                                             | Native Netlify file/object storage           |
 | **Forms**          | React Hook Form + Zod 4                                   | Type-safe validation                         |
 | **Charts**         | Recharts 2                                                | Data visualization                           |
-| **Deployment**     | GitHub → Netlify                                          | CI/CD with edge deployment                   |
-| **Storage**        | AWS S3 (via @aws-sdk/client-s3)                           | File storage with presigned URLs             |
+| **Platform**       | GitHub → Netlify                                          | CI/CD with edge deployment                   |
 | **Package Manager**| pnpm 10.4.1                                               | Strict, fast, workspace-ready                |
+
+### 3.0. Service Architecture Principle
+
+**Use native Netlify extensions for all web services.** Do not introduce standalone cloud services (AWS S3, external OAuth providers, self-hosted databases, etc.). If Netlify offers an extension or integration for a capability, use it. This keeps infrastructure unified, secrets managed in one place (Netlify dashboard), and deployment simple.
+
+### 3.0.1. Development & Deployment Workflow
+
+- **GitHub** is the single source of truth for all code.
+- All development happens via **Claude Chat** or **Claude Code** connections, pushing directly to the GitHub repo.
+- Netlify auto-deploys from GitHub on push.
+- Claude may use available connections (GitHub MCP tools, etc.) to create branches, open PRs, manage issues, and enhance the development workflow as needed.
 
 ### 3.1. Server Architecture
 
-**Entry point:** `server/_core/index.ts`
+Backend logic runs as **Netlify Functions** (serverless). The existing Express server in `server/_core/index.ts` is legacy scaffolding from the initial Manus setup and will be replaced.
+
+**Target architecture:**
 
 ```
-Express app
-├── Body parser (50MB limit)
-├── OAuth callback: GET /api/oauth/callback
-├── tRPC middleware: POST /api/trpc/*
-├── Dev: Vite HMR middleware
-└── Prod: Static file serving from dist/public
+Netlify Functions (netlify/functions/)
+├── API endpoints (tRPC or REST, routed via netlify.toml)
+├── AI/LLM calls (Gemini, Whisper)
+├── Scheduled tasks (weather checks, procurement)
+└── Webhooks (n8n, notifications)
 ```
 
-**tRPC Router structure** (`server/routers.ts`):
+**tRPC Router structure** (`server/routers.ts`) — carried forward into Netlify Functions:
 
 ```typescript
 appRouter = {
@@ -89,30 +107,22 @@ appRouter = {
 - `protectedProcedure` — Requires authenticated user (throws UNAUTHORIZED)
 - `adminProcedure` — Requires `role = 'admin'` (throws FORBIDDEN)
 
-### 3.2. Authentication Flow
+### 3.2. Authentication
 
-1. User clicks login → redirects to OAuth portal (`VITE_OAUTH_PORTAL_URL`)
-2. OAuth redirects back to `/api/oauth/callback?code=...&state=...`
-3. Backend exchanges code for token, fetches user info
-4. Upserts user in DB, creates JWT session token (HS256)
-5. Sets `app_session_id` cookie (httpOnly, secure, sameSite=none, 1-year expiry)
-6. Redirects to home page
+Use **Netlify Identity** for authentication. The existing custom OAuth flow (`server/_core/oauth.ts`, `server/_core/sdk.ts`) is legacy Manus scaffolding to be replaced.
 
-### 3.3. Database Schema (MySQL via Drizzle)
+- Eric is `role = 'admin'`; clients are `role = 'user'`
+- Netlify Identity handles signup, login, password reset, OAuth providers
+- Access control enforced via tRPC middleware and Netlify Identity JWT
 
-**Currently only one table exists:**
+### 3.3. Database
+
+Use a **Netlify database extension** (e.g., Neon Postgres, PlanetScale, Supabase) managed via the Netlify dashboard. The current MySQL schema in `drizzle/schema.ts` is legacy scaffolding — the Drizzle ORM setup will be adapted to whichever Netlify DB extension is chosen.
+
+**Current schema** (legacy, single `users` table — to be rebuilt):
 
 ```
-users
-├── id: int (auto-increment PK)
-├── openId: varchar(64) (unique, OAuth identifier — legacy Manus field, to be replaced)
-├── name: text
-├── email: varchar(320)
-├── loginMethod: varchar(64)
-├── role: enum('user', 'admin') default 'user'
-├── createdAt: timestamp
-├── updatedAt: timestamp (auto-update)
-└── lastSignedIn: timestamp
+users (legacy Manus table, to be replaced with Netlify Identity)
 ```
 
 **Planned tables** (add to `drizzle/schema.ts` as features are built):
@@ -156,12 +166,12 @@ precision-core-builders/
 │   └── public/                  # Static assets
 ├── server/
 │   ├── _core/
-│   │   ├── index.ts             # Express app entry point
+│   │   ├── index.ts             # Express entry point (LEGACY — migrate to Netlify Functions)
 │   │   ├── trpc.ts              # Router, publicProcedure, protectedProcedure, adminProcedure
 │   │   ├── context.ts           # TrpcContext, createContext
-│   │   ├── oauth.ts             # OAuth callback handler
-│   │   ├── sdk.ts               # OAuthService, JWT session management
-│   │   ├── cookies.ts           # Session cookie options
+│   │   ├── oauth.ts             # OAuth callback (LEGACY — replace with Netlify Identity)
+│   │   ├── sdk.ts               # Manus OAuth SDK (LEGACY — replace with Netlify Identity)
+│   │   ├── cookies.ts           # Session cookie options (LEGACY)
 │   │   ├── env.ts               # Environment variable aggregation
 │   │   ├── vite.ts              # Vite dev server setup
 │   │   ├── systemRouter.ts      # health, notifyOwner endpoints
@@ -170,10 +180,10 @@ precision-core-builders/
 │   │   ├── imageGeneration.ts   # Image generation (stubbed)
 │   │   ├── notification.ts      # Notification delivery (stubbed)
 │   │   ├── map.ts               # Map utilities
-│   │   └── dataApi.ts           # Data API integration
+│   │   └── dataApi.ts           # Manus data API (LEGACY — remove)
 │   ├── routers.ts               # appRouter definition
-│   ├── db.ts                    # Drizzle ORM, user queries
-│   ├── storage.ts               # AWS S3 helpers (storagePut, storageGet)
+│   ├── db.ts                    # Drizzle ORM, user queries (adapt to Netlify DB extension)
+│   ├── storage.ts               # AWS S3 helpers (LEGACY — replace with Netlify Blobs)
 │   └── auth.logout.test.ts      # Test file
 ├── shared/
 │   ├── _core/errors.ts          # HttpError, BadRequestError, UnauthorizedError, ForbiddenError
@@ -335,23 +345,24 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 
 ### 8.1. Do NOT
 
-- Store images/videos in `client/public/` or `client/src/assets/`
-- Hardcode API keys or secrets in code
+- Introduce standalone cloud services (AWS S3, external OAuth, self-hosted DB) — **use Netlify extensions for everything**
+- Store images/videos in `client/public/` or `client/src/assets/` — use Netlify Blobs
+- Hardcode API keys or secrets in code — use Netlify environment variables
 - Use external map libraries — use the built-in `Map.tsx` component
-- Create REST endpoints — use tRPC procedures only
-- Manually manipulate cookies — use the auth system in `server/_core/`
-- Use PostgreSQL/Supabase syntax — the database is **MySQL**
-- Use or extend any Manus-specific code (`ManusDialog.tsx`, `client/public/__manus__/`, `manus-upload-file`, Manus OAuth SDK in `server/_core/sdk.ts`) — Manus is **not part of this build** and these files are legacy scaffolding to be replaced
+- Manually manipulate cookies or roll custom auth — use Netlify Identity
+- Use or extend any Manus-specific code (`ManusDialog.tsx`, `client/public/__manus__/`, `server/_core/sdk.ts`, `server/_core/oauth.ts`, `server/storage.ts`) — these are legacy scaffolding to be replaced
 
 ### 8.2. DO
 
-- Store all secrets in environment variables (see `.env.example`)
+- Use **native Netlify extensions** for all services (auth, DB, storage, forms, scheduling)
+- Store all secrets via the **Netlify dashboard** (environment variables)
 - Use tRPC `protectedProcedure` / `adminProcedure` for access control
 - Use shadcn/ui components from `client/src/components/ui/` before building custom ones
 - Write Vitest tests for all critical procedures
 - Use Zod schemas for input validation on tRPC procedures
 - Follow Prettier formatting (80 chars, 2 spaces, trailing commas)
 - Use path aliases (`@/*`, `@shared/*`) for imports
+- Commit and push to **GitHub** — it is the single source of truth
 
 ### 8.3. Code Style
 
@@ -363,36 +374,44 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 
 ### 8.4. Environment Variables
 
-Key variables (see `.env.example` for full list):
+All environment variables are managed via the **Netlify dashboard** and injected at build/runtime. Only `VITE_`-prefixed variables are accessible in client code via `import.meta.env`.
 
-```
-VITE_APP_ID            # App identifier (VITE_ prefix = exposed to client)
-VITE_OAUTH_PORTAL_URL  # OAuth login portal URL
-JWT_SECRET             # JWT signing secret (32+ chars)
-OWNER_OPEN_ID          # Admin user's OAuth ID
-DATABASE_URL           # MySQL connection string
-```
+Netlify extensions (Identity, DB, Blobs) automatically provision their own env vars. Additional app-specific variables (API keys for Gemini, Whisper, OpenWeatherMap, etc.) are added manually in the Netlify dashboard.
 
-Only `VITE_`-prefixed variables are accessible in client code via `import.meta.env`.
+The `.env.example` file lists variables from the legacy Manus setup and will be updated as Netlify extensions are connected.
 
 ---
 
-## 9. Netlify Deployment
+## 9. Netlify Platform
 
-### Build Configuration (`netlify.toml`)
+Netlify is the **sole infrastructure platform**. All services are managed through native Netlify extensions.
+
+### 9.1. Build Configuration (`netlify.toml`)
 
 - **Build command:** `pnpm install && pnpm build`
 - **Publish directory:** `dist/public`
 - **Node version:** 20
 - **API routing:** `/api/*` → Netlify Functions
 
-### Security Headers (auto-applied)
+### 9.2. Netlify Extensions to Use
+
+| Service            | Netlify Extension                        | Replaces                         |
+| :----------------- | :--------------------------------------- | :------------------------------- |
+| **Auth**           | Netlify Identity                         | Custom OAuth / Manus SDK         |
+| **Database**       | Neon Postgres, PlanetScale, or Supabase  | MySQL via mysql2                 |
+| **File Storage**   | Netlify Blobs                            | AWS S3                           |
+| **Serverless**     | Netlify Functions                        | Express server                   |
+| **Forms**          | Netlify Forms (if needed)                | Custom form handling             |
+| **Scheduled Jobs** | Netlify Scheduled Functions              | External cron / n8n              |
+| **Analytics**      | Netlify Analytics                        | Custom tracking                  |
+
+### 9.3. Security Headers (auto-applied)
 
 - `X-Frame-Options: DENY`
 - `X-Content-Type-Options: nosniff`
 - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
 
-### Caching
+### 9.4. Caching
 
 - JS/CSS assets: immutable, 1-year cache
 - Static files: 1-year cache
