@@ -9,30 +9,39 @@ Precision Core Builders is built on the **Cathedral Principle**: sequential, pha
 ## Core Features
 
 ### 1. AI-Powered Voice-to-Report Field Logging
+
 Eric records voice memos on-site. The system automatically transcribes them with Whisper, generates structured daily field reports using Gemini, and updates the client portal in real-time. No manual data entry required.
 
 ### 2. Smart Weather-Responsive Scheduling
+
 The system monitors Eugene, OR weather forecasts and automatically adjusts Gantt charts. When rain is predicted, outdoor tasks (roofing, painting) are deprioritized, and interior tasks (cabinets, flooring) are moved up. Eric receives alerts of all changes.
 
 ### 3. Automated Material Procurement
+
 The platform tracks project phases and drafts Purchase Orders automatically. AI-driven price monitoring flags budget impacts and suggests alternative vendors. Integration with n8n enables automated vendor outreach and delivery coordination.
 
 ### 4. High-End Client "Concierge" Portal
+
 Clients experience a luxury portal featuring live site-cam access, a digital finish selection manager with real-time budget impact display, a transparent "Core Values" ledger of all decisions, and milestone-based automated billing.
 
 ### 5. Interactive AI Project Estimator
+
 A sophisticated tool that provides real-time, high-level cost ranges based on project parameters (square footage, materials, complexity). It educates clients upfront on the "Precision Core" approach to budgeting.
 
 ### 6. Sub-Contractor Orchestration
+
 Automated scheduling, site access codes, and safety briefings are sent to sub-contractors via SMS/Email through n8n workflows. No manual coordination required.
 
 ### 7. Owner "Command Center" Dashboard
+
 Eric's operational hub features AI lead prioritization, resource orchestration, profitability tracking (estimated vs. actual costs), and LLM-powered search ("What was the total spend on the Spyglass project?").
 
 ### 8. Secure Authentication & Role-Based Access
+
 Supabase Auth handles login/logout. Eric is `admin`; clients are `user`. Row-Level Security ensures data isolation.
 
 ### 9. Project Portfolio Showcase
+
 Interactive 360-degree walkthroughs and high-fidelity before/after sliders showcase completed work. Designed to impress potential clients and demonstrate craftsmanship.
 
 ## Design System: "Quiet Luxury"
@@ -46,20 +55,21 @@ The visual language is **"Warm Modern"**—minimalist, high-contrast, utilizing 
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Frontend** | React 19 / Vite / Tailwind CSS 4 / Framer Motion | High-performance, SEO-optimized UI with tactile animations. |
-| **Backend** | Node.js / Express.js / tRPC | Type-safe API layer, serverless-ready. |
-| **Database** | Supabase (PostgreSQL) | Real-time subscriptions, Row-Level Security, Auth. |
-| **AI/LLM** | Gemini-2.5-Flash | Field report generation, lead scoring, cost estimation. |
-| **Voice** | Whisper API | Voice-to-text for field memos. |
-| **Automation** | n8n | Orchestration of leads, notifications, sub-contractor comms. |
-| **Deployment** | GitHub → Netlify | CI/CD with automatic builds and edge deployment. |
-| **Storage** | Supabase Storage | Images, videos, documents, site-cam feeds. |
+| Layer          | Technology                                       | Purpose                                                      |
+| :------------- | :----------------------------------------------- | :----------------------------------------------------------- |
+| **Frontend**   | React 19 / Vite / Tailwind CSS 4 / Framer Motion | High-performance, SEO-optimized UI with tactile animations.  |
+| **Backend**    | Node.js / Express.js / tRPC                      | Type-safe API layer, serverless-ready.                       |
+| **Database**   | Supabase (PostgreSQL)                            | Real-time subscriptions, Row-Level Security, Auth.           |
+| **AI/LLM**     | Gemini-2.5-Flash                                 | Field report generation, lead scoring, cost estimation.      |
+| **Voice**      | Whisper API                                      | Voice-to-text for field memos.                               |
+| **Automation** | n8n                                              | Orchestration of leads, notifications, sub-contractor comms. |
+| **Deployment** | GitHub → Netlify                                 | CI/CD with automatic builds and edge deployment.             |
+| **Storage**    | Supabase Storage                                 | Images, videos, documents, site-cam feeds.                   |
 
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 20+ and pnpm
 - Supabase account (for database and auth)
 - Netlify account (for deployment)
@@ -116,6 +126,7 @@ precision-core-builders/
 ## Development Workflow
 
 ### 1. Database Changes
+
 Update the schema in `drizzle/schema.ts`, generate migrations, and apply them:
 
 ```bash
@@ -124,29 +135,33 @@ pnpm drizzle-kit generate
 ```
 
 ### 2. Backend Procedures
+
 Add or extend tRPC procedures in `server/routers.ts`. Use `protectedProcedure` for admin-only logic, `publicProcedure` for client-facing endpoints.
 
 ### 3. Frontend Components
+
 Create components in `client/src/components/` and pages in `client/src/pages/`. Use shadcn/ui components for consistency. Call backend procedures via `trpc.*.useQuery()` or `trpc.*.useMutation()`.
 
 ### 4. Testing
+
 Write Vitest tests for critical procedures in `server/*.test.ts`. Run tests with `pnpm test`.
 
 ### 5. Deployment
+
 Push to GitHub. Netlify automatically builds and deploys on every commit to `main`.
 
 ## Key Files
 
-| File | Purpose |
-| :--- | :--- |
-| `CLAUDE.md` | Agent priming, architecture, implementation guardrails. |
-| `drizzle/schema.ts` | Database tables and types. |
-| `server/routers.ts` | tRPC procedures (all backend logic). |
-| `server/functions/` | Netlify Functions for serverless compute (AI, voice, etc.). |
-| `client/src/index.css` | Design system: colors, typography, animations. |
-| `client/src/pages/Home.tsx` | Landing page with "Quiet Luxury" aesthetic. |
-| `client/src/pages/CommandCenter.tsx` | Eric's admin dashboard. |
-| `client/src/pages/ClientPortal.tsx` | Client project view. |
+| File                                 | Purpose                                                     |
+| :----------------------------------- | :---------------------------------------------------------- |
+| `CLAUDE.md`                          | Agent priming, architecture, implementation guardrails.     |
+| `drizzle/schema.ts`                  | Database tables and types.                                  |
+| `server/routers.ts`                  | tRPC procedures (all backend logic).                        |
+| `server/functions/`                  | Netlify Functions for serverless compute (AI, voice, etc.). |
+| `client/src/index.css`               | Design system: colors, typography, animations.              |
+| `client/src/pages/Home.tsx`          | Landing page with "Quiet Luxury" aesthetic.                 |
+| `client/src/pages/CommandCenter.tsx` | Eric's admin dashboard.                                     |
+| `client/src/pages/ClientPortal.tsx`  | Client project view.                                        |
 
 ## Environment Variables
 
@@ -178,12 +193,12 @@ NETLIFY_AUTH_TOKEN=your-netlify-token
 
 ## Success Metrics
 
-| Metric | Target |
-| :--- | :--- |
-| **Lead Quality** | 30% increase in high-intent leads via AI Estimator. |
-| **Operational Speed** | 50% reduction in manual project update communication. |
-| **Client Satisfaction** | 100% portal adoption rate for active projects. |
-| **Field Efficiency** | Voice-to-report reduces daily reporting time from 30 min to 5 min. |
+| Metric                  | Target                                                             |
+| :---------------------- | :----------------------------------------------------------------- |
+| **Lead Quality**        | 30% increase in high-intent leads via AI Estimator.                |
+| **Operational Speed**   | 50% reduction in manual project update communication.              |
+| **Client Satisfaction** | 100% portal adoption rate for active projects.                     |
+| **Field Efficiency**    | Voice-to-report reduces daily reporting time from 30 min to 5 min. |
 
 ## Contributing
 

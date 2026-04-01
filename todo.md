@@ -1,6 +1,7 @@
 # Precision Core Builders: Project TODO
 
 ## Phase 1: Foundation & Design System
+
 - [ ] Set up Tailwind CSS 4 with custom "Quiet Luxury" color palette
 - [ ] Implement custom typography (Playfair Display + Inter)
 - [ ] Create design tokens and CSS variables in `client/src/index.css`
@@ -11,6 +12,7 @@
 - [ ] Set up error boundaries and error handling
 
 ## Phase 2: Core Operations (Field Reporting & Scheduling)
+
 - [ ] Implement voice-to-report system (Whisper transcription)
 - [ ] Build Gemini integration for field report generation
 - [ ] Create Netlify Function for `/api/voice-to-report`
@@ -23,6 +25,7 @@
 - [ ] Create ledger entry system for all field report actions
 
 ## Phase 3: Client Experience (Portal & Estimator)
+
 - [ ] Build client portal landing page with project timeline
 - [ ] Create live project timeline/Gantt view for clients
 - [ ] Implement digital finish selection manager component
@@ -35,6 +38,7 @@
 - [ ] Add milestone-based automated billing UI
 
 ## Phase 4: Automation (Procurement & Sub-Contractors)
+
 - [ ] Design material procurement database schema
 - [ ] Build material procurement UI for Eric
 - [ ] Implement Netlify Function for `/api/material-procurement`
@@ -47,6 +51,7 @@
 - [ ] Implement material shortage alerts
 
 ## Phase 5: Analytics & Portfolio (Command Center & Showcase)
+
 - [ ] Build owner Command Center dashboard layout
 - [ ] Implement AI lead prioritization system
 - [ ] Create Netlify Function for `/api/lead-score`
@@ -59,6 +64,7 @@
 - [ ] Add project testimonials and case studies
 
 ## Phase 6: Authentication & Security
+
 - [ ] Implement Supabase Auth login/logout flows
 - [ ] Set up Row-Level Security (RLS) policies for data isolation
 - [ ] Create admin-only procedures and middleware
@@ -69,6 +75,7 @@
 - [ ] Create compliance documentation for Oregon CCB #246527
 
 ## Phase 7: Integration & Automation
+
 - [ ] Set up n8n self-hosted or cloud instance
 - [ ] Create n8n workflows for lead intake
 - [ ] Build n8n workflows for project milestone notifications
@@ -78,6 +85,7 @@
 - [ ] Implement automated review request triggers
 
 ## Phase 8: Advanced Features
+
 - [ ] Implement live site-cam integration (streaming setup)
 - [ ] Build site-cam viewer component in client portal
 - [ ] Create change order management system
@@ -88,6 +96,7 @@
 - [ ] Build cost variance analysis
 
 ## Phase 9: Testing & Optimization
+
 - [ ] Write Vitest tests for all tRPC procedures
 - [ ] Write Vitest tests for voice-to-report workflow
 - [ ] Write Vitest tests for weather scheduling logic
@@ -99,6 +108,7 @@
 - [ ] Accessibility audit (WCAG 2.1 AA compliance)
 
 ## Phase 10: Deployment & Documentation
+
 - [ ] Set up GitHub CI/CD pipeline
 - [ ] Configure Netlify deployment
 - [ ] Set up environment variables in Netlify dashboard
@@ -109,6 +119,7 @@
 - [ ] Create runbook for common operations
 
 ## Phase 11: Polish & Launch
+
 - [ ] Cinematic video background optimization
 - [ ] Micro-interaction refinement
 - [ ] Loading state polish
@@ -120,6 +131,7 @@
 - [ ] Launch preparation and go-live checklist
 
 ## Database Schema Tasks
+
 - [ ] Create `users` table (admin/user roles)
 - [ ] Create `projects` table (project metadata, budget, timeline)
 - [ ] Create `clients` table (client info, project history)
@@ -134,6 +146,7 @@
 - [ ] Create `notifications` table (alerts, messages, delivery status)
 
 ## Netlify Functions to Build
+
 - [ ] `/api/voice-to-report` - Whisper + Gemini integration
 - [ ] `/api/estimate-project` - Cost calculation engine
 - [ ] `/api/weather-schedule` - Weather API + scheduling logic
@@ -143,6 +156,7 @@
 - [ ] `/api/send-notification` - SMS/Email via n8n
 
 ## UI Components to Build
+
 - [ ] GanttChart (weather-responsive)
 - [ ] FinishSelector (digital showroom)
 - [ ] CoreValuesLedger (transparent log)
@@ -157,6 +171,7 @@
 - [ ] ProfitabilityDashboard (cost tracking)
 
 ## Notes
+
 - All voice transcription and AI processing must be done server-side (Netlify Functions)
 - Real-time updates use Supabase Realtime subscriptions
 - All sensitive data encrypted at rest and in transit

@@ -9,8 +9,18 @@
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "lint": "pnpm check && pnpm format:check",
+    "validate": "pnpm lint && pnpm test && pnpm build",
+    "clean": "rm -rf dist/ node_modules/.cache/ .manus-logs/",
+    "prepare": "node -e \"try { require('husky').install() } catch (e) {}\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
