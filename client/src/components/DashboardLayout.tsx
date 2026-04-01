@@ -10,7 +10,7 @@ import {
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   BarChart3, BookOpen, Calendar, ClipboardList, CreditCard, HardHat, HelpCircle,
-  Image, LayoutDashboard, LogOut, Package, PanelLeft, Pencil, Shield, Users, Wrench,
+  Image, LayoutDashboard, LogOut, Package, PanelLeft, Pencil, Settings, Shield, Users, Wrench,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -30,6 +30,7 @@ const NAV = [
   { icon: Shield,          label: "Ledger",            path: "/admin/ledger" },
   { icon: CreditCard,      label: "Billing",           path: "/admin/billing" },
   { icon: Image,           label: "Portfolio CMS",     path: "/admin/portfolio-cms" },
+  { icon: Settings,        label: "Platform Setup",    path: "/admin/setup" },
   { icon: HelpCircle,      label: "System Guide",      path: "/admin/guides" },
 ];
 

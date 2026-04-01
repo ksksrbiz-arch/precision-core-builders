@@ -33,6 +33,7 @@ const ScheduleView       = lazy(() => import("./pages/admin/ScheduleView"));
 const MaterialsView      = lazy(() => import("./pages/admin/MaterialsView"));
 const BillingView        = lazy(() => import("./pages/admin/BillingView"));
 const PortfolioAdmin     = lazy(() => import("./pages/admin/PortfolioAdmin"));
+const SetupWizard        = lazy(() => import("./pages/admin/SetupWizard"));
 
 // Portal pages
 const PortalDashboard    = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -84,6 +85,7 @@ function Router() {
         <Route path="/admin/materials"            component={MaterialsView} />
         <Route path="/admin/billing"              component={BillingView} />
         <Route path="/admin/portfolio-cms"        component={PortfolioAdmin} />
+        <Route path="/admin/setup"                component={SetupWizard} />
 
         {/* Client portal */}
         <Route path="/portal"                     component={PortalDashboard} />
