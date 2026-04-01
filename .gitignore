@@ -111,3 +111,25 @@ temp/
 
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
+
+# Manus logs
+.manus-logs/
+
+# Netlify
+.netlify/
+netlify/functions/*.ts
+netlify/functions/*.js
+!netlify/functions/README.md
+
+# Local Netlify folder
+.netlify
+
+# Sentry
+.sentryclirc
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Husky
+.husky/_
