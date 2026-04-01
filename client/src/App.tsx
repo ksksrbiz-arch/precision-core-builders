@@ -24,6 +24,7 @@ const CommandCenter      = lazy(() => import("./pages/admin/CommandCenter"));
 const ProjectsList       = lazy(() => import("./pages/admin/ProjectsList"));
 const ProjectDetail      = lazy(() => import("./pages/admin/ProjectDetail"));
 const FieldReportNew     = lazy(() => import("./pages/admin/FieldReportNew"));
+const SitePlanBuilder    = lazy(() => import("./pages/admin/SitePlanBuilder"));
 
 // Portal pages
 const PortalDashboard    = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -69,6 +70,7 @@ function Router() {
         <Route path="/admin/projects/:id"         component={ProjectDetail} />
         <Route path="/admin/field-reports/new"    component={FieldReportNew} />
         <Route path="/admin/field-reports"        component={CommandCenter} />
+        <Route path="/admin/site-plans"           component={SitePlanBuilder} />
 
         {/* Client portal */}
         <Route path="/portal"                     component={PortalDashboard} />
