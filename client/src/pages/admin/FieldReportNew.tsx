@@ -2,6 +2,7 @@
  * New Field Report — voice recording UI + AI report generation.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Mic, MicOff, Square, Send, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
@@ -97,8 +98,9 @@ export default function FieldReportNew() {
                 style={{ fontFamily: "var(--font-condensed)" }}>
           <ArrowLeft className="h-3.5 w-3.5" /> Field Reports
         </button>
-        <h1 className="text-2xl font-semibold mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+        <h1 className="text-2xl font-semibold mb-6 flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
           New Field Report
+          <GuideHelpButton guideId="field-reports" />
         </h1>
 
         {step === "select" && (

@@ -2,6 +2,7 @@
  * Admin Command Center — main dashboard with KPIs, project status, recent activity.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { trpc } from "@/lib/trpc";
 import { BarChart3, ClipboardList, DollarSign, TrendingUp, Users, AlertTriangle, Plus } from "lucide-react";
 import { useLocation } from "wouter";
@@ -57,9 +58,12 @@ export default function CommandCenter() {
         {/* Header */}
         <div className="flex items-center justify-between mb-7">
           <div>
-            <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              Command Center
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                Command Center
+              </h1>
+              <GuideHelpButton guideId="command-center" />
+            </div>
             <p className="text-sm text-muted-foreground font-light mt-0.5">
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </p>

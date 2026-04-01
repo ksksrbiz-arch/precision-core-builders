@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { trpc } from "@/lib/trpc";
 import { Plus, Search, MapPin, DollarSign } from "lucide-react";
 import { useState } from "react";
@@ -24,7 +25,10 @@ export default function ProjectsList() {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>Projects</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>Projects</h1>
+            <GuideHelpButton guideId="projects" />
+          </div>
           <button
             onClick={() => setLocation("/admin/projects/new")}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"

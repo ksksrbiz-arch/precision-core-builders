@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
-  BarChart3, BookOpen, Calendar, ClipboardList, HardHat, LayoutDashboard, LogOut,
+  BarChart3, BookOpen, Calendar, ClipboardList, HardHat, HelpCircle, LayoutDashboard, LogOut,
   Package, PanelLeft, Pencil, Shield, Users, Wrench,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -28,6 +28,7 @@ const NAV = [
   { icon: Package,         label: "Materials",         path: "/admin/materials" },
   { icon: Wrench,          label: "Sub-Contractors",   path: "/admin/sub-contractors" },
   { icon: Shield,          label: "Ledger",            path: "/admin/ledger" },
+  { icon: HelpCircle,      label: "System Guide",      path: "/admin/guides" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "pcb-sidebar-width";
