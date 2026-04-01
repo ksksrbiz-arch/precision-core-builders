@@ -11,7 +11,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: (failureCount, error) => {
         // Don't retry on auth errors
-        if (error instanceof Error && error.message.includes("10001")) return false;
+        if (error instanceof Error && error.message.includes("10001"))
+          return false;
         return failureCount < 2;
       },
     },
@@ -36,7 +37,10 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       fetch(input, init) {
-        return globalThis.fetch(input, { ...(init ?? {}), credentials: "include" });
+        return globalThis.fetch(input, {
+          ...(init ?? {}),
+          credentials: "include",
+        });
       },
     }),
   ],
@@ -47,5 +51,5 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
-  </trpc.Provider>,
+  </trpc.Provider>
 );

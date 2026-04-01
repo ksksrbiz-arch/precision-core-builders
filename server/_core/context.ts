@@ -20,7 +20,7 @@ export type TrpcContext = {
  * Phase 2: Replace this with Supabase JWT verification.
  */
 export async function createContext(
-  opts: CreateExpressContextOptions,
+  opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   return {
     req: opts.req,

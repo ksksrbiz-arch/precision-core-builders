@@ -39,7 +39,7 @@ async function startServer() {
   // tRPC API
   app.use(
     "/api/trpc",
-    createExpressMiddleware({ router: appRouter, createContext }),
+    createExpressMiddleware({ router: appRouter, createContext })
   );
 
   if (process.env.NODE_ENV === "development") {

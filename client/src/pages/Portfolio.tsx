@@ -21,12 +21,27 @@ import { useState } from "react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" as const },
+  },
 };
 const stagger = { visible: { transition: { staggerChildren: 0.1 } } };
 
-type Category = "All" | "Custom Homes" | "Renovations" | "Additions" | "Commercial";
-const CATEGORIES: Category[] = ["All", "Custom Homes", "Renovations", "Additions", "Commercial"];
+type Category =
+  | "All"
+  | "Custom Homes"
+  | "Renovations"
+  | "Additions"
+  | "Commercial";
+const CATEGORIES: Category[] = [
+  "All",
+  "Custom Homes",
+  "Renovations",
+  "Additions",
+  "Commercial",
+];
 
 type Project = {
   id: number;
@@ -52,7 +67,8 @@ const PROJECTS: Project[] = [
     location: "South Hills, Eugene",
     year: 2024,
     sqft: 3200,
-    highlight: "Full custom build — white oak floors, vaulted great room, chef's kitchen with quartzite island.",
+    highlight:
+      "Full custom build — white oak floors, vaulted great room, chef's kitchen with quartzite island.",
     accentColor: "#8B7355",
     patternSeed: 1,
   },
@@ -63,7 +79,8 @@ const PROJECTS: Project[] = [
     location: "River Road, Eugene",
     year: 2024,
     sqft: 850,
-    highlight: "Complete kitchen gut and two bathroom remodels. Waterfall quartz, custom cabinetry, heated tile.",
+    highlight:
+      "Complete kitchen gut and two bathroom remodels. Waterfall quartz, custom cabinetry, heated tile.",
     accentColor: "#6B8E23",
     patternSeed: 2,
   },
@@ -74,7 +91,8 @@ const PROJECTS: Project[] = [
     location: "Crest Drive, Eugene",
     year: 2023,
     sqft: 1100,
-    highlight: "Full second-story addition with master suite, two bedrooms, and a media room. Seamless exterior match.",
+    highlight:
+      "Full second-story addition with master suite, two bedrooms, and a media room. Seamless exterior match.",
     accentColor: "#D4A574",
     patternSeed: 3,
   },
@@ -85,7 +103,8 @@ const PROJECTS: Project[] = [
     location: "West Eugene",
     year: 2023,
     sqft: 2400,
-    highlight: "Commercial tenant improvement — open-plan office, conference room, server closet, and ADA restrooms.",
+    highlight:
+      "Commercial tenant improvement — open-plan office, conference room, server closet, and ADA restrooms.",
     accentColor: "#5B7FA6",
     patternSeed: 4,
   },
@@ -96,7 +115,8 @@ const PROJECTS: Project[] = [
     location: "Thurston, Springfield",
     year: 2023,
     sqft: 1900,
-    highlight: "Full interior refresh of a 1960s craftsman. New windows, refinished hardwoods, updated electrical.",
+    highlight:
+      "Full interior refresh of a 1960s craftsman. New windows, refinished hardwoods, updated electrical.",
     accentColor: "#8B7355",
     patternSeed: 5,
   },
@@ -107,7 +127,8 @@ const PROJECTS: Project[] = [
     location: "Friendly Area, Eugene",
     year: 2022,
     sqft: 640,
-    highlight: "Detached accessory dwelling unit with full kitchen, bath, and loft. Energy-efficient construction.",
+    highlight:
+      "Detached accessory dwelling unit with full kitchen, bath, and loft. Energy-efficient construction.",
     accentColor: "#6B8E23",
     patternSeed: 6,
   },
@@ -160,7 +181,11 @@ function PortfolioHeader() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="container flex items-center justify-between h-16">
-        <a href="/" className="flex items-center gap-2.5" aria-label="Precision Core Builders — Home">
+        <a
+          href="/"
+          className="flex items-center gap-2.5"
+          aria-label="Precision Core Builders — Home"
+        >
           <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
             <HardHat className="h-4 w-4 text-primary-foreground" aria-hidden />
           </div>
@@ -173,11 +198,31 @@ function PortfolioHeader() {
             </span>
           </div>
         </a>
-        <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
-          <a href="/#services" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Services</a>
-          <a href="/#values" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Values</a>
-          <a href="/portfolio" className="text-sm font-medium text-foreground">Portfolio</a>
-          <a href="/#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</a>
+        <nav
+          className="hidden md:flex items-center gap-8"
+          aria-label="Main navigation"
+        >
+          <a
+            href="/#services"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Services
+          </a>
+          <a
+            href="/#values"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Values
+          </a>
+          <a href="/portfolio" className="text-sm font-medium text-foreground">
+            Portfolio
+          </a>
+          <a
+            href="/#about"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            About
+          </a>
         </nav>
         <Button size="sm" asChild>
           <a href="/#contact">Get an Estimate</a>
@@ -213,16 +258,17 @@ function PortfolioHero() {
             variants={fadeUp}
             className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.1] mb-5"
           >
-            Built with precision.<br />
+            Built with precision.
+            <br />
             <span className="text-primary italic">Delivered with pride.</span>
           </motion.h1>
           <motion.p
             variants={fadeUp}
             className="text-muted-foreground text-lg leading-relaxed"
           >
-            Every project in our portfolio reflects the same commitment — quality
-            craftsmanship, transparent communication, and results that outlast
-            the contract.
+            Every project in our portfolio reflects the same commitment —
+            quality craftsmanship, transparent communication, and results that
+            outlast the contract.
           </motion.p>
         </motion.div>
       </div>
@@ -323,7 +369,11 @@ function ProjectsSection({
     <section className="pb-24" aria-labelledby="projects-heading">
       <div className="container">
         {/* Category filter */}
-        <div className="flex flex-wrap gap-2 mb-10" role="group" aria-label="Filter projects by category">
+        <div
+          className="flex flex-wrap gap-2 mb-10"
+          role="group"
+          aria-label="Filter projects by category"
+        >
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -366,7 +416,10 @@ function ProjectsSection({
 
 function TestimonialsSection() {
   return (
-    <section className="py-24 bg-card/50" aria-labelledby="testimonials-heading">
+    <section
+      className="py-24 bg-card/50"
+      aria-labelledby="testimonials-heading"
+    >
       <div className="container max-w-4xl">
         <motion.div
           initial="hidden"
@@ -393,7 +446,10 @@ function TestimonialsSection() {
                 variants={fadeUp}
                 className="bg-card border border-border/60 rounded-2xl p-7"
               >
-                <div className="flex gap-0.5 mb-4" aria-label="5 out of 5 stars">
+                <div
+                  className="flex gap-0.5 mb-4"
+                  aria-label="5 out of 5 stars"
+                >
                   {Array.from({ length: 5 }).map((_, j) => (
                     <Star
                       key={j}
@@ -446,8 +502,8 @@ function PortfolioCTA() {
             variants={fadeUp}
             className="text-muted-foreground text-lg mb-8"
           >
-            Every project we build becomes a portfolio piece we&apos;re proud of.
-            Let&apos;s make yours next.
+            Every project we build becomes a portfolio piece we&apos;re proud
+            of. Let&apos;s make yours next.
           </motion.p>
           <motion.div
             variants={fadeUp}
@@ -459,7 +515,12 @@ function PortfolioCTA() {
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
               </a>
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8" asChild>
+            <Button
+              variant="outline"
+              size="lg"
+              className="text-base px-8"
+              asChild
+            >
               <a href={SITE.phoneHref}>
                 <Phone className="mr-2 h-4 w-4" aria-hidden />
                 {SITE.phone}
@@ -481,18 +542,27 @@ function PortfolioFooter() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2.5">
             <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
-              <HardHat className="h-3 w-3 text-primary-foreground" aria-hidden />
+              <HardHat
+                className="h-3 w-3 text-primary-foreground"
+                aria-hidden
+              />
             </div>
             <span className="font-semibold tracking-tight text-foreground text-sm">
               Precision Core Builders
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-4 justify-center">
-            <a href={SITE.phoneHref} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+            <a
+              href={SITE.phoneHref}
+              className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+            >
               <Phone className="h-3.5 w-3.5" aria-hidden />
               {SITE.phone}
             </a>
-            <a href={SITE.emailHref} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+            <a
+              href={SITE.emailHref}
+              className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+            >
               <Mail className="h-3.5 w-3.5" aria-hidden />
               {SITE.email}
             </a>

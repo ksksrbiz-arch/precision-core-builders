@@ -4,7 +4,14 @@
  * Eric Tadlock + Mitch Tadlock | CCB #246527 | Eugene, OR
  */
 import { ASSETS, SITE } from "@/const";
-import { motion, useInView, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useMotionValue,
+  useSpring,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import {
   ArrowRight,
   CheckCircle2,
@@ -40,16 +47,19 @@ function useCounter(target: number, inView: boolean) {
   useEffect(() => {
     if (inView) val.set(target);
   }, [inView, target, val]);
-  useEffect(() => spring.on("change", v => setDisplay(Math.round(v))), [spring]);
+  useEffect(
+    () => spring.on("change", v => setDisplay(Math.round(v))),
+    [spring]
+  );
   return display;
 }
 
 const NAV = [
-  { label: "About",    href: "#about" },
+  { label: "About", href: "#about" },
   { label: "Services", href: "#services" },
-  { label: "Team",     href: "#team" },
+  { label: "Team", href: "#team" },
   { label: "Our Work", href: "#work" },
-  { label: "Contact",  href: "#contact" },
+  { label: "Contact", href: "#contact" },
 ];
 
 /* ══════════════════════════════════════════════════════════════
@@ -89,7 +99,9 @@ function Nav() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-        scrolled ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20" : "bg-transparent"
+        scrolled
+          ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
+          : "bg-transparent"
       }`}
     >
       <div className="container h-[72px] flex items-center justify-between">
@@ -104,7 +116,10 @@ function Nav() {
         </a>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-8" aria-label="Primary navigation">
+        <nav
+          className="hidden lg:flex items-center gap-8"
+          aria-label="Primary navigation"
+        >
           {NAV.map(n => (
             <a
               key={n.label}
@@ -214,12 +229,12 @@ const HERO_SLIDES = [
 ] as const;
 
 const SLIDE_DURATION = 6000; // ms each slide shows
-const FADE_DURATION  = 1200; // ms crossfade
+const FADE_DURATION = 1200; // ms crossfade
 
 function HeroSlideshow() {
   const [current, setCurrent] = useState(0);
-  const [prev, setPrev]       = useState<number | null>(null);
-  const [loaded, setLoaded]   = useState<Set<number>>(new Set([0]));
+  const [prev, setPrev] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState<Set<number>>(new Set([0]));
 
   useEffect(() => {
     // Preload next slide
@@ -315,7 +330,10 @@ function HeroSlideshow() {
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
-            onClick={() => { setPrev(current); setCurrent(i); }}
+            onClick={() => {
+              setPrev(current);
+              setCurrent(i);
+            }}
             aria-label={`Go to slide ${i + 1}`}
             className={`transition-all duration-500 rounded-full ${
               i === current
@@ -331,20 +349,36 @@ function HeroSlideshow() {
 
 function Hero() {
   const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
   const textY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
   return (
-    <section ref={ref} className="relative min-h-screen flex items-center overflow-hidden" aria-label="Hero">
+    <section
+      ref={ref}
+      className="relative min-h-screen flex items-center overflow-hidden"
+      aria-label="Hero"
+    >
       {/* CINEMATIC SLIDESHOW */}
       <HeroSlideshow />
 
       {/* Multi-layer gradient — bottom dark pool for text, left vignette */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10 pointer-events-none" aria-hidden />
-      <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/25 to-transparent pointer-events-none" aria-hidden />
+      <div
+        className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10 pointer-events-none"
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/25 to-transparent pointer-events-none"
+        aria-hidden
+      />
       {/* Top fade so nav reads cleanly */}
-      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-background/60 to-transparent pointer-events-none" aria-hidden />
+      <div
+        className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-background/60 to-transparent pointer-events-none"
+        aria-hidden
+      />
 
       {/* Film grain */}
       <div
@@ -356,7 +390,10 @@ function Hero() {
       />
 
       {/* CONTENT */}
-      <motion.div style={{ y: textY, opacity }} className="container relative z-10 pt-[72px]">
+      <motion.div
+        style={{ y: textY, opacity }}
+        className="container relative z-10 pt-[72px]"
+      >
         <motion.div
           initial="hidden"
           animate="visible"
@@ -364,7 +401,10 @@ function Hero() {
           className="max-w-4xl"
         >
           {/* Eyebrow */}
-          <motion.div variants={fadeUp} className="flex items-center gap-4 mb-8">
+          <motion.div
+            variants={fadeUp}
+            className="flex items-center gap-4 mb-8"
+          >
             <div className="h-px w-12 bg-primary" aria-hidden />
             <span
               className="text-primary text-[11px] tracking-[0.3em] uppercase font-semibold"
@@ -400,7 +440,10 @@ function Hero() {
             craftsmanship that shows for decades.
           </motion.p>
 
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
+          <motion.div
+            variants={fadeUp}
+            className="flex flex-col sm:flex-row gap-4"
+          >
             <a
               href="#contact"
               className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 text-sm font-bold tracking-[0.12em] uppercase hover:bg-primary/90 transition-all duration-200 hover:gap-3"
@@ -437,13 +480,13 @@ function Hero() {
    STATS BAR — real numbers, animated counters
 ══════════════════════════════════════════════════════════════ */
 const STATS = [
-  { value: 20, suffix: "",   label: "Years Construction Experience" },
-  { value: 12, suffix: "",   label: "Years Business Experience" },
-  { value: 50, suffix: "+",  label: "Happy Customers" },
-  { value: 0,  suffix: "",   label: "Call Backs" },
+  { value: 20, suffix: "", label: "Years Construction Experience" },
+  { value: 12, suffix: "", label: "Years Business Experience" },
+  { value: 50, suffix: "+", label: "Happy Customers" },
+  { value: 0, suffix: "", label: "Call Backs" },
 ] as const;
 
-function StatCell({ value, suffix, label }: typeof STATS[number]) {
+function StatCell({ value, suffix, label }: (typeof STATS)[number]) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const count = useCounter(value, inView);
@@ -454,7 +497,8 @@ function StatCell({ value, suffix, label }: typeof STATS[number]) {
         style={{ fontFamily: "var(--font-heading)" }}
         aria-label={`${value}${suffix}`}
       >
-        {count}{suffix}
+        {count}
+        {suffix}
       </div>
       <div
         className="text-[11px] tracking-[0.18em] uppercase text-muted-foreground leading-tight"
@@ -468,10 +512,15 @@ function StatCell({ value, suffix, label }: typeof STATS[number]) {
 
 function StatsBar() {
   return (
-    <section className="border-y border-border/50 bg-card/70" aria-label="Company credentials">
+    <section
+      className="border-y border-border/50 bg-card/70"
+      aria-label="Company credentials"
+    >
       <div className="container">
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border/40">
-          {STATS.map(s => <StatCell key={s.label} {...s} />)}
+          {STATS.map(s => (
+            <StatCell key={s.label} {...s} />
+          ))}
         </div>
       </div>
     </section>
@@ -485,7 +534,12 @@ function About() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   return (
-    <section id="about" className="py-28 sm:py-36" ref={ref} aria-labelledby="about-heading">
+    <section
+      id="about"
+      className="py-28 sm:py-36"
+      ref={ref}
+      aria-labelledby="about-heading"
+    >
       <div className="container">
         <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
           {/* Left — stacked text with gold accent rule */}
@@ -518,30 +572,54 @@ function About() {
             </motion.h2>
 
             {/* Gold rule */}
-            <motion.div variants={fadeUp} className="gold-rule mb-8" aria-hidden />
+            <motion.div
+              variants={fadeUp}
+              className="gold-rule mb-8"
+              aria-hidden
+            />
 
-            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-5">
-              Precision Core Builders represents a new standard in Eugene's construction
-              landscape — built on trust, respect, diligence, and over 20 years of
-              hands-on industry experience.
+            <motion.p
+              variants={fadeUp}
+              className="text-muted-foreground leading-relaxed text-base font-light mb-5"
+            >
+              Precision Core Builders represents a new standard in Eugene's
+              construction landscape — built on trust, respect, diligence, and
+              over 20 years of hands-on industry experience.
             </motion.p>
-            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-5">
-              Founded by two veteran construction brothers and a seasoned business
-              professional, we bring the kind of exceptional service to our neighbors
-              that only comes from genuine craftsmanship and community commitment.
+            <motion.p
+              variants={fadeUp}
+              className="text-muted-foreground leading-relaxed text-base font-light mb-5"
+            >
+              Founded by two veteran construction brothers and a seasoned
+              business professional, we bring the kind of exceptional service to
+              our neighbors that only comes from genuine craftsmanship and
+              community commitment.
             </motion.p>
-            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-10">
-              Our roots run deep in Eugene. Together, we&apos;re building a stronger,
-              more beautiful, and more efficient community — one project at a time.
+            <motion.p
+              variants={fadeUp}
+              className="text-muted-foreground leading-relaxed text-base font-light mb-10"
+            >
+              Our roots run deep in Eugene. Together, we&apos;re building a
+              stronger, more beautiful, and more efficient community — one
+              project at a time.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
+            <motion.div
+              variants={fadeUp}
+              className="flex flex-col sm:flex-row gap-4"
+            >
               {[
                 { icon: Shield, text: SITE.license },
                 { icon: MapPin, text: SITE.location },
               ].map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Icon className="h-4 w-4 text-primary flex-shrink-0" aria-hidden />
+                <div
+                  key={text}
+                  className="flex items-center gap-3 text-sm text-muted-foreground"
+                >
+                  <Icon
+                    className="h-4 w-4 text-primary flex-shrink-0"
+                    aria-hidden
+                  />
                   <span>{text}</span>
                 </div>
               ))}
@@ -577,7 +655,10 @@ function About() {
               >
                 <div className="flex-shrink-0 mt-1">
                   <div className="h-8 w-8 flex items-center justify-center border border-primary/40 group-hover:border-primary group-hover:bg-primary/5 transition-colors duration-300">
-                    <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />
+                    <CheckCircle2
+                      className="h-4 w-4 text-primary"
+                      aria-hidden
+                    />
                   </div>
                 </div>
                 <div>
@@ -587,7 +668,9 @@ function About() {
                   >
                     {v.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed font-light">{v.body}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                    {v.body}
+                  </p>
                 </div>
               </motion.div>
             ))}
@@ -656,7 +739,12 @@ function Services() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <section id="services" className="py-28 sm:py-36 bg-card/30" ref={ref} aria-labelledby="services-heading">
+    <section
+      id="services"
+      className="py-28 sm:py-36 bg-card/30"
+      ref={ref}
+      aria-labelledby="services-heading"
+    >
       <div className="container">
         {/* Header */}
         <motion.div
@@ -682,7 +770,10 @@ function Services() {
               Diverse Services,{" "}
               <em className="text-primary italic">Consistent Quality.</em>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-muted-foreground font-light max-w-xs leading-relaxed text-sm sm:text-right">
+            <motion.p
+              variants={fadeUp}
+              className="text-muted-foreground font-light max-w-xs leading-relaxed text-sm sm:text-right"
+            >
               Eight specialties, one standard of excellence.
             </motion.p>
           </div>
@@ -733,7 +824,10 @@ function Services() {
                     </a>
                   </div>
                   {/* Gold line accent */}
-                  <div className="h-px bg-primary/60 group-hover:bg-primary transition-colors duration-300 mt-2" aria-hidden />
+                  <div
+                    className="h-px bg-primary/60 group-hover:bg-primary transition-colors duration-300 mt-2"
+                    aria-hidden
+                  />
                 </div>
               </div>
             </motion.article>
@@ -755,6 +849,8 @@ const TEAM = [
     photo: ASSETS.team.eric,
     phone: SITE.phone,
     phoneHref: SITE.phoneHref,
+    email: SITE.email,
+    emailHref: SITE.emailHref,
   },
   {
     name: "Mitch Tadlock",
@@ -768,7 +864,12 @@ function Team() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <section id="team" className="py-28 sm:py-36" ref={ref} aria-labelledby="team-heading">
+    <section
+      id="team"
+      className="py-28 sm:py-36"
+      ref={ref}
+      aria-labelledby="team-heading"
+    >
       <div className="container">
         <motion.div
           initial="hidden"
@@ -814,7 +915,10 @@ function Team() {
                   loading="lazy"
                 />
                 {/* Subtle gold border bottom on hover */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-400 origin-left" aria-hidden />
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-1 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-400 origin-left"
+                  aria-hidden
+                />
               </div>
 
               {/* Info */}
@@ -851,7 +955,10 @@ function Team() {
                       href={member.emailHref}
                       className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors truncate"
                     >
-                      <Mail className="h-3.5 w-3.5 text-primary flex-shrink-0" aria-hidden />
+                      <Mail
+                        className="h-3.5 w-3.5 text-primary flex-shrink-0"
+                        aria-hidden
+                      />
                       {member.email}
                     </a>
                   )}
@@ -876,7 +983,12 @@ function Work() {
   const photos = ASSETS.portfolio;
 
   return (
-    <section id="work" className="py-28 sm:py-36 bg-card/30" ref={ref} aria-labelledby="work-heading">
+    <section
+      id="work"
+      className="py-28 sm:py-36 bg-card/30"
+      ref={ref}
+      aria-labelledby="work-heading"
+    >
       <div className="container">
         {/* Header */}
         <motion.div
@@ -929,7 +1041,9 @@ function Work() {
                 transition={{ delay: i * 0.04 }}
                 className={`group relative overflow-hidden ${isTall ? "row-span-2" : ""}`}
               >
-                <div className={`relative overflow-hidden ${isTall ? "h-full min-h-[320px]" : "aspect-square"}`}>
+                <div
+                  className={`relative overflow-hidden ${isTall ? "h-full min-h-[320px]" : "aspect-square"}`}
+                >
                   <img
                     src={src}
                     alt={`Precision Core Builders project ${i + 1}`}
@@ -957,11 +1071,19 @@ type FormStatus = "idle" | "submitting" | "success" | "error";
 function Contact() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [fields, setFields] = useState({
-    name: "", email: "", phone: "", projectType: "", budget: "", message: "",
+    name: "",
+    email: "",
+    phone: "",
+    projectType: "",
+    budget: "",
+    message: "",
   });
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setFields(p => ({ ...p, [e.target.name]: e.target.value }));
+  const onChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => setFields(p => ({ ...p, [e.target.name]: e.target.value }));
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -971,11 +1093,23 @@ function Contact() {
       const res = await fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(data as unknown as Record<string, string>).toString(),
+        body: new URLSearchParams(
+          data as unknown as Record<string, string>
+        ).toString(),
       });
       setStatus(res.ok ? "success" : "error");
-      if (res.ok) setFields({ name: "", email: "", phone: "", projectType: "", budget: "", message: "" });
-    } catch { setStatus("error"); }
+      if (res.ok)
+        setFields({
+          name: "",
+          email: "",
+          phone: "",
+          projectType: "",
+          budget: "",
+          message: "",
+        });
+    } catch {
+      setStatus("error");
+    }
   };
 
   const inputCls =
@@ -985,10 +1119,14 @@ function Contact() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="contact" className="py-28 sm:py-36" ref={ref} aria-labelledby="contact-heading">
+    <section
+      id="contact"
+      className="py-28 sm:py-36"
+      ref={ref}
+      aria-labelledby="contact-heading"
+    >
       <div className="container">
         <div className="grid lg:grid-cols-[1fr_1.5fr] gap-16 items-start">
-
           {/* Left — info */}
           <motion.div
             initial="hidden"
@@ -1017,18 +1155,41 @@ function Contact() {
             >
               Something Remarkable.
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed font-light mb-10 text-base">
+            <motion.p
+              variants={fadeUp}
+              className="text-muted-foreground leading-relaxed font-light mb-10 text-base"
+            >
               Call Eric directly, send an email, or fill out the form. We come
-              to your site for a free consultation before anything else — because
-              every project deserves a real look before a real number.
+              to your site for a free consultation before anything else —
+              because every project deserves a real look before a real number.
             </motion.p>
 
             <motion.div variants={stagger} className="space-y-0">
               {[
-                { icon: Phone, label: "Call Direct",  value: SITE.phone, href: SITE.phoneHref },
-                { icon: Mail,  label: "Email",        value: SITE.email, href: SITE.emailHref },
-                { icon: MapPin,label: "Service Area", value: "Eugene, Springfield & Lane County", href: undefined },
-                { icon: Shield,label: "Oregon CCB",   value: SITE.license, href: undefined },
+                {
+                  icon: Phone,
+                  label: "Call Direct",
+                  value: SITE.phone,
+                  href: SITE.phoneHref,
+                },
+                {
+                  icon: Mail,
+                  label: "Email",
+                  value: SITE.email,
+                  href: SITE.emailHref,
+                },
+                {
+                  icon: MapPin,
+                  label: "Service Area",
+                  value: "Eugene, Springfield & Lane County",
+                  href: undefined,
+                },
+                {
+                  icon: Shield,
+                  label: "Oregon CCB",
+                  value: SITE.license,
+                  href: undefined,
+                },
               ].map(({ icon: Icon, label, value, href }) => (
                 <motion.div
                   key={label}
@@ -1046,7 +1207,10 @@ function Contact() {
                       {label}
                     </div>
                     {href ? (
-                      <a href={href} className="text-sm text-foreground hover:text-primary transition-colors">
+                      <a
+                        href={href}
+                        className="text-sm text-foreground hover:text-primary transition-colors"
+                      >
                         {value}
                       </a>
                     ) : (
@@ -1068,7 +1232,10 @@ function Contact() {
               {status === "success" ? (
                 <div className="text-center py-16">
                   <div className="h-16 w-16 border border-primary/50 flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle2 className="h-8 w-8 text-primary" aria-hidden />
+                    <CheckCircle2
+                      className="h-8 w-8 text-primary"
+                      aria-hidden
+                    />
                   </div>
                   <h3
                     className="text-2xl font-semibold mb-3"
@@ -1101,9 +1268,15 @@ function Contact() {
                     className="space-y-4"
                     aria-label="Project inquiry form"
                   >
-                    <input type="hidden" name="form-name" value="project-inquiry" />
+                    <input
+                      type="hidden"
+                      name="form-name"
+                      value="project-inquiry"
+                    />
                     <p className="hidden" aria-hidden>
-                      <label>Skip: <input name="bot-field" tabIndex={-1} /></label>
+                      <label>
+                        Skip: <input name="bot-field" tabIndex={-1} />
+                      </label>
                     </p>
 
                     <div className="grid sm:grid-cols-2 gap-4">
@@ -1113,11 +1286,22 @@ function Contact() {
                           className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                           style={{ fontFamily: "var(--font-condensed)" }}
                         >
-                          Full Name <span className="text-primary" aria-hidden>*</span>
+                          Full Name{" "}
+                          <span className="text-primary" aria-hidden>
+                            *
+                          </span>
                         </label>
-                        <input id="name" name="name" type="text" required autoComplete="name"
-                          value={fields.name} onChange={onChange}
-                          className={inputCls} placeholder="Jane Smith" />
+                        <input
+                          id="name"
+                          name="name"
+                          type="text"
+                          required
+                          autoComplete="name"
+                          value={fields.name}
+                          onChange={onChange}
+                          className={inputCls}
+                          placeholder="Jane Smith"
+                        />
                       </div>
                       <div>
                         <label
@@ -1125,11 +1309,22 @@ function Contact() {
                           className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                           style={{ fontFamily: "var(--font-condensed)" }}
                         >
-                          Email <span className="text-primary" aria-hidden>*</span>
+                          Email{" "}
+                          <span className="text-primary" aria-hidden>
+                            *
+                          </span>
                         </label>
-                        <input id="email" name="email" type="email" required autoComplete="email"
-                          value={fields.email} onChange={onChange}
-                          className={inputCls} placeholder="jane@email.com" />
+                        <input
+                          id="email"
+                          name="email"
+                          type="email"
+                          required
+                          autoComplete="email"
+                          value={fields.email}
+                          onChange={onChange}
+                          className={inputCls}
+                          placeholder="jane@email.com"
+                        />
                       </div>
                     </div>
 
@@ -1142,9 +1337,16 @@ function Contact() {
                         >
                           Phone
                         </label>
-                        <input id="phone" name="phone" type="tel" autoComplete="tel"
-                          value={fields.phone} onChange={onChange}
-                          className={inputCls} placeholder="(541) 555-0100" />
+                        <input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          autoComplete="tel"
+                          value={fields.phone}
+                          onChange={onChange}
+                          className={inputCls}
+                          placeholder="(541) 555-0100"
+                        />
                       </div>
                       <div>
                         <label
@@ -1152,14 +1354,25 @@ function Contact() {
                           className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                           style={{ fontFamily: "var(--font-condensed)" }}
                         >
-                          Project Type <span className="text-primary" aria-hidden>*</span>
+                          Project Type{" "}
+                          <span className="text-primary" aria-hidden>
+                            *
+                          </span>
                         </label>
-                        <select id="projectType" name="projectType" required
-                          value={fields.projectType} onChange={onChange} className={inputCls}>
+                        <select
+                          id="projectType"
+                          name="projectType"
+                          required
+                          value={fields.projectType}
+                          onChange={onChange}
+                          className={inputCls}
+                        >
                           <option value="">Select…</option>
                           <option value="residential">Residential</option>
                           <option value="remodel">Remodel / Renovation</option>
-                          <option value="new-construction">New Construction</option>
+                          <option value="new-construction">
+                            New Construction
+                          </option>
                           <option value="restoration">Restoration</option>
                           <option value="outdoor">Outdoor / Decking</option>
                           <option value="roofing">Roofing</option>
@@ -1178,8 +1391,13 @@ function Contact() {
                       >
                         Approximate Budget
                       </label>
-                      <select id="budget" name="budget"
-                        value={fields.budget} onChange={onChange} className={inputCls}>
+                      <select
+                        id="budget"
+                        name="budget"
+                        value={fields.budget}
+                        onChange={onChange}
+                        className={inputCls}
+                      >
                         <option value="">Prefer not to say</option>
                         <option value="under-25k">Under $25,000</option>
                         <option value="25-75k">$25,000 – $75,000</option>
@@ -1195,18 +1413,30 @@ function Contact() {
                         className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                         style={{ fontFamily: "var(--font-condensed)" }}
                       >
-                        Project Description <span className="text-primary" aria-hidden>*</span>
+                        Project Description{" "}
+                        <span className="text-primary" aria-hidden>
+                          *
+                        </span>
                       </label>
-                      <textarea id="message" name="message" required rows={4}
-                        value={fields.message} onChange={onChange}
+                      <textarea
+                        id="message"
+                        name="message"
+                        required
+                        rows={4}
+                        value={fields.message}
+                        onChange={onChange}
                         className={`${inputCls} resize-none`}
-                        placeholder="Tell us about your project — what you're building, where it is, and any timeline or specific requirements…" />
+                        placeholder="Tell us about your project — what you're building, where it is, and any timeline or specific requirements…"
+                      />
                     </div>
 
                     {status === "error" && (
                       <p className="text-sm text-destructive" role="alert">
                         Something went wrong. Please call us at{" "}
-                        <a href={SITE.phoneHref} className="underline">{SITE.phone}</a>.
+                        <a href={SITE.phoneHref} className="underline">
+                          {SITE.phone}
+                        </a>
+                        .
                       </p>
                     )}
 
@@ -1217,11 +1447,18 @@ function Contact() {
                       className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 text-sm font-bold tracking-[0.12em] uppercase hover:bg-primary/90 disabled:opacity-60 transition-all duration-200 hover:gap-3"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      {status === "submitting" ? "Sending…" : <>Send Inquiry <ArrowRight className="h-4 w-4" /></>}
+                      {status === "submitting" ? (
+                        "Sending…"
+                      ) : (
+                        <>
+                          Send Inquiry <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
                     </button>
 
                     <p className="text-[11px] text-muted-foreground/60 text-center font-light pt-1">
-                      Free consultation · No obligation · Licensed &amp; insured · {SITE.license}
+                      Free consultation · No obligation · Licensed &amp; insured
+                      · {SITE.license}
                     </p>
                   </form>
                 </>
@@ -1296,7 +1533,10 @@ function Footer() {
               className="flex items-center justify-end gap-2 text-muted-foreground hover:text-primary transition-colors"
             >
               <Facebook className="h-4 w-4" />
-              <span className="text-xs" style={{ fontFamily: "var(--font-condensed)" }}>
+              <span
+                className="text-xs"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
                 Facebook
               </span>
             </a>
@@ -1306,7 +1546,10 @@ function Footer() {
         <div className="gold-rule my-8" aria-hidden />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground/60">
-          <p>&copy; {new Date().getFullYear()} Precision Core Builders. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Precision Core Builders. All
+            rights reserved.
+          </p>
           <p
             className="tracking-widest uppercase"
             style={{ fontFamily: "var(--font-condensed)" }}

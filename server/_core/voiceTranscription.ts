@@ -18,10 +18,12 @@ export type TranscriptionResult = {
 export async function transcribeAudio(
   audioBuffer: ArrayBuffer,
   mimeType: string = "audio/webm",
-  filename: string = "field-memo.webm",
+  filename: string = "field-memo.webm"
 ): Promise<TranscriptionResult> {
   if (!ENV.openaiApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured in Netlify environment variables.");
+    throw new Error(
+      "OPENAI_API_KEY is not configured in Netlify environment variables."
+    );
   }
 
   const form = new FormData();

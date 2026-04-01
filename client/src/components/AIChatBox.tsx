@@ -55,16 +55,16 @@ export default function AIChatBox() {
                 content:
                   "AI assistant coming in Phase 3 — Gemini integration via Netlify Function.",
               }
-            : m,
-        ),
+            : m
+        )
       );
     } catch {
       setMessages(prev =>
         prev.map(m =>
           m.id === assistantId
             ? { ...m, content: "Error reaching AI. Please try again." }
-            : m,
-        ),
+            : m
+        )
       );
     } finally {
       setStreaming(false);

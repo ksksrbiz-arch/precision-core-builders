@@ -30,7 +30,8 @@ export type LLMResult = {
   };
 };
 
-const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_API_BASE =
+  "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_MODEL = "gemini-2.0-flash";
 
 /**
@@ -39,10 +40,17 @@ const DEFAULT_MODEL = "gemini-2.0-flash";
  */
 export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   if (!ENV.geminiApiKey) {
-    throw new Error("GEMINI_API_KEY is not configured in Netlify environment variables.");
+    throw new Error(
+      "GEMINI_API_KEY is not configured in Netlify environment variables."
+    );
   }
 
-  const { messages, maxTokens = 4096, temperature = 0.3, jsonMode = false } = params;
+  const {
+    messages,
+    maxTokens = 4096,
+    temperature = 0.3,
+    jsonMode = false,
+  } = params;
 
   // Convert to Gemini contents format
   const contents = messages
@@ -76,7 +84,7 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(30_000),
-    },
+    }
   );
 
   if (!res.ok) {

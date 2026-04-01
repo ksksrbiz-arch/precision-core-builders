@@ -15,7 +15,9 @@ export type ImageGenerationResult = {
 };
 
 export async function generateImage(
-  _params: ImageGenerationParams,
+  _params: ImageGenerationParams
 ): Promise<ImageGenerationResult> {
-  throw new Error("Image generation not yet configured. Add GEMINI_API_KEY to Netlify env.");
+  throw new Error(
+    "Image generation not yet configured. Add GEMINI_API_KEY to Netlify env."
+  );
 }

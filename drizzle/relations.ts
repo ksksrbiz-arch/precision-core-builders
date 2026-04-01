@@ -97,7 +97,7 @@ export const finishSelectionsRelations = relations(
       fields: [finishSelections.clientId],
       references: [clients.id],
     }),
-  }),
+  })
 );
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
