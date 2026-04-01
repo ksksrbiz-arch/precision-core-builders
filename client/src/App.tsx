@@ -29,6 +29,10 @@ const ProjectDetail      = lazy(() => import("./pages/admin/ProjectDetail"));
 const FieldReportNew     = lazy(() => import("./pages/admin/FieldReportNew"));
 const SitePlanBuilder    = lazy(() => import("./pages/admin/SitePlanBuilder"));
 const Guides             = lazy(() => import("./pages/admin/Guides"));
+const ScheduleView       = lazy(() => import("./pages/admin/ScheduleView"));
+const MaterialsView      = lazy(() => import("./pages/admin/MaterialsView"));
+const BillingView        = lazy(() => import("./pages/admin/BillingView"));
+const PortfolioAdmin     = lazy(() => import("./pages/admin/PortfolioAdmin"));
 
 // Portal pages
 const PortalDashboard    = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -76,6 +80,10 @@ function Router() {
         <Route path="/admin/field-reports"        component={CommandCenter} />
         <Route path="/admin/site-plans"           component={SitePlanBuilder} />
         <Route path="/admin/guides"               component={Guides} />
+        <Route path="/admin/schedule"             component={ScheduleView} />
+        <Route path="/admin/materials"            component={MaterialsView} />
+        <Route path="/admin/billing"              component={BillingView} />
+        <Route path="/admin/portfolio-cms"        component={PortfolioAdmin} />
 
         {/* Client portal */}
         <Route path="/portal"                     component={PortalDashboard} />

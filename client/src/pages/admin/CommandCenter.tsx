@@ -1,12 +1,21 @@
 /**
- * Admin Command Center — main dashboard with KPIs, project status, recent activity.
+ * Admin Command Center — main dashboard with KPIs, project status, recent activity,
+ * AI lead scoring, Supabase Realtime updates, and Digital Foreman AI chat.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import AIChatBox from "@/components/AIChatBox";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, ClipboardList, DollarSign, TrendingUp, Users, AlertTriangle, Plus } from "lucide-react";
+import {
+  AlertTriangle, BarChart3, Bot, ChevronDown, ChevronUp,
+  ClipboardList, DollarSign, Loader2, Plus, TrendingUp, Users, Zap,
+} from "lucide-react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+
+// ─── Stat Card ─────────────────────────────────────────────────────────────────
 
 function StatCard({
   icon: Icon, label, value, sub, color = "primary",
@@ -30,16 +39,184 @@ function StatCard({
   );
 }
 
+// ─── Lead Scoring Panel ────────────────────────────────────────────────────────
+
+type LeadScore = {
+  score: number;
+  priority: "low" | "medium" | "high" | "urgent";
+  reasoning: string;
+  suggestedAction: string;
+  estimatedValue: number | null;
+};
+
+const PRIORITY_COLORS: Record<string, string> = {
+  low:    "text-muted-foreground border-border/60",
+  medium: "text-amber-400 border-amber-400/30 bg-amber-400/10",
+  high:   "text-primary border-primary/30 bg-primary/10",
+  urgent: "text-red-400 border-red-400/30 bg-red-400/10",
+};
+
+function LeadScoringPanel() {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<LeadScore | null>(null);
+  const [form, setForm] = useState({
+    name: "", projectType: "", budget: "", location: "", timeline: "", message: "",
+  });
+
+  const scoreALead = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/lead-score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setResult(await res.json());
+    } catch (err) {
+      setResult({
+        score: 0, priority: "low",
+        reasoning: `Error: ${err}`,
+        suggestedAction: "Check ANTHROPIC_API_KEY in Netlify environment.",
+        estimatedValue: null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const f = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, [key]: e.target.value }));
+
+  return (
+    <div className="bg-card border border-border/60">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between p-5"
+      >
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-primary" />
+          <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+             style={{ fontFamily: "var(--font-condensed)" }}>
+            AI Lead Intelligence
+          </p>
+        </div>
+        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+
+      {open && (
+        <div className="px-5 pb-5 border-t border-border/40">
+          <p className="text-xs text-muted-foreground font-light mt-4 mb-4">
+            Score an incoming lead to prioritize your response. AI analyzes project fit, budget, location, and timeline.
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-3 mb-3">
+            {[
+              { key: "name",        placeholder: "Lead name"               },
+              { key: "projectType", placeholder: "Project type (remodel, new build…)" },
+              { key: "budget",      placeholder: "Budget range ($)"        },
+              { key: "location",    placeholder: "Location (Eugene, Lane County…)" },
+              { key: "timeline",    placeholder: "Timeline (start date or 'ASAP')" },
+            ].map(({ key, placeholder }) => (
+              <input
+                key={key}
+                value={(form as any)[key]}
+                onChange={f(key as keyof typeof form)}
+                placeholder={placeholder}
+                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
+              />
+            ))}
+            <textarea
+              value={form.message}
+              onChange={f("message")}
+              placeholder="Lead message or project description…"
+              rows={2}
+              className="sm:col-span-2 px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors"
+            />
+          </div>
+
+          <button
+            onClick={scoreALead}
+            disabled={loading || !form.name}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+            {loading ? "Scoring…" : "Score This Lead"}
+          </button>
+
+          {result && (
+            <div className="mt-4 border border-border/60 p-4 bg-background/40">
+              {/* Score gauge */}
+              <div className="flex items-center gap-4 mb-3">
+                <div className="relative h-14 w-14 shrink-0">
+                  <svg viewBox="0 0 36 36" className="h-14 w-14 -rotate-90">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor"
+                            strokeWidth="2.5" className="text-border/40" />
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeDasharray={`${result.score} ${100 - result.score}`}
+                            className={result.score >= 75 ? "text-green-400" : result.score >= 50 ? "text-primary" : result.score >= 25 ? "text-amber-400" : "text-red-400"} />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">
+                    {result.score}
+                  </span>
+                </div>
+                <div>
+                  <span className={`text-[10px] px-2 py-1 border font-bold tracking-widest uppercase ${PRIORITY_COLORS[result.priority]}`}
+                        style={{ fontFamily: "var(--font-condensed)" }}>
+                    {result.priority.toUpperCase()}
+                  </span>
+                  {result.estimatedValue && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Est. value: <span className="text-primary font-semibold">${result.estimatedValue.toLocaleString()}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+              <p className="text-sm text-foreground mb-2">{result.reasoning}</p>
+              <div className="border-l-2 border-primary pl-3">
+                <p className="text-[10px] font-bold tracking-widest uppercase text-primary mb-0.5"
+                   style={{ fontFamily: "var(--font-condensed)" }}>Next Action</p>
+                <p className="text-xs text-muted-foreground">{result.suggestedAction}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Command Center ───────────────────────────────────────────────────────
+
 export default function CommandCenter() {
   const [, setLocation] = useLocation();
-  const { data: stats } = trpc.projects.stats.useQuery();
-  const { data: recentProjects } = trpc.projects.list.useQuery({ pageSize: 5 });
+  const [realtimeFlash, setRealtimeFlash] = useState(false);
+
+  const utils = trpc.useUtils();
+  const { data: stats, refetch: refetchStats } = trpc.projects.stats.useQuery();
+  const { data: recentProjects, refetch: refetchProjects } = trpc.projects.list.useQuery({ pageSize: 5 });
   const { data: recentReports } = trpc.fieldReports.list.useQuery({ pageSize: 5 });
   const { data: shortages } = trpc.materials.list.useQuery({ shortagesOnly: true, pageSize: 10 });
 
+  // ── Supabase Realtime subscription ─────────────────────────────────────────
+  const { isLive } = useRealtimeTable({
+    table: "projects",
+    onUpdate: () => {
+      // Refetch stats and projects list on any change
+      refetchStats();
+      refetchProjects();
+      setRealtimeFlash(true);
+      setTimeout(() => setRealtimeFlash(false), 1500);
+    },
+  });
+
   const budgetData = [
     { name: "Estimated", value: stats ? Math.round((stats.totalEstimated ?? 0) / 1000) : 0 },
-    { name: "Actual", value: stats ? Math.round((stats.totalActual ?? 0) / 1000) : 0 },
+    { name: "Actual",    value: stats ? Math.round((stats.totalActual    ?? 0) / 1000) : 0 },
   ];
 
   const statusData = stats ? [
@@ -63,6 +240,16 @@ export default function CommandCenter() {
                 Command Center
               </h1>
               <GuideHelpButton guideId="command-center" />
+              {/* Realtime indicator */}
+              <div className="flex items-center gap-1.5 ml-1">
+                <div className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                  realtimeFlash ? "bg-green-300 scale-125" : isLive ? "bg-green-500 animate-pulse" : "bg-muted-foreground/40"
+                }`} />
+                <span className="text-[9px] tracking-widest uppercase text-muted-foreground/60"
+                      style={{ fontFamily: "var(--font-condensed)" }}>
+                  {isLive ? "Live" : "Offline"}
+                </span>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground font-light mt-0.5">
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
@@ -96,7 +283,6 @@ export default function CommandCenter() {
 
         {/* Charts row */}
         <div className="grid lg:grid-cols-2 gap-4 mb-6">
-          {/* Project status breakdown */}
           <div className="bg-card border border-border/60 p-5">
             <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-4"
                style={{ fontFamily: "var(--font-condensed)" }}>
@@ -117,7 +303,6 @@ export default function CommandCenter() {
             </ResponsiveContainer>
           </div>
 
-          {/* Budget overview */}
           <div className="bg-card border border-border/60 p-5">
             <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-4"
                style={{ fontFamily: "var(--font-condensed)" }}>
@@ -137,8 +322,13 @@ export default function CommandCenter() {
           </div>
         </div>
 
+        {/* AI Lead Scoring */}
+        <div className="mb-6">
+          <LeadScoringPanel />
+        </div>
+
         {/* Recent activity */}
-        <div className="grid lg:grid-cols-2 gap-4">
+        <div className="grid lg:grid-cols-2 gap-4 mb-6">
           {/* Recent projects */}
           <div className="bg-card border border-border/60 p-5">
             <div className="flex items-center justify-between mb-4">
@@ -223,6 +413,18 @@ export default function CommandCenter() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* AI Chat */}
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Bot className="h-4 w-4 text-primary" />
+            <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+               style={{ fontFamily: "var(--font-condensed)" }}>
+              Digital Foreman AI
+            </p>
+          </div>
+          <AIChatBox compact />
         </div>
       </div>
     </DashboardLayout>

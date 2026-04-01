@@ -254,7 +254,7 @@ export default function Guides() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search guides... (e.g. \"weather\", \"invoice\", \"voice memo\")"
+                placeholder="Search guides… (e.g. weather, invoice, voice memo)"
                 className="pl-9 pr-9 bg-card border-border/60"
               />
               {search && (

@@ -2,6 +2,24 @@ import { db } from "../db";
 import { adminProcedure, publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
+const PortfolioInput = z.object({
+  title: z.string().min(1).max(300),
+  slug: z.string().min(1).max(300),
+  category: z.string().max(100).optional(),
+  description: z.string().optional(),
+  shortDescription: z.string().max(500).optional(),
+  location: z.string().max(200).optional(),
+  completionYear: z.number().int().optional(),
+  squareFootage: z.number().int().positive().optional(),
+  coverImageUrl: z.string().url().optional(),
+  galleryImageUrls: z.array(z.string().url()).optional(),
+  clientTestimonial: z.string().optional(),
+  clientName: z.string().max(200).optional(),
+  featured: z.boolean().optional().default(false),
+  published: z.boolean().optional().default(false),
+  sortOrder: z.number().int().optional().default(0),
+});
+
 export const portfolioRouter = router({
   listPublished: publicProcedure.query(async () => {
     const { data, error } = await db.from("portfolio_projects")
@@ -29,23 +47,7 @@ export const portfolioRouter = router({
   }),
 
   create: adminProcedure
-    .input(z.object({
-      title: z.string().min(1).max(300),
-      slug: z.string().min(1).max(300),
-      category: z.string().max(100).optional(),
-      description: z.string().optional(),
-      shortDescription: z.string().max(500).optional(),
-      location: z.string().max(200).optional(),
-      completionYear: z.number().int().optional(),
-      squareFootage: z.number().int().positive().optional(),
-      coverImageUrl: z.string().url().optional(),
-      galleryImageUrls: z.array(z.string().url()).optional(),
-      clientTestimonial: z.string().optional(),
-      clientName: z.string().max(200).optional(),
-      featured: z.boolean().optional().default(false),
-      published: z.boolean().optional().default(false),
-      sortOrder: z.number().int().optional().default(0),
-    }))
+    .input(PortfolioInput)
     .mutation(async ({ input }) => {
       const { data, error } = await db.from("portfolio_projects").insert({
         title: input.title, slug: input.slug, category: input.category,
@@ -60,6 +62,26 @@ export const portfolioRouter = router({
       return data;
     }),
 
+  update: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }).merge(PortfolioInput.partial()))
+    .mutation(async ({ input }) => {
+      const { id, shortDescription, completionYear, squareFootage, coverImageUrl,
+              galleryImageUrls, clientTestimonial, clientName, sortOrder, ...rest } = input;
+      const { data, error } = await db.from("portfolio_projects").update({
+        ...rest,
+        ...(shortDescription !== undefined && { short_description: shortDescription }),
+        ...(completionYear !== undefined && { completion_year: completionYear }),
+        ...(squareFootage !== undefined && { square_footage: squareFootage }),
+        ...(coverImageUrl !== undefined && { cover_image_url: coverImageUrl }),
+        ...(galleryImageUrls !== undefined && { gallery_image_urls: JSON.stringify(galleryImageUrls) }),
+        ...(clientTestimonial !== undefined && { client_testimonial: clientTestimonial }),
+        ...(clientName !== undefined && { client_name: clientName }),
+        ...(sortOrder !== undefined && { sort_order: sortOrder }),
+      }).eq("id", id).select().single();
+      if (error) throw new Error(error.message);
+      return data;
+    }),
+
   togglePublished: adminProcedure
     .input(z.object({ id: z.number().int().positive(), published: z.boolean() }))
     .mutation(async ({ input }) => {
@@ -68,5 +90,13 @@ export const portfolioRouter = router({
         .eq("id", input.id).select().single();
       if (error) throw new Error(error.message);
       return data;
+    }),
+
+  delete: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const { error } = await db.from("portfolio_projects").delete().eq("id", input.id);
+      if (error) throw new Error(error.message);
+      return { success: true };
     }),
 });
