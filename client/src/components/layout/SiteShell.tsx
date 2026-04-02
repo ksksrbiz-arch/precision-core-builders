@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 const NAV_LINKS = [
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
+  { label: "How It Works", href: "/how-it-works" },
   { label: "Our Work", href: "/portfolio" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
@@ -260,6 +261,7 @@ export function SiteFooter() {
             <ul className="space-y-2.5">
               {[
                 { label: "About Us", href: "/about" },
+                { label: "How It Works", href: "/how-it-works" },
                 { label: "Our Team", href: "/about" },
                 { label: "Our Work", href: "/portfolio" },
                 { label: "FAQ", href: "/faq" },

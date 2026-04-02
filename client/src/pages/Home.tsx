@@ -58,6 +58,7 @@ function useCounter(target: number, inView: boolean) {
 const NAV = [
   { label: "About", href: "#about" },
   { label: "Services", href: "#services" },
+  { label: "How It Works", href: "/how-it-works" },
   { label: "Team", href: "#team" },
   { label: "Our Work", href: "#work" },
   { label: "Contact", href: "#contact" },
