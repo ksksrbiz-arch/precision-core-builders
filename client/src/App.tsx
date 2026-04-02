@@ -1,7 +1,7 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { CookieConsent } from "./components/CookieConsent";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { MobileBottomNav } from "./components/MobileBottomNav";
@@ -88,12 +88,24 @@ const LazyCabinets = lazy(() =>
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div
-        className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
-        aria-label="Loading"
-      />
+      <div className="flex flex-col items-center gap-4">
+        <div
+          className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+          aria-label="Loading"
+        />
+        <div className="shimmer-gold h-1 w-32 rounded-full" />
+      </div>
     </div>
   );
+}
+
+/** Scroll to top on route change */
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [location]);
+  return null;
 }
 
 function Router() {
@@ -173,6 +185,7 @@ export default function App() {
         <TooltipProvider>
           <NetworkStatus />
           <Toaster />
+          <ScrollToTop />
           <Router />
           <MobileBottomNav />
           <PWAInstallPrompt />

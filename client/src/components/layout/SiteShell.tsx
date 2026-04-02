@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   Facebook,
+  LogIn,
   Mail,
   MapPin,
   Menu,
@@ -36,19 +37,21 @@ export function SiteNav() {
     return () => window.removeEventListener("scroll", h);
   }, []);
 
+  const currentPath =
+    typeof window !== "undefined" ? window.location.pathname : "";
+
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
-          : "bg-transparent"
+        scrolled ? "glass shadow-lg shadow-black/30" : "bg-transparent"
       }`}
     >
       <div className="container h-[68px] flex items-center justify-between">
         <a
           href="/"
           aria-label="Precision Core Builders — Home"
-          className="flex-shrink-0"
+          className="flex-shrink-0 transition-transform duration-300"
+          style={{ transform: scrolled ? "scale(0.92)" : "scale(1)" }}
         >
           <img
             src={ASSETS.logo}
@@ -67,7 +70,9 @@ export function SiteNav() {
             <a
               key={n.label}
               href={n.href}
-              className="text-[12px] font-semibold tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200"
+              className={`nav-underline text-[12px] font-semibold tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200 ${
+                currentPath === n.href ? "active text-primary" : ""
+              }`}
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               {n.label}
@@ -75,7 +80,7 @@ export function SiteNav() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {/* Phone — visible md+ */}
           <a
             href={SITE.phoneHref}
@@ -86,9 +91,21 @@ export function SiteNav() {
             <Phone className="h-3.5 w-3.5" />
             {SITE.phone}
           </a>
+
+          {/* Login button — always visible on desktop */}
+          <a
+            href="/auth/login"
+            className="hidden sm:inline-flex items-center gap-1.5 border border-border/60 text-muted-foreground px-3.5 py-2 text-[11px] font-bold tracking-[0.1em] uppercase hover:text-primary hover:border-primary/40 transition-all duration-200"
+            style={{ fontFamily: "var(--font-condensed)" }}
+            aria-label="Client login"
+          >
+            <LogIn className="h-3 w-3" />
+            Login
+          </a>
+
           <a
             href="/contact"
-            className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
+            className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3 border-pulse"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
             Free Estimate <ArrowRight className="h-3.5 w-3.5" />
@@ -109,7 +126,7 @@ export function SiteNav() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
+          className="lg:hidden glass border-t border-border/50"
         >
           <nav
             className="container py-5 flex flex-col gap-0"
@@ -120,13 +137,26 @@ export function SiteNav() {
                 key={n.label}
                 href={n.href}
                 onClick={() => setOpen(false)}
-                className="py-4 text-[13px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors min-h-[48px] flex items-center"
+                className={`py-4 text-[13px] font-bold tracking-widest uppercase border-b border-border/40 transition-colors min-h-[48px] flex items-center ${
+                  currentPath === n.href
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {n.label}
               </a>
             ))}
             <div className="pt-5 pb-2 flex flex-col gap-3">
+              {/* Mobile login button */}
+              <a
+                href="/auth/login"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 border border-border/60 text-muted-foreground py-3.5 text-sm font-bold tracking-wider uppercase hover:text-primary hover:border-primary/40 transition-colors min-h-[52px]"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <LogIn className="h-4 w-4" /> Client Login
+              </a>
               <a
                 href={SITE.phoneHref}
                 onClick={() => setOpen(false)}
@@ -171,7 +201,7 @@ export function MobileCTABar() {
       }`}
       aria-label="Quick contact"
     >
-      <div className="flex border-t border-border/60 bg-card/95 backdrop-blur-md">
+      <div className="flex border-t border-border/60 glass">
         <a
           href={SITE.phoneHref}
           className="flex-1 flex items-center justify-center gap-2 py-4 text-[12px] font-bold tracking-widest uppercase text-primary border-r border-border/40 min-h-[56px] active:bg-primary/10"
@@ -206,6 +236,9 @@ const SERVICES_FOOTER = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-border/40 bg-card/40 pb-20 sm:pb-0">
+      {/* Animated gold rule at top */}
+      <div className="gold-rule-animated" aria-hidden />
+
       <div className="container pt-14 pb-10">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
           {/* Brand */}
@@ -262,12 +295,12 @@ export function SiteFooter() {
               {[
                 { label: "About Us", href: "/about" },
                 { label: "How It Works", href: "/how-it-works" },
-                { label: "Our Team", href: "/about" },
                 { label: "Our Work", href: "/portfolio" },
                 { label: "FAQ", href: "/faq" },
                 { label: "Contact", href: "/contact" },
+                { label: "AI Estimator", href: "/estimator" },
               ].map(l => (
-                <li key={l.href}>
+                <li key={l.label}>
                   <a
                     href={l.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -277,6 +310,17 @@ export function SiteFooter() {
                 </li>
               ))}
             </ul>
+
+            {/* Client portal link in footer */}
+            <div className="mt-5 pt-4 border-t border-border/30">
+              <a
+                href="/auth/login"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                Client Portal Login
+              </a>
+            </div>
           </div>
 
           {/* Contact */}

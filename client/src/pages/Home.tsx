@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Facebook,
+  LogIn,
   Mail,
   MapPin,
   Menu,
@@ -103,14 +104,17 @@ function Nav() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
-          : "bg-transparent"
+        scrolled ? "glass shadow-lg shadow-black/30" : "bg-transparent"
       }`}
     >
       <div className="container h-[72px] flex items-center justify-between">
         {/* Logo */}
-        <a href="/" aria-label="Precision Core Builders — Home">
+        <a
+          href="/"
+          aria-label="Precision Core Builders — Home"
+          className="transition-transform duration-300"
+          style={{ transform: scrolled ? "scale(0.92)" : "scale(1)" }}
+        >
           <img
             src={ASSETS.logo}
             alt="Precision Core Builders"
@@ -128,7 +132,7 @@ function Nav() {
             <a
               key={n.label}
               href={n.href}
-              className="text-[13px] font-medium tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200"
+              className="nav-underline text-[13px] font-medium tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               {n.label}
@@ -136,10 +140,19 @@ function Nav() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Login */}
+          <a
+            href="/auth/login"
+            className="hidden sm:inline-flex items-center gap-1.5 border border-border/60 text-muted-foreground px-3.5 py-2 text-[11px] font-bold tracking-[0.1em] uppercase hover:text-primary hover:border-primary/40 transition-all duration-200"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            <LogIn className="h-3 w-3" />
+            Login
+          </a>
           <a
             href="#contact"
-            className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[12px] font-bold tracking-[0.12em] uppercase transition-all duration-200 hover:bg-primary/85 hover:gap-3"
+            className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[12px] font-bold tracking-[0.12em] uppercase transition-all duration-200 hover:bg-primary/85 hover:gap-3 border-pulse"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
             Free Estimate <ArrowRight className="h-3.5 w-3.5" />
@@ -159,7 +172,7 @@ function Nav() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
+          className="lg:hidden glass border-t border-border/50"
         >
           <nav className="container py-6 flex flex-col gap-1">
             {NAV.map(n => (
@@ -174,9 +187,17 @@ function Nav() {
               </a>
             ))}
             <a
+              href="/auth/login"
+              onClick={() => setOpen(false)}
+              className="mt-4 flex items-center justify-center gap-2 border border-border/60 text-muted-foreground py-3 text-sm font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              <LogIn className="h-4 w-4" /> Client Login
+            </a>
+            <a
               href="#contact"
               onClick={() => setOpen(false)}
-              className="mt-4 flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 text-sm font-bold tracking-widest uppercase"
+              className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 text-sm font-bold tracking-widest uppercase"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               Get Your Free Estimate <ArrowRight className="h-4 w-4" />
@@ -1616,19 +1637,27 @@ function Footer() {
           </div>
         </div>
 
-        <div className="gold-rule my-8" aria-hidden />
+        <div className="gold-rule-animated my-8" aria-hidden />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground/60">
           <p>
             &copy; {new Date().getFullYear()} Precision Core Builders. All
             rights reserved.
           </p>
-          <p
-            className="tracking-widest uppercase"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            Powered by Precision Core
-          </p>
+          <div className="flex items-center gap-4">
+            <a href="/privacy" className="hover:text-primary transition-colors">
+              Privacy
+            </a>
+            <a href="/terms" className="hover:text-primary transition-colors">
+              Terms
+            </a>
+            <a
+              href="/auth/login"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <LogIn className="h-3 w-3" /> Login
+            </a>
+          </div>
         </div>
       </div>
     </footer>

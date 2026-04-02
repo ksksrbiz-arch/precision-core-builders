@@ -311,3 +311,188 @@
     transition: transform 0.1s;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENHANCED ANIMATIONS & VISUAL POLISH
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ── Gold shimmer — loading/skeleton accent ─────────────────────────── */
+  @keyframes shimmer-gold {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  .shimmer-gold {
+    background: linear-gradient(
+      90deg,
+      transparent 25%,
+      rgba(200, 168, 75, 0.08) 50%,
+      transparent 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer-gold 2s infinite;
+  }
+
+  /* ── Ambient glow — subtle pulsing radial behind hero/CTA ──────────── */
+  @keyframes ambient-glow {
+    0%,
+    100% {
+      opacity: 0.03;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.06;
+      transform: scale(1.05);
+    }
+  }
+  .ambient-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at 50% 40%,
+      #c8a84b 0%,
+      transparent 55%
+    );
+    animation: ambient-glow 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* ── Card hover lift — subtle depth on interactive cards ────────────── */
+  .card-hover {
+    transition:
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.3s;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    border-color: rgba(200, 168, 75, 0.2);
+  }
+
+  /* ── Gold border pulse — draws attention to primary CTAs ───────────── */
+  @keyframes border-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(200, 168, 75, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 0 4px rgba(200, 168, 75, 0);
+    }
+  }
+  .border-pulse {
+    animation: border-pulse 2.5s ease-in-out infinite;
+  }
+
+  /* ── Smooth gradient bar — animated gold band for section dividers ──── */
+  @keyframes gradient-flow {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
+  }
+  .gold-rule-animated {
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #c8a84b,
+      #d4a574,
+      #c8a84b,
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: gradient-flow 4s linear infinite;
+    opacity: 0.5;
+  }
+
+  /* ── Glass card — frosted glass effect for overlays ─────────────────── */
+  .glass {
+    background: rgba(20, 18, 16, 0.7);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    border: 1px solid rgba(200, 168, 75, 0.1);
+  }
+
+  /* ── Text gradient — gold to warm for premium headings ─────────────── */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #c8a84b 0%, #d4a574 50%, #c8a84b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Nav link underline — animated from center on hover ────────────── */
+  .nav-underline {
+    position: relative;
+  }
+  .nav-underline::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    width: 0;
+    height: 1px;
+    background: #c8a84b;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateX(-50%);
+  }
+  .nav-underline:hover::after,
+  .nav-underline.active::after {
+    width: 100%;
+  }
+
+  /* ── Fade-in on scroll — for browser-native lazy reveal ────────────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Smooth page scroll behavior ────────────────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Selection color matching brand */
+  ::selection {
+    background: rgba(200, 168, 75, 0.3);
+    color: #ede6d9;
+  }
+
+  /* Scrollbar styling for Webkit/Blink browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0c0a08;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(200, 168, 75, 0.2);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(200, 168, 75, 0.35);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200, 168, 75, 0.2) #0c0a08;
+  }
+}
