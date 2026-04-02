@@ -93,7 +93,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: production
-      url: https://precisioncorebuilders.com
+      url: https://precision-core.netlify.app
 
     steps:
       - name: Checkout
