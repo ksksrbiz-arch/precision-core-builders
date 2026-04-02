@@ -1,6 +1,7 @@
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
 import { EUGENE_OR } from "../../server/_core/map";
+import { checkRateLimit, getClientIP } from "../../server/_core/rateLimit";
 
 const db = createClient(
   process.env.SUPABASE_URL!,
@@ -28,6 +29,17 @@ export const handler: Handler = async event => {
   if (event.httpMethod !== "GET") return { statusCode: 405, headers, body: "" };
 
   try {
+    // Rate limit: 20 weather checks per minute per IP
+    const ip = getClientIP(event.headers as Record<string, string>);
+    const rl = await checkRateLimit(`weather:${ip}`, 20);
+    if (!rl.allowed) {
+      return {
+        statusCode: 429,
+        headers: { ...headers, "Retry-After": "60" },
+        body: JSON.stringify({ error: "Too many requests" }),
+      };
+    }
+
     const projectId = parseInt(event.queryStringParameters?.projectId ?? "0");
     const apiKey = process.env.OPENWEATHERMAP_API_KEY;
 

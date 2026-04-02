@@ -8,6 +8,7 @@
  */
 import type { Handler, HandlerEvent } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
+import { checkRateLimit, getClientIP } from "../../server/_core/rateLimit";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -32,6 +33,17 @@ export const handler: Handler = async (event: HandlerEvent) => {
     return { statusCode: 204, headers: corsHeaders, body: "" };
 
   if (event.httpMethod !== "POST") return jsonErr(405, "Method not allowed");
+
+  /* ── Rate limit: 5 inquiries per minute per IP (spam protection) ────── */
+  const ip = getClientIP(event.headers as Record<string, string>);
+  const rl = await checkRateLimit(`inquiry:${ip}`, 5);
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...corsHeaders, "Retry-After": "60" },
+      body: JSON.stringify({ ok: false, message: "Too many submissions. Please wait a moment." }),
+    };
+  }
 
   /* ── Guard: env vars ──────────────────────────────────────────────────── */
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {

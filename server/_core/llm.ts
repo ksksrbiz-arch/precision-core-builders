@@ -34,13 +34,12 @@ export type LLMResult = {
 const MODEL = "claude-sonnet-4-6";
 
 /**
- * Cloudflare AI Gateway (optional) — proxies Anthropic calls for caching,
- * rate limiting, retries, and unified analytics.
+ * Create an Anthropic SDK client, optionally routed through Cloudflare
+ * AI Gateway for caching, retries, and analytics.
  *
- * Set CF_AI_GATEWAY_ID in Netlify env vars to enable.
- * Gateway URL: https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic
+ * Used by invokeLLM() and directly by vision-studio for image analysis.
  */
-function getClient(): Anthropic {
+export function getAnthropicClient(): Anthropic {
   if (!ENV.anthropicApiKey) {
     throw new Error(
       "ANTHROPIC_API_KEY is not configured in Netlify environment variables."
@@ -73,7 +72,7 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
     jsonMode = false,
   } = params;
 
-  const client = getClient();
+  const client = getAnthropicClient();
 
   // Separate system prompt from conversation messages
   const systemMsg = messages.find(m => m.role === "system");

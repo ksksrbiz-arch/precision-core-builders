@@ -1,6 +1,7 @@
 import type { Handler } from "@netlify/functions";
 import Anthropic from "@anthropic-ai/sdk";
-import { ENV } from "../../server/_core/env";
+import { getAnthropicClient } from "../../server/_core/llm";
+import { checkRateLimit, getClientIP } from "../../server/_core/rateLimit";
 
 /**
  * Vision Studio — Claude Vision API endpoint.
@@ -65,6 +66,17 @@ export const handler: Handler = async event => {
   }
 
   try {
+    // Rate limit: 10 vision analyses per minute per IP
+    const ip = getClientIP(event.headers as Record<string, string>);
+    const rl = await checkRateLimit(`vision:${ip}`, 10);
+    if (!rl.allowed) {
+      return {
+        statusCode: 429,
+        headers: { ...headers, "Retry-After": "60" },
+        body: JSON.stringify({ error: "Too many requests" }),
+      };
+    }
+
     const body = JSON.parse(event.body || "{}");
     const {
       image,
@@ -89,15 +101,8 @@ export const handler: Handler = async event => {
       };
     }
 
-    if (!ENV.anthropicApiKey) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured." }),
-      };
-    }
-
-    const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
+    // Uses shared client — routes through CF AI Gateway when configured
+    const client = getAnthropicClient();
 
     const userPrompt =
       customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
