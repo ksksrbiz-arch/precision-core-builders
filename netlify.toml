@@ -4,7 +4,7 @@
   command = "pnpm build"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
   COREPACK_ENABLE_STRICT = "0"
   PNPM_VERSION = "10.4.1"
 
