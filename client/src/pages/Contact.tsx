@@ -57,16 +57,13 @@ export default function Contact() {
     e.preventDefault();
     setStatus("submitting");
     try {
-      const data = new FormData(e.currentTarget);
-      const res = await fetch("/", {
+      const res = await fetch("/api/submit-inquiry", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(
-          data as unknown as Record<string, string>
-        ).toString(),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
       });
-      setStatus(res.ok ? "success" : "error");
-      if (res.ok)
+      if (res.ok) {
+        setStatus("success");
         setFields({
           name: "",
           email: "",
@@ -75,7 +72,12 @@ export default function Contact() {
           budget: "",
           message: "",
         });
-    } catch {
+      } else {
+        console.error("[Contact] submit failed", res.status, await res.text());
+        setStatus("error");
+      }
+    } catch (err) {
+      console.error("[Contact] submit error", err);
       setStatus("error");
     }
   };
@@ -164,24 +166,10 @@ export default function Contact() {
                   </motion.div>
                 ) : (
                   <form
-                    name="project-inquiry"
-                    method="POST"
-                    data-netlify="true"
-                    netlify-honeypot="bot-field"
                     onSubmit={onSubmit}
                     className="space-y-5"
                     aria-label="Project inquiry form"
                   >
-                    <input
-                      type="hidden"
-                      name="form-name"
-                      value="project-inquiry"
-                    />
-                    <p className="hidden" aria-hidden>
-                      <label>
-                        Skip: <input name="bot-field" tabIndex={-1} />
-                      </label>
-                    </p>
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       {[
