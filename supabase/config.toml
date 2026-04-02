@@ -1,5 +1,9 @@
 # Supabase local dev config
 # See https://supabase.com/docs/guides/local-development
+# Production project ref: mdxfvxycwzauixuphjau
+
+[project]
+project_id = "mdxfvxycwzauixuphjau"
 
 [api]
 port = 54321
