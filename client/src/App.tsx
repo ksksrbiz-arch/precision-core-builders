@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
+import { CookieConsent } from "./components/CookieConsent";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { NetworkStatus } from "./components/NetworkStatus";
@@ -20,6 +21,8 @@ const About = lazy(() => import("./pages/About"));
 const Services = lazy(() => import("./pages/Services"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Privacy = lazy(() => import("./pages/legal/Privacy"));
+const Terms = lazy(() => import("./pages/legal/Terms"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const VisionStudio = lazy(() => import("./pages/VisionStudio"));
 
@@ -154,6 +157,10 @@ function Router() {
         <Route path="/services/roofing" component={LazyRoofing} />
         <Route path="/services/cabinets" component={LazyCabinets} />
 
+        {/* Legal */}
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
+
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -172,6 +179,7 @@ export default function App() {
           <MobileBottomNav />
           <PWAInstallPrompt />
           <IOSInstallHint />
+          <CookieConsent />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

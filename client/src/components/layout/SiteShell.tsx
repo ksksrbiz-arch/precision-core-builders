@@ -333,6 +333,18 @@ export function SiteFooter() {
           </p>
           <div className="flex items-center gap-4">
             <a
+              href="/privacy"
+              className="hover:text-primary transition-colors"
+            >
+              Privacy
+            </a>
+            <a
+              href="/terms"
+              className="hover:text-primary transition-colors"
+            >
+              Terms
+            </a>
+            <a
               href={SITE.facebook}
               target="_blank"
               rel="noopener noreferrer"
@@ -340,12 +352,6 @@ export function SiteFooter() {
             >
               <Facebook className="h-3.5 w-3.5" /> Facebook
             </a>
-            <span
-              className="tracking-widest uppercase"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Powered by Precision Core
-            </span>
           </div>
         </div>
       </div>

@@ -11,8 +11,8 @@ const SIGNALS = [
   { icon: MapPin, label: "Local to Eugene", value: "Since 2004" },
   {
     icon: ThumbsUp,
-    label: "Customer Satisfaction",
-    value: "50+ Happy Clients",
+    label: "Our Promise",
+    value: "Quality Guaranteed",
   },
 ] as const;
 

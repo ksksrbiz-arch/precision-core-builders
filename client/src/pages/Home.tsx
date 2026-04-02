@@ -192,42 +192,31 @@ function Nav() {
    HERO — cinematic Ken Burns slideshow, 5 dramatic construction scenes
 ══════════════════════════════════════════════════════════════ */
 
-// 5 hand-picked dramatic construction/architecture shots
-// Each chosen for: golden light, scale, visual impact, Oregon-appropriate feel
+// 5 real Precision Core Builders project photos from the company CDN
 const HERO_SLIDES = [
   {
-    // Sweeping aerial — partially-framed luxury home at golden hour
-    url: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=2000&q=90",
-    alt: "Luxury custom home under construction — golden hour aerial view",
-    // Ken Burns: slow zoom in from center
+    url: ASSETS.portfolio[0],
+    alt: "Precision Core Builders — completed residential project",
     animation: "hero-zoom-in",
   },
   {
-    // Heavy timber framing — dramatic perspective looking up through rafters
-    url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=2000&q=90",
-    alt: "Heavy timber frame construction — dramatic rafter perspective",
-    // Ken Burns: slow drift right
+    url: ASSETS.services.residential,
+    alt: "Precision Core Builders — residential construction",
     animation: "hero-drift-right",
   },
   {
-    // Craftsman at work — carpenter precision detail shot, warm light
-    url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=2000&q=90",
-    alt: "Master carpenter precision work — warm workshop light",
-    // Ken Burns: slow pull back / zoom out
+    url: ASSETS.portfolio[2],
+    alt: "Precision Core Builders — custom home project",
     animation: "hero-zoom-out",
   },
   {
-    // Finished luxury home exterior — dramatic dusk sky, all lights on
-    url: "https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?auto=format&fit=crop&w=2000&q=90",
-    alt: "Completed custom home at dusk — lights glowing warm",
-    // Ken Burns: slow drift left
+    url: ASSETS.services.newConstruction,
+    alt: "Precision Core Builders — new construction",
     animation: "hero-drift-left",
   },
   {
-    // Interior framing — daylight streaming through window openings, dust motes
-    url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=2000&q=90",
-    alt: "Home framing interior — light streaming through window openings",
-    // Ken Burns: diagonal zoom
+    url: ASSETS.portfolio[4],
+    alt: "Precision Core Builders — remodel and renovation",
     animation: "hero-zoom-diagonal",
   },
 ] as const;
@@ -489,10 +478,10 @@ function Hero() {
    STATS BAR — real numbers, animated counters
 ══════════════════════════════════════════════════════════════ */
 const STATS = [
-  { value: 20, suffix: "", label: "Years Construction Experience" },
-  { value: 12, suffix: "", label: "Years Business Experience" },
-  { value: 50, suffix: "+", label: "Happy Customers" },
-  { value: 0, suffix: "", label: "Call Backs" },
+  { value: 20, suffix: "+", label: "Years Construction Experience" },
+  { value: 12, suffix: "+", label: "Years Business Experience" },
+  { value: 8, suffix: "", label: "Services Offered" },
+  { value: 2, suffix: "", label: "Expert Carpenters" },
 ] as const;
 
 function StatCell({ value, suffix, label }: (typeof STATS)[number]) {
@@ -1061,50 +1050,6 @@ function Work() {
 /* ══════════════════════════════════════════════════════════════
    TESTIMONIALS
 ══════════════════════════════════════════════════════════════ */
-const TESTIMONIALS = [
-  {
-    quote:
-      "Eric finished our second-story addition exactly when he said he would and exactly on budget. He was on site every single day. We won't use anyone else.",
-    name: "T. & K. Whitfield",
-    location: "South Eugene",
-    project: "Second Story Addition",
-    stars: 5,
-  },
-  {
-    quote:
-      "We've done two projects with Precision Core now — a kitchen remodel and a bathroom. The quality is exceptional and Eric's crew takes real pride in their work. You can see it in every detail.",
-    name: "M. Larson",
-    location: "River Road, Eugene",
-    project: "Kitchen & Bathroom Remodel",
-    stars: 5,
-  },
-  {
-    quote:
-      "We went with Eric because he actually came out, looked at everything, and gave us a real number. Other contractors threw estimates around without seeing the site. Night and day difference.",
-    name: "P. & D. Okonkwo",
-    location: "Thurston, Springfield",
-    project: "Home Addition",
-    stars: 5,
-  },
-] as const;
-
-function StarRating({ count }: { count: number }) {
-  return (
-    <div className="flex gap-1" aria-label={`${count} out of 5 stars`}>
-      {Array.from({ length: count }).map((_, i) => (
-        <svg
-          key={i}
-          className="h-3.5 w-3.5 fill-primary text-primary"
-          viewBox="0 0 20 20"
-          aria-hidden
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
-
 function Testimonials() {
   return (
     <section
@@ -1136,46 +1081,36 @@ function Testimonials() {
           </motion.h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-5">
-          {TESTIMONIALS.map((t, i) => (
-            <motion.blockquote
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{
-                delay: i * 0.12,
-                duration: 0.7,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="bg-card border border-border/60 p-7 flex flex-col hover:border-primary/25 transition-colors duration-300"
+        {/* Placeholder — real verified reviews coming soon */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="max-w-xl mx-auto text-center"
+        >
+          <div className="bg-card border border-border/60 p-10">
+            <p className="text-muted-foreground font-light leading-relaxed mb-4">
+              We're collecting verified reviews from our clients. In the
+              meantime, give us a call — we're happy to connect you with past
+              homeowners who can share their experience.
+            </p>
+            <a
+              href={SITE.phoneHref}
+              className="inline-flex items-center gap-2 text-primary text-sm font-semibold hover:underline"
             >
-              <StarRating count={t.stars} />
-              <p className="text-sm text-muted-foreground font-light leading-relaxed my-5 flex-1">
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <footer className="border-t border-border/40 pt-4">
-                <p className="text-sm font-semibold text-foreground">
-                  {t.name}
-                </p>
-                <p
-                  className="text-[11px] text-primary tracking-widest uppercase mt-0.5"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {t.project} · {t.location}
-                </p>
-              </footer>
-            </motion.blockquote>
-          ))}
-        </div>
+              <Phone className="h-4 w-4" />
+              {SITE.phone}
+            </a>
+          </div>
+        </motion.div>
 
         {/* Trust signals strip */}
-        <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[
             { value: "CCB #246527", label: "Oregon Licensed" },
             { value: "Licensed & Insured", label: "Fully Covered" },
             { value: "20+ Years", label: "Experience" },
-            { value: "0 Callbacks", label: "We Get It Right" },
           ].map(({ value, label }) => (
             <div
               key={label}

@@ -10,7 +10,7 @@ import {
 import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, MapPin, Phone, Star } from "lucide-react";
+import { ArrowRight, MapPin, Phone } from "lucide-react";
 import { useState } from "react";
 
 const fadeUp = {
@@ -42,8 +42,6 @@ type Project = {
   title: string;
   category: Exclude<Category, "All">;
   location: string;
-  year: number;
-  sqft: number;
   highlight: string;
   image: string;
 };
@@ -51,117 +49,75 @@ type Project = {
 const PROJECTS: Project[] = [
   {
     id: 1,
-    title: "South Hills Modern Farmhouse",
+    title: "Custom Home Build",
     category: "Custom Homes",
-    location: "South Hills, Eugene",
-    year: 2024,
-    sqft: 3200,
-    highlight:
-      "Full custom build — white oak floors, vaulted great room, chef's kitchen with quartzite island.",
+    location: "Eugene, OR",
+    highlight: "New construction with precision craftsmanship and attention to detail.",
     image: ASSETS.portfolio[0],
   },
   {
     id: 2,
-    title: "River Road Kitchen & Bath",
+    title: "Kitchen & Bath Renovation",
     category: "Renovations",
-    location: "River Road, Eugene",
-    year: 2024,
-    sqft: 850,
-    highlight:
-      "Complete kitchen gut and two bathroom remodels. Waterfall quartz, custom cabinetry, heated tile.",
+    location: "Eugene, OR",
+    highlight: "Complete kitchen and bathroom remodel with quality materials.",
     image: ASSETS.portfolio[1],
   },
   {
     id: 3,
-    title: "Crest Drive Second Story Addition",
+    title: "Second Story Addition",
     category: "Additions",
-    location: "Crest Drive, Eugene",
-    year: 2023,
-    sqft: 1100,
-    highlight:
-      "Full second-story addition with master suite, two bedrooms, and a media room. Seamless exterior match.",
+    location: "Eugene, OR",
+    highlight: "Seamless addition expanding the home's living space.",
     image: ASSETS.portfolio[2],
   },
   {
     id: 4,
-    title: "West 11th Commercial Build-Out",
+    title: "Commercial Build-Out",
     category: "Commercial",
-    location: "West Eugene",
-    year: 2023,
-    sqft: 2400,
-    highlight:
-      "Commercial tenant improvement — open-plan office, conference room, server closet, and ADA restrooms.",
+    location: "Eugene, OR",
+    highlight: "Professional commercial tenant improvement.",
     image: ASSETS.portfolio[3],
   },
   {
     id: 5,
-    title: "Thurston Craftsman Remodel",
+    title: "Craftsman Remodel",
     category: "Renovations",
-    location: "Thurston, Springfield",
-    year: 2023,
-    sqft: 1900,
-    highlight:
-      "Full interior refresh of a 1960s craftsman. New windows, refinished hardwoods, updated electrical.",
+    location: "Lane County, OR",
+    highlight: "Full interior refresh honoring original character.",
     image: ASSETS.portfolio[4],
   },
   {
     id: 6,
-    title: "Friendly Street ADU",
+    title: "Accessory Dwelling Unit",
     category: "Additions",
-    location: "Friendly Area, Eugene",
-    year: 2022,
-    sqft: 640,
-    highlight:
-      "Detached accessory dwelling unit with full kitchen, bath, and loft. Energy-efficient construction.",
+    location: "Eugene, OR",
+    highlight: "Detached ADU with full kitchen, bath, and loft.",
     image: ASSETS.portfolio[5],
   },
   {
     id: 7,
-    title: "Coburg Road Custom Home",
+    title: "Custom Craftsman Home",
     category: "Custom Homes",
-    location: "Coburg Road, Eugene",
-    year: 2022,
-    sqft: 2800,
-    highlight:
-      "3-bed/2.5-bath craftsman with custom millwork throughout, covered porch, and detached garage.",
+    location: "Lane County, OR",
+    highlight: "Custom millwork and covered porch built to last.",
     image: ASSETS.portfolio[6],
   },
   {
     id: 8,
-    title: "Cal Young Master Suite Addition",
+    title: "Master Suite Addition",
     category: "Additions",
-    location: "Cal Young, Eugene",
-    year: 2022,
-    sqft: 520,
-    highlight:
-      "Primary suite addition over existing garage — private entry, spa bath, walk-in closet.",
+    location: "Eugene, OR",
+    highlight: "Primary suite addition with spa bath and walk-in closet.",
     image: ASSETS.portfolio[7],
   },
   {
     id: 9,
-    title: "Ferry Street Bridge Renovation",
+    title: "Whole-Home Renovation",
     category: "Renovations",
-    location: "Ferry Street, Eugene",
-    year: 2021,
-    sqft: 2100,
-    highlight:
-      "Whole-home renovation of a mid-century modern. New layout, updated systems, period-appropriate finishes.",
+    location: "Eugene, OR",
+    highlight: "Complete renovation with updated systems and finishes.",
     image: ASSETS.portfolio[8],
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    quote:
-      "Eric's crew finished our kitchen remodel on time and exactly on budget. The daily photo updates through the client portal meant we always knew what was happening.",
-    name: "M. & K. Larson",
-    project: "River Road Kitchen & Bath",
-  },
-  {
-    quote:
-      "The second-story addition transformed our home. Eric walked us through every decision, every material, every change — zero surprises.",
-    name: "T. Whitfield",
-    project: "Crest Drive Addition",
   },
 ];
 
@@ -290,7 +246,7 @@ export default function Portfolio() {
                           className="text-[9px] px-2 py-1 font-bold tracking-[0.18em] uppercase bg-white/10 backdrop-blur-sm border border-white/20 text-white"
                           style={{ fontFamily: "var(--font-condensed)" }}
                         >
-                          {project.year}
+                          {project.location}
                         </span>
                       </div>
                     </div>
@@ -309,8 +265,6 @@ export default function Portfolio() {
                           aria-hidden
                         />
                         <span>{project.location}</span>
-                        <span className="text-border">·</span>
-                        <span>{project.sqft.toLocaleString()} sq ft</span>
                       </div>
                       <p className="text-sm text-muted-foreground font-light leading-relaxed">
                         {project.highlight}
@@ -346,39 +300,19 @@ export default function Portfolio() {
                 What clients say.
               </h2>
             </div>
-            <div className="grid sm:grid-cols-2 gap-5">
-              {TESTIMONIALS.map((t, i) => (
-                <motion.blockquote
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-card border border-border/60 p-7"
+            <div className="max-w-md mx-auto">
+              <div className="bg-card border border-border/60 p-8 text-center">
+                <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">
+                  Verified client testimonials coming soon. Want to hear from
+                  past clients? We&apos;re happy to connect you.
+                </p>
+                <a
+                  href="/contact"
+                  className="inline-flex items-center gap-2 text-primary text-sm font-semibold hover:underline"
                 >
-                  <div className="flex gap-0.5 mb-4" aria-label="5 stars">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <Star
-                        key={j}
-                        className="h-3.5 w-3.5 fill-primary text-primary"
-                        aria-hidden
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground mb-5 font-light">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <footer>
-                    <p className="text-sm font-semibold">{t.name}</p>
-                    <p
-                      className="text-[11px] text-primary tracking-wider uppercase mt-0.5"
-                      style={{ fontFamily: "var(--font-condensed)" }}
-                    >
-                      {t.project}
-                    </p>
-                  </footer>
-                </motion.blockquote>
-              ))}
+                  Contact Us <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
             </div>
           </div>
         </section>

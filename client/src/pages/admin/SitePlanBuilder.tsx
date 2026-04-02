@@ -568,7 +568,8 @@ export default function SitePlanBuilder() {
     const elements = excalidrawAPI.getSceneElements();
     const appState = excalidrawAPI.getAppState();
     // TODO: Save to Supabase — store elements + appState as JSON
-    console.log("Saving plan:", { name: planName, elements, appState });
+    void elements;
+    void appState;
     await new Promise(r => setTimeout(r, 800));
     setSaving(false);
   }, [excalidrawAPI, planName]);
