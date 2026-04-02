@@ -13,9 +13,16 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
-// Admin token Eric uses to authenticate setup calls
-// He can change this in Netlify -> Site config -> SETUP_ADMIN_TOKEN
-const SETUP_ADMIN_TOKEN = "precision-core-setup-2024";
+// Admin token stored in sessionStorage — Eric enters once per browser session.
+// The actual token is set in Netlify env vars as SETUP_ADMIN_TOKEN.
+function useAdminToken() {
+  const [token, setTokenState] = useState(() => sessionStorage.getItem("pcb-setup-token") ?? "");
+  const setToken = (t: string) => {
+    sessionStorage.setItem("pcb-setup-token", t);
+    setTokenState(t);
+  };
+  return { token, setToken, isSet: !!token };
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -134,7 +141,7 @@ const SERVICES: ServiceKey[] = [
 
 // ─── Single service card ───────────────────────────────────────────────────────
 
-function ServiceCard({ svc }: { svc: ServiceKey }) {
+function ServiceCard({ svc, adminToken }: { svc: ServiceKey; adminToken: string }) {
   const [open, setOpen]       = useState(false);
   const [value, setValue]     = useState("");
   const [saving, setSaving]   = useState(false);
@@ -155,7 +162,7 @@ function ServiceCard({ svc }: { svc: ServiceKey }) {
         body: JSON.stringify({
           key: svc.envKey,
           value: value.trim(),
-          adminToken: SETUP_ADMIN_TOKEN,
+          adminToken,
         }),
       });
       const data = await res.json();
@@ -284,8 +291,49 @@ function ServiceCard({ svc }: { svc: ServiceKey }) {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function SetupWizard() {
+  const { token, setToken, isSet } = useAdminToken();
+  const [tokenInput, setTokenInput] = useState("");
   const configured = SERVICES.filter(s => s.configured === true).length;
   const total = SERVICES.length;
+
+  // Auth gate — Eric enters his admin token once per session
+  if (!isSet) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto mt-12">
+          <div className="bg-card border border-border/60 p-8 text-center">
+            <Key className="h-10 w-10 text-primary/40 mx-auto mb-4" />
+            <h1 className="text-xl font-semibold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+              Setup Authentication
+            </h1>
+            <p className="text-sm text-muted-foreground font-light mb-6">
+              Enter your admin token to access platform configuration.
+              This was set in your Netlify environment variables as <code className="text-xs bg-input px-1 py-0.5 border border-border">SETUP_ADMIN_TOKEN</code>.
+            </p>
+            <input
+              type="password"
+              value={tokenInput}
+              onChange={e => setTokenInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && tokenInput.trim()) setToken(tokenInput.trim()); }}
+              placeholder="Paste your admin token…"
+              className="w-full bg-input border border-border text-sm text-foreground p-3 mb-4 focus:outline-none focus:border-primary/60"
+            />
+            <button
+              onClick={() => { if (tokenInput.trim()) setToken(tokenInput.trim()); }}
+              disabled={!tokenInput.trim()}
+              className="w-full py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              <Shield className="h-3.5 w-3.5 inline mr-2" /> Authenticate
+            </button>
+            <p className="text-[10px] text-muted-foreground/50 mt-4">
+              Token is stored only in your browser session. Closing the tab clears it.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -341,7 +389,7 @@ export default function SetupWizard() {
 
         {/* Service cards */}
         <div className="space-y-3">
-          {SERVICES.map(svc => <ServiceCard key={svc.id} svc={svc} />)}
+          {SERVICES.map(svc => <ServiceCard key={svc.id} svc={svc} adminToken={token} />)}
         </div>
 
         {/* Footer note */}

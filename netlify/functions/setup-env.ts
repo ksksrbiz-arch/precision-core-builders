@@ -11,6 +11,16 @@
  * setting his own token.
  */
 import type { Handler } from "@netlify/functions";
+import { timingSafeEqual as _tse } from "node:crypto";
+
+/** Timing-safe string comparison to prevent side-channel attacks */
+function timingSafeEqual(a: string, b: string): boolean {
+  try {
+    return _tse(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
+  } catch {
+    return false;
+  }
+}
 
 // Allowed keys that Eric is permitted to self-configure
 const ALLOWED_KEYS = new Set([
@@ -22,11 +32,11 @@ const ALLOWED_KEYS = new Set([
   "VITE_FRONTEND_FORGE_API_KEY",
 ]);
 
-const NETLIFY_TOKEN  = process.env.NETLIFY_AUTH_TOKEN  ?? "nfp_pbha9Q3PzNZkMdbXaVwThW6X9wzaxjvF0ff7";
-const NETLIFY_SITE_ID   = process.env.NETLIFY_SITE_ID   ?? "9fd4c5ea-1f55-4aad-a29e-7258c7b53a39";
-const NETLIFY_ACCOUNT_ID = process.env.NETLIFY_ACCOUNT_ID ?? "694fb6af96fad85b752f7fa6";
-// Simple admin guard — Eric sets this once and uses it in the wizard
-const ADMIN_TOKEN = process.env.SETUP_ADMIN_TOKEN ?? "precision-core-setup-2024";
+const NETLIFY_TOKEN    = process.env.NETLIFY_AUTH_TOKEN ?? "";
+const NETLIFY_SITE_ID  = process.env.NETLIFY_SITE_ID ?? "";
+const NETLIFY_ACCOUNT_ID = process.env.NETLIFY_ACCOUNT_ID ?? "";
+// Admin guard — Eric MUST set SETUP_ADMIN_TOKEN in Netlify env vars
+const ADMIN_TOKEN = process.env.SETUP_ADMIN_TOKEN ?? "";
 
 export const handler: Handler = async (event) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
@@ -34,10 +44,24 @@ export const handler: Handler = async (event) => {
   if (event.httpMethod !== "POST")    return { statusCode: 405, headers, body: "" };
 
   try {
+    // Validate required env vars are set (no hardcoded fallbacks)
+    if (!NETLIFY_TOKEN || !NETLIFY_SITE_ID || !NETLIFY_ACCOUNT_ID) {
+      return {
+        statusCode: 503, headers,
+        body: JSON.stringify({ error: "Setup function not configured. Set NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID, and NETLIFY_ACCOUNT_ID in Netlify environment variables." }),
+      };
+    }
+    if (!ADMIN_TOKEN) {
+      return {
+        statusCode: 503, headers,
+        body: JSON.stringify({ error: "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before using the Setup Wizard." }),
+      };
+    }
+
     const { key, value, adminToken } = JSON.parse(event.body ?? "{}");
 
-    // Auth check
-    if (!adminToken || adminToken !== ADMIN_TOKEN) {
+    // Auth check — timing-safe comparison to prevent timing attacks
+    if (!adminToken || typeof adminToken !== "string" || adminToken.length !== ADMIN_TOKEN.length || !timingSafeEqual(adminToken, ADMIN_TOKEN)) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid admin token" }) };
     }
 
