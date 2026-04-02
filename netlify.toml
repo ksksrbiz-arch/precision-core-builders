@@ -1,12 +1,12 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "corepack enable && corepack prepare pnpm@10.4.1 --activate && pnpm install && pnpm build"
+  command = "pnpm build"
 
 [build.environment]
   NODE_VERSION = "20"
   COREPACK_ENABLE_STRICT = "0"
-  PNPM_FLAGS = "--shamefully-hoist"
+  PNPM_VERSION = "10.4.1"
 
 # Redirect API calls to serverless functions
 [[redirects]]
