@@ -79,6 +79,7 @@ jobs:
         uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: "./dist/public"
+          functions-dir: "./netlify/functions"
           production-deploy: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Preview — PR #${{ github.event.number }}"
@@ -125,6 +126,7 @@ jobs:
         uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: "./dist/public"
+          functions-dir: "./netlify/functions"
           production-deploy: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Production — ${{ github.sha }}"
