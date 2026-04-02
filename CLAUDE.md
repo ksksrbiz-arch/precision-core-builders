@@ -447,3 +447,9 @@ These functions are documented in `netlify/functions/` but **not yet implemented
 ---
 
 **End of CLAUDE.md**
+
+# Auth Configuration Updated: 2026-04-02T13:58:32Z
+# - VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID, VITE_AUTH0_AUDIENCE set on Netlify
+# - VITE_SUPABASE_PUBLISHABLE_KEY set on Netlify
+# - Admin user created: erictadlock@precisioncorebuilders.com
+# - handle_new_user trigger fixed for proper enum casting
