@@ -1,5 +1,7 @@
+import { COOKIE_NAME } from "@shared/const";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { getSessionCookieOptions } from "./_core/cookies";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 
 export const appRouter = router({
   system: systemRouter,
@@ -9,6 +11,17 @@ export const appRouter = router({
      * Phase 1: always null. Phase 2: reads Supabase JWT from cookie.
      */
     me: publicProcedure.query(opts => opts.ctx.user),
+
+    /**
+     * Clears the session cookie and logs the user out.
+     */
+    logout: protectedProcedure.mutation(opts => {
+      opts.ctx.res.clearCookie(COOKIE_NAME, {
+        ...getSessionCookieOptions(opts.ctx.req),
+        maxAge: -1,
+      });
+      return { success: true };
+    }),
   }),
 
   // Feature routers added per phase:

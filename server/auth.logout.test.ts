@@ -17,15 +17,10 @@ function createAuthContext(): {
   const clearedCookies: CookieCall[] = [];
 
   const user: AuthenticatedUser = {
-    id: 1,
-    openId: "sample-user",
+    id: "sample-user-id",
     email: "sample@example.com",
     name: "Sample User",
-    loginMethod: "manus",
     role: "user",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
   };
 
   const ctx: TrpcContext = {
@@ -45,7 +40,6 @@ function createAuthContext(): {
 }
 
 describe("auth.logout", () => {
-  // TODO: Restore this test once Netlify Identity auth is implemented
   it("clears the session cookie and reports success", async () => {
     const { ctx, clearedCookies } = createAuthContext();
     const caller = appRouter.createCaller(ctx);
