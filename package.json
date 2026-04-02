@@ -127,5 +127,12 @@
       "esbuild": ">=0.25.0",
       "mermaid": ">=10.9.4"
     }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@tailwindcss/oxide",
+      "browser-tabs-lock"
+    ]
   }
 }
