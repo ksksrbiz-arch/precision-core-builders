@@ -141,7 +141,13 @@ export default function AuthLogin() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
-    if (authError) setError(authError.message);
+    if (authError) {
+      if (authError.message?.includes("provider") && authError.message?.includes("not enabled")) {
+        setError("Google sign-in is not yet configured. Please use email/password or Auth0 to sign in.");
+      } else {
+        setError(authError.message);
+      }
+    }
   };
 
   /* ── Password reset (Supabase) ──────────────────────────────────── */
