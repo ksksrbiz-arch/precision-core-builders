@@ -29,6 +29,7 @@ import {
   ClipboardList,
   CreditCard,
   HardHat,
+  Gauge,
   HelpCircle,
   Image,
   LayoutDashboard,
@@ -62,6 +63,7 @@ const NAV = [
   { icon: Camera, label: "Vision Studio", path: "/admin/vision-studio" },
   { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
   { icon: HelpCircle, label: "System Guide", path: "/admin/guides" },
+  { icon: Gauge, label: "Dev Dash", path: "/admin/dev" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "pcb-sidebar-width";
