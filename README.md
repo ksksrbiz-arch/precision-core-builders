@@ -1,3 +1,5 @@
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ksksrbiz-arch/precision-core-builders?quickstart=1)
+
 # Precision Core Builders: Digital Foreman Platform
 
 A luxury construction management platform designed for Eric Tadlock and Precision Core Builders (CCB #246527). This is a **thinking operational engine** that automates field reporting, procurement, scheduling, and client communication—enabling a small team to operate with the velocity of a ten-person firm.
