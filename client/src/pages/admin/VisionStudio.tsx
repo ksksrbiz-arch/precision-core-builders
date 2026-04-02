@@ -19,25 +19,70 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-type AnalysisMode = "progress" | "safety" | "material" | "defect" | "general" | "estimate";
+type AnalysisMode =
+  | "progress"
+  | "safety"
+  | "material"
+  | "defect"
+  | "general"
+  | "estimate";
 
 interface AnalysisResult {
   id: string;
   analysis: string;
   mode: AnalysisMode;
   model: string;
-  usage: { promptTokens: number; completionTokens: number; totalTokens: number };
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
   timestamp: string;
   imagePreview: string;
 }
 
-const MODES: { id: AnalysisMode; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: "general", label: "General", icon: <Eye className="h-3.5 w-3.5" />, color: "text-blue-500" },
-  { id: "progress", label: "Progress", icon: <HardHat className="h-3.5 w-3.5" />, color: "text-amber-500" },
-  { id: "safety", label: "Safety", icon: <Shield className="h-3.5 w-3.5" />, color: "text-red-500" },
-  { id: "material", label: "Material", icon: <Package className="h-3.5 w-3.5" />, color: "text-green-500" },
-  { id: "defect", label: "Defect", icon: <AlertTriangle className="h-3.5 w-3.5" />, color: "text-orange-500" },
-  { id: "estimate", label: "Estimate", icon: <DollarSign className="h-3.5 w-3.5" />, color: "text-emerald-500" },
+const MODES: {
+  id: AnalysisMode;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+}[] = [
+  {
+    id: "general",
+    label: "General",
+    icon: <Eye className="h-3.5 w-3.5" />,
+    color: "text-blue-500",
+  },
+  {
+    id: "progress",
+    label: "Progress",
+    icon: <HardHat className="h-3.5 w-3.5" />,
+    color: "text-amber-500",
+  },
+  {
+    id: "safety",
+    label: "Safety",
+    icon: <Shield className="h-3.5 w-3.5" />,
+    color: "text-red-500",
+  },
+  {
+    id: "material",
+    label: "Material",
+    icon: <Package className="h-3.5 w-3.5" />,
+    color: "text-green-500",
+  },
+  {
+    id: "defect",
+    label: "Defect",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+    color: "text-orange-500",
+  },
+  {
+    id: "estimate",
+    label: "Estimate",
+    icon: <DollarSign className="h-3.5 w-3.5" />,
+    color: "text-emerald-500",
+  },
 ];
 
 export default function VisionStudioAdmin() {
@@ -65,7 +110,7 @@ export default function VisionStudioAdmin() {
     setError(null);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const dataUrl = e.target?.result as string;
       setImagePreview(dataUrl);
       setImage(dataUrl.split(",")[1]);
@@ -88,7 +133,11 @@ export default function VisionStudioAdmin() {
     setError(null);
 
     try {
-      const payload: Record<string, string> = { image, mode, mediaType: "image/jpeg" };
+      const payload: Record<string, string> = {
+        image,
+        mode,
+        mediaType: "image/jpeg",
+      };
       if (customPrompt.trim()) payload.customPrompt = customPrompt.trim();
 
       const resp = await fetch("/.netlify/functions/vision-studio", {
@@ -109,7 +158,7 @@ export default function VisionStudioAdmin() {
         imagePreview: imagePreview!,
       };
 
-      setHistory((prev) => [result, ...prev]);
+      setHistory(prev => [result, ...prev]);
       setActiveResult(result);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Analysis failed");
@@ -126,7 +175,7 @@ export default function VisionStudioAdmin() {
   };
 
   const deleteResult = (id: string) => {
-    setHistory((prev) => prev.filter((r) => r.id !== id));
+    setHistory(prev => prev.filter(r => r.id !== id));
     if (activeResult?.id === id) setActiveResult(null);
   };
 
@@ -170,7 +219,7 @@ export default function VisionStudioAdmin() {
             {/* Upload */}
             {!imagePreview ? (
               <div
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 className="border-2 border-dashed border-border/60 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all min-h-[180px] flex flex-col items-center justify-center gap-2"
@@ -200,7 +249,7 @@ export default function VisionStudioAdmin() {
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={(e) => {
+              onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) handleFile(file);
               }}
@@ -208,7 +257,7 @@ export default function VisionStudioAdmin() {
 
             {/* Mode Selection */}
             <div className="grid grid-cols-3 gap-1.5">
-              {MODES.map((m) => (
+              {MODES.map(m => (
                 <button
                   key={m.id}
                   onClick={() => setMode(m.id)}
@@ -240,7 +289,7 @@ export default function VisionStudioAdmin() {
               {showCustom && (
                 <textarea
                   value={customPrompt}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  onChange={e => setCustomPrompt(e.target.value)}
                   placeholder="Override the default prompt..."
                   rows={3}
                   className="w-full text-xs bg-background border border-border/40 rounded-md px-3 py-2 resize-none focus:outline-none focus:border-primary/40"
@@ -280,7 +329,7 @@ export default function VisionStudioAdmin() {
                   History
                 </h3>
                 <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-                  {history.map((r) => (
+                  {history.map(r => (
                     <div
                       key={r.id}
                       className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all ${
@@ -297,7 +346,7 @@ export default function VisionStudioAdmin() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-medium truncate">
-                          {MODES.find((m) => m.id === r.mode)?.label}
+                          {MODES.find(m => m.id === r.mode)?.label}
                         </p>
                         <p className="text-[9px] text-muted-foreground flex items-center gap-1">
                           <Clock className="h-2.5 w-2.5" />
@@ -305,7 +354,7 @@ export default function VisionStudioAdmin() {
                         </p>
                       </div>
                       <button
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           deleteResult(r.id);
                         }}
@@ -333,7 +382,9 @@ export default function VisionStudioAdmin() {
             {loading && (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 border border-border/20 rounded-lg">
                 <Loader2 className="h-8 w-8 text-primary animate-spin mb-3" />
-                <p className="text-sm font-medium">Analyzing with Claude Vision...</p>
+                <p className="text-sm font-medium">
+                  Analyzing with Claude Vision...
+                </p>
               </div>
             )}
             {activeResult && !loading && (
@@ -342,7 +393,7 @@ export default function VisionStudioAdmin() {
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <span className="text-xs font-semibold uppercase tracking-wider">
-                      {MODES.find((m) => m.id === activeResult.mode)?.label}
+                      {MODES.find(m => m.id === activeResult.mode)?.label}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
                       {new Date(activeResult.timestamp).toLocaleString()}
@@ -367,7 +418,9 @@ export default function VisionStudioAdmin() {
                 </div>
                 <div className="px-4 py-2 bg-muted/20 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
                   <span>{activeResult.model}</span>
-                  <span>{activeResult.usage.totalTokens.toLocaleString()} tokens</span>
+                  <span>
+                    {activeResult.usage.totalTokens.toLocaleString()} tokens
+                  </span>
                 </div>
               </div>
             )}

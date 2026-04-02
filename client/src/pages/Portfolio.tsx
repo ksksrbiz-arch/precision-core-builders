@@ -52,7 +52,8 @@ const PROJECTS: Project[] = [
     title: "Custom Home Build",
     category: "Custom Homes",
     location: "Eugene, OR",
-    highlight: "New construction with precision craftsmanship and attention to detail.",
+    highlight:
+      "New construction with precision craftsmanship and attention to detail.",
     image: ASSETS.portfolio[0],
   },
   {

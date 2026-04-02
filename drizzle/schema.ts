@@ -496,8 +496,11 @@ export const visionStudioRequests = pgTable("vision_studio_requests", {
   completionTokens: integer("completion_tokens").notNull().default(0),
   totalTokens: integer("total_tokens").notNull().default(0),
   imageStoragePath: text("image_storage_path"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export type VisionStudioRequest = typeof visionStudioRequests.$inferSelect;
-export type InsertVisionStudioRequest = typeof visionStudioRequests.$inferInsert;
+export type InsertVisionStudioRequest =
+  typeof visionStudioRequests.$inferInsert;

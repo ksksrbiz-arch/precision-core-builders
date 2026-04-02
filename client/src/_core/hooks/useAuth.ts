@@ -53,9 +53,7 @@ export function useAuth() {
 
     if (a0.isAuthenticated && a0.user) {
       const roles: string[] =
-        a0.user["https://pcb.app/roles"] ??
-        a0.user.roles ??
-        [];
+        a0.user["https://pcb.app/roles"] ?? a0.user.roles ?? [];
       auth0User = {
         id: a0.user.sub ?? "",
         email: a0.user.email ?? "",

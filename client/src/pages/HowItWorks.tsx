@@ -254,8 +254,7 @@ function Hero() {
             className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.1] mb-6"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            How Your Project{" "}
-            <span className="text-primary">Comes to Life</span>
+            How Your Project <span className="text-primary">Comes to Life</span>
           </motion.h1>
 
           <motion.p
@@ -328,10 +327,7 @@ function WhySection() {
             </p>
           </motion.div>
 
-          <motion.div
-            variants={stagger}
-            className="grid sm:grid-cols-3 gap-6"
-          >
+          <motion.div variants={stagger} className="grid sm:grid-cols-3 gap-6">
             {[
               {
                 icon: Lock,
@@ -348,7 +344,7 @@ function WhySection() {
                 title: "Diligence",
                 text: "AI-powered automation eliminates human error in reporting, scheduling, and cost tracking.",
               },
-            ].map((v) => (
+            ].map(v => (
               <motion.div
                 key={v.title}
                 variants={fadeUp}
@@ -475,8 +471,8 @@ function FeaturesGrid() {
               className="text-3xl sm:text-4xl font-semibold mb-4"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Tools Built for <span className="text-primary">Your</span>{" "}
-              Peace of Mind
+              Tools Built for <span className="text-primary">Your</span> Peace
+              of Mind
             </h2>
             <p className="text-muted-foreground font-light max-w-2xl mx-auto">
               Every feature is designed to give you more visibility, more
@@ -495,13 +491,7 @@ function FeaturesGrid() {
   );
 }
 
-function FeatureCard({
-  feature,
-  index,
-}: {
-  feature: Feature;
-  index: number;
-}) {
+function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const Icon = feature.icon;
@@ -543,7 +533,7 @@ function FeatureCard({
 
             {/* Benefits */}
             <ul className="space-y-2">
-              {feature.benefits.map((b) => (
+              {feature.benefits.map(b => (
                 <li key={b} className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <span className="text-sm text-muted-foreground leading-snug">
@@ -590,8 +580,8 @@ function SecuritySection() {
             </h2>
             <p className="text-muted-foreground font-light leading-relaxed mb-8 max-w-xl mx-auto">
               We take your privacy seriously. Your portal is secured with
-              industry-standard encryption, your data is never shared with
-              third parties, and you control who sees your project information.
+              industry-standard encryption, your data is never shared with third
+              parties, and you control who sees your project information.
             </p>
           </motion.div>
 
@@ -604,7 +594,7 @@ function SecuritySection() {
               { label: "Private", sub: "Your data, only" },
               { label: "Secure Login", sub: "Auth0 + Supabase" },
               { label: "Audit Trail", sub: "Immutable logs" },
-            ].map((item) => (
+            ].map(item => (
               <motion.div
                 key={item.label}
                 variants={fadeUp}

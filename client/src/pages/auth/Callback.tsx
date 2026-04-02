@@ -87,7 +87,7 @@ export default function AuthCallback() {
           .single();
 
         if (error && attempt < 3) {
-          await new Promise((r) => setTimeout(r, 600 * attempt));
+          await new Promise(r => setTimeout(r, 600 * attempt));
           return redirectByRole(userId, attempt + 1);
         }
 
@@ -95,7 +95,7 @@ export default function AuthCallback() {
         setLocation(profile?.role === "admin" ? "/admin" : "/portal");
       } catch {
         if (attempt < 3) {
-          await new Promise((r) => setTimeout(r, 600 * attempt));
+          await new Promise(r => setTimeout(r, 600 * attempt));
           return redirectByRole(userId, attempt + 1);
         }
         didRedirect.current = true;

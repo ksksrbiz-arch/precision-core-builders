@@ -332,16 +332,10 @@ export function SiteFooter() {
             rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <a
-              href="/privacy"
-              className="hover:text-primary transition-colors"
-            >
+            <a href="/privacy" className="hover:text-primary transition-colors">
               Privacy
             </a>
-            <a
-              href="/terms"
-              className="hover:text-primary transition-colors"
-            >
+            <a href="/terms" className="hover:text-primary transition-colors">
               Terms
             </a>
             <a

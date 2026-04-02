@@ -61,17 +61,29 @@ const FEATURE_REGISTRY: FeatureGroup[] = [
     label: "Foundation & Design",
     icon: Palette,
     features: [
-      { name: "Tailwind CSS 4 theme", status: "done", path: "/client/src/index.css" },
+      {
+        name: "Tailwind CSS 4 theme",
+        status: "done",
+        path: "/client/src/index.css",
+      },
       { name: "Typography (Cormorant + Barlow)", status: "done" },
       { name: "Framer Motion animations", status: "done" },
       { name: "shadcn/ui component library (50+)", status: "done" },
-      { name: "Supabase Auth integration", status: "done", path: "/auth/login" },
+      {
+        name: "Supabase Auth integration",
+        status: "done",
+        path: "/auth/login",
+      },
       { name: "Role-based access (admin/user)", status: "done" },
       { name: "DashboardLayout + sidebar nav", status: "done" },
       { name: "Landing page (cinematic hero)", status: "done", path: "/" },
       { name: "PWA support + service worker", status: "done" },
       { name: "Error boundaries", status: "done" },
-      { name: "Login: password + magic link + Google", status: "done", path: "/auth/login" },
+      {
+        name: "Login: password + magic link + Google",
+        status: "done",
+        path: "/auth/login",
+      },
     ],
   },
   {
@@ -80,14 +92,47 @@ const FEATURE_REGISTRY: FeatureGroup[] = [
     icon: Wrench,
     features: [
       { name: "Command Center dashboard", status: "done", path: "/admin" },
-      { name: "Projects CRUD + list/detail", status: "done", path: "/admin/projects" },
-      { name: "Clients CRUD + list/detail", status: "done", path: "/admin/clients" },
-      { name: "Field Reports list + new", status: "done", path: "/admin/field-reports" },
-      { name: "Voice-to-report (Whisper)", status: "partial", path: "/admin/field-reports/new", notes: "UI done, needs Whisper API key" },
-      { name: "Gemini report generation", status: "partial", notes: "Stubbed in field report flow" },
-      { name: "Schedule view + weather overlay", status: "done", path: "/admin/schedule" },
-      { name: "Weather API integration (Eugene, OR)", status: "partial", notes: "Netlify function stubbed" },
-      { name: "Supabase Realtime subscriptions", status: "done", notes: "Live on Command Center" },
+      {
+        name: "Projects CRUD + list/detail",
+        status: "done",
+        path: "/admin/projects",
+      },
+      {
+        name: "Clients CRUD + list/detail",
+        status: "done",
+        path: "/admin/clients",
+      },
+      {
+        name: "Field Reports list + new",
+        status: "done",
+        path: "/admin/field-reports",
+      },
+      {
+        name: "Voice-to-report (Whisper)",
+        status: "partial",
+        path: "/admin/field-reports/new",
+        notes: "UI done, needs Whisper API key",
+      },
+      {
+        name: "Gemini report generation",
+        status: "partial",
+        notes: "Stubbed in field report flow",
+      },
+      {
+        name: "Schedule view + weather overlay",
+        status: "done",
+        path: "/admin/schedule",
+      },
+      {
+        name: "Weather API integration (Eugene, OR)",
+        status: "partial",
+        notes: "Netlify function stubbed",
+      },
+      {
+        name: "Supabase Realtime subscriptions",
+        status: "done",
+        notes: "Live on Command Center",
+      },
       { name: "Site plan builder", status: "done", path: "/admin/site-plans" },
     ],
   },
@@ -97,10 +142,27 @@ const FEATURE_REGISTRY: FeatureGroup[] = [
     icon: Users,
     features: [
       { name: "Client portal dashboard", status: "partial", path: "/portal" },
-      { name: "Portal: field reports view", status: "partial", path: "/portal/reports" },
-      { name: "Portal: finish selections", status: "partial", path: "/portal/finishes" },
-      { name: "Portal: Core Values ledger", status: "partial", path: "/portal/ledger" },
-      { name: "AI Project Estimator", status: "partial", path: "/estimator", notes: "Public page exists, needs Netlify function" },
+      {
+        name: "Portal: field reports view",
+        status: "partial",
+        path: "/portal/reports",
+      },
+      {
+        name: "Portal: finish selections",
+        status: "partial",
+        path: "/portal/finishes",
+      },
+      {
+        name: "Portal: Core Values ledger",
+        status: "partial",
+        path: "/portal/ledger",
+      },
+      {
+        name: "AI Project Estimator",
+        status: "partial",
+        path: "/estimator",
+        notes: "Public page exists, needs Netlify function",
+      },
       { name: "Vision Studio", status: "done", path: "/vision-studio" },
       { name: "Portfolio showcase", status: "done", path: "/portfolio" },
     ],
@@ -110,14 +172,43 @@ const FEATURE_REGISTRY: FeatureGroup[] = [
     label: "Automation & Procurement",
     icon: Zap,
     features: [
-      { name: "Materials inventory + shortage alerts", status: "done", path: "/admin/materials" },
-      { name: "AI PO generation", status: "partial", notes: "UI calls /api/material-procurement" },
-      { name: "Sub-contractor management", status: "done", path: "/admin/sub-contractors" },
-      { name: "Billing / milestone invoicing", status: "partial", path: "/admin/billing", notes: "Stripe integration stubbed" },
-      { name: "Estimates list + workflow", status: "done", path: "/admin/estimates" },
+      {
+        name: "Materials inventory + shortage alerts",
+        status: "done",
+        path: "/admin/materials",
+      },
+      {
+        name: "AI PO generation",
+        status: "partial",
+        notes: "UI calls /api/material-procurement",
+      },
+      {
+        name: "Sub-contractor management",
+        status: "done",
+        path: "/admin/sub-contractors",
+      },
+      {
+        name: "Billing / milestone invoicing",
+        status: "partial",
+        path: "/admin/billing",
+        notes: "Stripe integration stubbed",
+      },
+      {
+        name: "Estimates list + workflow",
+        status: "done",
+        path: "/admin/estimates",
+      },
       { name: "Core Values Ledger", status: "done", path: "/admin/ledger" },
-      { name: "n8n automation workflows", status: "planned", notes: "Not started" },
-      { name: "SMS/Email notifications", status: "planned", notes: "Not started" },
+      {
+        name: "n8n automation workflows",
+        status: "planned",
+        notes: "Not started",
+      },
+      {
+        name: "SMS/Email notifications",
+        status: "planned",
+        notes: "Not started",
+      },
     ],
   },
   {
@@ -125,8 +216,16 @@ const FEATURE_REGISTRY: FeatureGroup[] = [
     label: "Analytics & AI",
     icon: Sparkles,
     features: [
-      { name: "AI Lead Scoring panel", status: "partial", notes: "UI done in Command Center, needs API key" },
-      { name: "Digital Foreman AI chat", status: "partial", notes: "UI exists, needs ANTHROPIC_API_KEY" },
+      {
+        name: "AI Lead Scoring panel",
+        status: "partial",
+        notes: "UI done in Command Center, needs API key",
+      },
+      {
+        name: "Digital Foreman AI chat",
+        status: "partial",
+        notes: "UI exists, needs ANTHROPIC_API_KEY",
+      },
       { name: "Profitability tracking", status: "planned" },
       { name: "LLM-powered search", status: "planned" },
       { name: "360 project walkthroughs", status: "planned" },
@@ -141,11 +240,31 @@ const FEATURE_REGISTRY: FeatureGroup[] = [
       { name: "Security headers (CSP, X-Frame)", status: "done" },
       { name: "tRPC router scaffolding", status: "done" },
       { name: "Drizzle ORM + migrations", status: "done" },
-      { name: "Setup Wizard (self-service config)", status: "done", path: "/admin/setup" },
-      { name: "System Guide (help docs)", status: "done", path: "/admin/guides" },
-      { name: "Portfolio CMS admin", status: "done", path: "/admin/portfolio-cms" },
-      { name: "Row-Level Security (RLS)", status: "planned", notes: "Critical for multi-client isolation" },
-      { name: "Netlify Functions migration", status: "planned", notes: "Still using Express scaffolding" },
+      {
+        name: "Setup Wizard (self-service config)",
+        status: "done",
+        path: "/admin/setup",
+      },
+      {
+        name: "System Guide (help docs)",
+        status: "done",
+        path: "/admin/guides",
+      },
+      {
+        name: "Portfolio CMS admin",
+        status: "done",
+        path: "/admin/portfolio-cms",
+      },
+      {
+        name: "Row-Level Security (RLS)",
+        status: "planned",
+        notes: "Critical for multi-client isolation",
+      },
+      {
+        name: "Netlify Functions migration",
+        status: "planned",
+        notes: "Still using Express scaffolding",
+      },
       { name: "Rate limiting", status: "planned" },
       { name: "Audit logging", status: "planned" },
     ],
@@ -188,7 +307,7 @@ const STATUS_META: Record<
 
 function countByStatus(features: Feature[]) {
   const counts = { done: 0, partial: 0, stubbed: 0, planned: 0 };
-  features.forEach((f) => counts[f.status]++);
+  features.forEach(f => counts[f.status]++);
   return counts;
 }
 
@@ -203,7 +322,7 @@ function completionPct(features: Feature[]) {
   return Math.round((score / features.length) * 100);
 }
 
-const allFeatures = FEATURE_REGISTRY.flatMap((g) => g.features);
+const allFeatures = FEATURE_REGISTRY.flatMap(g => g.features);
 const overallPct = completionPct(allFeatures);
 const overallCounts = countByStatus(allFeatures);
 
@@ -283,7 +402,7 @@ function FeatureGroupCard({ group }: { group: FeatureGroup }) {
   return (
     <div className="bg-card border border-border/60">
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => setExpanded(v => !v)}
         className="w-full flex items-center gap-4 p-5 text-left hover:bg-accent/20 transition-colors"
       >
         <div className="h-10 w-10 border border-primary/30 flex items-center justify-center shrink-0">
@@ -358,7 +477,7 @@ function FeatureGroupCard({ group }: { group: FeatureGroup }) {
               )}
               {f.path && (
                 <button
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     setLocation(f.path!);
                   }}
@@ -484,7 +603,7 @@ export default function DevDash() {
   // Try to fetch system health from tRPC
   const healthQuery = trpc.system.health.useQuery(
     { timestamp: Date.now() },
-    { retry: false, refetchOnWindowFocus: false },
+    { retry: false, refetchOnWindowFocus: false }
   );
 
   const refresh = () => setLastRefresh(new Date());
@@ -715,7 +834,7 @@ export default function DevDash() {
                 { label: "TypeScript", version: "5.9" },
                 { label: "Recharts", version: "2.15" },
                 { label: "Zod", version: "4.1" },
-              ].map((dep) => (
+              ].map(dep => (
                 <div
                   key={dep.label}
                   className="flex items-center justify-between py-1.5 px-2 border border-border/20"
@@ -742,7 +861,7 @@ export default function DevDash() {
             </p>
           </div>
           <div className="space-y-3">
-            {FEATURE_REGISTRY.map((group) => (
+            {FEATURE_REGISTRY.map(group => (
               <FeatureGroupCard key={group.phase} group={group} />
             ))}
           </div>
@@ -763,13 +882,17 @@ export default function DevDash() {
             {[
               { label: "Command Center", path: "/admin", icon: TrendingUp },
               { label: "Projects", path: "/admin/projects", icon: FileCode },
-              { label: "Field Reports", path: "/admin/field-reports", icon: Wrench },
+              {
+                label: "Field Reports",
+                path: "/admin/field-reports",
+                icon: Wrench,
+              },
               { label: "Setup Wizard", path: "/admin/setup", icon: Package },
               { label: "Public Site", path: "/", icon: ExternalLink },
               { label: "Login Page", path: "/auth/login", icon: Shield },
               { label: "Client Portal", path: "/portal", icon: Users },
               { label: "Estimator", path: "/estimator", icon: Sparkles },
-            ].map((link) => (
+            ].map(link => (
               <button
                 key={link.path}
                 onClick={() => setLocation(link.path)}

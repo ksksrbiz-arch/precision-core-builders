@@ -20,15 +20,18 @@ const corsHeaders = {
 };
 
 function jsonErr(status: number, message: string) {
-  return { statusCode: status, headers: corsHeaders, body: JSON.stringify({ ok: false, message }) };
+  return {
+    statusCode: status,
+    headers: corsHeaders,
+    body: JSON.stringify({ ok: false, message }),
+  };
 }
 
 export const handler: Handler = async (event: HandlerEvent) => {
   if (event.httpMethod === "OPTIONS")
     return { statusCode: 204, headers: corsHeaders, body: "" };
 
-  if (event.httpMethod !== "POST")
-    return jsonErr(405, "Method not allowed");
+  if (event.httpMethod !== "POST") return jsonErr(405, "Method not allowed");
 
   /* ── Guard: env vars ──────────────────────────────────────────────────── */
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
@@ -46,20 +49,23 @@ export const handler: Handler = async (event: HandlerEvent) => {
     } else {
       // form-encoded (legacy Netlify Forms fallback)
       const params = new URLSearchParams(event.body ?? "");
-      params.forEach((v, k) => { raw[k] = v; });
+      params.forEach((v, k) => {
+        raw[k] = v;
+      });
     }
   } catch {
     return jsonErr(400, "Invalid request body");
   }
 
   /* ── Validate ─────────────────────────────────────────────────────────── */
-  const name    = (raw.name    ?? "").trim();
-  const email   = (raw.email   ?? "").trim().toLowerCase();
+  const name = (raw.name ?? "").trim();
+  const email = (raw.email ?? "").trim().toLowerCase();
   const message = (raw.message ?? "").trim();
 
-  if (!name)                                              return jsonErr(422, "Name is required");
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jsonErr(422, "A valid email is required");
-  if (!message)                                           return jsonErr(422, "Project details are required");
+  if (!name) return jsonErr(422, "Name is required");
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return jsonErr(422, "A valid email is required");
+  if (!message) return jsonErr(422, "Project details are required");
 
   /* ── Write to Supabase inquiries table ───────────────────────────────── */
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -69,12 +75,13 @@ export const handler: Handler = async (event: HandlerEvent) => {
   const row = {
     name,
     email,
-    phone:        (raw.phone       ?? "").trim() || null,
+    phone: (raw.phone ?? "").trim() || null,
     project_type: (raw.projectType ?? raw.project_type ?? "").trim() || null,
-    budget:       (raw.budget      ?? "").trim() || null,
+    budget: (raw.budget ?? "").trim() || null,
     message,
-    source:       (raw.source      ?? "contact_form").trim(),
-    ip_address:   (event.headers["x-forwarded-for"] ?? "").split(",")[0].trim() || null,
+    source: (raw.source ?? "contact_form").trim(),
+    ip_address:
+      (event.headers["x-forwarded-for"] ?? "").split(",")[0].trim() || null,
   };
 
   const { data: inserted, error: insertError } = await supabase
@@ -84,7 +91,10 @@ export const handler: Handler = async (event: HandlerEvent) => {
     .single();
 
   if (insertError) {
-    console.error("[submit-inquiry] Supabase insert error:", insertError.message);
+    console.error(
+      "[submit-inquiry] Supabase insert error:",
+      insertError.message
+    );
     return jsonErr(500, "Database error — please call us at 541-852-5144");
   }
 
@@ -102,8 +112,12 @@ export const handler: Handler = async (event: HandlerEvent) => {
         budget: raw.budget ?? null,
         message,
       }),
-    }).catch(e => console.warn("[submit-inquiry] lead-score fire-and-forget:", e));
-  } catch (_) { /* non-fatal */ }
+    }).catch(e =>
+      console.warn("[submit-inquiry] lead-score fire-and-forget:", e)
+    );
+  } catch (_) {
+    /* non-fatal */
+  }
 
   return {
     statusCode: 200,

@@ -50,9 +50,7 @@ const SubContractorsList = lazy(
   () => import("./pages/admin/SubContractorsList")
 );
 const LedgerView = lazy(() => import("./pages/admin/LedgerView"));
-const VisionStudioAdmin = lazy(
-  () => import("./pages/admin/VisionStudio")
-);
+const VisionStudioAdmin = lazy(() => import("./pages/admin/VisionStudio"));
 const DevDash = lazy(() => import("./pages/admin/DevDash"));
 
 // Portal pages

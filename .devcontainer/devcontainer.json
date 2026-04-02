@@ -48,10 +48,10 @@
   // Forward Vite dev server + Netlify CLI port + Supabase studio
   "forwardPorts": [3000, 8888, 54321, 54323],
   "portsAttributes": {
-    "3000":  { "label": "Vite Dev Server",    "onAutoForward": "notify" },
-    "8888":  { "label": "Netlify Dev",        "onAutoForward": "notify" },
-    "54321": { "label": "Supabase API",       "onAutoForward": "silent" },
-    "54323": { "label": "Supabase Studio",    "onAutoForward": "notify" }
+    "3000": { "label": "Vite Dev Server", "onAutoForward": "notify" },
+    "8888": { "label": "Netlify Dev", "onAutoForward": "notify" },
+    "54321": { "label": "Supabase API", "onAutoForward": "silent" },
+    "54323": { "label": "Supabase Studio", "onAutoForward": "notify" }
   },
 
   // Mount the repo as the workspace

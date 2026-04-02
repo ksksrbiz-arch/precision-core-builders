@@ -22,8 +22,7 @@ import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const auth0Available =
-  !!import.meta.env.VITE_AUTH0_DOMAIN &&
-  !!import.meta.env.VITE_AUTH0_CLIENT_ID;
+  !!import.meta.env.VITE_AUTH0_DOMAIN && !!import.meta.env.VITE_AUTH0_CLIENT_ID;
 
 type Mode = "sign-in" | "sign-up";
 type SignInMethod = "password" | "magic-link";
@@ -155,7 +154,7 @@ export default function AuthLogin() {
     clearError();
     const { error: authError } = await supabase.auth.resetPasswordForEmail(
       email.trim(),
-      { redirectTo: `${window.location.origin}/auth/callback` },
+      { redirectTo: `${window.location.origin}/auth/callback` }
     );
     setLoading(false);
     if (authError) {
@@ -505,7 +504,7 @@ export default function AuthLogin() {
                               autoComplete="email"
                               required
                               value={email}
-                              onChange={(e) => {
+                              onChange={e => {
                                 setEmail(e.target.value);
                                 clearError();
                               }}
@@ -551,7 +550,7 @@ export default function AuthLogin() {
                                   autoComplete="current-password"
                                   required={signInMethod === "password"}
                                   value={password}
-                                  onChange={(e) => {
+                                  onChange={e => {
                                     setPassword(e.target.value);
                                     clearError();
                                   }}
@@ -560,7 +559,7 @@ export default function AuthLogin() {
                                 />
                                 <button
                                   type="button"
-                                  onClick={() => setShowPassword((v) => !v)}
+                                  onClick={() => setShowPassword(v => !v)}
                                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                                   tabIndex={-1}
                                 >

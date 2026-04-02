@@ -55,13 +55,16 @@ export default function Terms() {
                 2. Services
               </h2>
               <p>
-                {SITE.name} ({SITE.license}) provides residential and
-                commercial construction services in the Eugene, Oregon and Lane
-                County area. Our website offers:
+                {SITE.name} ({SITE.license}) provides residential and commercial
+                construction services in the Eugene, Oregon and Lane County
+                area. Our website offers:
               </p>
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li>Project information and service descriptions</li>
-                <li>AI-powered project cost estimates (for informational purposes only)</li>
+                <li>
+                  AI-powered project cost estimates (for informational purposes
+                  only)
+                </li>
                 <li>Client portal access for active project management</li>
                 <li>Contact and inquiry submission forms</li>
               </ul>
@@ -110,8 +113,8 @@ export default function Terms() {
               </h2>
               <p>
                 All content on this website, including text, images, logos,
-                design elements, and software, is the property of {SITE.name}{" "}
-                or its licensors and is protected by copyright and other
+                design elements, and software, is the property of {SITE.name} or
+                its licensors and is protected by copyright and other
                 intellectual property laws.
               </p>
             </section>
@@ -153,9 +156,7 @@ export default function Terms() {
               >
                 8. Contact
               </h2>
-              <p>
-                For questions about these terms, contact us:
-              </p>
+              <p>For questions about these terms, contact us:</p>
               <p className="mt-2">
                 {SITE.name}
                 <br />

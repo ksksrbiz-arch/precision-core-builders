@@ -45,7 +45,7 @@ const MODE_PROMPTS: Record<AnalysisMode, string> = {
     "Based on this construction photo, provide rough cost estimates for the visible work. Include material costs and labor estimates where possible. Note this is for ballpark planning only.",
 };
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = async event => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -82,7 +82,10 @@ export const handler: Handler = async (event) => {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: "No image provided. Send base64-encoded image data in the 'image' field." }),
+        body: JSON.stringify({
+          error:
+            "No image provided. Send base64-encoded image data in the 'image' field.",
+        }),
       };
     }
 
@@ -130,8 +133,8 @@ export const handler: Handler = async (event) => {
     });
 
     const analysisText = response.content
-      .filter((block) => block.type === "text")
-      .map((block) => (block as Anthropic.TextBlock).text)
+      .filter(block => block.type === "text")
+      .map(block => (block as Anthropic.TextBlock).text)
       .join("");
 
     return {

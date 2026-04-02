@@ -170,7 +170,6 @@ export default function Contact() {
                     className="space-y-5"
                     aria-label="Project inquiry form"
                   >
-
                     <div className="grid sm:grid-cols-2 gap-4">
                       {[
                         {

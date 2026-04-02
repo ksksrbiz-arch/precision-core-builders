@@ -50,10 +50,7 @@ export function CookieConsent() {
               <p className="text-xs text-muted-foreground font-light leading-relaxed mb-3">
                 We use essential cookies to keep you logged in and remember your
                 preferences. By continuing to use this site, you agree to our{" "}
-                <a
-                  href="/privacy"
-                  className="text-primary hover:underline"
-                >
+                <a href="/privacy" className="text-primary hover:underline">
                   Privacy Policy
                 </a>
                 .

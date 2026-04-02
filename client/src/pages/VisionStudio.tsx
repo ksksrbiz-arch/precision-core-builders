@@ -17,23 +17,68 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-type AnalysisMode = "progress" | "safety" | "material" | "defect" | "general" | "estimate";
+type AnalysisMode =
+  | "progress"
+  | "safety"
+  | "material"
+  | "defect"
+  | "general"
+  | "estimate";
 
 interface AnalysisResult {
   analysis: string;
   mode: AnalysisMode;
   model: string;
-  usage: { promptTokens: number; completionTokens: number; totalTokens: number };
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
   timestamp: string;
 }
 
-const MODES: { id: AnalysisMode; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: "general", label: "General Analysis", icon: <Eye className="h-4 w-4" />, desc: "Full comprehensive review" },
-  { id: "progress", label: "Progress Check", icon: <HardHat className="h-4 w-4" />, desc: "Completion % by phase" },
-  { id: "safety", label: "Safety Inspection", icon: <Shield className="h-4 w-4" />, desc: "OSHA & hazard review" },
-  { id: "material", label: "Material ID", icon: <Package className="h-4 w-4" />, desc: "Identify materials & brands" },
-  { id: "defect", label: "Defect Detection", icon: <AlertTriangle className="h-4 w-4" />, desc: "Quality & damage check" },
-  { id: "estimate", label: "Cost Estimate", icon: <DollarSign className="h-4 w-4" />, desc: "Rough cost ballpark" },
+const MODES: {
+  id: AnalysisMode;
+  label: string;
+  icon: React.ReactNode;
+  desc: string;
+}[] = [
+  {
+    id: "general",
+    label: "General Analysis",
+    icon: <Eye className="h-4 w-4" />,
+    desc: "Full comprehensive review",
+  },
+  {
+    id: "progress",
+    label: "Progress Check",
+    icon: <HardHat className="h-4 w-4" />,
+    desc: "Completion % by phase",
+  },
+  {
+    id: "safety",
+    label: "Safety Inspection",
+    icon: <Shield className="h-4 w-4" />,
+    desc: "OSHA & hazard review",
+  },
+  {
+    id: "material",
+    label: "Material ID",
+    icon: <Package className="h-4 w-4" />,
+    desc: "Identify materials & brands",
+  },
+  {
+    id: "defect",
+    label: "Defect Detection",
+    icon: <AlertTriangle className="h-4 w-4" />,
+    desc: "Quality & damage check",
+  },
+  {
+    id: "estimate",
+    label: "Cost Estimate",
+    icon: <DollarSign className="h-4 w-4" />,
+    desc: "Rough cost ballpark",
+  },
 ];
 
 export default function VisionStudio() {
@@ -59,7 +104,7 @@ export default function VisionStudio() {
     setResult(null);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const dataUrl = e.target?.result as string;
       setImagePreview(dataUrl);
       // Strip data URL prefix for API
@@ -121,7 +166,10 @@ export default function VisionStudio() {
       {/* Header */}
       <header className="border-b border-border/40 bg-background/95 backdrop-blur-xl sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
-          <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            href="/"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="flex items-center gap-2">
@@ -149,7 +197,9 @@ export default function VisionStudio() {
             Construction Site Intelligence
           </h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Upload a construction photo and get instant AI-powered analysis — progress tracking, safety inspection, material identification, and more.
+            Upload a construction photo and get instant AI-powered analysis —
+            progress tracking, safety inspection, material identification, and
+            more.
           </p>
         </div>
 
@@ -159,7 +209,7 @@ export default function VisionStudio() {
             {/* Upload Zone */}
             {!imagePreview ? (
               <div
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 className="border-2 border-dashed border-border/60 rounded-lg p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all min-h-[240px] flex flex-col items-center justify-center gap-3"
@@ -168,8 +218,12 @@ export default function VisionStudio() {
                   <Upload className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Drop an image here or tap to upload</p>
-                  <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP, GIF — up to 20MB</p>
+                  <p className="text-sm font-medium">
+                    Drop an image here or tap to upload
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPEG, PNG, WebP, GIF — up to 20MB
+                  </p>
                 </div>
               </div>
             ) : (
@@ -193,7 +247,7 @@ export default function VisionStudio() {
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={(e) => {
+              onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) handleFile(file);
               }}
@@ -205,7 +259,7 @@ export default function VisionStudio() {
                 Analysis Mode
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {MODES.map((m) => (
+                {MODES.map(m => (
                   <button
                     key={m.id}
                     onClick={() => setMode(m.id)}
@@ -256,14 +310,20 @@ export default function VisionStudio() {
             {!result && !loading && (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 border border-border/20 rounded-lg bg-muted/30">
                 <ImageIcon className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Upload a photo and select an analysis mode to get started.</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload a photo and select an analysis mode to get started.
+                </p>
               </div>
             )}
             {loading && (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 border border-border/20 rounded-lg">
                 <Loader2 className="h-8 w-8 text-primary animate-spin mb-3" />
-                <p className="text-sm font-medium">Analyzing with Claude Vision...</p>
-                <p className="text-xs text-muted-foreground mt-1">This typically takes 5–15 seconds</p>
+                <p className="text-sm font-medium">
+                  Analyzing with Claude Vision...
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This typically takes 5–15 seconds
+                </p>
               </div>
             )}
             {result && (
@@ -272,14 +332,19 @@ export default function VisionStudio() {
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <span className="text-xs font-semibold uppercase tracking-wider">
-                      {MODES.find((m) => m.id === result.mode)?.label ?? "Analysis"}
+                      {MODES.find(m => m.id === result.mode)?.label ??
+                        "Analysis"}
                     </span>
                   </div>
                   <button
                     onClick={copyResult}
                     className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
                   >
-                    {copied ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                    {copied ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
                     {copied ? "Copied" : "Copy"}
                   </button>
                 </div>
@@ -290,7 +355,9 @@ export default function VisionStudio() {
                 </div>
                 <div className="px-4 py-2 bg-muted/20 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
                   <span>{result.model}</span>
-                  <span>{result.usage.totalTokens.toLocaleString()} tokens</span>
+                  <span>
+                    {result.usage.totalTokens.toLocaleString()} tokens
+                  </span>
                 </div>
               </div>
             )}

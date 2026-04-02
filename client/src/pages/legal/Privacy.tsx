@@ -48,9 +48,7 @@ export default function Privacy() {
                 <li>Submit a contact form or request an estimate</li>
                 <li>Create an account on our client portal</li>
                 <li>Communicate with us via email, phone, or our website</li>
-                <li>
-                  Use our AI Project Estimator or other interactive tools
-                </li>
+                <li>Use our AI Project Estimator or other interactive tools</li>
               </ul>
               <p className="mt-2">
                 This may include your name, email address, phone number, project
@@ -90,8 +88,8 @@ export default function Privacy() {
                 3. Information Sharing
               </h2>
               <p>
-                We do not sell, trade, or rent your personal information to third
-                parties. We may share your information with:
+                We do not sell, trade, or rent your personal information to
+                third parties. We may share your information with:
               </p>
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li>
@@ -99,8 +97,8 @@ export default function Privacy() {
                   project
                 </li>
                 <li>
-                  Service providers that help us operate our website and business
-                  (hosting, email, payment processing)
+                  Service providers that help us operate our website and
+                  business (hosting, email, payment processing)
                 </li>
                 <li>
                   Government agencies if required by law or to comply with legal
@@ -132,10 +130,10 @@ export default function Privacy() {
                 5. Cookies
               </h2>
               <p>
-                Our website uses essential cookies to maintain your login session
-                and remember your preferences. We may also use analytics cookies
-                to understand how visitors use our site. You can control cookie
-                settings in your browser.
+                Our website uses essential cookies to maintain your login
+                session and remember your preferences. We may also use analytics
+                cookies to understand how visitors use our site. You can control
+                cookie settings in your browser.
               </p>
             </section>
 
