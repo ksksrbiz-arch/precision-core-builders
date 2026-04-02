@@ -1,7 +1,7 @@
 /**
- * Auth callback — handles magic link AND OAuth provider redirects.
- * Supabase processes the token from the URL hash/code, then we redirect
- * based on the role stored in public.users (set by DB trigger on first login).
+ * Auth callback — handles magic link, OAuth provider, AND Auth0 redirects.
+ * Supabase processes tokens from URL hash/PKCE; Auth0 SDK handles its own
+ * code exchange. We redirect based on role once either provider resolves.
  */
 import { ASSETS } from "@/const";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +9,21 @@ import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+
+// Auth0 — conditionally available
+let useAuth0Hook: (() => {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: any;
+  error: Error | undefined;
+  handleRedirectCallback: () => Promise<any>;
+}) | null = null;
+try {
+  const mod = await import("@auth0/auth0-react");
+  useAuth0Hook = mod.useAuth0;
+} catch {
+  // Auth0 not available
+}
 
 type State = "loading" | "error";
 
@@ -18,7 +33,46 @@ export default function AuthCallback() {
   const [errorMsg, setErrorMsg] = useState("");
   const didRedirect = useRef(false);
 
+  // ── Auth0 state ──────────────────────────────────────────────────
+  let auth0User: any = null;
+  let auth0Authenticated = false;
+  let auth0Loading = false;
+  let auth0Error: Error | undefined;
+
+  if (useAuth0Hook) {
+    try {
+      const a0 = useAuth0Hook();
+      auth0User = a0.user;
+      auth0Authenticated = a0.isAuthenticated;
+      auth0Loading = a0.isLoading;
+      auth0Error = a0.error;
+    } catch {
+      // Auth0Provider not in tree
+    }
+  }
+
+  // ── Auth0 redirect handling ──────────────────────────────────────
   useEffect(() => {
+    if (auth0Error) {
+      setState("error");
+      setErrorMsg(auth0Error.message);
+      return;
+    }
+
+    if (auth0Authenticated && auth0User && !didRedirect.current) {
+      didRedirect.current = true;
+      // Check Auth0 roles claim
+      const roles: string[] =
+        auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
+      setLocation(roles.includes("admin") ? "/admin" : "/portal");
+    }
+  }, [auth0Authenticated, auth0User, auth0Error, setLocation]);
+
+  // ── Supabase redirect handling ───────────────────────────────────
+  useEffect(() => {
+    // If Auth0 already handled the redirect, skip Supabase
+    if (auth0Authenticated || auth0Loading) return;
+
     // Check for error in URL (OAuth errors come back as query params or hash)
     const url = new URL(window.location.href);
     const hashParams = new URLSearchParams(window.location.hash.slice(1));
@@ -49,8 +103,7 @@ export default function AuthCallback() {
           .single();
 
         if (error && attempt < 3) {
-          // Trigger still running — wait and retry
-          await new Promise(r => setTimeout(r, 600 * attempt));
+          await new Promise((r) => setTimeout(r, 600 * attempt));
           return redirectByRole(userId, attempt + 1);
         }
 
@@ -58,17 +111,15 @@ export default function AuthCallback() {
         setLocation(profile?.role === "admin" ? "/admin" : "/portal");
       } catch {
         if (attempt < 3) {
-          await new Promise(r => setTimeout(r, 600 * attempt));
+          await new Promise((r) => setTimeout(r, 600 * attempt));
           return redirectByRole(userId, attempt + 1);
         }
-        // Give up — default to portal
         didRedirect.current = true;
         setLocation("/portal");
       }
     }
 
-    // Supabase handles token exchange from hash/PKCE automatically.
-    // Listen for the SIGNED_IN event, then redirect by role.
+    // Listen for Supabase auth events
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -81,7 +132,7 @@ export default function AuthCallback() {
       }
     });
 
-    // Fallback: session already exists (e.g. refresh after partial redirect)
+    // Fallback: session already exists
     supabase.auth.getSession().then(({ data }) => {
       if (data.session && !didRedirect.current) {
         redirectByRole(data.session.user.id);
@@ -89,7 +140,7 @@ export default function AuthCallback() {
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, [setLocation, auth0Authenticated, auth0Loading]);
 
   if (state === "error") {
     return (
@@ -140,7 +191,7 @@ export default function AuthCallback() {
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-7 w-7 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground font-light">
-            Signing you in…
+            Signing you in&hellip;
           </p>
         </div>
       </motion.div>

@@ -1,3 +1,4 @@
+import { Auth0Provider } from "@auth0/auth0-react";
 import { trpc } from "@/lib/trpc";
 import { getAccessToken } from "@/lib/supabase";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,6 +7,11 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import "./index.css";
+
+// Auth0 config — injected by Netlify Auth0 extension (VITE_ prefix)
+const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined;
+const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as string | undefined;
+const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE as string | undefined;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,12 +57,30 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
+const AppTree = (
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
   </trpc.Provider>
+);
+
+createRoot(document.getElementById("root")!).render(
+  auth0Domain && auth0ClientId ? (
+    <Auth0Provider
+      domain={auth0Domain}
+      clientId={auth0ClientId}
+      authorizationParams={{
+        redirect_uri: `${window.location.origin}/auth/callback`,
+        ...(auth0Audience ? { audience: auth0Audience } : {}),
+      }}
+      cacheLocation="localstorage"
+    >
+      {AppTree}
+    </Auth0Provider>
+  ) : (
+    AppTree
+  ),
 );
 
 // ── Service Worker Registration ─────────────────────────────────────────
