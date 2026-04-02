@@ -1,12 +1,12 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "pnpm build"
+  command = "node --version && pnpm --version && ls -la && pnpm build 2>&1 || (echo 'BUILD FAILED' && exit 1)"
 
 [build.environment]
   NODE_VERSION = "20"
   COREPACK_ENABLE_STRICT = "0"
-  PNPM_VERSION = "10.4.1"
+  PNPM_VERSION = "9.15.0"
 
 # Redirect API calls to serverless functions
 [[redirects]]
