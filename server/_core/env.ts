@@ -19,6 +19,13 @@ export const ENV = {
   // Billing
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
 
+  // Cloudflare (AI Gateway, KV, R2)
+  cfAccountId: process.env.CF_ACCOUNT_ID ?? "",
+  cfAiGatewayId: process.env.CF_AI_GATEWAY_ID ?? "",
+  cfApiToken: process.env.CF_API_TOKEN ?? "",
+  cfKvRateLimitNs: process.env.CF_KV_RATE_LIMIT_NS ?? "",
+  cfR2Bucket: process.env.CF_R2_BUCKET ?? "",
+
   // Application
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction: process.env.NODE_ENV === "production",

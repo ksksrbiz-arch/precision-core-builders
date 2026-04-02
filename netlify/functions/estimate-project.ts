@@ -1,5 +1,6 @@
 import type { Handler } from "@netlify/functions";
 import { invokeLLM } from "../../server/_core/llm";
+import { checkRateLimit, getClientIP } from "../../server/_core/rateLimit";
 import { createClient } from "@supabase/supabase-js";
 
 const db = createClient(
@@ -47,6 +48,19 @@ export const handler: Handler = async event => {
     };
 
   try {
+    // Rate limit: 10 estimates per minute per IP
+    const ip = getClientIP(event.headers as Record<string, string>);
+    const rl = await checkRateLimit(`estimate:${ip}`, 10);
+    if (!rl.allowed) {
+      return {
+        statusCode: 429,
+        headers: { ...headers, "Retry-After": "60" },
+        body: JSON.stringify({
+          error: "Too many requests. Try again in a minute.",
+        }),
+      };
+    }
+
     const input = JSON.parse(event.body ?? "{}");
     const {
       squareFootage,

@@ -33,12 +33,31 @@ export type LLMResult = {
 
 const MODEL = "claude-sonnet-4-6";
 
+/**
+ * Cloudflare AI Gateway (optional) — proxies Anthropic calls for caching,
+ * rate limiting, retries, and unified analytics.
+ *
+ * Set CF_AI_GATEWAY_ID in Netlify env vars to enable.
+ * Gateway URL: https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic
+ */
 function getClient(): Anthropic {
   if (!ENV.anthropicApiKey) {
     throw new Error(
       "ANTHROPIC_API_KEY is not configured in Netlify environment variables."
     );
   }
+
+  const cfAccountId = process.env.CF_ACCOUNT_ID;
+  const cfGatewayId = process.env.CF_AI_GATEWAY_ID;
+
+  // Route through Cloudflare AI Gateway when configured
+  if (cfAccountId && cfGatewayId) {
+    return new Anthropic({
+      apiKey: ENV.anthropicApiKey,
+      baseURL: `https://gateway.ai.cloudflare.com/v1/${cfAccountId}/${cfGatewayId}/anthropic`,
+    });
+  }
+
   return new Anthropic({ apiKey: ENV.anthropicApiKey });
 }
 
