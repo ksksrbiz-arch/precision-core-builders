@@ -1,0 +1,10 @@
+# API calls → Netlify Functions
+/api/*  /.netlify/functions/:splat  200
+
+# PWA files — serve directly
+/sw.js           /sw.js           200
+/manifest.json   /manifest.json   200
+/offline.html    /offline.html    200
+
+# SPA fallback — all other routes → index.html
+/*  /index.html  200
