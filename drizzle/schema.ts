@@ -472,3 +472,32 @@ export type InsertFinishSelection = typeof finishSelections.$inferInsert;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+// ─── Vision Studio ───────────────────────────────────────────────────────────
+
+export const visionAnalysisModeEnum = pgEnum("vision_analysis_mode", [
+  "general",
+  "progress",
+  "safety",
+  "material",
+  "defect",
+  "estimate",
+]);
+
+export const visionStudioRequests = pgTable("vision_studio_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id"),
+  projectId: integer("project_id"),
+  mode: visionAnalysisModeEnum("mode").notNull().default("general"),
+  customPrompt: text("custom_prompt"),
+  analysis: text("analysis").notNull(),
+  model: varchar("model", { length: 50 }).notNull(),
+  promptTokens: integer("prompt_tokens").notNull().default(0),
+  completionTokens: integer("completion_tokens").notNull().default(0),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  imageStoragePath: text("image_storage_path"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type VisionStudioRequest = typeof visionStudioRequests.$inferSelect;
+export type InsertVisionStudioRequest = typeof visionStudioRequests.$inferInsert;

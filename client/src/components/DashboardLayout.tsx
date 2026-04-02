@@ -25,6 +25,7 @@ import {
   BarChart3,
   BookOpen,
   Calendar,
+  Camera,
   ClipboardList,
   CreditCard,
   HardHat,
@@ -58,6 +59,7 @@ const NAV = [
   { icon: Shield, label: "Ledger", path: "/admin/ledger" },
   { icon: CreditCard, label: "Billing", path: "/admin/billing" },
   { icon: Image, label: "Portfolio CMS", path: "/admin/portfolio-cms" },
+  { icon: Camera, label: "Vision Studio", path: "/admin/vision-studio" },
   { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
   { icon: HelpCircle, label: "System Guide", path: "/admin/guides" },
 ];

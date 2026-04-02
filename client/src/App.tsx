@@ -20,6 +20,7 @@ const About = lazy(() => import("./pages/About"));
 const Services = lazy(() => import("./pages/Services"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const VisionStudio = lazy(() => import("./pages/VisionStudio"));
 
 // Auth pages
 const AuthLogin = lazy(() => import("./pages/auth/Login"));
@@ -45,6 +46,9 @@ const SubContractorsList = lazy(
   () => import("./pages/admin/SubContractorsList")
 );
 const LedgerView = lazy(() => import("./pages/admin/LedgerView"));
+const VisionStudioAdmin = lazy(
+  () => import("./pages/admin/VisionStudio")
+);
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -101,6 +105,7 @@ function Router() {
         <Route path="/faq" component={FAQ} />
         <Route path="/contact" component={Contact} />
         <Route path="/estimator" component={Estimator} />
+        <Route path="/vision-studio" component={VisionStudio} />
 
         {/* Auth */}
         <Route path="/auth/login" component={AuthLogin} />
@@ -124,6 +129,7 @@ function Router() {
         <Route path="/admin/billing" component={BillingView} />
         <Route path="/admin/portfolio-cms" component={PortfolioAdmin} />
         <Route path="/admin/setup" component={SetupWizard} />
+        <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
 
         {/* Client portal */}
         <Route path="/portal" component={PortalDashboard} />
