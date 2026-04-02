@@ -16,10 +16,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # pnpm version read from packageManager in package.json — no hardcoded version
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
@@ -43,7 +42,6 @@ jobs:
         run: pnpm build
         env:
           NODE_ENV: production
-          # Supabase public keys safe to expose in build (non-secret)
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
@@ -60,8 +58,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
@@ -108,8 +104,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
