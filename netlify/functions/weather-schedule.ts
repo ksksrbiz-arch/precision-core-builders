@@ -23,6 +23,8 @@ export const handler: Handler = async event => {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
   };
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
   if (event.httpMethod !== "GET") return { statusCode: 405, headers, body: "" };
 
   try {
@@ -32,39 +34,46 @@ export const handler: Handler = async event => {
     // Fetch 7-day forecast for Eugene OR
     let forecast: WeatherDay[] = [];
     if (apiKey) {
-      const res = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${EUGENE_OR.lat}&lon=${EUGENE_OR.lng}&appid=${apiKey}&units=imperial&cnt=56`
-      );
-      const data = (await res.json()) as any;
-      // Group by day, take max rain probability and description
-      const byDay = new Map<string, WeatherDay>();
-      for (const item of data.list ?? []) {
-        const date = item.dt_txt.split(" ")[0];
-        const rain = item.rain?.["3h"] ?? 0;
-        const pop = (item.pop ?? 0) * 100;
-        if (!byDay.has(date)) {
-          byDay.set(date, {
-            date,
-            description: item.weather[0]?.description ?? "",
-            tempHigh: item.main.temp_max,
-            tempLow: item.main.temp_min,
-            rainProbability: pop,
-            rainMm: rain,
-            willRain: pop > 50,
-          });
-        } else {
-          const existing = byDay.get(date)!;
-          if (pop > existing.rainProbability) {
-            existing.rainProbability = pop;
-            existing.willRain = pop > 50;
+      try {
+        const res = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${EUGENE_OR.lat}&lon=${EUGENE_OR.lng}&appid=${apiKey}&units=imperial&cnt=56`
+        );
+        if (!res.ok)
+          throw new Error(`Weather API ${res.status}: ${res.statusText}`);
+        const data = (await res.json()) as any;
+        const byDay = new Map<string, WeatherDay>();
+        for (const item of data.list ?? []) {
+          const date = item.dt_txt.split(" ")[0];
+          const rain = item.rain?.["3h"] ?? 0;
+          const pop = (item.pop ?? 0) * 100;
+          if (!byDay.has(date)) {
+            byDay.set(date, {
+              date,
+              description: item.weather[0]?.description ?? "",
+              tempHigh: item.main.temp_max,
+              tempLow: item.main.temp_min,
+              rainProbability: pop,
+              rainMm: rain,
+              willRain: pop > 50,
+            });
+          } else {
+            const existing = byDay.get(date)!;
+            if (pop > existing.rainProbability) {
+              existing.rainProbability = pop;
+              existing.willRain = pop > 50;
+            }
+            existing.tempHigh = Math.max(existing.tempHigh, item.main.temp_max);
+            existing.rainMm += rain;
           }
-          existing.tempHigh = Math.max(existing.tempHigh, item.main.temp_max);
-          existing.rainMm += rain;
         }
+        forecast = Array.from(byDay.values()).slice(0, 7);
+      } catch (weatherErr) {
+        console.warn("[weather-schedule] API failed, using mock:", weatherErr);
+        // Fall through to mock data below
       }
-      forecast = Array.from(byDay.values()).slice(0, 7);
-    } else {
-      // Mock forecast when no API key
+    }
+    if (forecast.length === 0) {
+      // Mock forecast when no API key or API failed
       forecast = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() + i);

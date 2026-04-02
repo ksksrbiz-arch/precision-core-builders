@@ -38,7 +38,7 @@ export const handler: Handler = async event => {
     "Content-Type": "application/json",
   };
   if (event.httpMethod === "OPTIONS")
-    return { statusCode: 200, headers, body: "" };
+    return { statusCode: 204, headers, body: "" };
   if (event.httpMethod !== "POST")
     return {
       statusCode: 405,
@@ -85,7 +85,16 @@ export const handler: Handler = async event => {
       temperature: 0.1,
     });
 
-    const estimate = JSON.parse(result.text);
+    let estimate;
+    try {
+      estimate = JSON.parse(result.text);
+    } catch {
+      return {
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({ error: "AI returned invalid format" }),
+      };
+    }
 
     // Save to estimates table if projectId or clientId provided
     let savedEstimate = null;

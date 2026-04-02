@@ -23,6 +23,8 @@ export const handler: Handler = async event => {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
   };
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
   if (event.httpMethod !== "POST")
     return { statusCode: 405, headers, body: "" };
 
@@ -47,7 +49,16 @@ export const handler: Handler = async event => {
       temperature: 0.1,
     });
 
-    const score = JSON.parse(result.text);
+    let score;
+    try {
+      score = JSON.parse(result.text);
+    } catch {
+      return {
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({ error: "AI returned invalid format" }),
+      };
+    }
     return { statusCode: 200, headers, body: JSON.stringify(score) };
   } catch (err) {
     console.error("[lead-score]", err);

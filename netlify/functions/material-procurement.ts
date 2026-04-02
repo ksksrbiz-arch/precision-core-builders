@@ -1,6 +1,5 @@
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
-import { invokeLLM } from "../../server/_core/llm";
 
 const db = createClient(
   process.env.SUPABASE_URL!,
@@ -13,6 +12,8 @@ export const handler: Handler = async event => {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
   };
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
   if (event.httpMethod !== "POST")
     return { statusCode: 405, headers, body: "" };
 

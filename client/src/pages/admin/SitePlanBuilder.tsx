@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabase";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -565,13 +566,30 @@ export default function SitePlanBuilder() {
   const handleSave = useCallback(async () => {
     if (!excalidrawAPI) return;
     setSaving(true);
-    const elements = excalidrawAPI.getSceneElements();
-    const appState = excalidrawAPI.getAppState();
-    // TODO: Save to Supabase — store elements + appState as JSON
-    void elements;
-    void appState;
-    await new Promise(r => setTimeout(r, 800));
-    setSaving(false);
+    try {
+      const elements = excalidrawAPI.getSceneElements();
+      const appState = excalidrawAPI.getAppState();
+      const payload = {
+        name: planName || "Untitled Plan",
+        elements: JSON.stringify(elements),
+        app_state: JSON.stringify({
+          viewBackgroundColor: appState.viewBackgroundColor,
+          zoom: appState.zoom,
+          scrollX: appState.scrollX,
+          scrollY: appState.scrollY,
+        }),
+        updated_at: new Date().toISOString(),
+      };
+      // Upsert by name — update if exists, insert if new
+      const { error } = await supabase
+        .from("site_plans")
+        .upsert(payload, { onConflict: "name" });
+      if (error) console.error("[SitePlan] Save failed:", error.message);
+    } catch (err) {
+      console.error("[SitePlan] Save error:", err);
+    } finally {
+      setSaving(false);
+    }
   }, [excalidrawAPI, planName]);
 
   const handleExportPNG = useCallback(async () => {
