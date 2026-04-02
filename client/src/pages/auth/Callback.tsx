@@ -35,7 +35,13 @@ export default function AuthCallback() {
     // Auth0Provider not in tree — Supabase-only mode
   }
 
-  // ── Auth0 redirect handling ──────────────────────────────────────
+  // ── Auth0 → Supabase bridge ──────────────────────────────────────
+  let auth0GetToken: (() => Promise<string>) | null = null;
+  try {
+    const a0hook = useAuth0();
+    auth0GetToken = a0hook.getAccessTokenSilently;
+  } catch {}
+
   useEffect(() => {
     if (auth0Error) {
       setState("error");
@@ -43,13 +49,66 @@ export default function AuthCallback() {
       return;
     }
 
-    if (auth0Authenticated && auth0User && !didRedirect.current) {
-      didRedirect.current = true;
-      // Check Auth0 roles claim
-      const roles: string[] =
-        auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
-      setLocation(roles.includes("admin") ? "/admin" : "/portal");
-    }
+    if (!auth0Authenticated || !auth0User || didRedirect.current) return;
+
+    // Bridge Auth0 session → Supabase session
+    (async () => {
+      try {
+        // Get Auth0 access token
+        const auth0Token = auth0GetToken ? await auth0GetToken() : null;
+        if (!auth0Token) {
+          // Fallback: redirect using Auth0 roles only
+          didRedirect.current = true;
+          const roles: string[] =
+            auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
+          setLocation(roles.includes("admin") ? "/admin" : "/portal");
+          return;
+        }
+
+        // Call bridge function to create Supabase session
+        const res = await fetch("/api/auth0-bridge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ auth0Token }),
+        });
+
+        const data = await res.json();
+
+        if (data.bridged && data.access_token && data.refresh_token) {
+          // Set the Supabase session from bridge tokens
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          });
+
+          // Wait for session to propagate, then redirect by role
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            didRedirect.current = true;
+            const { data: profile } = await supabase
+              .from("users")
+              .select("role")
+              .eq("id", sessionData.session.user.id)
+              .single();
+            setLocation(profile?.role === "admin" ? "/admin" : "/portal");
+            return;
+          }
+        }
+
+        // Fallback: redirect using Auth0 roles
+        didRedirect.current = true;
+        const roles: string[] =
+          auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
+        setLocation(roles.includes("admin") ? "/admin" : "/portal");
+      } catch (err: any) {
+        console.error("[Auth0 Bridge]", err);
+        // Still redirect — just without Supabase session
+        didRedirect.current = true;
+        const roles: string[] =
+          auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
+        setLocation(roles.includes("admin") ? "/admin" : "/portal");
+      }
+    })();
   }, [auth0Authenticated, auth0User, auth0Error, setLocation]);
 
   // ── Supabase redirect handling ───────────────────────────────────
