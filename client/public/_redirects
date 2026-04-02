@@ -1,4 +1,7 @@
-# API calls → Netlify Functions
+# tRPC — all procedures route to the single trpc function
+/api/trpc/*  /.netlify/functions/trpc  200
+
+# Other API calls → Netlify Functions (1:1 mapping)
 /api/*  /.netlify/functions/:splat  200
 
 # PWA files — serve directly
