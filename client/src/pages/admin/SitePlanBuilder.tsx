@@ -57,7 +57,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 200, height: 16,
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 16,
             backgroundColor: "#495057",
             strokeColor: "#212529",
             strokeWidth: 2,
@@ -72,7 +75,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 160, height: 10,
+            x: 0,
+            y: 0,
+            width: 160,
+            height: 10,
             backgroundColor: "#adb5bd",
             strokeColor: "#495057",
             strokeWidth: 1,
@@ -87,7 +93,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 200, height: 20,
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 20,
             backgroundColor: "#343a40",
             strokeColor: "#000000",
             strokeWidth: 3,
@@ -102,7 +111,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 24, height: 24,
+            x: 0,
+            y: 0,
+            width: 24,
+            height: 24,
             backgroundColor: "#495057",
             strokeColor: "#212529",
             strokeWidth: 2,
@@ -118,12 +130,15 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
     icon: "🚪",
     items: [
       {
-        label: "Door (36\")",
+        label: 'Door (36")',
         emoji: "🚪",
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 36, height: 6,
+            x: 0,
+            y: 0,
+            width: 36,
+            height: 6,
             backgroundColor: "#f8f9fa",
             strokeColor: "#212529",
             strokeWidth: 1,
@@ -132,7 +147,12 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "line",
-            x: 0, y: 6, points: [[0, 0], [36, -30]],
+            x: 0,
+            y: 6,
+            points: [
+              [0, 0],
+              [36, -30],
+            ],
             strokeColor: "#868e96",
             strokeWidth: 1,
             roughness: 1,
@@ -140,12 +160,15 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         ],
       },
       {
-        label: "Window (48\")",
+        label: 'Window (48")',
         emoji: "🪟",
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 48, height: 6,
+            x: 0,
+            y: 0,
+            width: 48,
+            height: 6,
             backgroundColor: "#d0ebff",
             strokeColor: "#1971c2",
             strokeWidth: 2,
@@ -160,7 +183,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 72, height: 8,
+            x: 0,
+            y: 0,
+            width: 72,
+            height: 8,
             backgroundColor: "#d0ebff",
             strokeColor: "#1971c2",
             strokeWidth: 2,
@@ -169,7 +195,12 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "line",
-            x: 36, y: 0, points: [[0, 0], [0, 8]],
+            x: 36,
+            y: 0,
+            points: [
+              [0, 0],
+              [0, 8],
+            ],
             strokeColor: "#1971c2",
             strokeWidth: 1,
             roughness: 0,
@@ -188,7 +219,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "ellipse",
-            x: 0, y: 0, width: 30, height: 20,
+            x: 0,
+            y: 0,
+            width: 30,
+            height: 20,
             backgroundColor: "#e9ecef",
             strokeColor: "#1971c2",
             strokeWidth: 2,
@@ -203,7 +237,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "ellipse",
-            x: 0, y: 10, width: 24, height: 30,
+            x: 0,
+            y: 10,
+            width: 24,
+            height: 30,
             backgroundColor: "#e9ecef",
             strokeColor: "#1971c2",
             strokeWidth: 2,
@@ -212,7 +249,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "rectangle",
-            x: 2, y: 0, width: 20, height: 14,
+            x: 2,
+            y: 0,
+            width: 20,
+            height: 14,
             backgroundColor: "#e9ecef",
             strokeColor: "#1971c2",
             strokeWidth: 2,
@@ -227,7 +267,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 60, height: 30,
+            x: 0,
+            y: 0,
+            width: 60,
+            height: 30,
             backgroundColor: "#d0ebff",
             strokeColor: "#1971c2",
             strokeWidth: 2,
@@ -243,7 +286,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 40, height: 40,
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 40,
             backgroundColor: "#d0ebff",
             strokeColor: "#1971c2",
             strokeWidth: 2,
@@ -264,7 +310,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "ellipse",
-            x: 0, y: 0, width: 16, height: 16,
+            x: 0,
+            y: 0,
+            width: 16,
+            height: 16,
             backgroundColor: "transparent",
             strokeColor: "#e03131",
             strokeWidth: 2,
@@ -279,7 +328,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "ellipse",
-            x: 0, y: 0, width: 16, height: 16,
+            x: 0,
+            y: 0,
+            width: 16,
+            height: 16,
             backgroundColor: "transparent",
             strokeColor: "#e03131",
             strokeWidth: 2,
@@ -288,7 +340,9 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "text",
-            x: 4, y: 1, text: "S",
+            x: 4,
+            y: 1,
+            text: "S",
             fontSize: 12,
             fontFamily: 1,
             strokeColor: "#e03131",
@@ -301,7 +355,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "ellipse",
-            x: 0, y: 0, width: 20, height: 20,
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 20,
             backgroundColor: "#fff3bf",
             strokeColor: "#e8590c",
             strokeWidth: 2,
@@ -310,14 +367,24 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "line",
-            x: 4, y: 10, points: [[0, 0], [12, 0]],
+            x: 4,
+            y: 10,
+            points: [
+              [0, 0],
+              [12, 0],
+            ],
             strokeColor: "#e8590c",
             strokeWidth: 2,
             roughness: 0,
           },
           {
             type: "line",
-            x: 10, y: 4, points: [[0, 0], [0, 12]],
+            x: 10,
+            y: 4,
+            points: [
+              [0, 0],
+              [0, 12],
+            ],
             strokeColor: "#e8590c",
             strokeWidth: 2,
             roughness: 0,
@@ -330,7 +397,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "rectangle",
-            x: 0, y: 0, width: 20, height: 30,
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 30,
             backgroundColor: "#ffe3e3",
             strokeColor: "#e03131",
             strokeWidth: 2,
@@ -339,7 +409,9 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "text",
-            x: 3, y: 8, text: "P",
+            x: 3,
+            y: 8,
+            text: "P",
             fontSize: 14,
             fontFamily: 1,
             strokeColor: "#e03131",
@@ -358,28 +430,45 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "line",
-            x: 0, y: 0, points: [[0, 0], [120, 0]],
+            x: 0,
+            y: 0,
+            points: [
+              [0, 0],
+              [120, 0],
+            ],
             strokeColor: "#495057",
             strokeWidth: 1,
             roughness: 0,
           },
           {
             type: "line",
-            x: 0, y: -6, points: [[0, 0], [0, 12]],
+            x: 0,
+            y: -6,
+            points: [
+              [0, 0],
+              [0, 12],
+            ],
             strokeColor: "#495057",
             strokeWidth: 1,
             roughness: 0,
           },
           {
             type: "line",
-            x: 120, y: -6, points: [[0, 0], [0, 12]],
+            x: 120,
+            y: -6,
+            points: [
+              [0, 0],
+              [0, 12],
+            ],
             strokeColor: "#495057",
             strokeWidth: 1,
             roughness: 0,
           },
           {
             type: "text",
-            x: 40, y: -20, text: "10'-0\"",
+            x: 40,
+            y: -20,
+            text: "10'-0\"",
             fontSize: 14,
             fontFamily: 1,
             strokeColor: "#495057",
@@ -392,7 +481,10 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
         elements: [
           {
             type: "diamond",
-            x: 0, y: 0, width: 24, height: 24,
+            x: 0,
+            y: 0,
+            width: 24,
+            height: 24,
             backgroundColor: "#fff3bf",
             strokeColor: "#e8590c",
             strokeWidth: 2,
@@ -401,7 +493,9 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "text",
-            x: 6, y: 4, text: "1",
+            x: 6,
+            y: 4,
+            text: "1",
             fontSize: 14,
             fontFamily: 1,
             strokeColor: "#e8590c",
@@ -428,12 +522,29 @@ export default function SitePlanBuilder() {
   const [Excalidraw, setExcalidraw] = useState<any>(null);
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [planName, setPlanName] = useState("Untitled Site Plan");
-  const [activeStampCategory, setActiveStampCategory] = useState<string | null>(null);
+  const [activeStampCategory, setActiveStampCategory] = useState<string | null>(
+    null
+  );
   const [showStampPanel, setShowStampPanel] = useState(false);
   const [savedPlans] = useState<SavedPlan[]>([
-    { id: "1", name: "Main Floor Layout", project: "Johnson Residence", updatedAt: "2026-03-28" },
-    { id: "2", name: "Kitchen Remodel Spec", project: "Willamette Cottage", updatedAt: "2026-03-25" },
-    { id: "3", name: "Foundation Plan", project: "Eugene Office Build", updatedAt: "2026-03-20" },
+    {
+      id: "1",
+      name: "Main Floor Layout",
+      project: "Johnson Residence",
+      updatedAt: "2026-03-28",
+    },
+    {
+      id: "2",
+      name: "Kitchen Remodel Spec",
+      project: "Willamette Cottage",
+      updatedAt: "2026-03-25",
+    },
+    {
+      id: "3",
+      name: "Foundation Plan",
+      project: "Eugene Office Build",
+      updatedAt: "2026-03-20",
+    },
   ]);
   const [saving, setSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -441,12 +552,14 @@ export default function SitePlanBuilder() {
   // Dynamic import Excalidraw (it doesn't support SSR)
   useEffect(() => {
     let cancelled = false;
-    import("@excalidraw/excalidraw").then((mod) => {
+    import("@excalidraw/excalidraw").then(mod => {
       if (!cancelled) {
         setExcalidraw(() => mod.Excalidraw);
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -456,7 +569,7 @@ export default function SitePlanBuilder() {
     const appState = excalidrawAPI.getAppState();
     // TODO: Save to Supabase — store elements + appState as JSON
     console.log("Saving plan:", { name: planName, elements, appState });
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 800));
     setSaving(false);
   }, [excalidrawAPI, planName]);
 
@@ -506,8 +619,8 @@ export default function SitePlanBuilder() {
     (stamp: StampItem) => {
       if (!excalidrawAPI) return;
       const appState = excalidrawAPI.getAppState();
-      const centerX = (appState.scrollX * -1) + appState.width / 2;
-      const centerY = (appState.scrollY * -1) + appState.height / 2;
+      const centerX = appState.scrollX * -1 + appState.width / 2;
+      const centerY = appState.scrollY * -1 + appState.height / 2;
 
       const newElements = stamp.elements.map((el: any, i: number) => ({
         ...el,
@@ -534,7 +647,7 @@ export default function SitePlanBuilder() {
               <Pencil className="h-4 w-4 text-amber-500" />
               <Input
                 value={planName}
-                onChange={(e) => setPlanName(e.target.value)}
+                onChange={e => setPlanName(e.target.value)}
                 className="border-0 bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 w-[200px] md:w-[280px]"
               />
             </div>
@@ -589,7 +702,9 @@ export default function SitePlanBuilder() {
               className="gap-1.5"
             >
               <Save className="h-4 w-4" />
-              <span className="hidden md:inline">{saving ? "Saving..." : "Save"}</span>
+              <span className="hidden md:inline">
+                {saving ? "Saving..." : "Save"}
+              </span>
             </Button>
 
             {/* Export dropdown */}
@@ -609,21 +724,25 @@ export default function SitePlanBuilder() {
                   <Layers className="h-4 w-4 mr-2" /> Export as SVG
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => {
-                  if (excalidrawAPI) {
-                    const data = JSON.stringify({
-                      elements: excalidrawAPI.getSceneElements(),
-                      appState: excalidrawAPI.getAppState(),
-                    });
-                    const blob = new Blob([data], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `${planName.replace(/\s+/g, "-").toLowerCase()}.excalidraw`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }
-                }}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (excalidrawAPI) {
+                      const data = JSON.stringify({
+                        elements: excalidrawAPI.getSceneElements(),
+                        appState: excalidrawAPI.getAppState(),
+                      });
+                      const blob = new Blob([data], {
+                        type: "application/json",
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `${planName.replace(/\s+/g, "-").toLowerCase()}.excalidraw`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }
+                  }}
+                >
                   <Download className="h-4 w-4 mr-2" /> Export as .excalidraw
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -653,7 +772,7 @@ export default function SitePlanBuilder() {
                 </h3>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                {CONSTRUCTION_STAMPS.map((cat) => (
+                {CONSTRUCTION_STAMPS.map(cat => (
                   <div key={cat.name}>
                     <button
                       onClick={() =>
@@ -677,7 +796,7 @@ export default function SitePlanBuilder() {
                     </button>
                     {activeStampCategory === cat.name && (
                       <div className="ml-2 mt-1 space-y-0.5">
-                        {cat.items.map((stamp) => (
+                        {cat.items.map(stamp => (
                           <button
                             key={stamp.label}
                             onClick={() => addStampToCanvas(stamp)}
@@ -701,13 +820,17 @@ export default function SitePlanBuilder() {
                   Saved Plans
                 </h4>
                 <div className="space-y-1">
-                  {savedPlans.map((plan) => (
+                  {savedPlans.map(plan => (
                     <button
                       key={plan.id}
                       className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors"
                     >
-                      <p className="text-xs font-medium truncate">{plan.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{plan.project}</p>
+                      <p className="text-xs font-medium truncate">
+                        {plan.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {plan.project}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -738,7 +861,10 @@ export default function SitePlanBuilder() {
                     // Starter template: a basic room outline
                     {
                       type: "rectangle",
-                      x: 200, y: 150, width: 400, height: 300,
+                      x: 200,
+                      y: 150,
+                      width: 400,
+                      height: 300,
                       strokeColor: "#868e96",
                       backgroundColor: "transparent",
                       strokeWidth: 2,
@@ -749,7 +875,8 @@ export default function SitePlanBuilder() {
                     },
                     {
                       type: "text",
-                      x: 320, y: 280,
+                      x: 320,
+                      y: 280,
                       text: "Living Room\n20' × 15'",
                       fontSize: 16,
                       fontFamily: 1,
@@ -760,7 +887,8 @@ export default function SitePlanBuilder() {
                     },
                     {
                       type: "text",
-                      x: 180, y: 80,
+                      x: 180,
+                      y: 80,
                       text: "✏️ Precision Core Builders — Site Plan",
                       fontSize: 20,
                       fontFamily: 1,
@@ -782,7 +910,9 @@ export default function SitePlanBuilder() {
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-3">
                   <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
-                  <p className="text-sm text-muted-foreground">Loading Excalidraw canvas...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Loading Excalidraw canvas...
+                  </p>
                 </div>
               </div>
             )}

@@ -18,9 +18,13 @@ Return ONLY valid JSON:
   "estimatedValue": <estimated project value in dollars or null>
 }`;
 
-export const handler: Handler = async (event) => {
-  const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
-  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: "" };
+export const handler: Handler = async event => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+  };
+  if (event.httpMethod !== "POST")
+    return { statusCode: 405, headers, body: "" };
 
   try {
     const lead = JSON.parse(event.body ?? "{}");
@@ -47,6 +51,10 @@ export const handler: Handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify(score) };
   } catch (err) {
     console.error("[lead-score]", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: String(err) }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: String(err) }),
+    };
   }
 };

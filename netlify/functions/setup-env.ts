@@ -32,92 +32,139 @@ const ALLOWED_KEYS = new Set([
   "VITE_FRONTEND_FORGE_API_KEY",
 ]);
 
-const NETLIFY_TOKEN    = process.env.NETLIFY_AUTH_TOKEN ?? "";
-const NETLIFY_SITE_ID  = process.env.NETLIFY_SITE_ID ?? "";
+const NETLIFY_TOKEN = process.env.NETLIFY_AUTH_TOKEN ?? "";
+const NETLIFY_SITE_ID = process.env.NETLIFY_SITE_ID ?? "";
 const NETLIFY_ACCOUNT_ID = process.env.NETLIFY_ACCOUNT_ID ?? "";
 // Admin guard — Eric MUST set SETUP_ADMIN_TOKEN in Netlify env vars
 const ADMIN_TOKEN = process.env.SETUP_ADMIN_TOKEN ?? "";
 
-export const handler: Handler = async (event) => {
-  const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers, body: "" };
-  if (event.httpMethod !== "POST")    return { statusCode: 405, headers, body: "" };
+export const handler: Handler = async event => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+  };
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
+  if (event.httpMethod !== "POST")
+    return { statusCode: 405, headers, body: "" };
 
   try {
     // Validate required env vars are set (no hardcoded fallbacks)
     if (!NETLIFY_TOKEN || !NETLIFY_SITE_ID || !NETLIFY_ACCOUNT_ID) {
       return {
-        statusCode: 503, headers,
-        body: JSON.stringify({ error: "Setup function not configured. Set NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID, and NETLIFY_ACCOUNT_ID in Netlify environment variables." }),
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({
+          error:
+            "Setup function not configured. Set NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID, and NETLIFY_ACCOUNT_ID in Netlify environment variables.",
+        }),
       };
     }
     if (!ADMIN_TOKEN) {
       return {
-        statusCode: 503, headers,
-        body: JSON.stringify({ error: "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before using the Setup Wizard." }),
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({
+          error:
+            "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before using the Setup Wizard.",
+        }),
       };
     }
 
     const { key, value, adminToken } = JSON.parse(event.body ?? "{}");
 
     // Auth check — timing-safe comparison to prevent timing attacks
-    if (!adminToken || typeof adminToken !== "string" || adminToken.length !== ADMIN_TOKEN.length || !timingSafeEqual(adminToken, ADMIN_TOKEN)) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid admin token" }) };
+    if (
+      !adminToken ||
+      typeof adminToken !== "string" ||
+      adminToken.length !== ADMIN_TOKEN.length ||
+      !timingSafeEqual(adminToken, ADMIN_TOKEN)
+    ) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ error: "Invalid admin token" }),
+      };
     }
 
     // Key allowlist guard
     if (!ALLOWED_KEYS.has(key)) {
       return {
-        statusCode: 400, headers,
-        body: JSON.stringify({ error: `Key "${key}" is not in the allowed setup list.` }),
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          error: `Key "${key}" is not in the allowed setup list.`,
+        }),
       };
     }
 
     if (!value?.trim()) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: "value cannot be empty" }) };
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "value cannot be empty" }),
+      };
     }
 
     const base = `https://api.netlify.com/api/v1/accounts/${NETLIFY_ACCOUNT_ID}/env`;
-    const qs   = `?site_id=${NETLIFY_SITE_ID}`;
-    const authH = { "Authorization": `Bearer ${NETLIFY_TOKEN}`, "Content-Type": "application/json" };
+    const qs = `?site_id=${NETLIFY_SITE_ID}`;
+    const authH = {
+      Authorization: `Bearer ${NETLIFY_TOKEN}`,
+      "Content-Type": "application/json",
+    };
 
     // Try PATCH first (update), fall back to POST (create)
     let res = await fetch(`${base}/${key}${qs}`, {
       method: "PATCH",
       headers: authH,
-      body: JSON.stringify({ scopes: ["functions", "builds", "runtime"], value, context: "all" }),
+      body: JSON.stringify({
+        scopes: ["functions", "builds", "runtime"],
+        value,
+        context: "all",
+      }),
     });
 
     if (res.status === 404) {
       res = await fetch(`${base}${qs}`, {
         method: "POST",
         headers: authH,
-        body: JSON.stringify([{
-          key,
-          scopes: ["functions", "builds", "runtime", "post_processing"],
-          values: [{ context: "all", value }],
-        }]),
+        body: JSON.stringify([
+          {
+            key,
+            scopes: ["functions", "builds", "runtime", "post_processing"],
+            values: [{ context: "all", value }],
+          },
+        ]),
       });
     }
 
     if (!res.ok) {
-      const err = await res.json() as any;
+      const err = (await res.json()) as any;
       throw new Error(err?.message ?? `Netlify API ${res.status}`);
     }
 
     // Trigger a new deploy so the key is live immediately
     const deployRes = await fetch(
       `https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/builds`,
-      { method: "POST", headers: authH, body: JSON.stringify({ clear_cache: false }) }
+      {
+        method: "POST",
+        headers: authH,
+        body: JSON.stringify({ clear_cache: false }),
+      }
     );
     const deployed = deployRes.ok;
 
     return {
-      statusCode: 200, headers,
+      statusCode: 200,
+      headers,
       body: JSON.stringify({ success: true, key, deployed }),
     };
   } catch (err) {
     console.error("[setup-env]", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: String(err) }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: String(err) }),
+    };
   }
 };

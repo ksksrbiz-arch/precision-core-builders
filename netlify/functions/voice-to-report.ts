@@ -11,7 +11,7 @@ import { invokeLLM } from "../../server/_core/llm";
 const db = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
+  { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
 const FIELD_REPORT_SYSTEM_PROMPT = `You are an AI assistant for a licensed Oregon construction contractor.
@@ -26,7 +26,7 @@ Extract and return ONLY valid JSON in this exact format:
 }
 Be concise, professional, and factual. If a category has nothing to report, use an empty array.`;
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = async event => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
@@ -36,20 +36,42 @@ export const handler: Handler = async (event) => {
     return { statusCode: 200, headers: corsHeaders, body: "" };
   }
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: "Method not allowed" }) };
+    return {
+      statusCode: 405,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
   }
 
   try {
     // Verify auth
     const token = event.headers["authorization"]?.replace("Bearer ", "");
-    if (!token) return { statusCode: 401, headers: corsHeaders, body: JSON.stringify({ error: "Unauthorized" }) };
+    if (!token)
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "Unauthorized" }),
+      };
 
-    const { data: { user }, error: authError } = await db.auth.getUser(token);
-    if (authError || !user) return { statusCode: 401, headers: corsHeaders, body: JSON.stringify({ error: "Unauthorized" }) };
+    const {
+      data: { user },
+      error: authError,
+    } = await db.auth.getUser(token);
+    if (authError || !user)
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "Unauthorized" }),
+      };
 
     // Parse multipart body
     const body = event.body;
-    if (!body) return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: "No body" }) };
+    if (!body)
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "No body" }),
+      };
 
     const isBase64 = event.isBase64Encoded;
     const rawBody = isBase64 ? Buffer.from(body, "base64") : Buffer.from(body);
@@ -57,7 +79,11 @@ export const handler: Handler = async (event) => {
     // Extract projectId from query params
     const projectId = parseInt(event.queryStringParameters?.projectId ?? "0");
     if (!projectId) {
-      return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: "projectId required" }) };
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "projectId required" }),
+      };
     }
 
     // Get content type for multipart boundary
@@ -76,7 +102,10 @@ export const handler: Handler = async (event) => {
       if (!audioPart) throw new Error("No audio part in multipart");
       const bodyStart = audioPart.indexOf("\r\n\r\n") + 4;
       const bodyEnd = audioPart.lastIndexOf("\r\n");
-      audioBuffer = Buffer.from(audioPart.slice(bodyStart, bodyEnd), "binary").buffer;
+      audioBuffer = Buffer.from(
+        audioPart.slice(bodyStart, bodyEnd),
+        "binary"
+      ).buffer;
       const mimeMatch = audioPart.match(/Content-Type: ([^\r\n]+)/);
       if (mimeMatch) mimeType = mimeMatch[1].trim();
     } else {
@@ -92,7 +121,10 @@ export const handler: Handler = async (event) => {
     const llmResult = await invokeLLM({
       messages: [
         { role: "system", content: FIELD_REPORT_SYSTEM_PROMPT },
-        { role: "user", content: `Field memo transcription:\n\n${transcription.text}` },
+        {
+          role: "user",
+          content: `Field memo transcription:\n\n${transcription.text}`,
+        },
       ],
       jsonMode: true,
       maxTokens: 1000,
@@ -120,18 +152,22 @@ export const handler: Handler = async (event) => {
     }
 
     // 3. Save to field_reports table
-    const { data: report, error: dbError } = await db.from("field_reports").insert({
-      project_id: projectId,
-      author_id: user.id,
-      report_date: new Date().toISOString(),
-      transcription: transcription.text,
-      summary: reportData.summary,
-      tasks_completed: JSON.stringify(reportData.tasksCompleted),
-      materials_used: JSON.stringify(reportData.materialsUsed),
-      issues_flagged: JSON.stringify(reportData.issuesFlagged),
-      material_shortages: JSON.stringify(reportData.materialShortages),
-      published_to_client: false,
-    }).select().single();
+    const { data: report, error: dbError } = await db
+      .from("field_reports")
+      .insert({
+        project_id: projectId,
+        author_id: user.id,
+        report_date: new Date().toISOString(),
+        transcription: transcription.text,
+        summary: reportData.summary,
+        tasks_completed: JSON.stringify(reportData.tasksCompleted),
+        materials_used: JSON.stringify(reportData.materialsUsed),
+        issues_flagged: JSON.stringify(reportData.issuesFlagged),
+        material_shortages: JSON.stringify(reportData.materialShortages),
+        published_to_client: false,
+      })
+      .select()
+      .single();
 
     if (dbError) throw new Error(dbError.message);
 
@@ -145,7 +181,9 @@ export const handler: Handler = async (event) => {
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }),
+      body: JSON.stringify({
+        error: err instanceof Error ? err.message : "Internal error",
+      }),
     };
   }
 };

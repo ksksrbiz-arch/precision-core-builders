@@ -24,36 +24,54 @@ export const finishSelectionsRouter = router({
   list: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { data, error } = await db.from("finish_selections")
+      const { data, error } = await db
+        .from("finish_selections")
         .select("*")
         .eq("project_id", input.projectId)
-        .order("room").order("category");
+        .order("room")
+        .order("category");
       if (error) throw new Error(error.message);
       return data ?? [];
     }),
 
-  create: adminProcedure
-    .input(SelectionInput)
-    .mutation(async ({ input }) => {
-      const { data, error } = await db.from("finish_selections").insert({
-        project_id: input.projectId, client_id: input.clientId,
-        room: input.room, category: input.category,
-        item_name: input.itemName, brand: input.brand, sku: input.sku,
-        color_name: input.colorName, image_url: input.imageUrl,
-        unit_price: input.unitPrice, quantity: input.quantity,
-        total_cost: input.totalCost, allowance: input.allowance,
-        budget_delta: input.budgetDelta, notes: input.notes,
-      }).select().single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+  create: adminProcedure.input(SelectionInput).mutation(async ({ input }) => {
+    const { data, error } = await db
+      .from("finish_selections")
+      .insert({
+        project_id: input.projectId,
+        client_id: input.clientId,
+        room: input.room,
+        category: input.category,
+        item_name: input.itemName,
+        brand: input.brand,
+        sku: input.sku,
+        color_name: input.colorName,
+        image_url: input.imageUrl,
+        unit_price: input.unitPrice,
+        quantity: input.quantity,
+        total_cost: input.totalCost,
+        allowance: input.allowance,
+        budget_delta: input.budgetDelta,
+        notes: input.notes,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  }),
 
   clientApprove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { data, error } = await db.from("finish_selections")
-        .update({ client_approved: true, client_approved_at: new Date().toISOString() })
-        .eq("id", input.id).select().single();
+      const { data, error } = await db
+        .from("finish_selections")
+        .update({
+          client_approved: true,
+          client_approved_at: new Date().toISOString(),
+        })
+        .eq("id", input.id)
+        .select()
+        .single();
       if (error) throw new Error(error.message);
       return data;
     }),
@@ -61,9 +79,12 @@ export const finishSelectionsRouter = router({
   adminApprove: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { data, error } = await db.from("finish_selections")
+      const { data, error } = await db
+        .from("finish_selections")
         .update({ eric_approved: true })
-        .eq("id", input.id).select().single();
+        .eq("id", input.id)
+        .select()
+        .single();
       if (error) throw new Error(error.message);
       return data;
     }),
@@ -71,7 +92,10 @@ export const finishSelectionsRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { error } = await db.from("finish_selections").delete().eq("id", input.id);
+      const { error } = await db
+        .from("finish_selections")
+        .delete()
+        .eq("id", input.id);
       if (error) throw new Error(error.message);
       return { success: true };
     }),

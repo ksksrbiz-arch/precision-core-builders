@@ -2,7 +2,11 @@
  * Portfolio — real PCB project photos from Webflow CDN.
  * Filterable by category. Full multi-page structure.
  */
-import { SiteNav, SiteFooter, MobileCTABar } from "@/components/layout/SiteShell";
+import {
+  SiteNav,
+  SiteFooter,
+  MobileCTABar,
+} from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,12 +15,27 @@ import { useState } from "react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22,1,0.36,1] as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
+  },
 };
 const stagger = { visible: { transition: { staggerChildren: 0.09 } } };
 
-type Category = "All" | "Custom Homes" | "Renovations" | "Additions" | "Commercial";
-const CATEGORIES: Category[] = ["All", "Custom Homes", "Renovations", "Additions", "Commercial"];
+type Category =
+  | "All"
+  | "Custom Homes"
+  | "Renovations"
+  | "Additions"
+  | "Commercial";
+const CATEGORIES: Category[] = [
+  "All",
+  "Custom Homes",
+  "Renovations",
+  "Additions",
+  "Commercial",
+];
 
 type Project = {
   id: number;
@@ -37,7 +56,8 @@ const PROJECTS: Project[] = [
     location: "South Hills, Eugene",
     year: 2024,
     sqft: 3200,
-    highlight: "Full custom build — white oak floors, vaulted great room, chef's kitchen with quartzite island.",
+    highlight:
+      "Full custom build — white oak floors, vaulted great room, chef's kitchen with quartzite island.",
     image: ASSETS.portfolio[0],
   },
   {
@@ -47,7 +67,8 @@ const PROJECTS: Project[] = [
     location: "River Road, Eugene",
     year: 2024,
     sqft: 850,
-    highlight: "Complete kitchen gut and two bathroom remodels. Waterfall quartz, custom cabinetry, heated tile.",
+    highlight:
+      "Complete kitchen gut and two bathroom remodels. Waterfall quartz, custom cabinetry, heated tile.",
     image: ASSETS.portfolio[1],
   },
   {
@@ -57,7 +78,8 @@ const PROJECTS: Project[] = [
     location: "Crest Drive, Eugene",
     year: 2023,
     sqft: 1100,
-    highlight: "Full second-story addition with master suite, two bedrooms, and a media room. Seamless exterior match.",
+    highlight:
+      "Full second-story addition with master suite, two bedrooms, and a media room. Seamless exterior match.",
     image: ASSETS.portfolio[2],
   },
   {
@@ -67,7 +89,8 @@ const PROJECTS: Project[] = [
     location: "West Eugene",
     year: 2023,
     sqft: 2400,
-    highlight: "Commercial tenant improvement — open-plan office, conference room, server closet, and ADA restrooms.",
+    highlight:
+      "Commercial tenant improvement — open-plan office, conference room, server closet, and ADA restrooms.",
     image: ASSETS.portfolio[3],
   },
   {
@@ -77,7 +100,8 @@ const PROJECTS: Project[] = [
     location: "Thurston, Springfield",
     year: 2023,
     sqft: 1900,
-    highlight: "Full interior refresh of a 1960s craftsman. New windows, refinished hardwoods, updated electrical.",
+    highlight:
+      "Full interior refresh of a 1960s craftsman. New windows, refinished hardwoods, updated electrical.",
     image: ASSETS.portfolio[4],
   },
   {
@@ -87,7 +111,8 @@ const PROJECTS: Project[] = [
     location: "Friendly Area, Eugene",
     year: 2022,
     sqft: 640,
-    highlight: "Detached accessory dwelling unit with full kitchen, bath, and loft. Energy-efficient construction.",
+    highlight:
+      "Detached accessory dwelling unit with full kitchen, bath, and loft. Energy-efficient construction.",
     image: ASSETS.portfolio[5],
   },
   {
@@ -97,7 +122,8 @@ const PROJECTS: Project[] = [
     location: "Coburg Road, Eugene",
     year: 2022,
     sqft: 2800,
-    highlight: "3-bed/2.5-bath craftsman with custom millwork throughout, covered porch, and detached garage.",
+    highlight:
+      "3-bed/2.5-bath craftsman with custom millwork throughout, covered porch, and detached garage.",
     image: ASSETS.portfolio[6],
   },
   {
@@ -107,7 +133,8 @@ const PROJECTS: Project[] = [
     location: "Cal Young, Eugene",
     year: 2022,
     sqft: 520,
-    highlight: "Primary suite addition over existing garage — private entry, spa bath, walk-in closet.",
+    highlight:
+      "Primary suite addition over existing garage — private entry, spa bath, walk-in closet.",
     image: ASSETS.portfolio[7],
   },
   {
@@ -117,19 +144,22 @@ const PROJECTS: Project[] = [
     location: "Ferry Street, Eugene",
     year: 2021,
     sqft: 2100,
-    highlight: "Whole-home renovation of a mid-century modern. New layout, updated systems, period-appropriate finishes.",
+    highlight:
+      "Whole-home renovation of a mid-century modern. New layout, updated systems, period-appropriate finishes.",
     image: ASSETS.portfolio[8],
   },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: "Eric's crew finished our kitchen remodel on time and exactly on budget. The daily photo updates through the client portal meant we always knew what was happening.",
+    quote:
+      "Eric's crew finished our kitchen remodel on time and exactly on budget. The daily photo updates through the client portal meant we always knew what was happening.",
     name: "M. & K. Larson",
     project: "River Road Kitchen & Bath",
   },
   {
-    quote: "The second-story addition transformed our home. Eric walked us through every decision, every material, every change — zero surprises.",
+    quote:
+      "The second-story addition transformed our home. Eric walked us through every decision, every material, every change — zero surprises.",
     name: "T. Whitfield",
     project: "Crest Drive Addition",
   },
@@ -138,9 +168,8 @@ const TESTIMONIALS = [
 export default function Portfolio() {
   const [active, setActive] = useState<Category>("All");
 
-  const filtered = active === "All"
-    ? PROJECTS
-    : PROJECTS.filter(p => p.category === active);
+  const filtered =
+    active === "All" ? PROJECTS : PROJECTS.filter(p => p.category === active);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -153,7 +182,8 @@ export default function Portfolio() {
           <div
             className="absolute inset-0 opacity-[0.025] pointer-events-none"
             style={{
-              backgroundImage: "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
+              backgroundImage:
+                "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
               backgroundSize: "48px 48px",
             }}
             aria-hidden
@@ -172,12 +202,17 @@ export default function Portfolio() {
                 className="text-5xl sm:text-6xl font-semibold leading-tight mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Built with precision.<br />
+                Built with precision.
+                <br />
                 <em className="text-primary italic">Delivered with pride.</em>
               </motion.h1>
-              <motion.p variants={fadeUp} className="text-muted-foreground text-lg leading-relaxed font-light">
-                Every project in our portfolio reflects the same commitment — quality craftsmanship,
-                transparent communication, and results that outlast the contract.
+              <motion.p
+                variants={fadeUp}
+                className="text-muted-foreground text-lg leading-relaxed font-light"
+              >
+                Every project in our portfolio reflects the same commitment —
+                quality craftsmanship, transparent communication, and results
+                that outlast the contract.
               </motion.p>
             </motion.div>
           </div>
@@ -189,7 +224,11 @@ export default function Portfolio() {
         <section className="py-16 sm:py-24">
           <div className="container">
             {/* Category pills */}
-            <div className="flex flex-wrap gap-2 mb-10" role="group" aria-label="Filter by category">
+            <div
+              className="flex flex-wrap gap-2 mb-10"
+              role="group"
+              aria-label="Filter by category"
+            >
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
@@ -222,7 +261,11 @@ export default function Portfolio() {
                     key={project.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.07, duration: 0.5, ease: [0.22,1,0.36,1] }}
+                    transition={{
+                      delay: i * 0.07,
+                      duration: 0.5,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
                     className="group bg-card border border-border/60 overflow-hidden hover:border-primary/25 hover:shadow-lg hover:shadow-black/20 transition-all duration-300"
                   >
                     {/* Real photo */}
@@ -261,7 +304,10 @@ export default function Portfolio() {
                         {project.title}
                       </h3>
                       <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-3">
-                        <MapPin className="h-3 w-3 flex-shrink-0 text-primary" aria-hidden />
+                        <MapPin
+                          className="h-3 w-3 flex-shrink-0 text-primary"
+                          aria-hidden
+                        />
                         <span>{project.location}</span>
                         <span className="text-border">·</span>
                         <span>{project.sqft.toLocaleString()} sq ft</span>
@@ -287,11 +333,16 @@ export default function Portfolio() {
         <section className="py-20 sm:py-28 bg-card/30 border-y border-border/40">
           <div className="container max-w-4xl">
             <div className="text-center mb-12">
-              <span className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
-                    style={{ fontFamily: "var(--font-condensed)" }}>
+              <span
+                className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
                 Client Voices
               </span>
-              <h2 className="text-3xl sm:text-4xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2
+                className="text-3xl sm:text-4xl font-semibold"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
                 What clients say.
               </h2>
             </div>
@@ -307,7 +358,11 @@ export default function Portfolio() {
                 >
                   <div className="flex gap-0.5 mb-4" aria-label="5 stars">
                     {Array.from({ length: 5 }).map((_, j) => (
-                      <Star key={j} className="h-3.5 w-3.5 fill-primary text-primary" aria-hidden />
+                      <Star
+                        key={j}
+                        className="h-3.5 w-3.5 fill-primary text-primary"
+                        aria-hidden
+                      />
                     ))}
                   </div>
                   <p className="text-sm leading-relaxed text-muted-foreground mb-5 font-light">
@@ -315,8 +370,10 @@ export default function Portfolio() {
                   </p>
                   <footer>
                     <p className="text-sm font-semibold">{t.name}</p>
-                    <p className="text-[11px] text-primary tracking-wider uppercase mt-0.5"
-                       style={{ fontFamily: "var(--font-condensed)" }}>
+                    <p
+                      className="text-[11px] text-primary tracking-wider uppercase mt-0.5"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
                       {t.project}
                     </p>
                   </footer>
@@ -335,11 +392,15 @@ export default function Portfolio() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-3xl sm:text-4xl font-semibold mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2
+                className="text-3xl sm:text-4xl font-semibold mb-4"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
                 Ready to start yours?
               </h2>
               <p className="text-muted-foreground text-lg mb-8 font-light">
-                Every project we build becomes a portfolio piece we&apos;re proud of. Let&apos;s make yours next.
+                Every project we build becomes a portfolio piece we&apos;re
+                proud of. Let&apos;s make yours next.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a

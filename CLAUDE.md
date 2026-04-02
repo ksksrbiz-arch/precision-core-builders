@@ -53,19 +53,19 @@ This document primes AI assistants with the codebase structure, development work
 
 ## 3. Technical Architecture (Actual Stack)
 
-| Layer              | Technology                                                | Notes                                       |
-| :----------------- | :-------------------------------------------------------- | :------------------------------------------ |
-| **Frontend**       | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion       | shadcn/ui + Radix primitives for components  |
-| **Routing**        | Wouter 3.3                                                | Lightweight client-side router               |
-| **State/Data**     | tRPC 11 + React Query 5                                   | End-to-end type-safe API calls               |
-| **Backend**        | Netlify Functions                                         | Serverless; Express scaffolding is legacy    |
-| **Database**       | Netlify extension (e.g., Neon Postgres, PlanetScale)      | Use whichever Netlify DB extension fits best |
-| **Authentication** | Netlify Identity                                          | Native Netlify auth extension                |
-| **Storage**        | Netlify Blobs                                             | Native Netlify file/object storage           |
-| **Forms**          | React Hook Form + Zod 4                                   | Type-safe validation                         |
-| **Charts**         | Recharts 2                                                | Data visualization                           |
-| **Platform**       | GitHub → Netlify                                          | CI/CD with edge deployment                   |
-| **Package Manager**| pnpm 10.4.1                                               | Strict, fast, workspace-ready                |
+| Layer               | Technology                                           | Notes                                        |
+| :------------------ | :--------------------------------------------------- | :------------------------------------------- |
+| **Frontend**        | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion   | shadcn/ui + Radix primitives for components  |
+| **Routing**         | Wouter 3.3                                           | Lightweight client-side router               |
+| **State/Data**      | tRPC 11 + React Query 5                              | End-to-end type-safe API calls               |
+| **Backend**         | Netlify Functions                                    | Serverless; Express scaffolding is legacy    |
+| **Database**        | Netlify extension (e.g., Neon Postgres, PlanetScale) | Use whichever Netlify DB extension fits best |
+| **Authentication**  | Netlify Identity                                     | Native Netlify auth extension                |
+| **Storage**         | Netlify Blobs                                        | Native Netlify file/object storage           |
+| **Forms**           | React Hook Form + Zod 4                              | Type-safe validation                         |
+| **Charts**          | Recharts 2                                           | Data visualization                           |
+| **Platform**        | GitHub → Netlify                                     | CI/CD with edge deployment                   |
+| **Package Manager** | pnpm 10.4.1                                          | Strict, fast, workspace-ready                |
 
 ### 3.0. Service Architecture Principle
 
@@ -99,10 +99,11 @@ appRouter = {
   system: { health, notifyOwner },
   auth: { me, logout },
   // Feature routers go here (not yet implemented)
-}
+};
 ```
 
 **Middleware levels:**
+
 - `publicProcedure` — No auth required
 - `protectedProcedure` — Requires authenticated user (throws UNAUTHORIZED)
 - `adminProcedure` — Requires `role = 'admin'` (throws FORBIDDEN)
@@ -126,6 +127,7 @@ users (legacy Manus table, to be replaced with Netlify Identity)
 ```
 
 **Planned tables** (add to `drizzle/schema.ts` as features are built):
+
 - `projects` — Project metadata, budget, timeline, status
 - `clients` — Client contact info, project history
 - `field_reports` — Voice memos, transcriptions, summaries
@@ -395,15 +397,15 @@ Netlify is the **sole infrastructure platform**. All services are managed throug
 
 ### 9.2. Netlify Extensions to Use
 
-| Service            | Netlify Extension                        | Replaces                         |
-| :----------------- | :--------------------------------------- | :------------------------------- |
-| **Auth**           | Netlify Identity                         | Custom OAuth / Manus SDK         |
-| **Database**       | Neon Postgres, PlanetScale, or Supabase  | MySQL via mysql2                 |
-| **File Storage**   | Netlify Blobs                            | AWS S3                           |
-| **Serverless**     | Netlify Functions                        | Express server                   |
-| **Forms**          | Netlify Forms (if needed)                | Custom form handling             |
-| **Scheduled Jobs** | Netlify Scheduled Functions              | External cron / n8n              |
-| **Analytics**      | Netlify Analytics                        | Custom tracking                  |
+| Service            | Netlify Extension                       | Replaces                 |
+| :----------------- | :-------------------------------------- | :----------------------- |
+| **Auth**           | Netlify Identity                        | Custom OAuth / Manus SDK |
+| **Database**       | Neon Postgres, PlanetScale, or Supabase | MySQL via mysql2         |
+| **File Storage**   | Netlify Blobs                           | AWS S3                   |
+| **Serverless**     | Netlify Functions                       | Express server           |
+| **Forms**          | Netlify Forms (if needed)               | Custom form handling     |
+| **Scheduled Jobs** | Netlify Scheduled Functions             | External cron / n8n      |
+| **Analytics**      | Netlify Analytics                       | Custom tracking          |
 
 ### 9.3. Security Headers (auto-applied)
 
@@ -422,13 +424,13 @@ Netlify is the **sole infrastructure platform**. All services are managed throug
 
 These functions are documented in `netlify/functions/` but **not yet implemented**:
 
-| Function                 | Purpose                                          |
-| :----------------------- | :----------------------------------------------- |
-| `voice-to-report`        | Whisper transcription + Gemini report generation |
-| `estimate-project`       | Real-time cost calculation from project params   |
-| `weather-schedule`       | Eugene, OR weather → Gantt chart adjustments     |
-| `material-procurement`   | Phase tracking, PO drafts, vendor pricing        |
-| `lead-score`             | AI lead prioritization by type/budget/location   |
+| Function               | Purpose                                          |
+| :--------------------- | :----------------------------------------------- |
+| `voice-to-report`      | Whisper transcription + Gemini report generation |
+| `estimate-project`     | Real-time cost calculation from project params   |
+| `weather-schedule`     | Eugene, OR weather → Gantt chart adjustments     |
+| `material-procurement` | Phase tracking, PO drafts, vendor pricing        |
+| `lead-score`           | AI lead prioritization by type/budget/location   |
 
 ---
 

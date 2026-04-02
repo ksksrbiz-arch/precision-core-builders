@@ -8,9 +8,14 @@ import { ENV } from "../../server/_core/env";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
-async function stripeRequest(method: string, path: string, body?: Record<string, string | number | boolean | undefined>) {
+async function stripeRequest(
+  method: string,
+  path: string,
+  body?: Record<string, string | number | boolean | undefined>
+) {
   const key = ENV.stripeSecretKey;
-  if (!key) throw new Error("STRIPE_SECRET_KEY not configured in Netlify environment.");
+  if (!key)
+    throw new Error("STRIPE_SECRET_KEY not configured in Netlify environment.");
 
   const opts: RequestInit = {
     method,
@@ -29,15 +34,21 @@ async function stripeRequest(method: string, path: string, body?: Record<string,
   }
 
   const res = await fetch(`${STRIPE_API}${path}`, opts);
-  const data = await res.json() as any;
-  if (!res.ok) throw new Error(data?.error?.message ?? `Stripe error ${res.status}`);
+  const data = (await res.json()) as any;
+  if (!res.ok)
+    throw new Error(data?.error?.message ?? `Stripe error ${res.status}`);
   return data;
 }
 
-export const handler: Handler = async (event) => {
-  const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers, body: "" };
-  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: "" };
+export const handler: Handler = async event => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+  };
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
+  if (event.httpMethod !== "POST")
+    return { statusCode: 405, headers, body: "" };
 
   try {
     const { action, ...params } = JSON.parse(event.body ?? "{}");
@@ -47,7 +58,13 @@ export const handler: Handler = async (event) => {
       case "create_payment_link": {
         const { amountCents, description, projectName, clientEmail } = params;
         if (!amountCents || !description) {
-          return { statusCode: 400, headers, body: JSON.stringify({ error: "amountCents and description required" }) };
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({
+              error: "amountCents and description required",
+            }),
+          };
         }
 
         // Create product
@@ -66,11 +83,12 @@ export const handler: Handler = async (event) => {
         const link = await stripeRequest("POST", "/payment_links", {
           "line_items[0][price]": price.id,
           "line_items[0][quantity]": 1,
-          ...(clientEmail && { "customer_creation": "always" }),
+          ...(clientEmail && { customer_creation: "always" }),
         });
 
         return {
-          statusCode: 200, headers,
+          statusCode: 200,
+          headers,
           body: JSON.stringify({
             paymentLinkUrl: link.url,
             paymentLinkId: link.id,
@@ -84,13 +102,29 @@ export const handler: Handler = async (event) => {
 
       // Create a formal Stripe invoice and send to client
       case "create_invoice": {
-        const { clientEmail, clientName, amountCents, description, projectName, dueDate } = params;
+        const {
+          clientEmail,
+          clientName,
+          amountCents,
+          description,
+          projectName,
+          dueDate,
+        } = params;
         if (!clientEmail || !amountCents || !description) {
-          return { statusCode: 400, headers, body: JSON.stringify({ error: "clientEmail, amountCents, description required" }) };
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({
+              error: "clientEmail, amountCents, description required",
+            }),
+          };
         }
 
         // Find or create customer
-        const customers = await stripeRequest("GET", `/customers?email=${encodeURIComponent(clientEmail)}&limit=1`);
+        const customers = await stripeRequest(
+          "GET",
+          `/customers?email=${encodeURIComponent(clientEmail)}&limit=1`
+        );
         let customerId: string;
         if (customers.data?.length > 0) {
           customerId = customers.data[0].id;
@@ -128,10 +162,15 @@ export const handler: Handler = async (event) => {
         });
 
         // Finalize
-        const finalized = await stripeRequest("POST", `/invoices/${invoice.id}/finalize`, {});
+        const finalized = await stripeRequest(
+          "POST",
+          `/invoices/${invoice.id}/finalize`,
+          {}
+        );
 
         return {
-          statusCode: 200, headers,
+          statusCode: 200,
+          headers,
           body: JSON.stringify({
             invoiceId: finalized.id,
             invoiceUrl: finalized.hosted_invoice_url,
@@ -146,18 +185,30 @@ export const handler: Handler = async (event) => {
       // List recent invoices
       case "list_invoices": {
         const { limit = 20 } = params;
-        const invoices = await stripeRequest("GET", `/invoices?limit=${limit}&expand[]=data.customer`);
+        const invoices = await stripeRequest(
+          "GET",
+          `/invoices?limit=${limit}&expand[]=data.customer`
+        );
         return {
-          statusCode: 200, headers,
+          statusCode: 200,
+          headers,
           body: JSON.stringify({ invoices: invoices.data ?? [] }),
         };
       }
 
       default:
-        return { statusCode: 400, headers, body: JSON.stringify({ error: `Unknown action: ${action}` }) };
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: `Unknown action: ${action}` }),
+        };
     }
   } catch (err) {
     console.error("[stripe-billing]", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: String(err) }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: String(err) }),
+    };
   }
 };

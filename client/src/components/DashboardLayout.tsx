@@ -1,16 +1,44 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
-  BarChart3, BookOpen, Calendar, ClipboardList, CreditCard, HardHat, HelpCircle,
-  Image, LayoutDashboard, LogOut, Package, PanelLeft, Pencil, Settings, Shield, Users, Wrench,
+  BarChart3,
+  BookOpen,
+  Calendar,
+  ClipboardList,
+  CreditCard,
+  HardHat,
+  HelpCircle,
+  Image,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  PanelLeft,
+  Pencil,
+  Settings,
+  Shield,
+  Users,
+  Wrench,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -18,20 +46,20 @@ import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
 const NAV = [
-  { icon: LayoutDashboard, label: "Command Center",    path: "/admin" },
-  { icon: ClipboardList,   label: "Projects",          path: "/admin/projects" },
-  { icon: Users,           label: "Clients",           path: "/admin/clients" },
-  { icon: BookOpen,        label: "Field Reports",     path: "/admin/field-reports" },
-  { icon: Pencil,          label: "Site Plans",        path: "/admin/site-plans" },
-  { icon: Calendar,        label: "Schedule",          path: "/admin/schedule" },
-  { icon: BarChart3,       label: "Estimates",         path: "/admin/estimates" },
-  { icon: Package,         label: "Materials",         path: "/admin/materials" },
-  { icon: Wrench,          label: "Sub-Contractors",   path: "/admin/sub-contractors" },
-  { icon: Shield,          label: "Ledger",            path: "/admin/ledger" },
-  { icon: CreditCard,      label: "Billing",           path: "/admin/billing" },
-  { icon: Image,           label: "Portfolio CMS",     path: "/admin/portfolio-cms" },
-  { icon: Settings,        label: "Platform Setup",    path: "/admin/setup" },
-  { icon: HelpCircle,      label: "System Guide",      path: "/admin/guides" },
+  { icon: LayoutDashboard, label: "Command Center", path: "/admin" },
+  { icon: ClipboardList, label: "Projects", path: "/admin/projects" },
+  { icon: Users, label: "Clients", path: "/admin/clients" },
+  { icon: BookOpen, label: "Field Reports", path: "/admin/field-reports" },
+  { icon: Pencil, label: "Site Plans", path: "/admin/site-plans" },
+  { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
+  { icon: BarChart3, label: "Estimates", path: "/admin/estimates" },
+  { icon: Package, label: "Materials", path: "/admin/materials" },
+  { icon: Wrench, label: "Sub-Contractors", path: "/admin/sub-contractors" },
+  { icon: Shield, label: "Ledger", path: "/admin/ledger" },
+  { icon: CreditCard, label: "Billing", path: "/admin/billing" },
+  { icon: Image, label: "Portfolio CMS", path: "/admin/portfolio-cms" },
+  { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
+  { icon: HelpCircle, label: "System Guide", path: "/admin/guides" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "pcb-sidebar-width";
@@ -39,7 +67,11 @@ const DEFAULT_WIDTH = 240;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 360;
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
@@ -60,14 +92,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <HardHat className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+            <h1
+              className="text-xl font-semibold tracking-tight mb-2"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
               Sign in to continue
             </h1>
             <p className="text-sm text-muted-foreground font-light">
               This area requires authentication.
             </p>
           </div>
-          <Button size="lg" className="w-full bg-primary text-primary-foreground" asChild>
+          <Button
+            size="lg"
+            className="w-full bg-primary text-primary-foreground"
+            asChild
+          >
             <a href="/auth/login">Sign In</a>
           </Button>
         </div>
@@ -76,7 +115,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <SidebarProvider style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
+    <SidebarProvider
+      style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
+    >
       <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
         {children}
       </DashboardLayoutContent>
@@ -85,8 +126,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 }
 
 function DashboardLayoutContent({
-  children, setSidebarWidth,
-}: { children: React.ReactNode; setSidebarWidth: (w: number) => void }) {
+  children,
+  setSidebarWidth,
+}: {
+  children: React.ReactNode;
+  setSidebarWidth: (w: number) => void;
+}) {
   const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
@@ -122,8 +167,13 @@ function DashboardLayoutContent({
   }, [isResizing, setSidebarWidth]);
 
   const initials = user?.name
-    ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
-    : user?.email?.slice(0, 2).toUpperCase() ?? "U";
+    ? user.name
+        .split(" ")
+        .map(n => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : (user?.email?.slice(0, 2).toUpperCase() ?? "U");
 
   return (
     <>
@@ -139,8 +189,10 @@ function DashboardLayoutContent({
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed && (
-                <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground truncate"
-                      style={{ fontFamily: "var(--font-condensed)" }}>
+                <span
+                  className="text-xs font-bold tracking-widest uppercase text-muted-foreground truncate"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
                   Precision Core
                 </span>
               )}
@@ -150,7 +202,8 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0 py-2">
             <SidebarMenu className="px-2">
               {NAV.map(item => {
-                const isActive = location === item.path ||
+                const isActive =
+                  location === item.path ||
                   (item.path !== "/admin" && location.startsWith(item.path));
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -160,8 +213,16 @@ function DashboardLayoutContent({
                       tooltip={item.label}
                       className="h-9"
                     >
-                      <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                      <span className={isActive ? "text-foreground font-medium" : "text-muted-foreground"}>
+                      <item.icon
+                        className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                      />
+                      <span
+                        className={
+                          isActive
+                            ? "text-foreground font-medium"
+                            : "text-muted-foreground"
+                        }
+                      >
                         {item.label}
                       </span>
                     </SidebarMenuButton>
@@ -182,18 +243,27 @@ function DashboardLayoutContent({
                   </Avatar>
                   {!isCollapsed && (
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold truncate leading-none">{user?.name ?? "Admin"}</p>
-                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
+                      <p className="text-xs font-semibold truncate leading-none">
+                        {user?.name ?? "Admin"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                        {user?.email}
+                      </p>
                     </div>
                   )}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <a href="/" className="cursor-pointer">← Public Site</a>
+                  <a href="/" className="cursor-pointer">
+                    ← Public Site
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={signOut}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -211,8 +281,10 @@ function DashboardLayoutContent({
 
       <SidebarInset>
         {isMobile && (
-          <div className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-3"
-               style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          <div
+            className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-3"
+            style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+          >
             <SidebarTrigger className="h-10 w-10 rounded flex-shrink-0" />
             <span
               className="text-xs font-bold tracking-widest uppercase text-muted-foreground truncate flex-1"

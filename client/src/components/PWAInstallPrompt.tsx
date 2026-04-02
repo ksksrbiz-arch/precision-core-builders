@@ -14,7 +14,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
@@ -30,7 +31,8 @@ export function PWAInstallPrompt() {
     const dismissed = localStorage.getItem(DISMISS_KEY);
     if (dismissed) {
       const dismissDate = new Date(dismissed);
-      const daysSince = (Date.now() - dismissDate.getTime()) / (1000 * 60 * 60 * 24);
+      const daysSince =
+        (Date.now() - dismissDate.getTime()) / (1000 * 60 * 60 * 24);
       if (daysSince < DISMISS_DAYS) return;
     }
 
@@ -68,7 +70,9 @@ export function PWAInstallPrompt() {
           <Download className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">Install Digital Foreman</p>
+          <p className="text-sm font-semibold text-foreground">
+            Install Digital Foreman
+          </p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Add to home screen for instant access. Works offline.
           </p>
@@ -101,7 +105,9 @@ export function IOSInstallHint() {
   useEffect(() => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isInStandalone = (navigator as any).standalone === true;
-    const isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+    const isSafari =
+      /Safari/.test(navigator.userAgent) &&
+      !/CriOS|FxiOS/.test(navigator.userAgent);
 
     if (isIOS && !isInStandalone && isSafari) {
       const dismissed = localStorage.getItem("pcb-ios-hint");
@@ -121,11 +127,19 @@ export function IOSInstallHint() {
             <Download className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">Add to Home Screen</p>
+            <p className="text-sm font-semibold text-foreground">
+              Add to Home Screen
+            </p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Tap the <span className="inline-block px-1.5 py-0.5 bg-muted rounded text-foreground font-medium">Share</span> button
-              in Safari, then scroll down and tap
-              <span className="inline-block px-1.5 py-0.5 bg-muted rounded text-foreground font-medium ml-1">Add to Home Screen</span>.
+              Tap the{" "}
+              <span className="inline-block px-1.5 py-0.5 bg-muted rounded text-foreground font-medium">
+                Share
+              </span>{" "}
+              button in Safari, then scroll down and tap
+              <span className="inline-block px-1.5 py-0.5 bg-muted rounded text-foreground font-medium ml-1">
+                Add to Home Screen
+              </span>
+              .
             </p>
           </div>
           <button

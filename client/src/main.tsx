@@ -11,7 +11,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
-        if (error instanceof Error && error.message.includes("10001")) return false;
+        if (error instanceof Error && error.message.includes("10001"))
+          return false;
         return failureCount < 2;
       },
       staleTime: 30_000,
@@ -41,7 +42,10 @@ const trpcClient = trpc.createClient({
         return token ? { Authorization: `Bearer ${token}` } : {};
       },
       fetch(input, init) {
-        return globalThis.fetch(input, { ...(init ?? {}), credentials: "include" });
+        return globalThis.fetch(input, {
+          ...(init ?? {}),
+          credentials: "include",
+        });
       },
     }),
   ],
@@ -52,7 +56,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
-  </trpc.Provider>,
+  </trpc.Provider>
 );
 
 // ── Service Worker Registration ─────────────────────────────────────────
@@ -60,11 +64,11 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
-      .then((reg) => {
+      .then(reg => {
         console.log("[SW] Registered:", reg.scope);
         // Check for updates every 30 min
         setInterval(() => reg.update(), 30 * 60 * 1000);
       })
-      .catch((err) => console.warn("[SW] Registration failed:", err));
+      .catch(err => console.warn("[SW] Registration failed:", err));
   });
 }

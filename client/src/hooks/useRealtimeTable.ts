@@ -39,7 +39,7 @@ export function useRealtimeTable({ table, onUpdate }: UseRealtimeOptions) {
           onUpdate?.(event);
         }
       )
-      .subscribe((status) => {
+      .subscribe(status => {
         setIsLive(status === "SUBSCRIBED");
       });
 

@@ -9,16 +9,12 @@ const STATIC_CACHE = "pcb-static-v1";
 const API_CACHE = "pcb-api-v1";
 
 // Shell files to precache on install
-const PRECACHE_URLS = [
-  "/",
-  "/admin",
-  "/offline.html",
-];
+const PRECACHE_URLS = ["/", "/admin", "/offline.html"];
 
 // Install — precache shell
-self.addEventListener("install", (event) => {
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
+    caches.open(STATIC_CACHE).then(cache => {
       return cache.addAll(PRECACHE_URLS);
     })
   );
@@ -26,13 +22,13 @@ self.addEventListener("install", (event) => {
 });
 
 // Activate — clean old caches
-self.addEventListener("activate", (event) => {
+self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then((keys) => {
+    caches.keys().then(keys => {
       return Promise.all(
         keys
-          .filter((key) => key !== STATIC_CACHE && key !== API_CACHE)
-          .map((key) => caches.delete(key))
+          .filter(key => key !== STATIC_CACHE && key !== API_CACHE)
+          .map(key => caches.delete(key))
       );
     })
   );
@@ -40,7 +36,7 @@ self.addEventListener("activate", (event) => {
 });
 
 // Fetch strategy
-self.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", event => {
   const { request } = event;
   const url = new URL(request.url);
 
@@ -51,7 +47,10 @@ self.addEventListener("fetch", (event) => {
   if (!url.protocol.startsWith("http")) return;
 
   // API calls — network first, cache fallback
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/.netlify/")) {
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/.netlify/")
+  ) {
     event.respondWith(networkFirstStrategy(request));
     return;
   }
@@ -100,10 +99,13 @@ async function networkFirstStrategy(request) {
     return response;
   } catch {
     const cached = await caches.match(request);
-    return cached || new Response(JSON.stringify({ error: "offline" }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
+    return (
+      cached ||
+      new Response(JSON.stringify({ error: "offline" }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
   }
 }
 
@@ -133,7 +135,7 @@ async function staleWhileRevalidate(request) {
   const cached = await cache.match(request);
 
   const fetchPromise = fetch(request)
-    .then((response) => {
+    .then(response => {
       if (response.ok) cache.put(request, response.clone());
       return response;
     })
@@ -145,12 +147,14 @@ async function staleWhileRevalidate(request) {
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function isStaticAsset(pathname) {
-  return /\.(js|css|png|jpg|jpeg|webp|svg|gif|ico|woff2?|ttf|eot)(\?.*)?$/.test(pathname);
+  return /\.(js|css|png|jpg|jpeg|webp|svg|gif|ico|woff2?|ttf|eot)(\?.*)?$/.test(
+    pathname
+  );
 }
 
 // ── Background sync for field reports ─────────────────────────────────────
 
-self.addEventListener("sync", (event) => {
+self.addEventListener("sync", event => {
   if (event.tag === "sync-field-reports") {
     event.waitUntil(syncFieldReports());
   }
@@ -165,7 +169,7 @@ async function syncFieldReports() {
 
 // ── Push notifications ────────────────────────────────────────────────────
 
-self.addEventListener("push", (event) => {
+self.addEventListener("push", event => {
   if (!event.data) return;
 
   const data = event.data.json();
@@ -187,12 +191,12 @@ self.addEventListener("push", (event) => {
   );
 });
 
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener("notificationclick", event => {
   event.notification.close();
   const url = event.notification.data?.url || "/admin";
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window" }).then((clients) => {
+    self.clients.matchAll({ type: "window" }).then(clients => {
       // Focus existing window if open
       for (const client of clients) {
         if (client.url.includes(url) && "focus" in client) {

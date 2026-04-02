@@ -1,91 +1,118 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Offline — Precision Core Builders</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0C0A08;
-      color: #EDE6D9;
-      font-family: "Barlow", system-ui, sans-serif;
-      padding: 2rem;
-    }
-    .card {
-      max-width: 380px;
-      text-align: center;
-    }
-    .hex {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid rgba(200, 168, 75, 0.3);
-      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-      background: #141210;
-    }
-    .hex svg { width: 32px; height: 32px; color: #C8A84B; }
-    h1 {
-      font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-    }
-    p {
-      font-size: 0.875rem;
-      color: #7A7060;
-      line-height: 1.6;
-      margin-bottom: 1.5rem;
-    }
-    .tips {
-      text-align: left;
-      background: #141210;
-      border: 1px solid rgba(200, 168, 75, 0.1);
-      padding: 1rem;
-      font-size: 0.8rem;
-      color: #7A7060;
-      line-height: 1.7;
-    }
-    .tips strong { color: #C8A84B; }
-    button {
-      margin-top: 1.5rem;
-      padding: 0.75rem 2rem;
-      background: #C8A84B;
-      color: #0C0A08;
-      border: none;
-      font-weight: 600;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      cursor: pointer;
-    }
-    button:active { opacity: 0.8; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="hex">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-        <line x1="12" y1="2" x2="12" y2="12"/>
-      </svg>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline — Precision Core Builders</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0c0a08;
+        color: #ede6d9;
+        font-family: "Barlow", system-ui, sans-serif;
+        padding: 2rem;
+      }
+      .card {
+        max-width: 380px;
+        text-align: center;
+      }
+      .hex {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(200, 168, 75, 0.3);
+        clip-path: polygon(
+          50% 0%,
+          100% 25%,
+          100% 75%,
+          50% 100%,
+          0% 75%,
+          0% 25%
+        );
+        background: #141210;
+      }
+      .hex svg {
+        width: 32px;
+        height: 32px;
+        color: #c8a84b;
+      }
+      h1 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+      p {
+        font-size: 0.875rem;
+        color: #7a7060;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+      .tips {
+        text-align: left;
+        background: #141210;
+        border: 1px solid rgba(200, 168, 75, 0.1);
+        padding: 1rem;
+        font-size: 0.8rem;
+        color: #7a7060;
+        line-height: 1.7;
+      }
+      .tips strong {
+        color: #c8a84b;
+      }
+      button {
+        margin-top: 1.5rem;
+        padding: 0.75rem 2rem;
+        background: #c8a84b;
+        color: #0c0a08;
+        border: none;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        cursor: pointer;
+      }
+      button:active {
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="hex">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+          <line x1="12" y1="2" x2="12" y2="12" />
+        </svg>
+      </div>
+      <h1>No Signal</h1>
+      <p>
+        You're offline right now. Any field reports you started will sync
+        automatically when you're back on the network.
+      </p>
+      <div class="tips">
+        <strong>While you wait:</strong><br />
+        • Previously loaded pages may still work — hit back<br />
+        • Cached project data is available<br />
+        • Voice memos save locally until sync
+      </div>
+      <button onclick="location.reload()">Try Again</button>
     </div>
-    <h1>No Signal</h1>
-    <p>You're offline right now. Any field reports you started will sync automatically when you're back on the network.</p>
-    <div class="tips">
-      <strong>While you wait:</strong><br/>
-      • Previously loaded pages may still work — hit back<br/>
-      • Cached project data is available<br/>
-      • Voice memos save locally until sync
-    </div>
-    <button onclick="location.reload()">Try Again</button>
-  </div>
-</body>
+  </body>
 </html>

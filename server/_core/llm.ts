@@ -36,7 +36,7 @@ const MODEL = "claude-sonnet-4-6";
 function getClient(): Anthropic {
   if (!ENV.anthropicApiKey) {
     throw new Error(
-      "ANTHROPIC_API_KEY is not configured in Netlify environment variables.",
+      "ANTHROPIC_API_KEY is not configured in Netlify environment variables."
     );
   }
   return new Anthropic({ apiKey: ENV.anthropicApiKey });
@@ -47,7 +47,12 @@ function getClient(): Anthropic {
  * Handles system prompts, JSON mode prefix injection, and usage tracking.
  */
 export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
-  const { messages, maxTokens = 4096, temperature = 0.3, jsonMode = false } = params;
+  const {
+    messages,
+    maxTokens = 4096,
+    temperature = 0.3,
+    jsonMode = false,
+  } = params;
 
   const client = getClient();
 

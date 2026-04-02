@@ -14,7 +14,7 @@ You assist with:
 Core values: Precise Construction. Core Values.
 Keep responses concise, professional, and practical. If asked about specific project data you don't have access to, say so clearly.`;
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = async event => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
@@ -29,8 +29,10 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body ?? "{}");
-    const messages: Array<{ role: "user" | "assistant" | "system"; content: string }> =
-      body.messages ?? [];
+    const messages: Array<{
+      role: "user" | "assistant" | "system";
+      content: string;
+    }> = body.messages ?? [];
 
     if (!messages.length) {
       return {

@@ -6,8 +6,14 @@ import { ASSETS } from "@/const";
 import { ServicePage } from "./_template";
 
 const SERVICE_AREAS = [
-  "Eugene, OR", "Springfield, OR", "Coburg, OR", "Creswell, OR",
-  "Cottage Grove, OR", "Junction City, OR", "Florence, OR", "Lane County, OR",
+  "Eugene, OR",
+  "Springfield, OR",
+  "Coburg, OR",
+  "Creswell, OR",
+  "Cottage Grove, OR",
+  "Junction City, OR",
+  "Florence, OR",
+  "Lane County, OR",
 ];
 
 // ─── 1. Residential ──────────────────────────────────────────────────────────
@@ -16,7 +22,13 @@ export function Residential() {
     <ServicePage
       title="Residential Construction"
       subtitle="Eugene, OR Residential Contractor"
-      headline={<>Eugene's Residential<br /><em className="text-primary italic">Construction Specialists.</em></>}
+      headline={
+        <>
+          Eugene's Residential
+          <br />
+          <em className="text-primary italic">Construction Specialists.</em>
+        </>
+      }
       heroImage={ASSETS.services.residential}
       heroImageAlt="Residential construction Eugene Oregon — Precision Core Builders"
       metaTitle="Residential Contractor Eugene OR | Precision Core Builders | CCB #246527"
@@ -39,10 +51,22 @@ export function Residential() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "How long does a residential project take in Eugene?", a: "Timelines vary by scope. A full new home build typically runs 8–14 months. Major additions take 3–6 months. We provide a detailed schedule at the estimate stage and update you weekly throughout construction." },
-        { q: "Do you handle building permits in Eugene and Lane County?", a: "Yes. We manage the entire permitting process with the City of Eugene Building & Permit Services and Lane County. Permit costs are included in your estimate." },
-        { q: "Are you licensed and insured in Oregon?", a: `Absolutely. Precision Core Builders holds Oregon CCB license #246527 and carries full general liability and workers' compensation insurance. Copies available on request.` },
-        { q: "What is your service area?", a: "We serve Eugene, Springfield, Coburg, Creswell, Cottage Grove, Junction City, Florence, and surrounding Lane County communities." },
+        {
+          q: "How long does a residential project take in Eugene?",
+          a: "Timelines vary by scope. A full new home build typically runs 8–14 months. Major additions take 3–6 months. We provide a detailed schedule at the estimate stage and update you weekly throughout construction.",
+        },
+        {
+          q: "Do you handle building permits in Eugene and Lane County?",
+          a: "Yes. We manage the entire permitting process with the City of Eugene Building & Permit Services and Lane County. Permit costs are included in your estimate.",
+        },
+        {
+          q: "Are you licensed and insured in Oregon?",
+          a: `Absolutely. Precision Core Builders holds Oregon CCB license #246527 and carries full general liability and workers' compensation insurance. Copies available on request.`,
+        },
+        {
+          q: "What is your service area?",
+          a: "We serve Eugene, Springfield, Coburg, Creswell, Cottage Grove, Junction City, Florence, and surrounding Lane County communities.",
+        },
       ]}
       relatedServices={[
         { label: "Remodels & Renovations", href: "/services/remodels" },
@@ -59,7 +83,13 @@ export function Remodels() {
     <ServicePage
       title="Remodels & Renovations"
       subtitle="Eugene, OR Remodel Contractor"
-      headline={<>Eugene Remodels Done<br /><em className="text-primary italic">The Right Way.</em></>}
+      headline={
+        <>
+          Eugene Remodels Done
+          <br />
+          <em className="text-primary italic">The Right Way.</em>
+        </>
+      }
       heroImage={ASSETS.services.remodels}
       heroImageAlt="Kitchen and bathroom remodel Eugene Oregon"
       metaTitle="Home Remodeling Contractor Eugene OR | Precision Core Builders | CCB #246527"
@@ -82,10 +112,22 @@ export function Remodels() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "How much does a kitchen remodel cost in Eugene?", a: "Kitchen remodels in Eugene typically range from $25,000 to $80,000+ depending on scope, materials, and layout changes. We provide itemized estimates so you know exactly where every dollar goes." },
-        { q: "Do we need to move out during a remodel?", a: "For most kitchen and bathroom remodels, no. We sequence the work to minimize disruption and maintain access to essential areas. For full-home renovations, temporary relocation may be needed for a portion of the project." },
-        { q: "How long does a bathroom remodel take?", a: "A standard bathroom remodel takes 2–4 weeks from demo to completion. Larger master bath remodels can run 4–6 weeks. We give you a week-by-week schedule before we start." },
-        { q: "Do you handle permits for remodels?", a: "Yes. Structural changes, electrical work, plumbing modifications, and additions require permits in Eugene. We handle all of it through the City of Eugene Building Division." },
+        {
+          q: "How much does a kitchen remodel cost in Eugene?",
+          a: "Kitchen remodels in Eugene typically range from $25,000 to $80,000+ depending on scope, materials, and layout changes. We provide itemized estimates so you know exactly where every dollar goes.",
+        },
+        {
+          q: "Do we need to move out during a remodel?",
+          a: "For most kitchen and bathroom remodels, no. We sequence the work to minimize disruption and maintain access to essential areas. For full-home renovations, temporary relocation may be needed for a portion of the project.",
+        },
+        {
+          q: "How long does a bathroom remodel take?",
+          a: "A standard bathroom remodel takes 2–4 weeks from demo to completion. Larger master bath remodels can run 4–6 weeks. We give you a week-by-week schedule before we start.",
+        },
+        {
+          q: "Do you handle permits for remodels?",
+          a: "Yes. Structural changes, electrical work, plumbing modifications, and additions require permits in Eugene. We handle all of it through the City of Eugene Building Division.",
+        },
       ]}
       relatedServices={[
         { label: "Residential", href: "/services/residential" },
@@ -102,7 +144,13 @@ export function NewConstruction() {
     <ServicePage
       title="New Construction"
       subtitle="Eugene, OR Custom Home Builder"
-      headline={<>Custom Homes Built<br /><em className="text-primary italic">To Stand the Test of Time.</em></>}
+      headline={
+        <>
+          Custom Homes Built
+          <br />
+          <em className="text-primary italic">To Stand the Test of Time.</em>
+        </>
+      }
       heroImage={ASSETS.services.newConstruction}
       heroImageAlt="New home construction Eugene Oregon"
       metaTitle="Custom Home Builder Eugene OR | New Construction | Precision Core Builders CCB #246527"
@@ -125,10 +173,22 @@ export function NewConstruction() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "How long does it take to build a custom home in Eugene?", a: "From permit approval to move-in, a custom home in Eugene typically takes 10–16 months depending on size and complexity. We provide a detailed phase schedule at the start of your project." },
-        { q: "Do I need an architect before contacting you?", a: "Not necessarily. We can work with plans you already have, or connect you with trusted local architects and designers in Eugene. We'll review any existing plans and advise before you commit to design costs." },
-        { q: "What areas around Eugene do you build new homes in?", a: "We build new homes throughout Eugene, Springfield, Coburg, Creswell, Cottage Grove, Junction City, and surrounding Lane County communities." },
-        { q: "How do you handle cost overruns?", a: "We build detailed, itemized estimates and document every change order in writing before proceeding. Surprises are rare — and when scope changes arise, we discuss costs with you before the work happens." },
+        {
+          q: "How long does it take to build a custom home in Eugene?",
+          a: "From permit approval to move-in, a custom home in Eugene typically takes 10–16 months depending on size and complexity. We provide a detailed phase schedule at the start of your project.",
+        },
+        {
+          q: "Do I need an architect before contacting you?",
+          a: "Not necessarily. We can work with plans you already have, or connect you with trusted local architects and designers in Eugene. We'll review any existing plans and advise before you commit to design costs.",
+        },
+        {
+          q: "What areas around Eugene do you build new homes in?",
+          a: "We build new homes throughout Eugene, Springfield, Coburg, Creswell, Cottage Grove, Junction City, and surrounding Lane County communities.",
+        },
+        {
+          q: "How do you handle cost overruns?",
+          a: "We build detailed, itemized estimates and document every change order in writing before proceeding. Surprises are rare — and when scope changes arise, we discuss costs with you before the work happens.",
+        },
       ]}
       relatedServices={[
         { label: "Residential", href: "/services/residential" },
@@ -145,7 +205,13 @@ export function Restoration() {
     <ServicePage
       title="Restoration"
       subtitle="Eugene, OR Restoration Contractor"
-      headline={<>Restoring Eugene Homes<br /><em className="text-primary italic">Back to Their Best.</em></>}
+      headline={
+        <>
+          Restoring Eugene Homes
+          <br />
+          <em className="text-primary italic">Back to Their Best.</em>
+        </>
+      }
       heroImage={ASSETS.services.restoration}
       heroImageAlt="Home restoration project Eugene Oregon — before and after"
       metaTitle="Home Restoration Contractor Eugene OR | Precision Core Builders | CCB #246527"
@@ -168,9 +234,18 @@ export function Restoration() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "Do you work with insurance companies on restoration claims?", a: "Yes. We provide detailed documentation — scope of work, photos, and itemized costs — that meets insurance adjuster requirements. We've worked with most major carriers in the Eugene area." },
-        { q: "How do you assess the full extent of damage before quoting?", a: "We do a thorough on-site inspection before any estimate, including checking inside walls if necessary. We'd rather find everything upfront than discover it mid-project." },
-        { q: "Can you match the original materials on a historic Eugene home?", a: "In most cases, yes. We source period-appropriate lumber, millwork profiles, siding patterns, and finishes. Eugene has several excellent salvage and specialty suppliers we work with regularly." },
+        {
+          q: "Do you work with insurance companies on restoration claims?",
+          a: "Yes. We provide detailed documentation — scope of work, photos, and itemized costs — that meets insurance adjuster requirements. We've worked with most major carriers in the Eugene area.",
+        },
+        {
+          q: "How do you assess the full extent of damage before quoting?",
+          a: "We do a thorough on-site inspection before any estimate, including checking inside walls if necessary. We'd rather find everything upfront than discover it mid-project.",
+        },
+        {
+          q: "Can you match the original materials on a historic Eugene home?",
+          a: "In most cases, yes. We source period-appropriate lumber, millwork profiles, siding patterns, and finishes. Eugene has several excellent salvage and specialty suppliers we work with regularly.",
+        },
       ]}
       relatedServices={[
         { label: "Residential", href: "/services/residential" },
@@ -187,7 +262,13 @@ export function Outdoor() {
     <ServicePage
       title="Outdoor Spaces"
       subtitle="Eugene, OR Deck & Outdoor Builder"
-      headline={<>Outdoor Living Spaces<br /><em className="text-primary italic">Built for Oregon.</em></>}
+      headline={
+        <>
+          Outdoor Living Spaces
+          <br />
+          <em className="text-primary italic">Built for Oregon.</em>
+        </>
+      }
       heroImage={ASSETS.services.outdoor}
       heroImageAlt="Custom deck and outdoor living space Eugene Oregon"
       metaTitle="Deck Builder & Outdoor Contractor Eugene OR | Precision Core Builders | CCB #246527"
@@ -210,9 +291,18 @@ export function Outdoor() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "What deck materials hold up best in Eugene's wet climate?", a: "Composite decking (Trex, TimberTech) offers the best longevity in Eugene's wet climate with minimal maintenance. For wood, we recommend kiln-dried Douglas Fir or cedar with proper sealing. We discuss tradeoffs at the estimate." },
-        { q: "Do outdoor decks require permits in Eugene?", a: "Yes — decks over 30 inches from grade or attached to the house require a building permit in Eugene. We handle all permitting through the City of Eugene Building Division." },
-        { q: "How long does a deck build take?", a: "A standard deck takes 1–2 weeks from permit approval. Larger covered outdoor structures with pergolas, kitchens, or multiple levels typically run 3–5 weeks." },
+        {
+          q: "What deck materials hold up best in Eugene's wet climate?",
+          a: "Composite decking (Trex, TimberTech) offers the best longevity in Eugene's wet climate with minimal maintenance. For wood, we recommend kiln-dried Douglas Fir or cedar with proper sealing. We discuss tradeoffs at the estimate.",
+        },
+        {
+          q: "Do outdoor decks require permits in Eugene?",
+          a: "Yes — decks over 30 inches from grade or attached to the house require a building permit in Eugene. We handle all permitting through the City of Eugene Building Division.",
+        },
+        {
+          q: "How long does a deck build take?",
+          a: "A standard deck takes 1–2 weeks from permit approval. Larger covered outdoor structures with pergolas, kitchens, or multiple levels typically run 3–5 weeks.",
+        },
       ]}
       relatedServices={[
         { label: "Residential", href: "/services/residential" },
@@ -229,7 +319,13 @@ export function Painting() {
     <ServicePage
       title="Painting"
       subtitle="Eugene, OR Painting Contractor"
-      headline={<>Interior &amp; Exterior Painting<br /><em className="text-primary italic">Done Right.</em></>}
+      headline={
+        <>
+          Interior &amp; Exterior Painting
+          <br />
+          <em className="text-primary italic">Done Right.</em>
+        </>
+      }
       heroImage={ASSETS.services.painting}
       heroImageAlt="Professional interior and exterior painting Eugene Oregon"
       metaTitle="Painting Contractor Eugene OR | Interior & Exterior | Precision Core Builders CCB #246527"
@@ -252,9 +348,18 @@ export function Painting() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "How often should I repaint the exterior of my Eugene home?", a: "In Eugene's climate, most exteriors need repainting every 6–10 years depending on sun exposure, siding type, and the quality of the previous paint job. We assess your existing finish at the estimate." },
-        { q: "Do you offer cabinet painting as an alternative to replacement?", a: "Yes — cabinet painting and refinishing is one of the most cost-effective ways to update a kitchen. We prep properly, use a bonding primer, and apply a factory-smooth finish that holds up to daily use." },
-        { q: "Do I need to move furniture and belongings before you start?", a: "We move and protect furniture with drop cloths as part of our process. We ask that breakables and valuables be removed from work areas before we arrive." },
+        {
+          q: "How often should I repaint the exterior of my Eugene home?",
+          a: "In Eugene's climate, most exteriors need repainting every 6–10 years depending on sun exposure, siding type, and the quality of the previous paint job. We assess your existing finish at the estimate.",
+        },
+        {
+          q: "Do you offer cabinet painting as an alternative to replacement?",
+          a: "Yes — cabinet painting and refinishing is one of the most cost-effective ways to update a kitchen. We prep properly, use a bonding primer, and apply a factory-smooth finish that holds up to daily use.",
+        },
+        {
+          q: "Do I need to move furniture and belongings before you start?",
+          a: "We move and protect furniture with drop cloths as part of our process. We ask that breakables and valuables be removed from work areas before we arrive.",
+        },
       ]}
       relatedServices={[
         { label: "Remodels & Renovations", href: "/services/remodels" },
@@ -271,7 +376,13 @@ export function Roofing() {
     <ServicePage
       title="Roofing"
       subtitle="Eugene, OR Roofing Contractor"
-      headline={<>Eugene Roofing<br /><em className="text-primary italic">Built for Oregon Rain.</em></>}
+      headline={
+        <>
+          Eugene Roofing
+          <br />
+          <em className="text-primary italic">Built for Oregon Rain.</em>
+        </>
+      }
       heroImage={ASSETS.services.roofing}
       heroImageAlt="Roof replacement and roofing services Eugene Oregon"
       metaTitle="Roofing Contractor Eugene OR | Roof Replacement & Repair | Precision Core Builders CCB #246527"
@@ -294,9 +405,18 @@ export function Roofing() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "How do I know if my Eugene home needs a new roof or just repairs?", a: "Shingles curling, granule loss in gutters, visible daylight in the attic, and leaks after heavy rain are all signs. We offer free roof assessments and will give you an honest answer about repair vs. replacement." },
-        { q: "What roofing materials work best in Eugene's wet climate?", a: "Architectural (dimensional) shingles with a 30-year rating are the most cost-effective for most Eugene homes. Metal roofing offers superior longevity (50+ years) in wet climates and is increasingly popular for its durability." },
-        { q: "How long does a full roof replacement take?", a: "Most full residential roof replacements in Eugene are completed in 1–3 days depending on size and complexity. We coordinate for minimal disruption and clean up completely each day." },
+        {
+          q: "How do I know if my Eugene home needs a new roof or just repairs?",
+          a: "Shingles curling, granule loss in gutters, visible daylight in the attic, and leaks after heavy rain are all signs. We offer free roof assessments and will give you an honest answer about repair vs. replacement.",
+        },
+        {
+          q: "What roofing materials work best in Eugene's wet climate?",
+          a: "Architectural (dimensional) shingles with a 30-year rating are the most cost-effective for most Eugene homes. Metal roofing offers superior longevity (50+ years) in wet climates and is increasingly popular for its durability.",
+        },
+        {
+          q: "How long does a full roof replacement take?",
+          a: "Most full residential roof replacements in Eugene are completed in 1–3 days depending on size and complexity. We coordinate for minimal disruption and clean up completely each day.",
+        },
       ]}
       relatedServices={[
         { label: "Restoration", href: "/services/restoration" },
@@ -313,7 +433,13 @@ export function Cabinets() {
     <ServicePage
       title="Custom Cabinets"
       subtitle="Eugene, OR Cabinet Builder"
-      headline={<>Custom Cabinets &amp; Millwork<br /><em className="text-primary italic">Built to Fit Your Home.</em></>}
+      headline={
+        <>
+          Custom Cabinets &amp; Millwork
+          <br />
+          <em className="text-primary italic">Built to Fit Your Home.</em>
+        </>
+      }
       heroImage={ASSETS.services.cabinets}
       heroImageAlt="Custom cabinetry and millwork Eugene Oregon"
       metaTitle="Custom Cabinet Builder Eugene OR | Built-Ins & Millwork | Precision Core Builders CCB #246527"
@@ -336,9 +462,18 @@ export function Cabinets() {
       ]}
       serviceAreas={SERVICE_AREAS}
       faqs={[
-        { q: "How do custom cabinets compare in cost to stock cabinets from big-box stores?", a: "Custom cabinets typically cost 30–60% more than stock options but last 2–3x longer, fit your exact space, and offer material and finish quality that stock cabinets don't approach. For most Eugene homeowners doing a serious kitchen update, custom is the better long-term investment." },
-        { q: "How long does a custom cabinet project take?", a: "From measurement to installation, most kitchen cabinet projects take 4–8 weeks. This includes shop time for building and finishing, and typically 2–4 days for installation depending on scope." },
-        { q: "Can you match existing cabinets for an addition or partial update?", a: "Yes. Profile matching, stain matching, and hardware sourcing for additions and partial updates is something we do regularly. We assess feasibility at the estimate stage." },
+        {
+          q: "How do custom cabinets compare in cost to stock cabinets from big-box stores?",
+          a: "Custom cabinets typically cost 30–60% more than stock options but last 2–3x longer, fit your exact space, and offer material and finish quality that stock cabinets don't approach. For most Eugene homeowners doing a serious kitchen update, custom is the better long-term investment.",
+        },
+        {
+          q: "How long does a custom cabinet project take?",
+          a: "From measurement to installation, most kitchen cabinet projects take 4–8 weeks. This includes shop time for building and finishing, and typically 2–4 days for installation depending on scope.",
+        },
+        {
+          q: "Can you match existing cabinets for an addition or partial update?",
+          a: "Yes. Profile matching, stain matching, and hardware sourcing for additions and partial updates is something we do regularly. We assess feasibility at the estimate stage.",
+        },
       ]}
       relatedServices={[
         { label: "Remodels & Renovations", href: "/services/remodels" },

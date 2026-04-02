@@ -1,7 +1,11 @@
 /**
  * Services overview page — all 8 services with real photos, links to sub-pages.
  */
-import { SiteNav, SiteFooter, MobileCTABar } from "@/components/layout/SiteShell";
+import {
+  SiteNav,
+  SiteFooter,
+  MobileCTABar,
+} from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { motion } from "framer-motion";
@@ -9,7 +13,11 @@ import { ArrowRight, Phone } from "lucide-react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+  },
 };
 
 const SERVICES = [
@@ -76,7 +84,8 @@ export default function ServicesPage() {
           <div
             className="absolute inset-0 opacity-[0.025] pointer-events-none"
             style={{
-              backgroundImage: "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
+              backgroundImage:
+                "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
               backgroundSize: "48px 48px",
             }}
             aria-hidden
@@ -99,12 +108,19 @@ export default function ServicesPage() {
                 className="text-5xl sm:text-6xl font-semibold leading-tight mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Every trade.<br />
-                <em className="text-primary italic">One standard of quality.</em>
+                Every trade.
+                <br />
+                <em className="text-primary italic">
+                  One standard of quality.
+                </em>
               </motion.h1>
-              <motion.p variants={fadeUp} className="text-muted-foreground text-lg leading-relaxed font-light">
-                From ground-up new construction to custom cabinetry — we handle every phase of your
-                project with the same precision and commitment to craft.
+              <motion.p
+                variants={fadeUp}
+                className="text-muted-foreground text-lg leading-relaxed font-light"
+              >
+                From ground-up new construction to custom cabinetry — we handle
+                every phase of your project with the same precision and
+                commitment to craft.
               </motion.p>
             </motion.div>
           </div>
@@ -123,7 +139,11 @@ export default function ServicesPage() {
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
-                  transition={{ delay: i * 0.07, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{
+                    delay: i * 0.07,
+                    duration: 0.6,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
                   className="group relative bg-card border border-border/60 overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-black/20 transition-all duration-300 flex"
                 >
                   {/* Photo */}
@@ -176,11 +196,15 @@ export default function ServicesPage() {
           <div className="container">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 max-w-4xl mx-auto">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-semibold mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                <h2
+                  className="text-2xl sm:text-3xl font-semibold mb-1"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
                   Not sure which service you need?
                 </h2>
                 <p className="text-muted-foreground font-light text-sm">
-                  Call Eric — free consultation, honest advice, no sales pressure.
+                  Call Eric — free consultation, honest advice, no sales
+                  pressure.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">

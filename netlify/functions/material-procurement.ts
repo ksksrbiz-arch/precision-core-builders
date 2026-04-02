@@ -5,24 +5,33 @@ import { invokeLLM } from "../../server/_core/llm";
 const db = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
+  { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-export const handler: Handler = async (event) => {
-  const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
-  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: "" };
+export const handler: Handler = async event => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+  };
+  if (event.httpMethod !== "POST")
+    return { statusCode: 405, headers, body: "" };
 
   try {
     const { projectId, phase } = JSON.parse(event.body ?? "{}");
-    if (!projectId) return { statusCode: 400, headers, body: JSON.stringify({ error: "projectId required" }) };
+    if (!projectId)
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "projectId required" }),
+      };
 
     // Get materials for this project/phase
     let q = db.from("materials").select("*").eq("project_id", projectId);
     if (phase) q = q.eq("phase_needed", phase);
     const { data: materials } = await q;
 
-    const shortages = (materials ?? []).filter(m =>
-      m.quantity_needed && (m.quantity_ordered ?? 0) < m.quantity_needed
+    const shortages = (materials ?? []).filter(
+      m => m.quantity_needed && (m.quantity_ordered ?? 0) < m.quantity_needed
     );
 
     // Generate PO draft with Gemini
@@ -38,7 +47,7 @@ export const handler: Handler = async (event) => {
       for (const [vendor, items] of vendorGroups) {
         const total = items.reduce((sum, m) => {
           const needed = (m.quantity_needed ?? 0) - (m.quantity_ordered ?? 0);
-          return sum + (needed * (m.unit_price_current ?? 0));
+          return sum + needed * (m.unit_price_current ?? 0);
         }, 0);
         purchaseOrders.push({
           id: `PO-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
@@ -61,14 +70,22 @@ export const handler: Handler = async (event) => {
     }
 
     return {
-      statusCode: 200, headers,
+      statusCode: 200,
+      headers,
       body: JSON.stringify({
-        projectId, phase, materialsChecked: (materials ?? []).length,
-        shortagesFound: shortages.length, purchaseOrders,
+        projectId,
+        phase,
+        materialsChecked: (materials ?? []).length,
+        shortagesFound: shortages.length,
+        purchaseOrders,
       }),
     };
   } catch (err) {
     console.error("[material-procurement]", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: String(err) }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: String(err) }),
+    };
   }
 };

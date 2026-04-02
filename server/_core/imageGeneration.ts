@@ -30,15 +30,19 @@ Return ONLY valid JSON matching the requested schema.`;
  * Use this wherever generateImage() was previously called.
  */
 export async function describeProjectImage(
-  params: ImageDescriptionParams,
+  params: ImageDescriptionParams
 ): Promise<ImageDescriptionResult> {
   const prompt = [
     `Project type: ${params.projectType}`,
     params.location ? `Location: ${params.location}` : null,
-    params.materials?.length ? `Materials: ${params.materials.join(", ")}` : null,
+    params.materials?.length
+      ? `Materials: ${params.materials.join(", ")}`
+      : null,
     params.phase ? `Construction phase: ${params.phase}` : null,
     params.notes ? `Notes: ${params.notes}` : null,
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const result = await invokeLLM({
     messages: [
@@ -63,6 +67,6 @@ export async function describeProjectImage(
 export async function generateImage(_params: unknown): Promise<never> {
   throw new Error(
     "generateImage() is deprecated. Use describeProjectImage() from imageGeneration.ts. " +
-    "Claude generates rich text descriptions; upload actual photos to Supabase Storage.",
+      "Claude generates rich text descriptions; upload actual photos to Supabase Storage."
   );
 }

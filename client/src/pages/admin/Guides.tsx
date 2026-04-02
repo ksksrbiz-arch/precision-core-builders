@@ -30,11 +30,19 @@ import { GUIDES, type Guide, type GuideSection } from "./guides-data";
 
 // ── Section renderer ──────────────────────────────────────────────────────
 
-function GuideSectionBlock({ section, index }: { section: GuideSection; index: number }) {
+function GuideSectionBlock({
+  section,
+  index,
+}: {
+  section: GuideSection;
+  index: number;
+}) {
   return (
     <div className="space-y-3">
       {section.body && (
-        <p className="text-sm text-foreground/80 leading-relaxed">{section.body}</p>
+        <p className="text-sm text-foreground/80 leading-relaxed">
+          {section.body}
+        </p>
       )}
 
       {section.steps && section.steps.length > 0 && (
@@ -48,7 +56,9 @@ function GuideSectionBlock({ section, index }: { section: GuideSection; index: n
                 <span className="text-xs font-bold text-primary">{i + 1}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">{step.action}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {step.action}
+                </p>
                 {step.detail && (
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                     {step.detail}
@@ -64,12 +74,16 @@ function GuideSectionBlock({ section, index }: { section: GuideSection; index: n
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-md p-3 space-y-2">
           <div className="flex items-center gap-1.5 text-amber-500">
             <Lightbulb className="h-3.5 w-3.5" />
-            <span className="text-xs font-bold uppercase tracking-wider">Pro Tips</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Pro Tips
+            </span>
           </div>
           {section.tips.map((tip, i) => (
             <div key={i} className="flex gap-2 items-start">
               <ChevronRight className="h-3 w-3 text-amber-500/60 mt-1 flex-shrink-0" />
-              <p className="text-xs text-foreground/70 leading-relaxed">{tip}</p>
+              <p className="text-xs text-foreground/70 leading-relaxed">
+                {tip}
+              </p>
             </div>
           ))}
         </div>
@@ -89,7 +103,13 @@ function GuideSectionBlock({ section, index }: { section: GuideSection; index: n
 
 // ── Single guide card (expanded) ──────────────────────────────────────────
 
-function GuideCard({ guide, defaultOpen }: { guide: Guide; defaultOpen?: boolean }) {
+function GuideCard({
+  guide,
+  defaultOpen,
+}: {
+  guide: Guide;
+  defaultOpen?: boolean;
+}) {
   const [, setLocation] = useLocation();
   const Icon = guide.icon;
 
@@ -129,7 +149,9 @@ function GuideCard({ guide, defaultOpen }: { guide: Guide; defaultOpen?: boolean
       {/* Sections as accordion */}
       <Accordion
         type="multiple"
-        defaultValue={defaultOpen ? guide.sections.map((_, i) => `${guide.id}-${i}`) : []}
+        defaultValue={
+          defaultOpen ? guide.sections.map((_, i) => `${guide.id}-${i}`) : []
+        }
         className="px-5 pb-3"
       >
         {guide.sections.map((section, i) => (
@@ -168,7 +190,7 @@ function TableOfContents({
       >
         Jump to
       </p>
-      {guides.map((guide) => {
+      {guides.map(guide => {
         const Icon = guide.icon;
         const isActive = activeId === guide.id;
         return (
@@ -199,19 +221,19 @@ export default function Guides() {
   const filtered = useMemo(() => {
     if (!search.trim()) return GUIDES;
     const q = search.toLowerCase();
-    return GUIDES.filter((g) => {
+    return GUIDES.filter(g => {
       if (g.title.toLowerCase().includes(q)) return true;
       if (g.tagline.toLowerCase().includes(q)) return true;
       return g.sections.some(
-        (s) =>
+        s =>
           s.heading.toLowerCase().includes(q) ||
           s.body?.toLowerCase().includes(q) ||
           s.steps?.some(
-            (st) =>
+            st =>
               st.action.toLowerCase().includes(q) ||
               st.detail?.toLowerCase().includes(q)
           ) ||
-          s.tips?.some((t) => t.toLowerCase().includes(q)) ||
+          s.tips?.some(t => t.toLowerCase().includes(q)) ||
           s.warning?.toLowerCase().includes(q)
       );
     });
@@ -229,12 +251,16 @@ export default function Guides() {
             >
               System Guide
             </h1>
-            <Badge variant="outline" className="text-[10px] tracking-wider uppercase font-semibold">
+            <Badge
+              variant="outline"
+              className="text-[10px] tracking-wider uppercase font-semibold"
+            >
               {GUIDES.length} Topics
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Everything you need to know about every tool. No fluff. Search or scroll.
+            Everything you need to know about every tool. No fluff. Search or
+            scroll.
           </p>
         </div>
 
@@ -253,7 +279,7 @@ export default function Guides() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
                 placeholder="Search guides… (e.g. weather, invoice, voice memo)"
                 className="pl-9 pr-9 bg-card border-border/60"
               />
@@ -278,7 +304,7 @@ export default function Guides() {
 
             {/* Guide cards */}
             <div className="space-y-4 pb-12">
-              {filtered.map((guide) => (
+              {filtered.map(guide => (
                 <GuideCard
                   key={guide.id}
                   guide={guide}

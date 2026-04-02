@@ -152,7 +152,9 @@ export const projects = pgTable("projects", {
   siteCamUrl: text("site_cam_url"),
   // CCB compliance
   permitNumbers: text("permit_numbers"), // comma-separated
-  licenseNumber: varchar("license_number", { length: 50 }).default("CCB #246527"),
+  licenseNumber: varchar("license_number", { length: 50 }).default(
+    "CCB #246527"
+  ),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -174,8 +176,8 @@ export const fieldReports = pgTable("field_reports", {
   // AI-generated structured report
   summary: text("summary"),
   tasksCompleted: text("tasks_completed"), // JSON array string
-  materialsUsed: text("materials_used"),   // JSON array string
-  issuesFlagged: text("issues_flagged"),   // JSON array string
+  materialsUsed: text("materials_used"), // JSON array string
+  issuesFlagged: text("issues_flagged"), // JSON array string
   materialShortages: text("material_shortages"), // JSON array string
   // Publishing
   publishedToClient: boolean("published_to_client").default(false),
@@ -292,11 +294,20 @@ export const materials = pgTable("materials", {
   category: varchar("category", { length: 100 }), // lumber, hardware, roofing, etc.
   unit: varchar("unit", { length: 50 }), // board-ft, sq-ft, each, etc.
   quantityNeeded: decimal("quantity_needed", { precision: 10, scale: 2 }),
-  quantityOrdered: decimal("quantity_ordered", { precision: 10, scale: 2 }).default("0"),
-  quantityReceived: decimal("quantity_received", { precision: 10, scale: 2 }).default("0"),
+  quantityOrdered: decimal("quantity_ordered", {
+    precision: 10,
+    scale: 2,
+  }).default("0"),
+  quantityReceived: decimal("quantity_received", {
+    precision: 10,
+    scale: 2,
+  }).default("0"),
   // Pricing
   unitPriceCurrent: decimal("unit_price_current", { precision: 10, scale: 2 }),
-  unitPriceBudgeted: decimal("unit_price_budgeted", { precision: 10, scale: 2 }),
+  unitPriceBudgeted: decimal("unit_price_budgeted", {
+    precision: 10,
+    scale: 2,
+  }),
   // Vendor
   vendorName: varchar("vendor_name", { length: 200 }),
   vendorSku: varchar("vendor_sku", { length: 100 }),
@@ -331,8 +342,8 @@ export const portfolioProjects = pgTable("portfolio_projects", {
   // Media (Supabase Storage URLs)
   coverImageUrl: text("cover_image_url"),
   galleryImageUrls: text("gallery_image_urls"), // JSON array string
-  beforeImageUrls: text("before_image_urls"),   // JSON array string
-  afterImageUrls: text("after_image_urls"),     // JSON array string
+  beforeImageUrls: text("before_image_urls"), // JSON array string
+  afterImageUrls: text("after_image_urls"), // JSON array string
   // Testimonial
   clientTestimonial: text("client_testimonial"),
   clientName: varchar("client_name", { length: 200 }),

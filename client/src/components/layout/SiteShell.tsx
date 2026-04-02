@@ -4,15 +4,24 @@
  */
 import { ASSETS, SITE } from "@/const";
 import { motion } from "framer-motion";
-import { ArrowRight, Facebook, Mail, MapPin, Menu, Phone, Shield, X } from "lucide-react";
+import {
+  ArrowRight,
+  Facebook,
+  Mail,
+  MapPin,
+  Menu,
+  Phone,
+  Shield,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 const NAV_LINKS = [
-  { label: "About",     href: "/about" },
-  { label: "Services",  href: "/services" },
-  { label: "Our Work",  href: "/portfolio" },
-  { label: "FAQ",       href: "/faq" },
-  { label: "Contact",   href: "/contact" },
+  { label: "About", href: "/about" },
+  { label: "Services", href: "/services" },
+  { label: "Our Work", href: "/portfolio" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Contact", href: "/contact" },
 ];
 
 /* ─── Top Nav ───────────────────────────────────────────────── */
@@ -35,12 +44,24 @@ export function SiteNav() {
       }`}
     >
       <div className="container h-[68px] flex items-center justify-between">
-        <a href="/" aria-label="Precision Core Builders — Home" className="flex-shrink-0">
-          <img src={ASSETS.logo} alt="Precision Core Builders" className="h-9 w-auto" fetchPriority="high" />
+        <a
+          href="/"
+          aria-label="Precision Core Builders — Home"
+          className="flex-shrink-0"
+        >
+          <img
+            src={ASSETS.logo}
+            alt="Precision Core Builders"
+            className="h-9 w-auto"
+            fetchPriority="high"
+          />
         </a>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-7" aria-label="Primary navigation">
+        <nav
+          className="hidden lg:flex items-center gap-7"
+          aria-label="Primary navigation"
+        >
           {NAV_LINKS.map(n => (
             <a
               key={n.label}
@@ -89,7 +110,10 @@ export function SiteNav() {
           animate={{ opacity: 1, y: 0 }}
           className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
         >
-          <nav className="container py-5 flex flex-col gap-0" aria-label="Mobile navigation">
+          <nav
+            className="container py-5 flex flex-col gap-0"
+            aria-label="Mobile navigation"
+          >
             {NAV_LINKS.map(n => (
               <a
                 key={n.label}
@@ -168,14 +192,14 @@ export function MobileCTABar() {
 
 /* ─── Site Footer ───────────────────────────────────────────── */
 const SERVICES_FOOTER = [
-  { label: "Residential",          href: "/services/residential" },
-  { label: "Remodels & Renovations",href: "/services/remodels" },
-  { label: "New Construction",     href: "/services/new-construction" },
-  { label: "Restoration",          href: "/services/restoration" },
-  { label: "Outdoor Spaces",       href: "/services/outdoor" },
-  { label: "Painting",             href: "/services/painting" },
-  { label: "Roofing",              href: "/services/roofing" },
-  { label: "Custom Cabinets",      href: "/services/cabinets" },
+  { label: "Residential", href: "/services/residential" },
+  { label: "Remodels & Renovations", href: "/services/remodels" },
+  { label: "New Construction", href: "/services/new-construction" },
+  { label: "Restoration", href: "/services/restoration" },
+  { label: "Outdoor Spaces", href: "/services/outdoor" },
+  { label: "Painting", href: "/services/painting" },
+  { label: "Roofing", href: "/services/roofing" },
+  { label: "Custom Cabinets", href: "/services/cabinets" },
 ];
 
 export function SiteFooter() {
@@ -185,28 +209,39 @@ export function SiteFooter() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <img src={ASSETS.logo} alt="Precision Core Builders" className="h-9 w-auto mb-4" />
+            <img
+              src={ASSETS.logo}
+              alt="Precision Core Builders"
+              className="h-9 w-auto mb-4"
+            />
             <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">
               Precision Construction, Core Values. Serving Eugene, Oregon and
               surrounding Lane County since 2004.
             </p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <Shield className="h-3.5 w-3.5 text-primary flex-shrink-0" aria-hidden />
+              <Shield
+                className="h-3.5 w-3.5 text-primary flex-shrink-0"
+                aria-hidden
+              />
               <span>{SITE.license} · Licensed &amp; Insured</span>
             </div>
           </div>
 
           {/* Services */}
           <div>
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-4"
-               style={{ fontFamily: "var(--font-condensed)" }}>
+            <p
+              className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-4"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
               Services
             </p>
             <ul className="space-y-2.5">
               {SERVICES_FOOTER.map(s => (
                 <li key={s.href}>
-                  <a href={s.href}
-                     className="text-sm text-muted-foreground hover:text-primary transition-colors leading-tight block">
+                  <a
+                    href={s.href}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors leading-tight block"
+                  >
                     {s.label}
                   </a>
                 </li>
@@ -216,21 +251,25 @@ export function SiteFooter() {
 
           {/* Company */}
           <div>
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-4"
-               style={{ fontFamily: "var(--font-condensed)" }}>
+            <p
+              className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-4"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
               Company
             </p>
             <ul className="space-y-2.5">
               {[
-                { label: "About Us",   href: "/about" },
-                { label: "Our Team",   href: "/about" },
-                { label: "Our Work",   href: "/portfolio" },
-                { label: "FAQ",        href: "/faq" },
-                { label: "Contact",    href: "/contact" },
+                { label: "About Us", href: "/about" },
+                { label: "Our Team", href: "/about" },
+                { label: "Our Work", href: "/portfolio" },
+                { label: "FAQ", href: "/faq" },
+                { label: "Contact", href: "/contact" },
               ].map(l => (
                 <li key={l.href}>
-                  <a href={l.href}
-                     className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a
+                    href={l.href}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     {l.label}
                   </a>
                 </li>
@@ -240,22 +279,35 @@ export function SiteFooter() {
 
           {/* Contact */}
           <div>
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-4"
-               style={{ fontFamily: "var(--font-condensed)" }}>
+            <p
+              className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-4"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
               Get In Touch
             </p>
             <div className="space-y-3 mb-5">
               {[
-                { icon: Phone, value: SITE.phone,    href: SITE.phoneHref },
-                { icon: Mail,  value: SITE.email,    href: SITE.emailHref },
-                { icon: MapPin,value: "Eugene, Oregon", href: undefined },
+                { icon: Phone, value: SITE.phone, href: SITE.phoneHref },
+                { icon: Mail, value: SITE.email, href: SITE.emailHref },
+                { icon: MapPin, value: "Eugene, Oregon", href: undefined },
               ].map(({ icon: Icon, value, href }) => (
                 <div key={value} className="flex items-start gap-3">
-                  <Icon className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" aria-hidden />
-                  {href
-                    ? <a href={href} className="text-sm text-muted-foreground hover:text-primary transition-colors break-all">{value}</a>
-                    : <span className="text-sm text-muted-foreground">{value}</span>
-                  }
+                  <Icon
+                    className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0"
+                    aria-hidden
+                  />
+                  {href ? (
+                    <a
+                      href={href}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors break-all"
+                    >
+                      {value}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {value}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -273,10 +325,17 @@ export function SiteFooter() {
         <div className="gold-rule mb-6" aria-hidden />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground/50">
-          <p>&copy; {new Date().getFullYear()} Precision Core Builders. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Precision Core Builders. All
+            rights reserved.
+          </p>
           <div className="flex items-center gap-4">
-            <a href={SITE.facebook} target="_blank" rel="noopener noreferrer"
-               className="flex items-center gap-1.5 hover:text-primary transition-colors">
+            <a
+              href={SITE.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
               <Facebook className="h-3.5 w-3.5" /> Facebook
             </a>
             <span

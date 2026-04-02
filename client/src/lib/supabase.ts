@@ -10,7 +10,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
     "[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY not set. " +
-    "Auth will not work until these are added to Netlify environment variables.",
+      "Auth will not work until these are added to Netlify environment variables."
   );
 }
 
@@ -23,7 +23,7 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: true,
     },
-  },
+  }
 );
 
 /** Get the current JWT access token for tRPC Authorization header. */

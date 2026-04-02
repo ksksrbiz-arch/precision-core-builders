@@ -14,10 +14,14 @@ import { cn } from "@/lib/utils";
 import { MapPin, ExternalLink } from "lucide-react";
 
 declare global {
-  interface Window { google?: typeof google; }
+  interface Window {
+    google?: typeof google;
+  }
 }
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY as string | undefined;
+const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY as
+  | string
+  | undefined;
 const FORGE_BASE_URL =
   (import.meta.env.VITE_FRONTEND_FORGE_API_URL as string | undefined) ||
   "https://forge.butterfly-effect.dev";
@@ -25,12 +29,18 @@ const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
 function loadMapScript() {
   return new Promise<void>((resolve, reject) => {
-    if (window.google?.maps) { resolve(); return; }
+    if (window.google?.maps) {
+      resolve();
+      return;
+    }
     const script = document.createElement("script");
     script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
     script.crossOrigin = "anonymous";
-    script.onload = () => { resolve(); script.remove(); };
+    script.onload = () => {
+      resolve();
+      script.remove();
+    };
     script.onerror = () => reject(new Error("Maps script failed to load"));
     document.head.appendChild(script);
   });
@@ -60,7 +70,7 @@ function MapPlaceholder({
     <div
       className={cn(
         "w-full h-[500px] border border-border/60 bg-muted/20 flex flex-col items-center justify-center gap-3",
-        className,
+        className
       )}
     >
       <div className="h-12 w-12 border border-primary/30 flex items-center justify-center">
@@ -135,15 +145,20 @@ export function MapView({
         mapContainer.current.innerHTML = "";
         const ph = document.createElement("div");
         ph.textContent = "Map unavailable";
-        ph.style.cssText = "display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted-foreground);font-size:0.875rem;";
+        ph.style.cssText =
+          "display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted-foreground);font-size:0.875rem;";
         mapContainer.current.appendChild(ph);
       }
     }
   });
 
-  useEffect(() => { init(); }, [init]);
+  useEffect(() => {
+    init();
+  }, [init]);
 
-  return <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />;
+  return (
+    <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />
+  );
 }
 
 // Default export for legacy imports

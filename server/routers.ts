@@ -17,17 +17,17 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
   }),
-  projects:          projectsRouter,
-  clients:           clientsRouter,
-  fieldReports:      fieldReportsRouter,
-  schedule:          scheduleRouter,
-  estimates:         estimatesRouter,
-  ledger:            ledgerRouter,
-  materials:         materialsRouter,
-  subContractors:    subContractorsRouter,
-  finishSelections:  finishSelectionsRouter,
-  notifications:     notificationsRouter,
-  portfolio:         portfolioRouter,
+  projects: projectsRouter,
+  clients: clientsRouter,
+  fieldReports: fieldReportsRouter,
+  schedule: scheduleRouter,
+  estimates: estimatesRouter,
+  ledger: ledgerRouter,
+  materials: materialsRouter,
+  subContractors: subContractorsRouter,
+  finishSelections: finishSelectionsRouter,
+  notifications: notificationsRouter,
+  portfolio: portfolioRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -69,17 +69,17 @@ export default function AuthCallback() {
 
     // Supabase handles token exchange from hash/PKCE automatically.
     // Listen for the SIGNED_IN event, then redirect by role.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          await redirectByRole(session.user.id);
-        } else if (event === "SIGNED_OUT") {
-          setLocation("/auth/login");
-        } else if (event === "TOKEN_REFRESHED" && session) {
-          await redirectByRole(session.user.id);
-        }
-      },
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        await redirectByRole(session.user.id);
+      } else if (event === "SIGNED_OUT") {
+        setLocation("/auth/login");
+      } else if (event === "TOKEN_REFRESHED" && session) {
+        await redirectByRole(session.user.id);
+      }
+    });
 
     // Fallback: session already exists (e.g. refresh after partial redirect)
     supabase.auth.getSession().then(({ data }) => {
@@ -102,11 +102,15 @@ export default function AuthCallback() {
           <div className="h-12 w-12 border border-destructive/40 bg-destructive/10 flex items-center justify-center mx-auto mb-5">
             <AlertCircle className="h-6 w-6 text-destructive" />
           </div>
-          <h2 className="text-lg font-semibold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+          <h2
+            className="text-lg font-semibold mb-2"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
             Sign-in failed
           </h2>
           <p className="text-sm text-muted-foreground font-light mb-6 leading-relaxed">
-            {errorMsg || "Something went wrong during sign-in. Please try again."}
+            {errorMsg ||
+              "Something went wrong during sign-in. Please try again."}
           </p>
           <a
             href="/auth/login"
@@ -128,10 +132,16 @@ export default function AuthCallback() {
         transition={{ duration: 0.4 }}
         className="flex flex-col items-center gap-5"
       >
-        <img src={ASSETS.logo} alt="Precision Core Builders" className="h-8 w-auto opacity-60" />
+        <img
+          src={ASSETS.logo}
+          alt="Precision Core Builders"
+          className="h-8 w-auto opacity-60"
+        />
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-7 w-7 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-light">Signing you in…</p>
+          <p className="text-sm text-muted-foreground font-light">
+            Signing you in…
+          </p>
         </div>
       </motion.div>
     </div>

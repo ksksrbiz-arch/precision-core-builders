@@ -13,7 +13,7 @@ function isSecureRequest(req: Request): boolean {
 }
 
 export function getSessionCookieOptions(
-  req: Request,
+  req: Request
 ): Pick<CookieOptions, "httpOnly" | "path" | "sameSite" | "secure"> {
   return {
     httpOnly: true,

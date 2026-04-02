@@ -2,7 +2,11 @@
  * About page — Eric & Mitch Tadlock, company values, full team section.
  * Lifted from Home.tsx About + Team sections, adapted for standalone page.
  */
-import { SiteNav, SiteFooter, MobileCTABar } from "@/components/layout/SiteShell";
+import {
+  SiteNav,
+  SiteFooter,
+  MobileCTABar,
+} from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { motion, useInView } from "framer-motion";
@@ -11,7 +15,11 @@ import { useRef } from "react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const },
+  },
 };
 const stagger = { visible: { transition: { staggerChildren: 0.1 } } };
 
@@ -63,7 +71,8 @@ export default function About() {
           <div
             className="absolute inset-0 opacity-[0.025] pointer-events-none"
             style={{
-              backgroundImage: "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
+              backgroundImage:
+                "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
               backgroundSize: "48px 48px",
             }}
             aria-hidden
@@ -82,15 +91,17 @@ export default function About() {
                 className="text-5xl sm:text-6xl font-semibold leading-tight mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Reliable hands.<br />
+                Reliable hands.
+                <br />
                 <em className="text-primary italic">Crafting your world.</em>
               </motion.h1>
               <motion.p
                 variants={fadeUp}
                 className="text-muted-foreground text-lg leading-relaxed font-light"
               >
-                Precision Core Builders represents a new standard in Eugene&apos;s construction landscape —
-                built on trust, respect, diligence, and over 20 years of hands-on industry experience.
+                Precision Core Builders represents a new standard in
+                Eugene&apos;s construction landscape — built on trust, respect,
+                diligence, and over 20 years of hands-on industry experience.
               </motion.p>
             </motion.div>
           </div>
@@ -108,27 +119,52 @@ export default function About() {
                 animate={inViewValues ? "visible" : "hidden"}
                 variants={stagger}
               >
-                <motion.div variants={fadeUp} className="gold-rule mb-8" aria-hidden />
-                <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-5">
-                  Founded by two veteran construction brothers, we bring exceptional service to our
-                  neighbors that only comes from genuine craftsmanship and community commitment.
+                <motion.div
+                  variants={fadeUp}
+                  className="gold-rule mb-8"
+                  aria-hidden
+                />
+                <motion.p
+                  variants={fadeUp}
+                  className="text-muted-foreground leading-relaxed text-base font-light mb-5"
+                >
+                  Founded by two veteran construction brothers, we bring
+                  exceptional service to our neighbors that only comes from
+                  genuine craftsmanship and community commitment.
                 </motion.p>
-                <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-5">
-                  Our roots run deep in Eugene. We&apos;ve spent two decades building homes, renovating
-                  spaces, and earning the trust of Lane County homeowners — one project at a time.
+                <motion.p
+                  variants={fadeUp}
+                  className="text-muted-foreground leading-relaxed text-base font-light mb-5"
+                >
+                  Our roots run deep in Eugene. We&apos;ve spent two decades
+                  building homes, renovating spaces, and earning the trust of
+                  Lane County homeowners — one project at a time.
                 </motion.p>
-                <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed text-base font-light mb-8">
-                  When you work with Precision Core Builders, you work directly with Eric and Mitch.
-                  No middlemen, no subcontracted crews you&apos;ve never met — just the Tadlock brothers
-                  and their commitment to getting it right.
+                <motion.p
+                  variants={fadeUp}
+                  className="text-muted-foreground leading-relaxed text-base font-light mb-8"
+                >
+                  When you work with Precision Core Builders, you work directly
+                  with Eric and Mitch. No middlemen, no subcontracted crews
+                  you&apos;ve never met — just the Tadlock brothers and their
+                  commitment to getting it right.
                 </motion.p>
-                <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 mb-10">
+                <motion.div
+                  variants={fadeUp}
+                  className="flex flex-col sm:flex-row gap-4 mb-10"
+                >
                   {[
                     { icon: Shield, text: SITE.license },
                     { icon: MapPin, text: SITE.location },
                   ].map(({ icon: Icon, text }) => (
-                    <div key={text} className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Icon className="h-4 w-4 text-primary flex-shrink-0" aria-hidden />
+                    <div
+                      key={text}
+                      className="flex items-center gap-3 text-sm text-muted-foreground"
+                    >
+                      <Icon
+                        className="h-4 w-4 text-primary flex-shrink-0"
+                        aria-hidden
+                      />
                       <span>{text}</span>
                     </div>
                   ))}
@@ -159,7 +195,10 @@ export default function About() {
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       <div className="h-8 w-8 flex items-center justify-center border border-primary/40 group-hover:border-primary group-hover:bg-primary/5 transition-colors duration-300">
-                        <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />
+                        <CheckCircle2
+                          className="h-4 w-4 text-primary"
+                          aria-hidden
+                        />
                       </div>
                     </div>
                     <div>
@@ -169,7 +208,9 @@ export default function About() {
                       >
                         {v.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed font-light">{v.body}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                        {v.body}
+                      </p>
                     </div>
                   </motion.div>
                 ))}
@@ -204,7 +245,11 @@ export default function About() {
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
-                  transition={{ delay: i * 0.14, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{
+                    delay: i * 0.14,
+                    duration: 0.65,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
                   className="group"
                 >
                   <div className="relative aspect-[3/4] overflow-hidden mb-5">
@@ -214,7 +259,10 @@ export default function About() {
                       className="w-full h-full object-cover object-top group-hover:scale-[1.03] transition-transform duration-700"
                       loading="lazy"
                     />
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" aria-hidden />
+                    <div
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
+                      aria-hidden
+                    />
                   </div>
                   <h3
                     className="text-lg font-bold tracking-[0.04em] uppercase leading-tight"
@@ -255,7 +303,10 @@ export default function About() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-3xl sm:text-4xl font-semibold mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2
+                className="text-3xl sm:text-4xl font-semibold mb-4"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
                 Ready to work with us?
               </h2>
               <p className="text-muted-foreground text-lg mb-8 font-light">

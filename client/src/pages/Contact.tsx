@@ -1,30 +1,57 @@
 /**
  * Contact page — full inquiry form, phone, email, service area.
  */
-import { SiteNav, SiteFooter, MobileCTABar } from "@/components/layout/SiteShell";
+import {
+  SiteNav,
+  SiteFooter,
+  MobileCTABar,
+} from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Clock, Facebook, Loader2, Mail, MapPin, Phone, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Facebook,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  Shield,
+} from "lucide-react";
 import { useState } from "react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+  },
 };
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-const inputCls = "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors";
+const inputCls =
+  "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors";
 
 export default function Contact() {
   const [status, setStatus] = useState<Status>("idle");
   const [fields, setFields] = useState({
-    name: "", email: "", phone: "", projectType: "", budget: "", message: "",
+    name: "",
+    email: "",
+    phone: "",
+    projectType: "",
+    budget: "",
+    message: "",
   });
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setFields(p => ({ ...p, [e.target.name]: e.target.value }));
+  const onChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => setFields(p => ({ ...p, [e.target.name]: e.target.value }));
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -34,11 +61,23 @@ export default function Contact() {
       const res = await fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(data as unknown as Record<string, string>).toString(),
+        body: new URLSearchParams(
+          data as unknown as Record<string, string>
+        ).toString(),
       });
       setStatus(res.ok ? "success" : "error");
-      if (res.ok) setFields({ name: "", email: "", phone: "", projectType: "", budget: "", message: "" });
-    } catch { setStatus("error"); }
+      if (res.ok)
+        setFields({
+          name: "",
+          email: "",
+          phone: "",
+          projectType: "",
+          budget: "",
+          message: "",
+        });
+    } catch {
+      setStatus("error");
+    }
   };
 
   return (
@@ -52,7 +91,8 @@ export default function Contact() {
           <div
             className="absolute inset-0 opacity-[0.025] pointer-events-none"
             style={{
-              backgroundImage: "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
+              backgroundImage:
+                "linear-gradient(#C8A84B 1px, transparent 1px), linear-gradient(90deg, #C8A84B 1px, transparent 1px)",
               backgroundSize: "48px 48px",
             }}
             aria-hidden
@@ -75,12 +115,16 @@ export default function Contact() {
                 className="text-5xl sm:text-6xl font-semibold leading-tight mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Let&apos;s build<br />
+                Let&apos;s build
+                <br />
                 <em className="text-primary italic">something remarkable.</em>
               </motion.h1>
-              <motion.p variants={fadeUp} className="text-muted-foreground text-lg leading-relaxed font-light">
-                Free on-site consultation. We come to you, review your project, and give you a
-                real written estimate — no obligation.
+              <motion.p
+                variants={fadeUp}
+                className="text-muted-foreground text-lg leading-relaxed font-light"
+              >
+                Free on-site consultation. We come to you, review your project,
+                and give you a real written estimate — no obligation.
               </motion.p>
             </motion.div>
           </div>
@@ -92,7 +136,6 @@ export default function Contact() {
         <section className="py-16 sm:py-24">
           <div className="container">
             <div className="grid lg:grid-cols-[1fr_380px] gap-12 xl:gap-20 max-w-6xl mx-auto">
-
               {/* Form */}
               <div>
                 {status === "success" ? (
@@ -102,11 +145,15 @@ export default function Contact() {
                     className="bg-card border border-border/60 p-10 text-center"
                   >
                     <CheckCircle2 className="h-12 w-12 text-primary mx-auto mb-4" />
-                    <h2 className="text-2xl font-semibold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                    <h2
+                      className="text-2xl font-semibold mb-2"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
                       Message received.
                     </h2>
                     <p className="text-muted-foreground font-light mb-6">
-                      We&apos;ll be in touch within one business day to schedule your free consultation.
+                      We&apos;ll be in touch within one business day to schedule
+                      your free consultation.
                     </p>
                     <a
                       href={SITE.phoneHref}
@@ -125,17 +172,51 @@ export default function Contact() {
                     className="space-y-5"
                     aria-label="Project inquiry form"
                   >
-                    <input type="hidden" name="form-name" value="project-inquiry" />
+                    <input
+                      type="hidden"
+                      name="form-name"
+                      value="project-inquiry"
+                    />
                     <p className="hidden" aria-hidden>
-                      <label>Skip: <input name="bot-field" tabIndex={-1} /></label>
+                      <label>
+                        Skip: <input name="bot-field" tabIndex={-1} />
+                      </label>
                     </p>
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       {[
-                        { id: "name",  label: "Your Name",    type: "text",  req: true,  placeholder: "Jane Smith",           auto: "name" },
-                        { id: "email", label: "Email",        type: "email", req: true,  placeholder: "jane@email.com",        auto: "email" },
-                        { id: "phone", label: "Phone",        type: "tel",   req: false, placeholder: "(541) 555-0100",        auto: "tel" },
-                        { id: "budget",label: "Project Budget",type: "text", req: false, placeholder: "e.g. $50k–$100k",      auto: "off" },
+                        {
+                          id: "name",
+                          label: "Your Name",
+                          type: "text",
+                          req: true,
+                          placeholder: "Jane Smith",
+                          auto: "name",
+                        },
+                        {
+                          id: "email",
+                          label: "Email",
+                          type: "email",
+                          req: true,
+                          placeholder: "jane@email.com",
+                          auto: "email",
+                        },
+                        {
+                          id: "phone",
+                          label: "Phone",
+                          type: "tel",
+                          req: false,
+                          placeholder: "(541) 555-0100",
+                          auto: "tel",
+                        },
+                        {
+                          id: "budget",
+                          label: "Project Budget",
+                          type: "text",
+                          req: false,
+                          placeholder: "e.g. $50k–$100k",
+                          auto: "off",
+                        },
                       ].map(f => (
                         <div key={f.id}>
                           <label
@@ -143,13 +224,22 @@ export default function Contact() {
                             className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                             style={{ fontFamily: "var(--font-condensed)" }}
                           >
-                            {f.label}{f.req && <span className="text-primary ml-1" aria-hidden>*</span>}
+                            {f.label}
+                            {f.req && (
+                              <span className="text-primary ml-1" aria-hidden>
+                                *
+                              </span>
+                            )}
                           </label>
                           <input
-                            id={f.id} name={f.id} type={f.type}
-                            required={f.req} autoComplete={f.auto}
+                            id={f.id}
+                            name={f.id}
+                            type={f.type}
+                            required={f.req}
+                            autoComplete={f.auto}
                             value={(fields as Record<string, string>)[f.id]}
-                            onChange={onChange} className={inputCls}
+                            onChange={onChange}
+                            className={inputCls}
                             placeholder={f.placeholder}
                           />
                         </div>
@@ -165,13 +255,27 @@ export default function Contact() {
                         Project Type
                       </label>
                       <select
-                        id="projectType" name="projectType"
-                        value={fields.projectType} onChange={onChange}
+                        id="projectType"
+                        name="projectType"
+                        value={fields.projectType}
+                        onChange={onChange}
                         className={inputCls}
                       >
                         <option value="">Select a service…</option>
-                        {["Residential Construction","Remodel / Renovation","New Construction","Restoration","Outdoor Spaces","Painting","Roofing","Custom Cabinets","Multiple / Not Sure"].map(o => (
-                          <option key={o} value={o}>{o}</option>
+                        {[
+                          "Residential Construction",
+                          "Remodel / Renovation",
+                          "New Construction",
+                          "Restoration",
+                          "Outdoor Spaces",
+                          "Painting",
+                          "Roofing",
+                          "Custom Cabinets",
+                          "Multiple / Not Sure",
+                        ].map(o => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -182,11 +286,18 @@ export default function Contact() {
                         className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                         style={{ fontFamily: "var(--font-condensed)" }}
                       >
-                        Project Details <span className="text-primary" aria-hidden>*</span>
+                        Project Details{" "}
+                        <span className="text-primary" aria-hidden>
+                          *
+                        </span>
                       </label>
                       <textarea
-                        id="message" name="message" required rows={5}
-                        value={fields.message} onChange={onChange}
+                        id="message"
+                        name="message"
+                        required
+                        rows={5}
+                        value={fields.message}
+                        onChange={onChange}
                         className={`${inputCls} resize-none`}
                         placeholder="Tell us about your project — location, timeline, scope, anything that helps us understand what you need…"
                       />
@@ -195,7 +306,9 @@ export default function Contact() {
                     {status === "error" && (
                       <p className="text-sm text-destructive" role="alert">
                         Something went wrong — please call us at{" "}
-                        <a href={SITE.phoneHref} className="underline">{SITE.phone}</a>
+                        <a href={SITE.phoneHref} className="underline">
+                          {SITE.phone}
+                        </a>
                       </p>
                     )}
 
@@ -205,9 +318,14 @@ export default function Contact() {
                       className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/90 disabled:opacity-60 transition-all hover:gap-3 min-h-[54px]"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      {status === "submitting"
-                        ? <Loader2 className="h-4 w-4 animate-spin" />
-                        : <>Send Project Inquiry <ArrowRight className="h-3.5 w-3.5" /></>}
+                      {status === "submitting" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          Send Project Inquiry{" "}
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </>
+                      )}
                     </button>
 
                     <p className="text-[10px] text-center text-muted-foreground/50 font-light">
@@ -256,7 +374,10 @@ export default function Contact() {
                     sub: "Licensed & insured in Oregon",
                   },
                 ].map(({ icon: Icon, label, value, href, sub }) => (
-                  <div key={label} className="bg-card border border-border/60 p-5 flex gap-4">
+                  <div
+                    key={label}
+                    className="bg-card border border-border/60 p-5 flex gap-4"
+                  >
                     <div className="h-9 w-9 border border-primary/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Icon className="h-4 w-4 text-primary" aria-hidden />
                     </div>
@@ -268,13 +389,20 @@ export default function Contact() {
                         {label}
                       </p>
                       {href ? (
-                        <a href={href} className="text-sm font-semibold text-foreground hover:text-primary transition-colors break-all">
+                        <a
+                          href={href}
+                          className="text-sm font-semibold text-foreground hover:text-primary transition-colors break-all"
+                        >
                           {value}
                         </a>
                       ) : (
-                        <p className="text-sm font-semibold text-foreground">{value}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {value}
+                        </p>
                       )}
-                      <p className="text-[11px] text-muted-foreground font-light mt-0.5">{sub}</p>
+                      <p className="text-[11px] text-muted-foreground font-light mt-0.5">
+                        {sub}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -288,7 +416,9 @@ export default function Contact() {
                   <Facebook className="h-5 w-5 text-[#1877F2]" />
                   <div>
                     <p className="text-sm font-semibold">Facebook</p>
-                    <p className="text-[11px] text-muted-foreground">Precision Core Builders</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Precision Core Builders
+                    </p>
                   </div>
                 </a>
               </div>

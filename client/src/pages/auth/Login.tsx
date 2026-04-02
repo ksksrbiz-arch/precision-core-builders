@@ -41,7 +41,8 @@ export default function AuthLogin() {
       <div
         className="fixed inset-0 opacity-[0.03] pointer-events-none"
         style={{
-          backgroundImage: "repeating-linear-gradient(45deg, #C8A84B 0, #C8A84B 1px, transparent 0, transparent 50%)",
+          backgroundImage:
+            "repeating-linear-gradient(45deg, #C8A84B 0, #C8A84B 1px, transparent 0, transparent 50%)",
           backgroundSize: "12px 12px",
         }}
         aria-hidden
@@ -55,7 +56,12 @@ export default function AuthLogin() {
           transition={{ duration: 0.5 }}
           className="flex justify-center mb-8"
         >
-          <img src={ASSETS.logo} alt="Precision Core Builders" className="h-10 w-auto" fetchPriority="high" />
+          <img
+            src={ASSETS.logo}
+            alt="Precision Core Builders"
+            className="h-10 w-auto"
+            fetchPriority="high"
+          />
         </motion.div>
 
         <motion.div
@@ -65,7 +71,6 @@ export default function AuthLogin() {
           className="bg-card border border-border/60 shadow-xl shadow-black/20"
         >
           <AnimatePresence mode="wait">
-
             {/* Sent state */}
             {step === "sent" ? (
               <motion.div
@@ -79,24 +84,32 @@ export default function AuthLogin() {
                 <div className="h-14 w-14 border border-primary/40 bg-primary/10 flex items-center justify-center mx-auto mb-5">
                   <Mail className="h-7 w-7 text-primary" />
                 </div>
-                <h1 className="text-xl font-semibold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                <h1
+                  className="text-xl font-semibold mb-2"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
                   Check your email
                 </h1>
                 <p className="text-sm text-muted-foreground leading-relaxed mb-1 font-light">
                   Magic link sent to
                 </p>
-                <p className="text-sm font-semibold text-foreground mb-5 break-all">{email}</p>
+                <p className="text-sm font-semibold text-foreground mb-5 break-all">
+                  {email}
+                </p>
                 <p className="text-xs text-muted-foreground/60 font-light mb-6">
                   Click the link to sign in. It expires in 60 minutes.
                 </p>
                 <button
-                  onClick={() => { setStep("idle"); setEmail(""); setError(""); }}
+                  onClick={() => {
+                    setStep("idle");
+                    setEmail("");
+                    setError("");
+                  }}
                   className="text-xs text-muted-foreground hover:text-primary transition-colors underline"
                 >
                   Use a different email
                 </button>
               </motion.div>
-
             ) : (
               /* Login form */
               <motion.div
@@ -115,7 +128,10 @@ export default function AuthLogin() {
                   >
                     Digital Foreman
                   </span>
-                  <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                  <h1
+                    className="text-xl font-semibold"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
                     Sign in to your dashboard
                   </h1>
                 </div>
@@ -150,7 +166,10 @@ export default function AuthLogin() {
                       autoComplete="email"
                       required
                       value={email}
-                      onChange={e => { setEmail(e.target.value); setError(""); }}
+                      onChange={e => {
+                        setEmail(e.target.value);
+                        setError("");
+                      }}
                       placeholder="you@precisioncorebuilders.com"
                       className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
                     />
@@ -162,9 +181,13 @@ export default function AuthLogin() {
                     className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/90 disabled:opacity-50 transition-all hover:gap-3 min-h-[48px]"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    {loading
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <>Send Magic Link <ArrowRight className="h-3.5 w-3.5" /></>}
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        Send Magic Link <ArrowRight className="h-3.5 w-3.5" />
+                      </>
+                    )}
                   </button>
                 </form>
 
@@ -174,11 +197,14 @@ export default function AuthLogin() {
                   <span>Secured by Supabase</span>
                   <span className="text-border">·</span>
                   <Check className="h-3 w-3 text-green-500/70" />
-                  <span>{import.meta.env.VITE_SUPABASE_URL ? "Connected" : "Not configured"}</span>
+                  <span>
+                    {import.meta.env.VITE_SUPABASE_URL
+                      ? "Connected"
+                      : "Not configured"}
+                  </span>
                 </div>
               </motion.div>
             )}
-
           </AnimatePresence>
         </motion.div>
 

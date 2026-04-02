@@ -73,10 +73,26 @@ export const GUIDES: Guide[] = [
         heading: "KPI Cards",
         body: "The four cards across the top are your vitals:",
         steps: [
-          { action: "Active Projects", detail: "How many jobs are currently in progress. If this number surprises you, something slipped through." },
-          { action: "Total Revenue", detail: "Sum of all invoiced amounts across active and completed projects." },
-          { action: "Budget Health", detail: "Green = under budget. Yellow = within 10%. Red = over. Don't let it go red." },
-          { action: "Open Tasks", detail: "Unfinished action items across all projects. Keep this number dropping." },
+          {
+            action: "Active Projects",
+            detail:
+              "How many jobs are currently in progress. If this number surprises you, something slipped through.",
+          },
+          {
+            action: "Total Revenue",
+            detail:
+              "Sum of all invoiced amounts across active and completed projects.",
+          },
+          {
+            action: "Budget Health",
+            detail:
+              "Green = under budget. Yellow = within 10%. Red = over. Don't let it go red.",
+          },
+          {
+            action: "Open Tasks",
+            detail:
+              "Unfinished action items across all projects. Keep this number dropping.",
+          },
         ],
       },
       {
@@ -90,13 +106,14 @@ export const GUIDES: Guide[] = [
       {
         heading: "Material Shortages",
         body: "Bottom section flags any materials running low on active projects. Each item shows the project, what's short, and quantity needed. Click to go straight to the Materials page and place the order.",
-        warning: "If you see a shortage for a project that starts this week, handle it NOW. Don't wait for the automated PO.",
+        warning:
+          "If you see a shortage for a project that starts this week, handle it NOW. Don't wait for the automated PO.",
       },
       {
         heading: "Quick Actions",
         tips: [
-          "\"+ New Project\" — start a new job right from here",
-          "\"+ Field Report\" — file a report without navigating away",
+          '"+ New Project" — start a new job right from here',
+          '"+ Field Report" — file a report without navigating away',
           "Click any project name to drill into its detail page",
           "The page auto-refreshes every 60 seconds. No need to hit reload.",
         ],
@@ -121,12 +138,26 @@ export const GUIDES: Guide[] = [
       {
         heading: "Creating a New Project",
         steps: [
-          { action: "Click \"+ New Project\"" },
-          { action: "Enter project name", detail: "Use the format: [Client Last Name] — [Job Type]. Example: \"Johnson — Kitchen Remodel\"" },
-          { action: "Set the client", detail: "Pick from existing clients or create a new one inline." },
-          { action: "Enter estimated budget", detail: "This is your bid number. It locks in as the baseline for budget tracking." },
+          { action: 'Click "+ New Project"' },
+          {
+            action: "Enter project name",
+            detail:
+              'Use the format: [Client Last Name] — [Job Type]. Example: "Johnson — Kitchen Remodel"',
+          },
+          {
+            action: "Set the client",
+            detail: "Pick from existing clients or create a new one inline.",
+          },
+          {
+            action: "Enter estimated budget",
+            detail:
+              "This is your bid number. It locks in as the baseline for budget tracking.",
+          },
           { action: "Set start date and target completion" },
-          { action: "Add project address", detail: "This feeds the weather system. Get it right." },
+          {
+            action: "Add project address",
+            detail: "This feeds the weather system. Get it right.",
+          },
           { action: "Hit Save" },
         ],
         tips: [
@@ -138,24 +169,58 @@ export const GUIDES: Guide[] = [
         heading: "Project Detail Page",
         body: "Click any project to see everything about it:",
         steps: [
-          { action: "Overview tab", detail: "Budget summary, timeline, client info, and milestone progress bar." },
-          { action: "Field Reports tab", detail: "Every report filed for this project, newest first." },
-          { action: "Materials tab", detail: "All materials allocated, ordered, and delivered for this job." },
-          { action: "Schedule tab", detail: "Gantt-style view of tasks with weather overlays." },
-          { action: "Documents tab", detail: "Permits, contracts, photos, inspection reports." },
-          { action: "Financials tab", detail: "Invoices sent, payments received, change orders." },
+          {
+            action: "Overview tab",
+            detail:
+              "Budget summary, timeline, client info, and milestone progress bar.",
+          },
+          {
+            action: "Field Reports tab",
+            detail: "Every report filed for this project, newest first.",
+          },
+          {
+            action: "Materials tab",
+            detail:
+              "All materials allocated, ordered, and delivered for this job.",
+          },
+          {
+            action: "Schedule tab",
+            detail: "Gantt-style view of tasks with weather overlays.",
+          },
+          {
+            action: "Documents tab",
+            detail: "Permits, contracts, photos, inspection reports.",
+          },
+          {
+            action: "Financials tab",
+            detail: "Invoices sent, payments received, change orders.",
+          },
         ],
       },
       {
         heading: "Project Statuses",
         steps: [
-          { action: "Planning", detail: "Bid accepted, not yet started. Permits, materials, scheduling phase." },
-          { action: "Active", detail: "Boots on the ground. Work in progress." },
-          { action: "Paused", detail: "Waiting on client decision, permits, weather hold, etc." },
-          { action: "Punch List", detail: "Main work done. Working through final items." },
+          {
+            action: "Planning",
+            detail:
+              "Bid accepted, not yet started. Permits, materials, scheduling phase.",
+          },
+          {
+            action: "Active",
+            detail: "Boots on the ground. Work in progress.",
+          },
+          {
+            action: "Paused",
+            detail: "Waiting on client decision, permits, weather hold, etc.",
+          },
+          {
+            action: "Punch List",
+            detail: "Main work done. Working through final items.",
+          },
           { action: "Completed", detail: "Job's done. Final invoice sent." },
         ],
-        warning: "Moving to \"Completed\" triggers the final invoice workflow. Make sure the punch list is actually clear before you flip it.",
+        warning:
+          'Moving to "Completed" triggers the final invoice workflow. Make sure the punch list is actually clear before you flip it.',
       },
     ],
   },
@@ -167,7 +232,8 @@ export const GUIDES: Guide[] = [
     id: "clients",
     title: "Clients",
     icon: Users,
-    tagline: "Your client roster. Contact info, project history, portal access.",
+    tagline:
+      "Your client roster. Contact info, project history, portal access.",
     path: "/admin/clients",
     sections: [
       {
@@ -177,10 +243,21 @@ export const GUIDES: Guide[] = [
       {
         heading: "Adding a Client",
         steps: [
-          { action: "Click \"+ New Client\"" },
-          { action: "Enter full name, email, and phone", detail: "Email is required — it's how they access the Client Portal." },
-          { action: "Add property address", detail: "If different from project address." },
-          { action: "Set communication preference", detail: "Email, phone, or text. The system uses this for automated notifications." },
+          { action: 'Click "+ New Client"' },
+          {
+            action: "Enter full name, email, and phone",
+            detail:
+              "Email is required — it's how they access the Client Portal.",
+          },
+          {
+            action: "Add property address",
+            detail: "If different from project address.",
+          },
+          {
+            action: "Set communication preference",
+            detail:
+              "Email, phone, or text. The system uses this for automated notifications.",
+          },
           { action: "Save" },
         ],
       },
@@ -188,10 +265,25 @@ export const GUIDES: Guide[] = [
         heading: "Client Portal Access",
         body: "Each client gets their own portal login. From here you control what they see:",
         steps: [
-          { action: "Toggle portal access on/off", detail: "Turning it on sends them an invite email with login instructions." },
-          { action: "Live Site-Cam", detail: "Enable/disable their camera access per project." },
-          { action: "Report visibility", detail: "Choose which field reports they can see. Some are internal-only." },
-          { action: "Selection Manager", detail: "When enabled, they can pick finishes and see budget impacts in real time." },
+          {
+            action: "Toggle portal access on/off",
+            detail:
+              "Turning it on sends them an invite email with login instructions.",
+          },
+          {
+            action: "Live Site-Cam",
+            detail: "Enable/disable their camera access per project.",
+          },
+          {
+            action: "Report visibility",
+            detail:
+              "Choose which field reports they can see. Some are internal-only.",
+          },
+          {
+            action: "Selection Manager",
+            detail:
+              "When enabled, they can pick finishes and see budget impacts in real time.",
+          },
         ],
         tips: [
           "Give portal access on Day 1. Clients who can see progress make fewer phone calls.",
@@ -224,37 +316,75 @@ export const GUIDES: Guide[] = [
         steps: [
           { action: "Go to Field Reports → + New Report" },
           { action: "Select the project from the dropdown" },
-          { action: "Hit the red mic button and start talking", detail: "Speak naturally. Mention what was done, who was on-site, any problems, material usage, and what's planned for tomorrow." },
+          {
+            action: "Hit the red mic button and start talking",
+            detail:
+              "Speak naturally. Mention what was done, who was on-site, any problems, material usage, and what's planned for tomorrow.",
+          },
           { action: "Hit stop when you're done" },
           { action: "The AI transcribes and structures it in ~10 seconds" },
-          { action: "Review the generated report", detail: "It breaks your words into: Work Completed, Issues/Delays, Materials Used, Tomorrow's Plan." },
+          {
+            action: "Review the generated report",
+            detail:
+              "It breaks your words into: Work Completed, Issues/Delays, Materials Used, Tomorrow's Plan.",
+          },
           { action: "Edit anything that's off, then hit Submit" },
         ],
         tips: [
-          "Mention specific quantities: \"Used 12 sheets of 3/4\" plywood\" not just \"used some plywood.\"",
-          "Say names: \"Dave and Mike were on-site\" — the system tracks crew allocation.",
-          "Call out problems explicitly: \"The framing lumber delivery was short 40 2x6s\" — this triggers a material shortage alert.",
+          'Mention specific quantities: "Used 12 sheets of 3/4" plywood" not just "used some plywood."',
+          'Say names: "Dave and Mike were on-site" — the system tracks crew allocation.',
+          'Call out problems explicitly: "The framing lumber delivery was short 40 2x6s" — this triggers a material shortage alert.',
           "Don't ramble. State facts. The AI can't fix vague input.",
         ],
       },
       {
         heading: "What Happens After You Submit",
         steps: [
-          { action: "Client portal updates automatically", detail: "If the report is marked client-visible, they see a cleaned-up summary." },
-          { action: "Project milestones update", detail: "Completed work items advance the progress bar." },
-          { action: "Material shortages flagged", detail: "If you mentioned anything running low, it hits the Command Center and the Materials page." },
-          { action: "Subcontractor notifications", detail: "If you mentioned needing a sub tomorrow, the system can auto-notify them." },
+          {
+            action: "Client portal updates automatically",
+            detail:
+              "If the report is marked client-visible, they see a cleaned-up summary.",
+          },
+          {
+            action: "Project milestones update",
+            detail: "Completed work items advance the progress bar.",
+          },
+          {
+            action: "Material shortages flagged",
+            detail:
+              "If you mentioned anything running low, it hits the Command Center and the Materials page.",
+          },
+          {
+            action: "Subcontractor notifications",
+            detail:
+              "If you mentioned needing a sub tomorrow, the system can auto-notify them.",
+          },
         ],
       },
       {
         heading: "Report Types",
         steps: [
-          { action: "Daily Progress", detail: "Standard end-of-day report. Most common." },
-          { action: "Issue Report", detail: "Something went wrong. Damage, safety concern, code violation discovered." },
-          { action: "Inspection Report", detail: "Log the results of a city/county inspection." },
-          { action: "Change Order", detail: "Client requested something different. Documents the scope change and cost impact." },
+          {
+            action: "Daily Progress",
+            detail: "Standard end-of-day report. Most common.",
+          },
+          {
+            action: "Issue Report",
+            detail:
+              "Something went wrong. Damage, safety concern, code violation discovered.",
+          },
+          {
+            action: "Inspection Report",
+            detail: "Log the results of a city/county inspection.",
+          },
+          {
+            action: "Change Order",
+            detail:
+              "Client requested something different. Documents the scope change and cost impact.",
+          },
         ],
-        warning: "Change Order reports automatically create a budget amendment entry in the Ledger. Make sure the numbers are right before submitting.",
+        warning:
+          "Change Order reports automatically create a budget amendment entry in the Ledger. Make sure the numbers are right before submitting.",
       },
     ],
   },
@@ -266,7 +396,8 @@ export const GUIDES: Guide[] = [
     id: "site-plans",
     title: "Site Plans",
     icon: Pencil,
-    tagline: "Hand-drawn site specs. Sketch it like you would on a napkin, but digital.",
+    tagline:
+      "Hand-drawn site specs. Sketch it like you would on a napkin, but digital.",
     path: "/admin/site-plans",
     sections: [
       {
@@ -276,23 +407,46 @@ export const GUIDES: Guide[] = [
       {
         heading: "Basic Drawing",
         steps: [
-          { action: "Select a tool from the top toolbar", detail: "Rectangle for walls/rooms, line for dimensions, ellipse for fixtures, text for labels." },
+          {
+            action: "Select a tool from the top toolbar",
+            detail:
+              "Rectangle for walls/rooms, line for dimensions, ellipse for fixtures, text for labels.",
+          },
           { action: "Click and drag on the canvas to draw" },
           { action: "Hold Shift for perfect squares/circles/straight lines" },
           { action: "Double-click any shape to add text inside it" },
-          { action: "Use Ctrl+D (Cmd+D on Mac) to duplicate selected elements" },
+          {
+            action: "Use Ctrl+D (Cmd+D on Mac) to duplicate selected elements",
+          },
           { action: "Scroll to zoom, hold Space and drag to pan" },
         ],
       },
       {
         heading: "Construction Stamp Library",
-        body: "Click the \"Stamps\" button in the toolbar to open the library. Pre-built elements you can drop onto the canvas with one click:",
+        body: 'Click the "Stamps" button in the toolbar to open the library. Pre-built elements you can drop onto the canvas with one click:',
         steps: [
-          { action: "Structural", detail: "Exterior walls (thick), interior walls (thin), load-bearing walls (hatched), columns/posts." },
-          { action: "Openings", detail: "36\" doors with swing arc, 48\" windows, sliding doors." },
-          { action: "Plumbing", detail: "Sinks, toilets, bathtubs, showers. Blue symbols." },
-          { action: "Electrical", detail: "Outlets (red circles), switches, light fixtures (yellow), electrical panels." },
-          { action: "Dimensions", detail: "Dimension lines with measurements, note callout diamonds." },
+          {
+            action: "Structural",
+            detail:
+              "Exterior walls (thick), interior walls (thin), load-bearing walls (hatched), columns/posts.",
+          },
+          {
+            action: "Openings",
+            detail: '36" doors with swing arc, 48" windows, sliding doors.',
+          },
+          {
+            action: "Plumbing",
+            detail: "Sinks, toilets, bathtubs, showers. Blue symbols.",
+          },
+          {
+            action: "Electrical",
+            detail:
+              "Outlets (red circles), switches, light fixtures (yellow), electrical panels.",
+          },
+          {
+            action: "Dimensions",
+            detail: "Dimension lines with measurements, note callout diamonds.",
+          },
         ],
         tips: [
           "Click a stamp to place it at the center of your view. Then drag it where it goes.",
@@ -311,20 +465,35 @@ export const GUIDES: Guide[] = [
       {
         heading: "Exporting & Sharing",
         steps: [
-          { action: "Export as PNG", detail: "For sending to clients or printing. High-res image." },
-          { action: "Export as SVG", detail: "Scalable vector. Good for putting in permits or formal docs." },
-          { action: "Export as .excalidraw", detail: "Native format. Reopen and edit later." },
-          { action: "Share button", detail: "Generates a link for the client portal so they can view (not edit) the plan." },
+          {
+            action: "Export as PNG",
+            detail: "For sending to clients or printing. High-res image.",
+          },
+          {
+            action: "Export as SVG",
+            detail:
+              "Scalable vector. Good for putting in permits or formal docs.",
+          },
+          {
+            action: "Export as .excalidraw",
+            detail: "Native format. Reopen and edit later.",
+          },
+          {
+            action: "Share button",
+            detail:
+              "Generates a link for the client portal so they can view (not edit) the plan.",
+          },
         ],
-        warning: "PNG exports what's on screen. Zoom out to capture the full plan before exporting.",
+        warning:
+          "PNG exports what's on screen. Zoom out to capture the full plan before exporting.",
       },
       {
         heading: "Pro Moves",
         tips: [
           "Alt+drag to duplicate an element while moving it. Fastest way to repeat walls.",
-          "Select multiple elements → right-click → \"Group\" to move them together.",
+          'Select multiple elements → right-click → "Group" to move them together.',
           "Use the hand-drawn roughness to your advantage — clients love the authentic look.",
-          "Name your plans clearly: \"[Client] — [What] — [Date]\". You'll thank yourself later.",
+          'Name your plans clearly: "[Client] — [What] — [Date]". You\'ll thank yourself later.',
         ],
       },
     ],
@@ -337,7 +506,8 @@ export const GUIDES: Guide[] = [
     id: "schedule",
     title: "Schedule",
     icon: Calendar,
-    tagline: "Weather-smart scheduling. Rain moves roofing; sun moves painting.",
+    tagline:
+      "Weather-smart scheduling. Rain moves roofing; sun moves painting.",
     path: "/admin/schedule",
     sections: [
       {
@@ -349,24 +519,42 @@ export const GUIDES: Guide[] = [
         body: "Each project's tasks are laid out horizontally on a timeline. Color coding:",
         steps: [
           { action: "Blue bars", detail: "Scheduled and confirmed." },
-          { action: "Yellow bars", detail: "Weather-flagged. Might need to move." },
+          {
+            action: "Yellow bars",
+            detail: "Weather-flagged. Might need to move.",
+          },
           { action: "Red bars", detail: "Overdue or blocked." },
           { action: "Green bars", detail: "Completed." },
-          { action: "Gray dashed bars", detail: "Waiting on dependency (previous task must finish first)." },
+          {
+            action: "Gray dashed bars",
+            detail: "Waiting on dependency (previous task must finish first).",
+          },
         ],
       },
       {
         heading: "Adding Tasks",
         steps: [
-          { action: "Click a project row → \"+ Add Task\"" },
-          { action: "Name the task", detail: "Be specific: \"Frame east wall\" not \"framing\"." },
-          { action: "Set indoor/outdoor", detail: "This is critical. It's how the weather system knows what to reschedule." },
+          { action: 'Click a project row → "+ Add Task"' },
+          {
+            action: "Name the task",
+            detail: 'Be specific: "Frame east wall" not "framing".',
+          },
+          {
+            action: "Set indoor/outdoor",
+            detail:
+              "This is critical. It's how the weather system knows what to reschedule.",
+          },
           { action: "Set duration in days" },
-          { action: "Link dependencies if needed", detail: "Foundation must finish before framing starts. Set that here." },
+          {
+            action: "Link dependencies if needed",
+            detail:
+              "Foundation must finish before framing starts. Set that here.",
+          },
           { action: "Assign crew or sub-contractor" },
           { action: "Save" },
         ],
-        warning: "If you don't mark a task as outdoor, the weather system won't touch it. Roofing marked as indoor = roofing in the rain.",
+        warning:
+          "If you don't mark a task as outdoor, the weather system won't touch it. Roofing marked as indoor = roofing in the rain.",
       },
       {
         heading: "Weather Adjustments",
@@ -374,9 +562,13 @@ export const GUIDES: Guide[] = [
         steps: [
           { action: "Flags the task yellow on the Gantt chart" },
           { action: "Suggests moving it to the next clear day" },
-          { action: "Offers to swap in an interior task from the same project" },
+          {
+            action: "Offers to swap in an interior task from the same project",
+          },
           { action: "Sends you a notification with the suggested changes" },
-          { action: "You approve or override. Nothing moves without your say." },
+          {
+            action: "You approve or override. Nothing moves without your say.",
+          },
         ],
         tips: [
           "Check the schedule Sunday night. The system has already analyzed the week ahead.",
@@ -408,13 +600,29 @@ export const GUIDES: Guide[] = [
       {
         heading: "Creating an Estimate",
         steps: [
-          { action: "Click \"+ New Estimate\"" },
-          { action: "Select project type", detail: "Kitchen remodel, bathroom, new construction, deck, roofing, etc." },
+          { action: 'Click "+ New Estimate"' },
+          {
+            action: "Select project type",
+            detail:
+              "Kitchen remodel, bathroom, new construction, deck, roofing, etc.",
+          },
           { action: "Enter square footage and scope details" },
-          { action: "Set quality tier", detail: "Standard, Premium, or Luxury. This adjusts material costs and finish levels." },
-          { action: "Add any special requirements", detail: "Permits needed, structural engineering, specialty materials." },
-          { action: "Hit \"Generate Estimate\"" },
-          { action: "Review the line-item breakdown", detail: "Materials, labor, sub costs, permits, contingency. Every line is editable." },
+          {
+            action: "Set quality tier",
+            detail:
+              "Standard, Premium, or Luxury. This adjusts material costs and finish levels.",
+          },
+          {
+            action: "Add any special requirements",
+            detail:
+              "Permits needed, structural engineering, specialty materials.",
+          },
+          { action: 'Hit "Generate Estimate"' },
+          {
+            action: "Review the line-item breakdown",
+            detail:
+              "Materials, labor, sub costs, permits, contingency. Every line is editable.",
+          },
           { action: "Adjust any numbers, then Save or Send to Client" },
         ],
       },
@@ -422,18 +630,39 @@ export const GUIDES: Guide[] = [
         heading: "Line Item Breakdown",
         body: "Every estimate is broken into categories:",
         steps: [
-          { action: "Materials", detail: "Itemized by type. Lumber, hardware, fixtures, finishes. Prices pulled from current market data." },
-          { action: "Labor", detail: "Calculated from estimated hours × your loaded labor rate." },
-          { action: "Subcontractor costs", detail: "Electrical, plumbing, HVAC — based on your sub-contractor rate cards." },
-          { action: "Permits & inspections", detail: "Auto-calculated for Lane County/Eugene requirements." },
-          { action: "Contingency", detail: "Default 10%. Adjust up for older homes, complex jobs." },
-          { action: "Markup", detail: "Your profit margin. Separate from contingency." },
+          {
+            action: "Materials",
+            detail:
+              "Itemized by type. Lumber, hardware, fixtures, finishes. Prices pulled from current market data.",
+          },
+          {
+            action: "Labor",
+            detail: "Calculated from estimated hours × your loaded labor rate.",
+          },
+          {
+            action: "Subcontractor costs",
+            detail:
+              "Electrical, plumbing, HVAC — based on your sub-contractor rate cards.",
+          },
+          {
+            action: "Permits & inspections",
+            detail: "Auto-calculated for Lane County/Eugene requirements.",
+          },
+          {
+            action: "Contingency",
+            detail: "Default 10%. Adjust up for older homes, complex jobs.",
+          },
+          {
+            action: "Markup",
+            detail: "Your profit margin. Separate from contingency.",
+          },
         ],
       },
       {
         heading: "Converting to a Project",
-        body: "When the client approves the estimate, click \"Convert to Project.\" This creates the project with the estimate as the baseline budget. Every dollar is tracked from that point forward.",
-        warning: "Once converted, the estimate becomes read-only. Any scope changes go through Change Orders in Field Reports.",
+        body: 'When the client approves the estimate, click "Convert to Project." This creates the project with the estimate as the baseline budget. Every dollar is tracked from that point forward.',
+        warning:
+          "Once converted, the estimate becomes read-only. Any scope changes go through Change Orders in Field Reports.",
       },
       {
         heading: "Historical Comparison",
@@ -462,8 +691,14 @@ export const GUIDES: Guide[] = [
         steps: [
           { action: "Allocated", detail: "What the estimate says you need." },
           { action: "Ordered", detail: "POs that have been sent." },
-          { action: "Delivered", detail: "What's arrived on-site. Log deliveries as they come." },
-          { action: "Used", detail: "What's been installed. Updated via field reports." },
+          {
+            action: "Delivered",
+            detail: "What's arrived on-site. Log deliveries as they come.",
+          },
+          {
+            action: "Used",
+            detail: "What's been installed. Updated via field reports.",
+          },
           { action: "Remaining", detail: "The math: Delivered minus Used." },
         ],
       },
@@ -471,20 +706,24 @@ export const GUIDES: Guide[] = [
         heading: "Logging a Delivery",
         steps: [
           { action: "Go to Materials → select the project" },
-          { action: "Click \"Log Delivery\"" },
+          { action: 'Click "Log Delivery"' },
           { action: "Select items from the PO or add new items" },
           { action: "Enter quantities received" },
-          { action: "Note any shortages or damage", detail: "This creates an automatic Issue Report in Field Reports." },
+          {
+            action: "Note any shortages or damage",
+            detail: "This creates an automatic Issue Report in Field Reports.",
+          },
           { action: "Upload a photo of the delivery ticket" },
           { action: "Save" },
         ],
-        warning: "Always log deliveries the same day. If you wait, the shortage alerts won't fire when they should.",
+        warning:
+          "Always log deliveries the same day. If you wait, the shortage alerts won't fire when they should.",
       },
       {
         heading: "Auto-Generated Purchase Orders",
         body: "The system monitors project phases. When you're 2 weeks from needing materials for the next phase, it drafts a PO based on the estimate quantities and current vendor pricing.",
         steps: [
-          { action: "You get a notification: \"PO draft ready for [Project]\"" },
+          { action: 'You get a notification: "PO draft ready for [Project]"' },
           { action: "Review quantities and pricing" },
           { action: "Adjust if needed" },
           { action: "Approve → PO sends to the vendor automatically" },
@@ -518,15 +757,29 @@ export const GUIDES: Guide[] = [
       {
         heading: "Adding a Sub",
         steps: [
-          { action: "Click \"+ New Sub-Contractor\"" },
+          { action: 'Click "+ New Sub-Contractor"' },
           { action: "Enter company name, contact name, phone, email" },
-          { action: "Select trade", detail: "Electrical, plumbing, HVAC, concrete, roofing, painting, drywall, etc." },
-          { action: "Enter CCB license number", detail: "The system verifies it against Oregon CCB records." },
-          { action: "Set their rate card", detail: "Hourly rate, day rate, or per-job pricing." },
-          { action: "Upload insurance certificate", detail: "The system alerts you 30 days before it expires." },
+          {
+            action: "Select trade",
+            detail:
+              "Electrical, plumbing, HVAC, concrete, roofing, painting, drywall, etc.",
+          },
+          {
+            action: "Enter CCB license number",
+            detail: "The system verifies it against Oregon CCB records.",
+          },
+          {
+            action: "Set their rate card",
+            detail: "Hourly rate, day rate, or per-job pricing.",
+          },
+          {
+            action: "Upload insurance certificate",
+            detail: "The system alerts you 30 days before it expires.",
+          },
           { action: "Save" },
         ],
-        warning: "Never put a sub on a job without a current insurance certificate. The system will flag it, but don't ignore it.",
+        warning:
+          "Never put a sub on a job without a current insurance certificate. The system will flag it, but don't ignore it.",
       },
       {
         heading: "Assigning Subs to Projects",
@@ -535,8 +788,14 @@ export const GUIDES: Guide[] = [
           { action: "Date and time" },
           { action: "Site address with map link" },
           { action: "Scope of work for that visit" },
-          { action: "Site access instructions", detail: "Gate codes, where to park, who to check in with." },
-          { action: "Safety briefing link", detail: "Required reading before first visit to any new site." },
+          {
+            action: "Site access instructions",
+            detail: "Gate codes, where to park, who to check in with.",
+          },
+          {
+            action: "Safety briefing link",
+            detail: "Required reading before first visit to any new site.",
+          },
         ],
       },
       {
@@ -585,15 +844,16 @@ export const GUIDES: Guide[] = [
         heading: "Searching the Ledger",
         body: "Use the filter bar to narrow by project, date range, entry type, or dollar amount. Every entry links back to its source — click to see the original report, invoice, or document.",
         tips: [
-          "Filter by \"Change Order\" before client meetings. Know exactly what changed and why.",
-          "Filter by project + \"Payment\" to see payment history at a glance.",
+          'Filter by "Change Order" before client meetings. Know exactly what changed and why.',
+          'Filter by project + "Payment" to see payment history at a glance.',
           "The Ledger is exportable. PDF or CSV. Use it for tax prep, dispute resolution, or bonding applications.",
         ],
       },
       {
         heading: "Client-Facing Ledger",
         body: "A cleaned-up subset of the Ledger is visible in the Client Portal. Clients see: invoices, payments, change orders, permits, and inspections. They do NOT see: your material costs, sub-contractor payments, or internal notes.",
-        warning: "If you add notes to a ledger entry, mark them as \"Internal\" if they shouldn't be client-facing. Default is internal, but double-check.",
+        warning:
+          'If you add notes to a ledger entry, mark them as "Internal" if they shouldn\'t be client-facing. Default is internal, but double-check.',
       },
       {
         heading: "Why This Matters",
@@ -609,29 +869,47 @@ export const GUIDES: Guide[] = [
     id: "billing",
     title: "Billing & Payments",
     icon: CreditCard,
-    tagline: "Milestone invoicing. One-click client approvals. Get paid faster.",
+    tagline:
+      "Milestone invoicing. One-click client approvals. Get paid faster.",
     path: "/admin/billing",
     sections: [
       {
         heading: "How Invoicing Works",
-        body: "Invoices are milestone-based. When a project phase completes, the system generates a draft invoice for that milestone's portion of the budget. You review it, tweak if needed, and send. The client gets an email with a one-click \"Approve & Pay\" button.",
+        body: 'Invoices are milestone-based. When a project phase completes, the system generates a draft invoice for that milestone\'s portion of the budget. You review it, tweak if needed, and send. The client gets an email with a one-click "Approve & Pay" button.',
       },
       {
         heading: "Setting Up Milestones",
         steps: [
           { action: "Go to the Project → Financials tab" },
-          { action: "Set payment milestones", detail: "Example: 30% at contract, 25% at framing, 25% at rough-in, 20% at completion." },
-          { action: "Link each milestone to a project phase", detail: "When that phase marks complete, the invoice drafts automatically." },
+          {
+            action: "Set payment milestones",
+            detail:
+              "Example: 30% at contract, 25% at framing, 25% at rough-in, 20% at completion.",
+          },
+          {
+            action: "Link each milestone to a project phase",
+            detail:
+              "When that phase marks complete, the invoice drafts automatically.",
+          },
         ],
       },
       {
         heading: "Sending an Invoice",
         steps: [
-          { action: "Review the auto-generated draft", detail: "Check the line items, amounts, and milestone description." },
+          {
+            action: "Review the auto-generated draft",
+            detail: "Check the line items, amounts, and milestone description.",
+          },
           { action: "Add any change order adjustments" },
-          { action: "Hit \"Send to Client\"" },
-          { action: "Client receives email with payment link", detail: "Stripe or PayPal. Their choice." },
-          { action: "When they pay, you get notified and the Ledger updates automatically." },
+          { action: 'Hit "Send to Client"' },
+          {
+            action: "Client receives email with payment link",
+            detail: "Stripe or PayPal. Their choice.",
+          },
+          {
+            action:
+              "When they pay, you get notified and the Ledger updates automatically.",
+          },
         ],
       },
       {
@@ -650,9 +928,9 @@ export const GUIDES: Guide[] = [
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 export function getGuideById(id: string): Guide | undefined {
-  return GUIDES.find((g) => g.id === id);
+  return GUIDES.find(g => g.id === id);
 }
 
 export function getGuideByPath(path: string): Guide | undefined {
-  return GUIDES.find((g) => g.path === path);
+  return GUIDES.find(g => g.path === path);
 }

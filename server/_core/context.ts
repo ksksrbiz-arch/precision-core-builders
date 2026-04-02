@@ -35,11 +35,10 @@ function getSupabaseAdmin() {
  * Returns the authenticated user or null for public routes.
  */
 export async function createContext(
-  opts: CreateExpressContextOptions,
+  opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   const authHeader = opts.req.headers["authorization"];
-  const token =
-    authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
   if (!token) {
     return { req: opts.req, res: opts.res, user: null };

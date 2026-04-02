@@ -46,7 +46,10 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
     setLoading(true);
 
     try {
-      const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
+      const history = [...messages, userMsg].map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
       const res = await fetch("/api/ai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,13 +58,21 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setMessages(prev =>
-        prev.map(m => m.id === assistantId ? { ...m, content: data.text ?? "No response." } : m)
+        prev.map(m =>
+          m.id === assistantId
+            ? { ...m, content: data.text ?? "No response." }
+            : m
+        )
       );
     } catch {
       setMessages(prev =>
         prev.map(m =>
           m.id === assistantId
-            ? { ...m, content: "⚠️ AI unavailable. Check ANTHROPIC_API_KEY in Netlify env." }
+            ? {
+                ...m,
+                content:
+                  "⚠️ AI unavailable. Check ANTHROPIC_API_KEY in Netlify env.",
+              }
             : m
         )
       );
@@ -71,17 +82,27 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
   };
 
   return (
-    <div className={`flex flex-col border border-border/60 bg-card overflow-hidden ${compact ? "h-[420px]" : "h-full min-h-[520px]"}`}>
+    <div
+      className={`flex flex-col border border-border/60 bg-card overflow-hidden ${compact ? "h-[420px]" : "h-full min-h-[520px]"}`}
+    >
       <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
         <div className="h-6 w-6 border border-primary/40 flex items-center justify-center">
           <Bot className="h-3.5 w-3.5 text-primary" />
         </div>
-        <span className="text-xs font-bold tracking-widest uppercase" style={{ fontFamily: "var(--font-condensed)" }}>
+        <span
+          className="text-xs font-bold tracking-widest uppercase"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
           Digital Foreman AI
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-[9px] text-green-400 tracking-wider uppercase" style={{ fontFamily: "var(--font-condensed)" }}>Live</span>
+          <span
+            className="text-[9px] text-green-400 tracking-wider uppercase"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            Live
+          </span>
         </div>
       </div>
 
@@ -89,13 +110,18 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
         {messages.length === 0 && (
           <div className="py-3">
             <p className="text-xs text-muted-foreground text-center mb-4 font-light">
-              Ask about projects, materials, weather scheduling, or Oregon codes.
+              Ask about projects, materials, weather scheduling, or Oregon
+              codes.
             </p>
             <div className="grid grid-cols-2 gap-2">
               {QUICK_PROMPTS.map(p => (
-                <button key={p} onClick={() => send(p)}
-                  className="text-left text-[10px] p-2.5 border border-border/40 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors leading-snug">
-                  <Zap className="h-2.5 w-2.5 inline mr-1 text-primary/60" />{p}
+                <button
+                  key={p}
+                  onClick={() => send(p)}
+                  className="text-left text-[10px] p-2.5 border border-border/40 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors leading-snug"
+                >
+                  <Zap className="h-2.5 w-2.5 inline mr-1 text-primary/60" />
+                  {p}
                 </button>
               ))}
             </div>
@@ -103,16 +129,25 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
         )}
         <div className="space-y-3">
           {messages.map(m => (
-            <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={m.id}
+              className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               {m.role === "assistant" && (
                 <div className="h-6 w-6 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5">
                   <Bot className="h-3 w-3 text-primary" />
                 </div>
               )}
-              <div className={`max-w-[82%] px-3.5 py-2.5 text-sm leading-relaxed ${
-                m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted/60 border border-border/40"
-              }`}>
-                {m.content || <span className="text-muted-foreground animate-pulse">…</span>}
+              <div
+                className={`max-w-[82%] px-3.5 py-2.5 text-sm leading-relaxed ${
+                  m.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/60 border border-border/40"
+                }`}
+              >
+                {m.content || (
+                  <span className="text-muted-foreground animate-pulse">…</span>
+                )}
               </div>
               {m.role === "user" && (
                 <div className="h-6 w-6 border border-border/60 flex items-center justify-center shrink-0 mt-0.5">
@@ -134,8 +169,12 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
           disabled={loading}
           className="flex-1 bg-background border border-input px-3.5 py-2 text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
         />
-        <Button size="icon" onClick={() => send()} disabled={!input.trim() || loading}
-                className="h-9 w-9 bg-primary hover:bg-primary/85">
+        <Button
+          size="icon"
+          onClick={() => send()}
+          disabled={!input.trim() || loading}
+          className="h-9 w-9 bg-primary hover:bg-primary/85"
+        >
           <ArrowUp className="h-4 w-4" />
         </Button>
       </div>

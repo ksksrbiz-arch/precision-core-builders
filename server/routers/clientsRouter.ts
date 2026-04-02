@@ -17,18 +17,22 @@ const ClientInput = z.object({
 
 export const clientsRouter = router({
   list: adminProcedure
-    .input(z.object({
-      page: z.number().int().positive().optional(),
-      pageSize: z.number().int().min(1).max(100).optional(),
-      search: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        page: z.number().int().positive().optional(),
+        pageSize: z.number().int().min(1).max(100).optional(),
+        search: z.string().optional(),
+      })
+    )
     .query(async ({ input }) => {
       const { from, to } = paginate(input);
-      let q = db.from("clients")
+      let q = db
+        .from("clients")
         .select("*, projects(id,name,status)", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(from, to);
-      if (input.search) q = q.or(`name.ilike.%${input.search}%,email.ilike.%${input.search}%`);
+      if (input.search)
+        q = q.or(`name.ilike.%${input.search}%,email.ilike.%${input.search}%`);
       const { data, error, count } = await q;
       if (error) throw new Error(error.message);
       return { data: data ?? [], total: count ?? 0 };
@@ -37,40 +41,54 @@ export const clientsRouter = router({
   getById: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { data, error } = await db.from("clients")
-        .select("*, projects(id,name,status,estimated_budget,actual_cost,completion_percent,created_at)")
+      const { data, error } = await db
+        .from("clients")
+        .select(
+          "*, projects(id,name,status,estimated_budget,actual_cost,completion_percent,created_at)"
+        )
         .eq("id", input.id)
         .single();
       if (error) throw new Error(error.message);
       return data;
     }),
 
-  create: adminProcedure
-    .input(ClientInput)
-    .mutation(async ({ input }) => {
-      const { data, error } = await db.from("clients")
-        .insert({
-          name: input.name, email: input.email, phone: input.phone,
-          address: input.address, city: input.city, state: input.state,
-          zip: input.zip, notes: input.notes, lead_source: input.leadSource,
-          user_id: input.userId,
-        })
-        .select().single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+  create: adminProcedure.input(ClientInput).mutation(async ({ input }) => {
+    const { data, error } = await db
+      .from("clients")
+      .insert({
+        name: input.name,
+        email: input.email,
+        phone: input.phone,
+        address: input.address,
+        city: input.city,
+        state: input.state,
+        zip: input.zip,
+        notes: input.notes,
+        lead_source: input.leadSource,
+        user_id: input.userId,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  }),
 
   update: adminProcedure
-    .input(z.object({ id: z.number().int().positive() }).merge(ClientInput.partial()))
+    .input(
+      z.object({ id: z.number().int().positive() }).merge(ClientInput.partial())
+    )
     .mutation(async ({ input }) => {
       const { id, leadSource, userId, ...rest } = input;
-      const { data, error } = await db.from("clients")
+      const { data, error } = await db
+        .from("clients")
         .update({
           ...rest,
           ...(leadSource !== undefined && { lead_source: leadSource }),
           ...(userId !== undefined && { user_id: userId }),
         })
-        .eq("id", id).select().single();
+        .eq("id", id)
+        .select()
+        .single();
       if (error) throw new Error(error.message);
       return data;
     }),

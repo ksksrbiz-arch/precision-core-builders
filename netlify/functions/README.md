@@ -5,6 +5,7 @@ This directory contains serverless functions that run on Netlify's edge network.
 ## Overview
 
 All backend logic runs as Netlify Functions, providing:
+
 - Automatic scaling
 - Pay-per-use pricing
 - Edge deployment
@@ -15,11 +16,13 @@ All backend logic runs as Netlify Functions, providing:
 The following serverless functions need to be implemented:
 
 ### 1. Voice-to-Report (`voice-to-report.ts`)
+
 Accepts audio file, transcribes with Whisper, generates field report with Gemini.
 
 **Endpoint:** `POST /api/voice-to-report`
 
 **Request:**
+
 ```typescript
 {
   audio: File | Blob,
@@ -28,6 +31,7 @@ Accepts audio file, transcribes with Whisper, generates field report with Gemini
 ```
 
 **Response:**
+
 ```typescript
 {
   transcription: string,
@@ -42,11 +46,13 @@ Accepts audio file, transcribes with Whisper, generates field report with Gemini
 ```
 
 ### 2. Project Estimator (`estimate-project.ts`)
+
 Calculates real-time cost ranges based on project parameters.
 
 **Endpoint:** `POST /api/estimate-project`
 
 **Request:**
+
 ```typescript
 {
   squareFootage: number,
@@ -57,6 +63,7 @@ Calculates real-time cost ranges based on project parameters.
 ```
 
 **Response:**
+
 ```typescript
 {
   estimatedCost: {
@@ -74,14 +81,17 @@ Calculates real-time cost ranges based on project parameters.
 ```
 
 ### 3. Weather Schedule (`weather-schedule.ts`)
+
 Fetches Eugene, OR weather and adjusts Gantt chart priorities.
 
 **Endpoint:** `GET /api/weather-schedule`
 
 **Query Params:**
+
 - `projectId`: string
 
 **Response:**
+
 ```typescript
 {
   weather: {
@@ -98,11 +108,13 @@ Fetches Eugene, OR weather and adjusts Gantt chart priorities.
 ```
 
 ### 4. Material Procurement (`material-procurement.ts`)
+
 Monitors project phases, drafts POs, checks vendor pricing.
 
 **Endpoint:** `POST /api/material-procurement`
 
 **Request:**
+
 ```typescript
 {
   projectId: string,
@@ -111,6 +123,7 @@ Monitors project phases, drafts POs, checks vendor pricing.
 ```
 
 **Response:**
+
 ```typescript
 {
   purchaseOrders: {
@@ -129,11 +142,13 @@ Monitors project phases, drafts POs, checks vendor pricing.
 ```
 
 ### 5. Lead Scoring (`lead-score.ts`)
+
 AI-prioritizes incoming leads by project type, budget, location.
 
 **Endpoint:** `POST /api/lead-score`
 
 **Request:**
+
 ```typescript
 {
   lead: {
@@ -149,6 +164,7 @@ AI-prioritizes incoming leads by project type, budget, location.
 ```
 
 **Response:**
+
 ```typescript
 {
   score: number, // 0-100
@@ -173,7 +189,7 @@ export const handler: Handler = async (
 ) => {
   try {
     // Parse request body
-    const body = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body || "{}");
 
     // Your function logic here
     const result = await doSomething(body);
@@ -182,18 +198,18 @@ export const handler: Handler = async (
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(result),
     };
   } catch (error) {
-    console.error('Function error:', error);
+    console.error("Function error:", error);
     return {
       statusCode: 500,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ error: "Internal server error" }),
     };
   }
 };
@@ -204,6 +220,7 @@ export const handler: Handler = async (
 ## Environment Variables
 
 All functions have access to environment variables set in Netlify dashboard:
+
 - `GEMINI_API_KEY`
 - `WHISPER_API_KEY`
 - `OPENWEATHERMAP_API_KEY`
@@ -217,16 +234,19 @@ Access them via `process.env.VARIABLE_NAME`
 ## Testing Locally
 
 1. Install Netlify CLI:
+
    ```bash
    npm install -g netlify-cli
    ```
 
 2. Link to your Netlify site:
+
    ```bash
    netlify link
    ```
 
 3. Run dev server with functions:
+
    ```bash
    netlify dev
    ```

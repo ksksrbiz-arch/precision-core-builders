@@ -5,8 +5,17 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import {
-  AlertTriangle, Calendar, CheckCircle2, Circle, Clock,
-  CloudRain, Loader2, RefreshCw, Sun, Thermometer, Wind,
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  Circle,
+  Clock,
+  CloudRain,
+  Loader2,
+  RefreshCw,
+  Sun,
+  Thermometer,
+  Wind,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -34,26 +43,33 @@ type WeatherData = {
   alerts: string[];
 };
 
-const STATUS_CONFIG: Record<string, { color: string; icon: typeof Circle; label: string }> = {
-  pending:     { color: "text-muted-foreground", icon: Circle,       label: "Pending" },
-  in_progress: { color: "text-primary",          icon: Clock,        label: "In Progress" },
-  complete:    { color: "text-green-400",         icon: CheckCircle2, label: "Complete" },
-  blocked:     { color: "text-red-400",           icon: AlertTriangle, label: "Blocked" },
-  deferred:    { color: "text-orange-400",        icon: AlertTriangle, label: "Deferred" },
+const STATUS_CONFIG: Record<
+  string,
+  { color: string; icon: typeof Circle; label: string }
+> = {
+  pending: { color: "text-muted-foreground", icon: Circle, label: "Pending" },
+  in_progress: { color: "text-primary", icon: Clock, label: "In Progress" },
+  complete: { color: "text-green-400", icon: CheckCircle2, label: "Complete" },
+  blocked: { color: "text-red-400", icon: AlertTriangle, label: "Blocked" },
+  deferred: {
+    color: "text-orange-400",
+    icon: AlertTriangle,
+    label: "Deferred",
+  },
 };
 
 const TASK_COLORS: Record<string, string> = {
-  roofing:     "bg-red-400/15 text-red-300 border-red-400/30",
-  outdoor:     "bg-orange-400/15 text-orange-300 border-orange-400/30",
-  painting:    "bg-yellow-400/15 text-yellow-300 border-yellow-400/30",
-  framing:     "bg-blue-400/15 text-blue-300 border-blue-400/30",
-  electrical:  "bg-purple-400/15 text-purple-300 border-purple-400/30",
-  plumbing:    "bg-cyan-400/15 text-cyan-300 border-cyan-400/30",
-  cabinetry:   "bg-amber-400/15 text-amber-300 border-amber-400/30",
-  flooring:    "bg-green-400/15 text-green-300 border-green-400/30",
-  drywall:     "bg-gray-400/15 text-gray-300 border-gray-400/30",
-  indoor:      "bg-primary/10 text-primary border-primary/20",
-  other:       "bg-border/30 text-muted-foreground border-border/40",
+  roofing: "bg-red-400/15 text-red-300 border-red-400/30",
+  outdoor: "bg-orange-400/15 text-orange-300 border-orange-400/30",
+  painting: "bg-yellow-400/15 text-yellow-300 border-yellow-400/30",
+  framing: "bg-blue-400/15 text-blue-300 border-blue-400/30",
+  electrical: "bg-purple-400/15 text-purple-300 border-purple-400/30",
+  plumbing: "bg-cyan-400/15 text-cyan-300 border-cyan-400/30",
+  cabinetry: "bg-amber-400/15 text-amber-300 border-amber-400/30",
+  flooring: "bg-green-400/15 text-green-300 border-green-400/30",
+  drywall: "bg-gray-400/15 text-gray-300 border-gray-400/30",
+  indoor: "bg-primary/10 text-primary border-primary/20",
+  other: "bg-border/30 text-muted-foreground border-border/40",
 };
 
 function WeatherBar({ weather }: { weather: WeatherData }) {
@@ -61,15 +77,20 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
   return (
     <div className="bg-card border border-border/60 p-5 mb-5">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
-           style={{ fontFamily: "var(--font-condensed)" }}>
+        <p
+          className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
           7-Day Eugene OR Forecast
         </p>
         {weather.alerts.length > 0 && (
-          <span className="flex items-center gap-1.5 text-[10px] text-orange-400 border border-orange-400/30 bg-orange-400/10 px-2 py-1"
-                style={{ fontFamily: "var(--font-condensed)" }}>
+          <span
+            className="flex items-center gap-1.5 text-[10px] text-orange-400 border border-orange-400/30 bg-orange-400/10 px-2 py-1"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
             <CloudRain className="h-3 w-3" />
-            {weather.alerts.length} Rain Alert{weather.alerts.length > 1 ? "s" : ""}
+            {weather.alerts.length} Rain Alert
+            {weather.alerts.length > 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -77,22 +98,37 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
         {days.map(day => {
           const date = new Date(day.date + "T12:00:00");
           const label = date.toLocaleDateString("en-US", { weekday: "short" });
-          const md = date.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+          const md = date.toLocaleDateString("en-US", {
+            month: "numeric",
+            day: "numeric",
+          });
           return (
-            <div key={day.date}
-                 className={`flex flex-col items-center p-2 border text-center ${
-                   day.willRain
-                     ? "border-orange-400/40 bg-orange-400/5"
-                     : "border-border/40 bg-background/40"
-                 }`}>
-              <p className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground mb-1"
-                 style={{ fontFamily: "var(--font-condensed)" }}>{label}</p>
+            <div
+              key={day.date}
+              className={`flex flex-col items-center p-2 border text-center ${
+                day.willRain
+                  ? "border-orange-400/40 bg-orange-400/5"
+                  : "border-border/40 bg-background/40"
+              }`}
+            >
+              <p
+                className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground mb-1"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {label}
+              </p>
               <p className="text-[9px] text-muted-foreground/60 mb-2">{md}</p>
-              {day.willRain
-                ? <CloudRain className="h-5 w-5 text-orange-400 mb-1" />
-                : <Sun className="h-5 w-5 text-primary/70 mb-1" />}
-              <p className="text-xs font-semibold text-foreground">{Math.round(day.tempHigh)}°</p>
-              <p className="text-[9px] text-muted-foreground">{Math.round(day.tempLow)}°</p>
+              {day.willRain ? (
+                <CloudRain className="h-5 w-5 text-orange-400 mb-1" />
+              ) : (
+                <Sun className="h-5 w-5 text-primary/70 mb-1" />
+              )}
+              <p className="text-xs font-semibold text-foreground">
+                {Math.round(day.tempHigh)}°
+              </p>
+              <p className="text-[9px] text-muted-foreground">
+                {Math.round(day.tempLow)}°
+              </p>
               {day.rainProbability > 0 && (
                 <p className="text-[9px] text-orange-400 mt-1 font-semibold">
                   {Math.round(day.rainProbability)}%
@@ -115,7 +151,11 @@ export default function ScheduleView() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
-  const { data: scheduleItems, isLoading: scheduleLoading, refetch } = trpc.schedule.list.useQuery(
+  const {
+    data: scheduleItems,
+    isLoading: scheduleLoading,
+    refetch,
+  } = trpc.schedule.list.useQuery(
     { projectId: selectedProject! },
     { enabled: !!selectedProject }
   );
@@ -153,7 +193,8 @@ export default function ScheduleView() {
   }, [projects]);
 
   const deferredTaskIds = new Set(
-    weather?.adjustments.filter(a => a.action === "defer").map(a => a.taskId) ?? []
+    weather?.adjustments.filter(a => a.action === "defer").map(a => a.taskId) ??
+      []
   );
 
   const filtered = (scheduleItems ?? []).filter(item =>
@@ -172,7 +213,10 @@ export default function ScheduleView() {
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            <h1
+              className="text-2xl font-semibold"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
               Weather Schedule
             </h1>
             <p className="text-sm text-muted-foreground font-light mt-0.5">
@@ -185,7 +229,9 @@ export default function ScheduleView() {
             className="flex items-center gap-2 border border-border/60 text-muted-foreground px-3 py-2 text-[11px] font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${weatherLoading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${weatherLoading ? "animate-spin" : ""}`}
+            />
             Refresh
           </button>
         </div>
@@ -214,7 +260,9 @@ export default function ScheduleView() {
         {weatherLoading && (
           <div className="bg-card border border-border/60 p-8 mb-5 flex items-center justify-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Fetching Eugene OR forecast…</span>
+            <span className="text-sm text-muted-foreground">
+              Fetching Eugene OR forecast…
+            </span>
           </div>
         )}
         {weatherError && (
@@ -225,36 +273,57 @@ export default function ScheduleView() {
         {weather && !weatherLoading && <WeatherBar weather={weather} />}
 
         {/* Rain alerts */}
-        {weather && weather.adjustments.filter(a => a.action === "defer").length > 0 && (
-          <div className="bg-orange-400/5 border border-orange-400/30 p-4 mb-5">
-            <p className="text-[10px] font-bold tracking-widest uppercase text-orange-400 mb-3"
-               style={{ fontFamily: "var(--font-condensed)" }}>
-              ⚠️ Weather Adjustments Recommended
-            </p>
-            <div className="space-y-2">
-              {weather.adjustments.filter(a => a.action === "defer").map(a => (
-                <div key={a.taskId} className="flex items-start gap-3">
-                  <CloudRain className="h-3.5 w-3.5 text-orange-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{a.taskTitle}</p>
-                    <p className="text-xs text-muted-foreground">{a.recommendation}</p>
-                  </div>
-                  <button
-                    onClick={() => updateStatus.mutate({ id: a.taskId, status: "deferred" })}
-                    className="ml-auto text-[9px] px-2 py-1 border border-orange-400/40 text-orange-400 hover:bg-orange-400/10 transition-colors flex-shrink-0"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    Defer
-                  </button>
-                </div>
-              ))}
+        {weather &&
+          weather.adjustments.filter(a => a.action === "defer").length > 0 && (
+            <div className="bg-orange-400/5 border border-orange-400/30 p-4 mb-5">
+              <p
+                className="text-[10px] font-bold tracking-widest uppercase text-orange-400 mb-3"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                ⚠️ Weather Adjustments Recommended
+              </p>
+              <div className="space-y-2">
+                {weather.adjustments
+                  .filter(a => a.action === "defer")
+                  .map(a => (
+                    <div key={a.taskId} className="flex items-start gap-3">
+                      <CloudRain className="h-3.5 w-3.5 text-orange-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {a.taskTitle}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {a.recommendation}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          updateStatus.mutate({
+                            id: a.taskId,
+                            status: "deferred",
+                          })
+                        }
+                        className="ml-auto text-[9px] px-2 py-1 border border-orange-400/40 text-orange-400 hover:bg-orange-400/10 transition-colors flex-shrink-0"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Defer
+                      </button>
+                    </div>
+                  ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Status filter */}
         <div className="flex gap-0 border-b border-border/40 mb-5 overflow-x-auto">
-          {["all", "pending", "in_progress", "complete", "deferred", "blocked"].map(s => (
+          {[
+            "all",
+            "pending",
+            "in_progress",
+            "complete",
+            "deferred",
+            "blocked",
+          ].map(s => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
@@ -274,21 +343,27 @@ export default function ScheduleView() {
         {scheduleLoading && (
           <div className="flex items-center justify-center py-16 gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Loading schedule…</span>
+            <span className="text-sm text-muted-foreground">
+              Loading schedule…
+            </span>
           </div>
         )}
 
         {!scheduleLoading && !selectedProject && (
           <div className="py-16 text-center">
             <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light">Select a project to view its schedule</p>
+            <p className="text-sm text-muted-foreground font-light">
+              Select a project to view its schedule
+            </p>
           </div>
         )}
 
         {!scheduleLoading && selectedProject && filtered.length === 0 && (
           <div className="py-16 text-center">
             <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light">No schedule items found</p>
+            <p className="text-sm text-muted-foreground font-light">
+              No schedule items found
+            </p>
             <button
               onClick={() => setLocation(`/admin/projects/${selectedProject}`)}
               className="mt-4 text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
@@ -304,7 +379,8 @@ export default function ScheduleView() {
             const isDeferred = deferredTaskIds.has(item.id);
             const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.pending;
             const StatusIcon = cfg.icon;
-            const tagCls = TASK_COLORS[item.task_type ?? "other"] ?? TASK_COLORS.other;
+            const tagCls =
+              TASK_COLORS[item.task_type ?? "other"] ?? TASK_COLORS.other;
 
             return (
               <div
@@ -313,13 +389,18 @@ export default function ScheduleView() {
                   isDeferred
                     ? "border-orange-400/40 bg-orange-400/5"
                     : item.status === "complete"
-                    ? "border-green-400/20 opacity-70"
-                    : "border-border/60 hover:border-border/80"
+                      ? "border-green-400/20 opacity-70"
+                      : "border-border/60 hover:border-border/80"
                 }`}
               >
                 {/* Status toggle */}
                 <button
-                  onClick={() => updateStatus.mutate({ id: item.id, status: cycleStatus(item.status) })}
+                  onClick={() =>
+                    updateStatus.mutate({
+                      id: item.id,
+                      status: cycleStatus(item.status),
+                    })
+                  }
                   className={`shrink-0 transition-colors hover:scale-110 ${cfg.color}`}
                   title={`Status: ${cfg.label} — click to advance`}
                 >
@@ -329,18 +410,24 @@ export default function ScheduleView() {
                 {/* Task info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <p className={`text-sm font-medium ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                    <p
+                      className={`text-sm font-medium ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}
+                    >
                       {item.title}
                     </p>
                     {isDeferred && (
-                      <span className="text-[8px] px-1.5 py-0.5 bg-orange-400/15 border border-orange-400/30 text-orange-400 font-bold tracking-widest uppercase"
-                            style={{ fontFamily: "var(--font-condensed)" }}>
+                      <span
+                        className="text-[8px] px-1.5 py-0.5 bg-orange-400/15 border border-orange-400/30 text-orange-400 font-bold tracking-widest uppercase"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
                         ⚠ Rain
                       </span>
                     )}
                     {item.is_outdoor && (
-                      <span className="text-[8px] px-1.5 py-0.5 bg-sky-400/10 border border-sky-400/20 text-sky-400 font-bold tracking-widest uppercase"
-                            style={{ fontFamily: "var(--font-condensed)" }}>
+                      <span
+                        className="text-[8px] px-1.5 py-0.5 bg-sky-400/10 border border-sky-400/20 text-sky-400 font-bold tracking-widest uppercase"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
                         Outdoor
                       </span>
                     )}
@@ -349,8 +436,12 @@ export default function ScheduleView() {
                     {item.planned_start && (
                       <span className="flex items-center gap-1">
                         <Calendar className="h-2.5 w-2.5" />
-                        {new Date(item.planned_start).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        {item.planned_end && ` – ${new Date(item.planned_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                        {new Date(item.planned_start).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric" }
+                        )}
+                        {item.planned_end &&
+                          ` – ${new Date(item.planned_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
                       </span>
                     )}
                     {item.duration_days && (
@@ -359,21 +450,23 @@ export default function ScheduleView() {
                         {item.duration_days}d
                       </span>
                     )}
-                    {item.assigned_to && (
-                      <span>{item.assigned_to}</span>
-                    )}
+                    {item.assigned_to && <span>{item.assigned_to}</span>}
                   </div>
                 </div>
 
                 {/* Task type badge */}
-                <span className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase flex-shrink-0 ${tagCls}`}
-                      style={{ fontFamily: "var(--font-condensed)" }}>
+                <span
+                  className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase flex-shrink-0 ${tagCls}`}
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
                   {item.task_type?.replace("_", " ") ?? "other"}
                 </span>
 
                 {/* Status badge */}
-                <span className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase flex-shrink-0 ${cfg.color} border-current/30`}
-                      style={{ fontFamily: "var(--font-condensed)" }}>
+                <span
+                  className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase flex-shrink-0 ${cfg.color} border-current/30`}
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
                   {cfg.label}
                 </span>
               </div>
@@ -385,15 +478,39 @@ export default function ScheduleView() {
         {scheduleItems && scheduleItems.length > 0 && (
           <div className="grid grid-cols-4 gap-3 mt-6">
             {[
-              { label: "Total", value: scheduleItems.length, color: "text-foreground" },
-              { label: "Complete", value: scheduleItems.filter(i => i.status === "complete").length, color: "text-green-400" },
-              { label: "In Progress", value: scheduleItems.filter(i => i.status === "in_progress").length, color: "text-primary" },
-              { label: "Deferred", value: scheduleItems.filter(i => i.status === "deferred").length, color: "text-orange-400" },
+              {
+                label: "Total",
+                value: scheduleItems.length,
+                color: "text-foreground",
+              },
+              {
+                label: "Complete",
+                value: scheduleItems.filter(i => i.status === "complete")
+                  .length,
+                color: "text-green-400",
+              },
+              {
+                label: "In Progress",
+                value: scheduleItems.filter(i => i.status === "in_progress")
+                  .length,
+                color: "text-primary",
+              },
+              {
+                label: "Deferred",
+                value: scheduleItems.filter(i => i.status === "deferred")
+                  .length,
+                color: "text-orange-400",
+              },
             ].map(s => (
-              <div key={s.label} className="bg-card border border-border/60 p-3 text-center">
+              <div
+                key={s.label}
+                className="bg-card border border-border/60 p-3 text-center"
+              >
                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-[9px] text-muted-foreground tracking-widest uppercase mt-0.5"
-                   style={{ fontFamily: "var(--font-condensed)"}}>
+                <p
+                  className="text-[9px] text-muted-foreground tracking-widest uppercase mt-0.5"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
                   {s.label}
                 </p>
               </div>

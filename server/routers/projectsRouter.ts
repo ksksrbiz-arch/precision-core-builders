@@ -3,7 +3,13 @@ import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
 const ProjectStatusEnum = z.enum([
-  "lead","estimate_sent","contracted","in_progress","punch_list","complete","on_hold",
+  "lead",
+  "estimate_sent",
+  "contracted",
+  "in_progress",
+  "punch_list",
+  "complete",
+  "on_hold",
 ]);
 
 const CreateProjectInput = z.object({
@@ -27,15 +33,18 @@ const CreateProjectInput = z.object({
 
 export const projectsRouter = router({
   list: adminProcedure
-    .input(z.object({
-      page: z.number().int().positive().optional(),
-      pageSize: z.number().int().min(1).max(100).optional(),
-      status: ProjectStatusEnum.optional(),
-      search: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        page: z.number().int().positive().optional(),
+        pageSize: z.number().int().min(1).max(100).optional(),
+        status: ProjectStatusEnum.optional(),
+        search: z.string().optional(),
+      })
+    )
     .query(async ({ input }) => {
       const { from, to } = paginate(input);
-      let q = db.from("projects")
+      let q = db
+        .from("projects")
         .select("*, clients(id,name,email,phone)", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -49,14 +58,18 @@ export const projectsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input, ctx }) => {
-      const { data, error } = await db.from("projects")
+      const { data, error } = await db
+        .from("projects")
         .select("*, clients(id,name,email,phone,user_id)")
         .eq("id", input.id)
         .single();
       if (error) throw new Error(error.message);
       // Clients can only view their own projects
       if (ctx.user?.role !== "admin") {
-        if (data.clients?.user_id !== ctx.user?.id || !data.client_portal_enabled) {
+        if (
+          data.clients?.user_id !== ctx.user?.id ||
+          !data.client_portal_enabled
+        ) {
           throw new Error("Unauthorized");
         }
       }
@@ -66,7 +79,8 @@ export const projectsRouter = router({
   create: adminProcedure
     .input(CreateProjectInput)
     .mutation(async ({ input }) => {
-      const { data, error } = await db.from("projects")
+      const { data, error } = await db
+        .from("projects")
         .insert({
           client_id: input.clientId,
           name: input.name,
@@ -92,20 +106,45 @@ export const projectsRouter = router({
     }),
 
   update: adminProcedure
-    .input(z.object({ id: z.number().int().positive() }).merge(CreateProjectInput.partial()))
+    .input(
+      z
+        .object({ id: z.number().int().positive() })
+        .merge(CreateProjectInput.partial())
+    )
     .mutation(async ({ input }) => {
-      const { id, clientId, projectType, estimatedBudget, contractedBudget,
-              estimatedStartDate, estimatedEndDate, clientPortalEnabled, siteCamUrl,
-              permitNumbers, ...rest } = input;
-      const { data, error } = await db.from("projects")
+      const {
+        id,
+        clientId,
+        projectType,
+        estimatedBudget,
+        contractedBudget,
+        estimatedStartDate,
+        estimatedEndDate,
+        clientPortalEnabled,
+        siteCamUrl,
+        permitNumbers,
+        ...rest
+      } = input;
+      const { data, error } = await db
+        .from("projects")
         .update({
           ...(clientId !== undefined && { client_id: clientId }),
           ...(projectType !== undefined && { project_type: projectType }),
-          ...(estimatedBudget !== undefined && { estimated_budget: estimatedBudget }),
-          ...(contractedBudget !== undefined && { contracted_budget: contractedBudget }),
-          ...(estimatedStartDate !== undefined && { estimated_start_date: estimatedStartDate }),
-          ...(estimatedEndDate !== undefined && { estimated_end_date: estimatedEndDate }),
-          ...(clientPortalEnabled !== undefined && { client_portal_enabled: clientPortalEnabled }),
+          ...(estimatedBudget !== undefined && {
+            estimated_budget: estimatedBudget,
+          }),
+          ...(contractedBudget !== undefined && {
+            contracted_budget: contractedBudget,
+          }),
+          ...(estimatedStartDate !== undefined && {
+            estimated_start_date: estimatedStartDate,
+          }),
+          ...(estimatedEndDate !== undefined && {
+            estimated_end_date: estimatedEndDate,
+          }),
+          ...(clientPortalEnabled !== undefined && {
+            client_portal_enabled: clientPortalEnabled,
+          }),
           ...(siteCamUrl !== undefined && { site_cam_url: siteCamUrl }),
           ...(permitNumbers !== undefined && { permit_numbers: permitNumbers }),
           ...rest,
@@ -118,16 +157,21 @@ export const projectsRouter = router({
     }),
 
   updateProgress: adminProcedure
-    .input(z.object({
-      id: z.number().int().positive(),
-      completionPercent: z.number().int().min(0).max(100),
-      actualCost: z.number().nonnegative().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        completionPercent: z.number().int().min(0).max(100),
+        actualCost: z.number().nonnegative().optional(),
+      })
+    )
     .mutation(async ({ input }) => {
-      const { data, error } = await db.from("projects")
+      const { data, error } = await db
+        .from("projects")
         .update({
           completion_percent: input.completionPercent,
-          ...(input.actualCost !== undefined && { actual_cost: input.actualCost }),
+          ...(input.actualCost !== undefined && {
+            actual_cost: input.actualCost,
+          }),
         })
         .eq("id", input.id)
         .select()
@@ -145,7 +189,9 @@ export const projectsRouter = router({
     }),
 
   stats: adminProcedure.query(async () => {
-    const { data } = await db.from("projects").select("status, estimated_budget, actual_cost, contracted_budget");
+    const { data } = await db
+      .from("projects")
+      .select("status, estimated_budget, actual_cost, contracted_budget");
     const all = data ?? [];
     return {
       total: all.length,
@@ -155,7 +201,10 @@ export const projectsRouter = router({
         contracted: all.filter(p => p.status === "contracted").length,
         complete: all.filter(p => p.status === "complete").length,
       },
-      totalEstimated: all.reduce((s, p) => s + Number(p.estimated_budget ?? 0), 0),
+      totalEstimated: all.reduce(
+        (s, p) => s + Number(p.estimated_budget ?? 0),
+        0
+      ),
       totalActual: all.reduce((s, p) => s + Number(p.actual_cost ?? 0), 0),
     };
   }),

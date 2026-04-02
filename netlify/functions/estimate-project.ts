@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const db = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
+  { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
 const ESTIMATOR_SYSTEM_PROMPT = `You are an expert construction cost estimator specializing in Eugene, Oregon residential construction.
@@ -32,16 +32,37 @@ Respond ONLY with valid JSON in this exact format:
   "aiReasoning": "2-3 sentence explanation of the estimate basis and key cost drivers"
 }`;
 
-export const handler: Handler = async (event) => {
-  const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
-  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
-  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
+export const handler: Handler = async event => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+  };
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 200, headers, body: "" };
+  if (event.httpMethod !== "POST")
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
 
   try {
     const input = JSON.parse(event.body ?? "{}");
-    const { squareFootage, projectType, complexity, materials, location, additionalNotes } = input;
+    const {
+      squareFootage,
+      projectType,
+      complexity,
+      materials,
+      location,
+      additionalNotes,
+    } = input;
 
-    if (!projectType) return { statusCode: 400, headers, body: JSON.stringify({ error: "projectType required" }) };
+    if (!projectType)
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "projectType required" }),
+      };
 
     const userPrompt = [
       `Project type: ${projectType}`,
@@ -50,7 +71,9 @@ export const handler: Handler = async (event) => {
       materials?.length ? `Selected materials: ${materials.join(", ")}` : "",
       location ? `Location: ${location}` : "Location: Eugene, OR",
       additionalNotes ? `Additional notes: ${additionalNotes}` : "",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     const result = await invokeLLM({
       messages: [
@@ -67,24 +90,40 @@ export const handler: Handler = async (event) => {
     // Save to estimates table if projectId or clientId provided
     let savedEstimate = null;
     if (input.projectId || input.clientId) {
-      const { data } = await db.from("estimates").insert({
-        project_id: input.projectId,
-        client_id: input.clientId,
-        square_footage: squareFootage,
-        project_type: projectType,
-        complexity,
-        materials: materials ? JSON.stringify(materials) : null,
-        location: location ?? "Eugene, OR",
-        additional_notes: additionalNotes,
-        ...estimate,
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      }).select().single();
+      const { data } = await db
+        .from("estimates")
+        .insert({
+          project_id: input.projectId,
+          client_id: input.clientId,
+          square_footage: squareFootage,
+          project_type: projectType,
+          complexity,
+          materials: materials ? JSON.stringify(materials) : null,
+          location: location ?? "Eugene, OR",
+          additional_notes: additionalNotes,
+          ...estimate,
+          expires_at: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        })
+        .select()
+        .single();
       savedEstimate = data;
     }
 
-    return { statusCode: 200, headers, body: JSON.stringify({ ...estimate, savedEstimate }) };
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ ...estimate, savedEstimate }),
+    };
   } catch (err) {
     console.error("[estimate-project]", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        error: err instanceof Error ? err.message : "Internal error",
+      }),
+    };
   }
 };

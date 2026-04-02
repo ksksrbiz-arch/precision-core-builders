@@ -47,7 +47,9 @@ export function NetworkStatus() {
     >
       <div className="flex items-center justify-center gap-2 py-2 px-4">
         {online ? (
-          <p className="text-xs font-semibold text-white">Back online — syncing data</p>
+          <p className="text-xs font-semibold text-white">
+            Back online — syncing data
+          </p>
         ) : (
           <>
             <WifiOff className="h-3.5 w-3.5 text-white" />
