@@ -1,7 +1,7 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "echo '--- Node ---' && node -v && echo '--- Build ---' && npx vite build --debug 2>&1; echo \"Exit: $?\""
+  command = "pnpm install --no-frozen-lockfile && pnpm build"
 
 [build.environment]
   NODE_VERSION = "20"
