@@ -19,18 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useState } from "react";
-
-// Auth0 — conditionally use when the provider is available
-let useAuth0Hook: (() => {
-  loginWithRedirect: (opts?: any) => Promise<void>;
-  isLoading: boolean;
-}) | null = null;
-try {
-  const mod = await import("@auth0/auth0-react");
-  useAuth0Hook = mod.useAuth0;
-} catch {
-  // Auth0 not installed or provider missing
-}
+import { useAuth0 } from "@auth0/auth0-react";
 
 const auth0Available =
   !!import.meta.env.VITE_AUTH0_DOMAIN &&
@@ -50,11 +39,11 @@ export default function AuthLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Auth0 hook — only call inside the component if the provider exists
+  // Auth0 hook — useAuth0 throws if Auth0Provider is not mounted
   let auth0LoginWithRedirect: ((opts?: any) => Promise<void>) | null = null;
-  if (useAuth0Hook && auth0Available) {
+  if (auth0Available) {
     try {
-      const a0 = useAuth0Hook();
+      const a0 = useAuth0();
       auth0LoginWithRedirect = a0.loginWithRedirect;
     } catch {
       // Auth0Provider not in tree

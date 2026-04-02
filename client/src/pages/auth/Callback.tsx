@@ -9,21 +9,7 @@ import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-
-// Auth0 — conditionally available
-let useAuth0Hook: (() => {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  user: any;
-  error: Error | undefined;
-  handleRedirectCallback: () => Promise<any>;
-}) | null = null;
-try {
-  const mod = await import("@auth0/auth0-react");
-  useAuth0Hook = mod.useAuth0;
-} catch {
-  // Auth0 not available
-}
+import { useAuth0 } from "@auth0/auth0-react";
 
 type State = "loading" | "error";
 
@@ -33,22 +19,20 @@ export default function AuthCallback() {
   const [errorMsg, setErrorMsg] = useState("");
   const didRedirect = useRef(false);
 
-  // ── Auth0 state ──────────────────────────────────────────────────
+  // ── Auth0 state — useAuth0 throws if Auth0Provider is not mounted ─
   let auth0User: any = null;
   let auth0Authenticated = false;
   let auth0Loading = false;
   let auth0Error: Error | undefined;
 
-  if (useAuth0Hook) {
-    try {
-      const a0 = useAuth0Hook();
-      auth0User = a0.user;
-      auth0Authenticated = a0.isAuthenticated;
-      auth0Loading = a0.isLoading;
-      auth0Error = a0.error;
-    } catch {
-      // Auth0Provider not in tree
-    }
+  try {
+    const a0 = useAuth0();
+    auth0User = a0.user;
+    auth0Authenticated = a0.isAuthenticated;
+    auth0Loading = a0.isLoading;
+    auth0Error = a0.error;
+  } catch {
+    // Auth0Provider not in tree — Supabase-only mode
   }
 
   // ── Auth0 redirect handling ──────────────────────────────────────
