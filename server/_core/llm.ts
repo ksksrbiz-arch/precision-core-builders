@@ -127,10 +127,8 @@ async function invokeCloudflareLLM(
     throw new Error(`Cloudflare Workers AI: ${errMsg}`);
   }
 
-  let text =
-    typeof data.result.response === "string"
-      ? data.result.response
-      : JSON.stringify(data.result.response);
+  // Coerce to string — CF API can return unexpected types
+  let text = String(data.result.response ?? "");
 
   // Clean markdown fences — Llama models often wrap JSON in various fence styles
   if (jsonMode) {

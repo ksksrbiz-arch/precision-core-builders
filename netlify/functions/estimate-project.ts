@@ -118,7 +118,7 @@ export const handler: Handler = async event => {
             headers,
             body: JSON.stringify({
               error: "AI returned invalid format",
-              raw: result.text.slice(0, 200),
+              raw: result.text.slice(0, 800),
             }),
           };
         }
@@ -132,7 +132,7 @@ export const handler: Handler = async event => {
           headers,
           body: JSON.stringify({
             error: "AI returned invalid format",
-            raw: result.text.slice(0, 200),
+            raw: result.text.slice(0, 800),
           }),
         };
       }
