@@ -129,12 +129,23 @@ async function invokeCloudflareLLM(
 
   let text = data.result.response;
 
-  // Clean markdown fences if model wraps JSON in them
+  // Clean markdown fences — Llama models often wrap JSON in various fence styles
   if (jsonMode) {
-    text = text
-      .replace(/^```(?:json)?\s*\n?/i, "")
-      .replace(/\n?```\s*$/i, "")
-      .trim();
+    // Remove leading fences: ```json, ```, ~~~json, ~~~
+    text = text.replace(/^[\s]*```[\w]*\s*\n?/i, "");
+    text = text.replace(/^[\s]*~~~[\w]*\s*\n?/i, "");
+    // Remove trailing fences
+    text = text.replace(/\n?\s*```[\s]*$/i, "");
+    text = text.replace(/\n?\s*~~~[\s]*$/i, "");
+    text = text.trim();
+
+    // If still not valid JSON, try to extract JSON object from the text
+    if (!text.startsWith("{") && !text.startsWith("[")) {
+      const jsonMatch = text.match(/(\{[\s\S]*\})/);
+      if (jsonMatch) {
+        text = jsonMatch[1];
+      }
+    }
   }
 
   return {

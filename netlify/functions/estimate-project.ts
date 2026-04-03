@@ -103,11 +103,39 @@ export const handler: Handler = async event => {
     try {
       estimate = JSON.parse(result.text);
     } catch {
-      return {
-        statusCode: 502,
-        headers,
-        body: JSON.stringify({ error: "AI returned invalid format" }),
-      };
+      // Fallback: try to extract JSON from the response text
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          estimate = JSON.parse(jsonMatch[0]);
+        } catch {
+          console.error(
+            "[estimate-project] Failed to parse:",
+            result.text.slice(0, 500)
+          );
+          return {
+            statusCode: 502,
+            headers,
+            body: JSON.stringify({
+              error: "AI returned invalid format",
+              raw: result.text.slice(0, 200),
+            }),
+          };
+        }
+      } else {
+        console.error(
+          "[estimate-project] No JSON found:",
+          result.text.slice(0, 500)
+        );
+        return {
+          statusCode: 502,
+          headers,
+          body: JSON.stringify({
+            error: "AI returned invalid format",
+            raw: result.text.slice(0, 200),
+          }),
+        };
+      }
     }
 
     // Save to estimates table if projectId or clientId provided
