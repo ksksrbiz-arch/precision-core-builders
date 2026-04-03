@@ -1,7 +1,7 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "echo 'Node:' && node -v && echo 'PNPM:' && pnpm -v && pnpm install --no-frozen-lockfile && pnpm build"
+  command = "npm install --legacy-peer-deps && npx vite build"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -54,27 +54,21 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # Allow mic (voice reports), camera (site cam), geolocation (weather/site)
-    # Uses structured-header syntax required by Chromium 116+
     Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self), interest-cohort=()"
-    # Legacy Feature-Policy fallback for older WebView / Safari < 16
     Feature-Policy = "camera 'self'; microphone 'self'; geolocation 'self'"
 
-# PWA manifest — don't cache aggressively (needs to update)
 [[headers]]
   for = "/manifest.json"
   [headers.values]
     Cache-Control = "public, max-age=86400"
     Content-Type = "application/manifest+json"
 
-# Service worker — MUST not be cached long
 [[headers]]
   for = "/sw.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
     Service-Worker-Allowed = "/"
 
-# Icons — cache for a week
 [[headers]]
   for = "/icons/*"
   [headers.values]
@@ -100,7 +94,6 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Context-specific build configurations
 [context.production]
   environment = { NODE_ENV = "production" }
 
@@ -109,4 +102,3 @@
 
 [context.branch-deploy]
   environment = { NODE_ENV = "development" }
-
