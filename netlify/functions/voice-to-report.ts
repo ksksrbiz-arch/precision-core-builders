@@ -1,7 +1,11 @@
 /**
- * Voice-to-Report Netlify Function
- * Accepts audio (multipart), transcribes with Whisper, generates structured
- * field report via Gemini, saves to field_reports table.
+ * Voice/Text-to-Report Netlify Function
+ *
+ * Two modes:
+ * 1. Audio (multipart) → Whisper transcription → Claude structured report
+ * 2. Text (JSON body)  → Claude structured report (skips Whisper)
+ *
+ * Saves to field_reports table.
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
@@ -14,8 +18,8 @@ const db = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const FIELD_REPORT_SYSTEM_PROMPT = `You are an AI assistant for a licensed Oregon construction contractor.
-You will receive a voice transcription from a job site field report.
+const FIELD_REPORT_SYSTEM_PROMPT = `You are an AI assistant for a licensed Oregon construction contractor (CCB #246527, Eugene OR).
+You will receive field notes from a job site — either transcribed from voice or typed directly.
 Extract and return ONLY valid JSON in this exact format:
 {
   "summary": "2-4 sentence professional summary of the day's work",
@@ -64,19 +68,6 @@ export const handler: Handler = async event => {
         body: JSON.stringify({ error: "Unauthorized" }),
       };
 
-    // Parse multipart body
-    const body = event.body;
-    if (!body)
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: "No body" }),
-      };
-
-    const isBase64 = event.isBase64Encoded;
-    const rawBody = isBase64 ? Buffer.from(body, "base64") : Buffer.from(body);
-
-    // Extract projectId from query params
     const projectId = parseInt(event.queryStringParameters?.projectId ?? "0");
     if (!projectId) {
       return {
@@ -86,44 +77,71 @@ export const handler: Handler = async event => {
       };
     }
 
-    // Get content type for multipart boundary
-    const contentType = event.headers["content-type"] ?? "audio/webm";
-    const isMultipart = contentType.includes("multipart");
+    const contentType = event.headers["content-type"] ?? "";
+    let transcriptionText: string;
 
-    let audioBuffer: ArrayBuffer;
-    let mimeType = "audio/webm";
+    // ── TEXT MODE: JSON body with { text: "..." } ──────────────────
+    if (contentType.includes("application/json")) {
+      const body = JSON.parse(event.body ?? "{}");
+      if (!body.text || typeof body.text !== "string" || !body.text.trim()) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: "text field required" }),
+        };
+      }
+      transcriptionText = body.text.trim();
+    }
+    // ── VOICE MODE: multipart audio → Whisper ──────────────────────
+    else {
+      const body = event.body;
+      if (!body)
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: "No body" }),
+        };
 
-    if (isMultipart) {
-      // Extract audio from multipart — find binary part
-      const boundary = contentType.split("boundary=")[1];
-      if (!boundary) throw new Error("No multipart boundary");
-      const parts = rawBody.toString().split(`--${boundary}`);
-      const audioPart = parts.find(p => p.includes("audio"));
-      if (!audioPart) throw new Error("No audio part in multipart");
-      const bodyStart = audioPart.indexOf("\r\n\r\n") + 4;
-      const bodyEnd = audioPart.lastIndexOf("\r\n");
-      audioBuffer = Buffer.from(
-        audioPart.slice(bodyStart, bodyEnd),
-        "binary"
-      ).buffer;
-      const mimeMatch = audioPart.match(/Content-Type: ([^\r\n]+)/);
-      if (mimeMatch) mimeType = mimeMatch[1].trim();
-    } else {
-      // Raw audio body
-      audioBuffer = rawBody.buffer;
-      mimeType = contentType;
+      const isBase64 = event.isBase64Encoded;
+      const rawBody = isBase64
+        ? Buffer.from(body, "base64")
+        : Buffer.from(body);
+
+      const isMultipart = contentType.includes("multipart");
+
+      let audioBuffer: ArrayBuffer;
+      let mimeType = "audio/webm";
+
+      if (isMultipart) {
+        const boundary = contentType.split("boundary=")[1];
+        if (!boundary) throw new Error("No multipart boundary");
+        const parts = rawBody.toString().split(`--${boundary}`);
+        const audioPart = parts.find(p => p.includes("audio"));
+        if (!audioPart) throw new Error("No audio part in multipart");
+        const bodyStart = audioPart.indexOf("\r\n\r\n") + 4;
+        const bodyEnd = audioPart.lastIndexOf("\r\n");
+        audioBuffer = Buffer.from(
+          audioPart.slice(bodyStart, bodyEnd),
+          "binary"
+        ).buffer;
+        const mimeMatch = audioPart.match(/Content-Type: ([^\r\n]+)/);
+        if (mimeMatch) mimeType = mimeMatch[1].trim();
+      } else {
+        audioBuffer = rawBody.buffer;
+        mimeType = contentType;
+      }
+
+      const transcription = await transcribeAudio(audioBuffer, mimeType);
+      transcriptionText = transcription.text;
     }
 
-    // 1. Transcribe with Whisper
-    const transcription = await transcribeAudio(audioBuffer, mimeType);
-
-    // 2. Generate structured report with Gemini
+    // ── Generate structured report via Claude ──────────────────────
     const llmResult = await invokeLLM({
       messages: [
         { role: "system", content: FIELD_REPORT_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Field memo transcription:\n\n${transcription.text}`,
+          content: `Field notes:\n\n${transcriptionText}`,
         },
       ],
       jsonMode: true,
@@ -143,7 +161,7 @@ export const handler: Handler = async event => {
       reportData = JSON.parse(llmResult.text);
     } catch {
       reportData = {
-        summary: transcription.text.slice(0, 500),
+        summary: transcriptionText.slice(0, 500),
         tasksCompleted: [],
         materialsUsed: [],
         issuesFlagged: [],
@@ -151,14 +169,14 @@ export const handler: Handler = async event => {
       };
     }
 
-    // 3. Save to field_reports table
+    // ── Save to field_reports table ────────────────────────────────
     const { data: report, error: dbError } = await db
       .from("field_reports")
       .insert({
         project_id: projectId,
         author_id: user.id,
         report_date: new Date().toISOString(),
-        transcription: transcription.text,
+        transcription: transcriptionText,
         summary: reportData.summary,
         tasks_completed: JSON.stringify(reportData.tasksCompleted),
         materials_used: JSON.stringify(reportData.materialsUsed),

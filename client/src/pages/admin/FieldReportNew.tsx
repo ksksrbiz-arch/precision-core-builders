@@ -1,32 +1,38 @@
 /**
- * New Field Report — voice recording UI + AI report generation.
+ * New Field Report — voice recording OR text input + AI report generation.
+ * Voice mode: records → Whisper transcription → Claude structured report.
+ * Text mode: typed notes → Claude structured report (no Whisper needed).
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
-  Mic,
-  MicOff,
-  Square,
-  Send,
-  Loader2,
   ArrowLeft,
   CheckCircle2,
+  FileText,
+  Loader2,
+  Mic,
+  MicOff,
+  Send,
+  Square,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
-type Step = "select" | "record" | "processing" | "review" | "done";
+type Step = "select" | "input" | "processing" | "review" | "done";
+type InputMode = "voice" | "text";
 
 export default function FieldReportNew() {
   const [, setLocation] = useLocation();
   const { accessToken } = useAuth();
   const [step, setStep] = useState<Step>("select");
+  const [inputMode, setInputMode] = useState<InputMode>("text");
   const [projectId, setProjectId] = useState<number | null>(null);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [textNotes, setTextNotes] = useState("");
   const [report, setReport] = useState<any>(null);
   const [editedSummary, setEditedSummary] = useState("");
   const [error, setError] = useState("");
@@ -37,6 +43,7 @@ export default function FieldReportNew() {
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
   const publishMutation = trpc.fieldReports.publish.useMutation();
 
+  // ── Voice recording ──────────────────────────────────────────────
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -55,8 +62,10 @@ export default function FieldReportNew() {
       setRecording(true);
       setRecordingTime(0);
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-    } catch (err) {
-      setError("Could not access microphone. Please check permissions.");
+    } catch {
+      setError(
+        "Could not access microphone. Check permissions or use text mode."
+      );
     }
   };
 
@@ -73,6 +82,7 @@ export default function FieldReportNew() {
     []
   );
 
+  // ── Process voice recording ──────────────────────────────────────
   const processAudio = async () => {
     if (!audioBlob || !projectId) return;
     setStep("processing");
@@ -92,7 +102,32 @@ export default function FieldReportNew() {
       setStep("review");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Processing failed");
-      setStep("record");
+      setStep("input");
+    }
+  };
+
+  // ── Process text notes ───────────────────────────────────────────
+  const processText = async () => {
+    if (!textNotes.trim() || !projectId) return;
+    setStep("processing");
+    setError("");
+    try {
+      const res = await fetch(`/api/voice-to-report?projectId=${projectId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: textNotes.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Processing failed");
+      setReport(data.report);
+      setEditedSummary(data.report.summary ?? "");
+      setStep("review");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Processing failed");
+      setStep("input");
     }
   };
 
@@ -114,6 +149,10 @@ export default function FieldReportNew() {
     }
   };
 
+  const activeProjects = projects?.data.filter(
+    p => p.status === "in_progress" || p.status === "contracted"
+  );
+
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
@@ -132,17 +171,15 @@ export default function FieldReportNew() {
           <GuideHelpButton guideId="field-reports" />
         </h1>
 
+        {/* ═══ STEP 1: Select project ═══════════════════════════════ */}
         {step === "select" && (
           <div className="bg-card border border-border/60 p-6">
             <p className="text-sm text-muted-foreground mb-4 font-light">
               Select the project for this field report:
             </p>
-            <div className="space-y-2 mb-5">
-              {projects?.data
-                .filter(
-                  p => p.status === "in_progress" || p.status === "contracted"
-                )
-                .map(p => (
+            {activeProjects && activeProjects.length > 0 ? (
+              <div className="space-y-2 mb-5">
+                {activeProjects.map(p => (
                   <button
                     key={p.id}
                     onClick={() => setProjectId(p.id)}
@@ -158,105 +195,191 @@ export default function FieldReportNew() {
                     </p>
                   </button>
                 ))}
-            </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No active projects.{" "}
+                <button
+                  onClick={() => setLocation("/admin/projects")}
+                  className="text-primary hover:underline"
+                >
+                  Create a project
+                </button>{" "}
+                first.
+              </div>
+            )}
             <button
-              onClick={() => projectId && setStep("record")}
+              onClick={() => projectId && setStep("input")}
               disabled={!projectId}
               className="w-full py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Continue to Recording →
+              Continue →
             </button>
           </div>
         )}
 
-        {step === "record" && (
-          <div className="bg-card border border-border/60 p-8 text-center">
-            <p className="text-xs text-muted-foreground mb-8 font-light">
+        {/* ═══ STEP 2: Input mode (voice or text) ══════════════════ */}
+        {step === "input" && (
+          <div className="space-y-4">
+            {/* Project label */}
+            <p className="text-xs text-muted-foreground font-light">
               Project:{" "}
               <strong className="text-foreground">
                 {projects?.data.find(p => p.id === projectId)?.name}
               </strong>
             </p>
-            {/* Recording indicator */}
-            <div
-              className={`h-28 w-28 rounded-full border-4 flex items-center justify-center mx-auto mb-6 transition-all ${
-                recording
-                  ? "border-red-500 bg-red-500/10 animate-pulse"
-                  : "border-border/60 bg-card"
-              }`}
-            >
-              {recording ? (
-                <Mic className="h-10 w-10 text-red-400" />
-              ) : (
-                <Mic className="h-10 w-10 text-muted-foreground" />
-              )}
+
+            {/* Mode toggle */}
+            <div className="flex border border-border/40 bg-background/50">
+              <button
+                onClick={() => setInputMode("text")}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-bold tracking-[0.14em] uppercase transition-colors ${
+                  inputMode === "text"
+                    ? "bg-primary/10 text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <FileText className="h-3.5 w-3.5" /> Type Notes
+              </button>
+              <button
+                onClick={() => setInputMode("voice")}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-bold tracking-[0.14em] uppercase transition-colors ${
+                  inputMode === "voice"
+                    ? "bg-primary/10 text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Mic className="h-3.5 w-3.5" /> Voice Memo
+              </button>
             </div>
-            {recording && (
-              <p className="text-3xl font-mono text-foreground mb-2">
-                {fmt(recordingTime)}
+
+            {error && (
+              <p className="px-4 py-3 border border-destructive/40 bg-destructive/10 text-xs text-destructive">
+                {error}
               </p>
             )}
-            <p className="text-sm text-muted-foreground mb-8 font-light">
-              {recording
-                ? "Recording… speak clearly about today's progress, materials, and any issues."
-                : "Press record when ready to report on today's site work."}
-            </p>
-            {error && <p className="text-sm text-destructive mb-4">{error}</p>}
-            <div className="flex gap-3 justify-center">
-              {!recording && !audioBlob && (
-                <button
-                  onClick={startRecording}
-                  className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white text-[11px] font-bold tracking-widest uppercase hover:bg-red-600 transition-colors"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <Mic className="h-4 w-4" /> Start Recording
-                </button>
-              )}
-              {recording && (
-                <button
-                  onClick={stopRecording}
-                  className="flex items-center gap-2 px-6 py-3 bg-foreground text-background text-[11px] font-bold tracking-widest uppercase hover:opacity-90 transition-opacity"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <Square className="h-4 w-4" /> Stop
-                </button>
-              )}
-              {audioBlob && !recording && (
-                <>
+
+            {/* ── Text input mode ────────────────────────────────── */}
+            {inputMode === "text" && (
+              <div className="bg-card border border-border/60 p-6">
+                <p className="text-xs text-muted-foreground mb-3 font-light">
+                  Describe today's progress, materials used, and any issues.
+                  Claude will structure this into a formal field report.
+                </p>
+                <textarea
+                  value={textNotes}
+                  onChange={e => setTextNotes(e.target.value)}
+                  rows={8}
+                  placeholder="Got the demo done on the kitchen cabinets and countertops. Hauled out 2 loads of debris. Discovered some water damage behind the sink wall — drywall is soft about 2ft wide, going to need to sister a stud and re-drywall that section. Used the Sawzall plus 5 demo blades. Need to order the replacement stud lumber and moisture barrier before framing starts Monday."
+                  className="w-full bg-input border border-border text-sm text-foreground p-4 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 resize-none placeholder:text-muted-foreground/25"
+                />
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-[10px] text-muted-foreground/40">
+                    {textNotes.length > 0
+                      ? `${textNotes.length} characters`
+                      : ""}
+                  </span>
                   <button
-                    onClick={() => {
-                      setAudioBlob(null);
-                      setRecordingTime(0);
-                    }}
-                    className="px-5 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                    onClick={processText}
+                    disabled={textNotes.trim().length < 10}
+                    className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    <MicOff className="h-4 w-4 inline mr-1" /> Re-record
+                    <Send className="h-4 w-4" /> Generate Report
                   </button>
-                  <button
-                    onClick={processAudio}
-                    className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    <Send className="h-4 w-4" /> Process Report
-                  </button>
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Voice recording mode ───────────────────────────── */}
+            {inputMode === "voice" && (
+              <div className="bg-card border border-border/60 p-8 text-center">
+                <div
+                  className={`h-28 w-28 rounded-full border-4 flex items-center justify-center mx-auto mb-6 transition-all ${
+                    recording
+                      ? "border-red-500 bg-red-500/10 animate-pulse"
+                      : "border-border/60 bg-card"
+                  }`}
+                >
+                  <Mic
+                    className={`h-10 w-10 ${recording ? "text-red-400" : "text-muted-foreground"}`}
+                  />
+                </div>
+                {recording && (
+                  <p className="text-3xl font-mono text-foreground mb-2">
+                    {fmt(recordingTime)}
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground mb-8 font-light">
+                  {recording
+                    ? "Recording… speak clearly about today's progress, materials, and any issues."
+                    : "Press record when ready to report on today's site work."}
+                </p>
+                <div className="flex gap-3 justify-center">
+                  {!recording && !audioBlob && (
+                    <button
+                      onClick={startRecording}
+                      className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white text-[11px] font-bold tracking-widest uppercase hover:bg-red-600 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Mic className="h-4 w-4" /> Start Recording
+                    </button>
+                  )}
+                  {recording && (
+                    <button
+                      onClick={stopRecording}
+                      className="flex items-center gap-2 px-6 py-3 bg-foreground text-background text-[11px] font-bold tracking-widest uppercase hover:opacity-90 transition-opacity"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Square className="h-4 w-4" /> Stop
+                    </button>
+                  )}
+                  {audioBlob && !recording && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setAudioBlob(null);
+                          setRecordingTime(0);
+                        }}
+                        className="px-5 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <MicOff className="h-4 w-4 inline mr-1" /> Re-record
+                      </button>
+                      <button
+                        onClick={processAudio}
+                        className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <Send className="h-4 w-4" /> Process Report
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* ═══ STEP 3: Processing ══════════════════════════════════ */}
         {step === "processing" && (
           <div className="bg-card border border-border/60 p-12 text-center">
             <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
-            <p className="text-sm font-medium mb-1">Transcribing your memo…</p>
+            <p className="text-sm font-medium mb-1">
+              {inputMode === "voice"
+                ? "Transcribing your memo…"
+                : "Analyzing your field notes…"}
+            </p>
             <p className="text-xs text-muted-foreground font-light">
               Generating structured field report with AI
             </p>
           </div>
         )}
 
+        {/* ═══ STEP 4: Review ══════════════════════════════════════ */}
         {step === "review" && report && (
           <div className="space-y-4">
             <div className="bg-card border border-border/60 p-5">
@@ -304,7 +427,7 @@ export default function FieldReportNew() {
             })}
             <div className="flex gap-3">
               <button
-                onClick={() => setLocation(`/admin/field-reports/${report.id}`)}
+                onClick={() => setLocation("/admin/field-reports")}
                 className="flex-1 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -328,6 +451,7 @@ export default function FieldReportNew() {
           </div>
         )}
 
+        {/* ═══ STEP 5: Done ════════════════════════════════════════ */}
         {step === "done" && (
           <div className="bg-card border border-border/60 p-10 text-center">
             <CheckCircle2 className="h-12 w-12 text-green-400 mx-auto mb-4" />
@@ -352,6 +476,7 @@ export default function FieldReportNew() {
                 onClick={() => {
                   setStep("select");
                   setAudioBlob(null);
+                  setTextNotes("");
                   setReport(null);
                   setRecordingTime(0);
                 }}
