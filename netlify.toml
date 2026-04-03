@@ -1,7 +1,7 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "mkdir -p dist/public && cp client/public/offline.html dist/public/index.html && echo BUILD_OK"
+  command = "echo 'Node:' && node -v && echo 'PNPM:' && pnpm -v && pnpm install --no-frozen-lockfile && pnpm build"
 
 [build.environment]
   NODE_VERSION = "20"
