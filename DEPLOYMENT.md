@@ -117,6 +117,7 @@ The build is configured via `netlify.toml` in the repository root. Key settings:
 ### Secrets Scanning Error
 
 **Error message:**
+
 ```
 Secret env var "VITE_AUTH0_DOMAIN"'s value detected:
   found value at line 70 in dist/public/assets/index-DPzLDhJ.js
@@ -162,6 +163,7 @@ Add `SECRETS_SCAN_OMIT_KEYS=VITE_AUTH0_DOMAIN,VITE_AUTH0_CLIENT_ID` to environme
 ### Netlify Analytics
 
 Enable Netlify Analytics for:
+
 - Page views and unique visitors
 - Top pages and bandwidth usage
 - Performance metrics
@@ -169,6 +171,7 @@ Enable Netlify Analytics for:
 ### Error Tracking
 
 Consider integrating:
+
 - Sentry for error tracking
 - LogRocket for session replay
 - Netlify function logs for serverless monitoring
@@ -191,6 +194,7 @@ Security headers are configured in `netlify.toml`:
 ## Support
 
 For deployment issues:
+
 - Check [Netlify documentation](https://docs.netlify.com/)
 - Review build logs in Netlify dashboard
 - Contact Eric Tadlock for project-specific questions

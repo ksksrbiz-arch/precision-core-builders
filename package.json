@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
     "build": "vite build",
-    "start": "echo \"Production runs on Netlify Functions \u2014 use netlify dev locally\"",
+    "start": "echo \"Production runs on Netlify Functions — use netlify dev locally\"",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
