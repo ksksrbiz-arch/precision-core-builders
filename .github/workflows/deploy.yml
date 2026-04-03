@@ -83,7 +83,7 @@ jobs:
           VITE_AUTH0_CLIENT_ID: ${{ secrets.VITE_AUTH0_CLIENT_ID }}
 
       - name: Deploy to Netlify (Preview)
-        run: npx netlify-cli deploy --dir=./dist/public --functions=./netlify/functions --message="Preview — PR #${{ github.event.number }}"
+        run: npx netlify-cli deploy --dir=./dist/public --functions=./netlify/functions --message='Preview — PR #${{ github.event.number }}'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -126,7 +126,7 @@ jobs:
           VITE_AUTH0_CLIENT_ID: ${{ secrets.VITE_AUTH0_CLIENT_ID }}
 
       - name: Deploy to Netlify (Production)
-        run: npx netlify-cli deploy --prod --dir=./dist/public --functions=./netlify/functions --message="Production — ${{ github.sha }}"
+        run: npx netlify-cli deploy --prod --dir=./dist/public --functions=./netlify/functions --message='Production — ${{ github.sha }}'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
