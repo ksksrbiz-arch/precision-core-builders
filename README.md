@@ -152,6 +152,15 @@ Write Vitest tests for critical procedures in `server/*.test.ts`. Run tests with
 
 Push to GitHub. Netlify automatically builds and deploys on every commit to `main`.
 
+#### Netlify Secrets Scanning Configuration
+
+Auth0 domain and client ID are **public values** (not secrets) that are intentionally exposed in client-side JavaScript. To prevent Netlify's secrets scanner from blocking deployment, add the following environment variable in the Netlify dashboard:
+
+**Key:** `SECRETS_SCAN_OMIT_KEYS`
+**Value:** `VITE_AUTH0_DOMAIN,VITE_AUTH0_CLIENT_ID`
+
+This tells Netlify to ignore these specific environment variables during secrets scanning, since they are safe to appear in the bundled client-side assets.
+
 ## Key Files
 
 | File                                 | Purpose                                                     |
@@ -175,6 +184,11 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
+# Auth0 (public values - safe to expose in client)
+VITE_AUTH0_DOMAIN=your-tenant.auth0.com
+VITE_AUTH0_CLIENT_ID=your-auth0-client-id
+VITE_AUTH0_AUDIENCE=your-api-audience (optional)
+
 # AI/LLM
 GEMINI_API_KEY=your-gemini-api-key
 OPENWEATHERMAP_API_KEY=your-weather-api-key
@@ -182,9 +196,11 @@ OPENWEATHERMAP_API_KEY=your-weather-api-key
 # n8n (for automation workflows)
 N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/...
 
-# Netlify Functions
-NETLIFY_AUTH_TOKEN=your-netlify-token
+# Netlify Deployment
+SECRETS_SCAN_OMIT_KEYS=VITE_AUTH0_DOMAIN,VITE_AUTH0_CLIENT_ID
 ```
+
+**Note:** `VITE_AUTH0_DOMAIN` and `VITE_AUTH0_CLIENT_ID` are prefixed with `VITE_` to make them accessible in client-side code. These are **public values** (not secrets) required for Auth0 OAuth configuration. The `SECRETS_SCAN_OMIT_KEYS` variable tells Netlify's secrets scanner to ignore these values during deployment.
 
 ## Security & Compliance
 

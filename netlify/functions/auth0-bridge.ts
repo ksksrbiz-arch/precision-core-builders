@@ -68,8 +68,7 @@ export const handler: Handler = async event => {
     };
   }
 
-  const auth0Domain =
-    process.env.VITE_AUTH0_DOMAIN ?? process.env.NEXT_PUBLIC_AUTH0_DOMAIN ?? "";
+  const auth0Domain = process.env.VITE_AUTH0_DOMAIN ?? "";
 
   if (!auth0Domain) {
     return {
