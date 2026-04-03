@@ -1,11 +1,10 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "pnpm install --no-frozen-lockfile && pnpm build"
+  command = "echo 'Node:' && node -v && echo 'PNPM:' && pnpm -v && pnpm install --no-frozen-lockfile && pnpm build"
 
 [build.environment]
   NODE_VERSION = "20"
-  PNPM_VERSION = "9"
 
 # Redirect API calls to serverless functions
 [[redirects]]
