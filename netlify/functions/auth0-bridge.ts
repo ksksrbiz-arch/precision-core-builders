@@ -54,7 +54,7 @@ async function fetchAuth0UserInfo(
   }
 }
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = async event => {
   // Handle CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
@@ -69,9 +69,7 @@ export const handler: Handler = async (event) => {
   }
 
   const auth0Domain =
-    process.env.VITE_AUTH0_DOMAIN ??
-    process.env.NEXT_PUBLIC_AUTH0_DOMAIN ??
-    "";
+    process.env.VITE_AUTH0_DOMAIN ?? process.env.NEXT_PUBLIC_AUTH0_DOMAIN ?? "";
 
   if (!auth0Domain) {
     return {
@@ -116,7 +114,7 @@ export const handler: Handler = async (event) => {
   // Step 2: Check if user already exists in Supabase auth
   const { data: existingUsers } = await admin.auth.admin.listUsers();
   const existingUser = existingUsers?.users?.find(
-    (u) => u.email === userInfo.email
+    u => u.email === userInfo.email
   );
 
   let supabaseUserId: string;
@@ -126,7 +124,10 @@ export const handler: Handler = async (event) => {
     supabaseUserId = existingUser.id;
     await admin.auth.admin.updateUserById(supabaseUserId, {
       user_metadata: {
-        name: userInfo.name ?? userInfo.nickname ?? existingUser.user_metadata?.name,
+        name:
+          userInfo.name ??
+          userInfo.nickname ??
+          existingUser.user_metadata?.name,
         avatar_url: userInfo.picture ?? existingUser.user_metadata?.avatar_url,
         auth0_sub: userInfo.sub,
         provider: "auth0",
@@ -137,7 +138,7 @@ export const handler: Handler = async (event) => {
     const randomPw =
       "Auth0!" +
       Array.from(crypto.getRandomValues(new Uint8Array(24)))
-        .map((b) => b.toString(36))
+        .map(b => b.toString(36))
         .join("")
         .slice(0, 24);
 
@@ -147,7 +148,8 @@ export const handler: Handler = async (event) => {
         email_confirm: true,
         password: randomPw,
         user_metadata: {
-          name: userInfo.name ?? userInfo.nickname ?? userInfo.email.split("@")[0],
+          name:
+            userInfo.name ?? userInfo.nickname ?? userInfo.email.split("@")[0],
           avatar_url: userInfo.picture,
           auth0_sub: userInfo.sub,
           provider: "auth0",
@@ -194,10 +196,9 @@ export const handler: Handler = async (event) => {
   }
 
   // Extract the token from the magic link
-  const linkUrl = new URL(
-    linkData.properties?.action_link ?? ""
-  );
-  const token_hash = linkUrl.searchParams.get("token_hash") ?? linkUrl.hash?.slice(1);
+  const linkUrl = new URL(linkData.properties?.action_link ?? "");
+  const token_hash =
+    linkUrl.searchParams.get("token_hash") ?? linkUrl.hash?.slice(1);
 
   // Step 4: Verify the OTP to get real session tokens
   const { data: verifyData, error: verifyErr } = await admin.auth.verifyOtp({
