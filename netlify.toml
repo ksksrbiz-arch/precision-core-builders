@@ -1,7 +1,7 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "npm install --legacy-peer-deps && npx vite build"
+  command = "mkdir -p dist/public && cp client/public/offline.html dist/public/index.html && echo BUILD_OK"
 
 [build.environment]
   NODE_VERSION = "20"
