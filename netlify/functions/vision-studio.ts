@@ -1,9 +1,10 @@
 import type { Handler } from "@netlify/functions";
-import { getOpenAIClient } from "../../server/_core/llm";
+import Anthropic from "@anthropic-ai/sdk";
+import { getAnthropicClient } from "../../server/_core/llm";
 import { checkRateLimit, getClientIP } from "../../server/_core/rateLimit";
 
 /**
- * Vision Studio — OpenAI GPT-4o Vision API endpoint.
+ * Vision Studio — Claude Vision API endpoint.
  * Accepts base64-encoded images and returns AI analysis
  * for construction site photos, material inspection, progress tracking, etc.
  */
@@ -100,23 +101,29 @@ export const handler: Handler = async event => {
       };
     }
 
-    const client = getOpenAIClient();
+    const client = getAnthropicClient();
     const userPrompt =
       customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4o",
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
       temperature: 0.2,
+      system: SYSTEM_PROMPT,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
           content: [
             {
-              type: "image_url",
-              image_url: {
-                url: `data:${mediaType};base64,${image}`,
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType as
+                  | "image/jpeg"
+                  | "image/png"
+                  | "image/gif"
+                  | "image/webp",
+                data: image,
               },
             },
             {
@@ -128,7 +135,10 @@ export const handler: Handler = async event => {
       ],
     });
 
-    const analysisText = response.choices[0]?.message?.content ?? "";
+    const analysisText = response.content
+      .filter(block => block.type === "text")
+      .map(block => (block as Anthropic.TextBlock).text)
+      .join("");
 
     return {
       statusCode: 200,
@@ -137,13 +147,12 @@ export const handler: Handler = async event => {
         analysis: analysisText,
         mode,
         model: response.model,
-        usage: response.usage
-          ? {
-              promptTokens: response.usage.prompt_tokens,
-              completionTokens: response.usage.completion_tokens,
-              totalTokens: response.usage.total_tokens,
-            }
-          : null,
+        usage: {
+          promptTokens: response.usage.input_tokens,
+          completionTokens: response.usage.output_tokens,
+          totalTokens:
+            response.usage.input_tokens + response.usage.output_tokens,
+        },
         timestamp: new Date().toISOString(),
       }),
     };
