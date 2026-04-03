@@ -18,7 +18,6 @@ export const appRouter = router({
     logout: protectedProcedure.mutation(opts => {
       opts.ctx.res.clearCookie(COOKIE_NAME, {
         ...getSessionCookieOptions(opts.ctx.req),
-        maxAge: -1,
       });
       return { success: true };
     }),
