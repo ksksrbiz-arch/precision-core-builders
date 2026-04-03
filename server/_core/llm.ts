@@ -142,10 +142,19 @@ async function invokeCloudflareLLM(
 
     // If still not valid JSON, try to extract JSON object from the text
     if (!text.startsWith("{") && !text.startsWith("[")) {
-      const jsonMatch = text.match(/(\{[\s\S]*\})/);
+      const jsonMatch = text.match(/(\{[\s\S]*)/);
       if (jsonMatch) {
         text = jsonMatch[1];
       }
+    }
+
+    // Balance braces — Llama models sometimes omit the closing }
+    const opens = (text.match(/\{/g) || []).length;
+    const closes = (text.match(/\}/g) || []).length;
+    if (opens > closes) {
+      // Remove trailing comma if present before adding closing braces
+      text = text.replace(/,\s*$/, "");
+      text += "\n" + "}".repeat(opens - closes);
     }
   }
 
