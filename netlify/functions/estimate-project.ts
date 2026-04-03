@@ -95,7 +95,7 @@ export const handler: Handler = async event => {
         { role: "user", content: userPrompt },
       ],
       jsonMode: true,
-      maxTokens: 800,
+      maxTokens: 2048,
       temperature: 0.1,
     });
 
