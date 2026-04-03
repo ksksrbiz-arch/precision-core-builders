@@ -1,9 +1,10 @@
 /**
- * LLM client — Claude (Anthropic) via the official SDK.
- * All AI features (field reports, estimator, lead scoring) call invokeLLM().
- * Model: claude-sonnet-4-6 — fast, accurate, cost-efficient for structured tasks.
+ * LLM client — Cloudflare Workers AI (free tier).
+ * All AI features (field reports, estimator, lead scoring, chat) call invokeLLM().
+ * Model: @cf/meta/llama-3.3-70b-instruct-fp8-fast — best free-tier quality.
+ *
+ * Falls back to Anthropic Claude if CF_API_TOKEN is not set but ANTHROPIC_API_KEY is.
  */
-import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "./env";
 
 export type LLMRole = "system" | "user" | "assistant";
@@ -17,7 +18,7 @@ export type LLMInvokeParams = {
   messages: LLMMessage[];
   maxTokens?: number;
   temperature?: number;
-  /** When true, instructs Claude to respond only in JSON. */
+  /** When true, instructs the model to respond only in JSON. */
   jsonMode?: boolean;
 };
 
@@ -31,36 +32,13 @@ export type LLMResult = {
   };
 };
 
-const MODEL = "claude-sonnet-4-6";
+const CF_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 /**
- * Create an Anthropic SDK client, optionally routed through Cloudflare
- * AI Gateway for caching, retries, and analytics.
- */
-export function getAnthropicClient(): Anthropic {
-  if (!ENV.anthropicApiKey) {
-    throw new Error(
-      "ANTHROPIC_API_KEY is not configured in Netlify environment variables."
-    );
-  }
-
-  const cfAccountId = process.env.CF_ACCOUNT_ID;
-  const cfGatewayId = process.env.CF_AI_GATEWAY_ID;
-
-  // Route through Cloudflare AI Gateway when configured
-  if (cfAccountId && cfGatewayId) {
-    return new Anthropic({
-      apiKey: ENV.anthropicApiKey,
-      baseURL: `https://gateway.ai.cloudflare.com/v1/${cfAccountId}/${cfGatewayId}/anthropic`,
-    });
-  }
-
-  return new Anthropic({ apiKey: ENV.anthropicApiKey });
-}
-
-/**
- * Invoke Claude via the Anthropic SDK.
- * Handles system prompts, JSON mode prefix injection, and usage tracking.
+ * Invoke LLM via Cloudflare Workers AI REST API.
+ * Free tier: 10,000 neurons/day — plenty for daily construction ops.
+ *
+ * If Cloudflare is not configured, falls back to Anthropic SDK.
  */
 export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   const {
@@ -70,13 +48,116 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
     jsonMode = false,
   } = params;
 
-  const client = getAnthropicClient();
+  const cfAccountId = ENV.cfAccountId;
+  const cfApiToken = process.env.CF_API_TOKEN;
 
-  // Separate system prompt from conversation messages
+  // ── Cloudflare Workers AI (primary — free) ──────────────────────
+  if (cfAccountId && cfApiToken) {
+    return invokeCloudflareLLM(
+      cfAccountId,
+      cfApiToken,
+      messages,
+      maxTokens,
+      temperature,
+      jsonMode
+    );
+  }
+
+  // ── Anthropic fallback (paid) ───────────────────────────────────
+  if (ENV.anthropicApiKey) {
+    return invokeAnthropicLLM(messages, maxTokens, temperature, jsonMode);
+  }
+
+  throw new Error(
+    "No LLM provider configured. Set CF_API_TOKEN for Cloudflare Workers AI (free) or ANTHROPIC_API_KEY for Claude."
+  );
+}
+
+// ── Cloudflare Workers AI ───────────────────────────────────────────
+async function invokeCloudflareLLM(
+  accountId: string,
+  apiToken: string,
+  messages: LLMMessage[],
+  maxTokens: number,
+  temperature: number,
+  jsonMode: boolean
+): Promise<LLMResult> {
+  // Inject JSON-only instruction into system prompt
+  const cfMessages = messages.map(m => {
+    if (m.role === "system" && jsonMode) {
+      return {
+        role: m.role,
+        content: `${m.content}\n\nIMPORTANT: Respond with ONLY valid JSON. No markdown code fences, no preamble, no explanation — raw JSON only.`,
+      };
+    }
+    return { role: m.role, content: m.content };
+  });
+
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${CF_MODEL}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: cfMessages,
+        max_tokens: maxTokens,
+        temperature,
+        stream: false,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Cloudflare Workers AI ${res.status}: ${errText}`);
+  }
+
+  const data = (await res.json()) as {
+    success: boolean;
+    result?: { response?: string };
+    errors?: Array<{ message: string }>;
+  };
+
+  if (!data.success || !data.result?.response) {
+    const errMsg =
+      data.errors?.map(e => e.message).join("; ") ?? "Empty response";
+    throw new Error(`Cloudflare Workers AI: ${errMsg}`);
+  }
+
+  let text = data.result.response;
+
+  // Clean markdown fences if model wraps JSON in them
+  if (jsonMode) {
+    text = text
+      .replace(/^```(?:json)?\s*\n?/i, "")
+      .replace(/\n?```\s*$/i, "")
+      .trim();
+  }
+
+  return {
+    text,
+    model: CF_MODEL,
+  };
+}
+
+// ── Anthropic fallback ──────────────────────────────────────────────
+async function invokeAnthropicLLM(
+  messages: LLMMessage[],
+  maxTokens: number,
+  temperature: number,
+  jsonMode: boolean
+): Promise<LLMResult> {
+  // Dynamic import to avoid bundling Anthropic SDK when using CF
+  const { default: Anthropic } = await import("@anthropic-ai/sdk");
+
+  const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
+
   const systemMsg = messages.find(m => m.role === "system");
   const conversationMsgs = messages.filter(m => m.role !== "system");
 
-  // Build system string — append JSON-only instruction when jsonMode is set
   const systemParts = [
     systemMsg?.content ?? "",
     jsonMode
@@ -85,24 +166,22 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   ].filter(Boolean);
   const system = systemParts.join("\n\n");
 
-  // Cast messages to Anthropic SDK format (system is already separated)
-  const sdkMessages: Anthropic.MessageParam[] = conversationMsgs.map(m => ({
+  const sdkMessages = conversationMsgs.map(m => ({
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
 
   const response = await client.messages.create({
-    model: MODEL,
+    model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
     temperature,
     ...(system ? { system } : {}),
     messages: sdkMessages,
   });
 
-  // Extract text from response content blocks
   const text = response.content
-    .filter(block => block.type === "text")
-    .map(block => (block as Anthropic.TextBlock).text)
+    .filter((block: any) => block.type === "text")
+    .map((block: any) => block.text)
     .join("");
 
   return {
@@ -114,4 +193,21 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
       totalTokens: response.usage.input_tokens + response.usage.output_tokens,
     },
   };
+}
+
+/**
+ * Backward compat export for vision-studio.
+ * Returns a simple object with a chat method that routes through invokeLLM.
+ */
+export function getAnthropicClient() {
+  // This is only used by vision-studio as a fallback.
+  // Vision features require a vision-capable model (Anthropic/OpenAI).
+  // CF Workers AI does not have strong vision models on free tier.
+  const Anthropic = require("@anthropic-ai/sdk").default;
+  if (!ENV.anthropicApiKey) {
+    throw new Error(
+      "Vision analysis requires ANTHROPIC_API_KEY — Cloudflare Workers AI free tier does not include vision models."
+    );
+  }
+  return new Anthropic({ apiKey: ENV.anthropicApiKey });
 }

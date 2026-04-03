@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
     "build": "vite build",
-    "start": "echo \"Production runs on Netlify Functions — use netlify dev locally\"",
+    "start": "echo \"Production runs on Netlify Functions \u2014 use netlify dev locally\"",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0",
-    "@auth0/auth0-react": "^2.2.4",
     "@excalidraw/excalidraw": "^0.18.0",
     "@hookform/resolvers": "^5.2.2",
     "@netlify/functions": "^2.8.2",
