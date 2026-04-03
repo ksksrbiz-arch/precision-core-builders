@@ -1,7 +1,7 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "npm install --legacy-peer-deps && npx vite build"
+  command = "npx vite build"
 
 [build.environment]
   NODE_VERSION = "20"
