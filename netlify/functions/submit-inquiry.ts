@@ -41,7 +41,10 @@ export const handler: Handler = async (event: HandlerEvent) => {
     return {
       statusCode: 429,
       headers: { ...corsHeaders, "Retry-After": "60" },
-      body: JSON.stringify({ ok: false, message: "Too many submissions. Please wait a moment." }),
+      body: JSON.stringify({
+        ok: false,
+        message: "Too many submissions. Please wait a moment.",
+      }),
     };
   }
 

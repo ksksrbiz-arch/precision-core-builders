@@ -142,8 +142,13 @@ export default function AuthLogin() {
     });
     setLoading(false);
     if (authError) {
-      if (authError.message?.includes("provider") && authError.message?.includes("not enabled")) {
-        setError("Google sign-in is not yet configured. Please use email/password or Auth0 to sign in.");
+      if (
+        authError.message?.includes("provider") &&
+        authError.message?.includes("not enabled")
+      ) {
+        setError(
+          "Google sign-in is not yet configured. Please use email/password or Auth0 to sign in."
+        );
       } else {
         setError(authError.message);
       }
