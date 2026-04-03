@@ -11,6 +11,7 @@ import {
   IOSInstallHint,
 } from "./components/PWAInstallPrompt";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { withAdminGuard } from "./components/AdminGuard";
 import Home from "./pages/Home";
 
 // Public pages
@@ -127,26 +128,26 @@ function Router() {
         <Route path="/auth/login" component={AuthLogin} />
         <Route path="/auth/callback" component={AuthCallback} />
 
-        {/* Admin */}
-        <Route path="/admin" component={CommandCenter} />
-        <Route path="/admin/projects" component={ProjectsList} />
-        <Route path="/admin/projects/:id" component={ProjectDetail} />
-        <Route path="/admin/field-reports/new" component={FieldReportNew} />
-        <Route path="/admin/field-reports" component={FieldReportsList} />
-        <Route path="/admin/clients/:id" component={ClientDetail} />
-        <Route path="/admin/clients" component={ClientsList} />
-        <Route path="/admin/estimates" component={EstimatesList} />
-        <Route path="/admin/sub-contractors" component={SubContractorsList} />
-        <Route path="/admin/ledger" component={LedgerView} />
-        <Route path="/admin/site-plans" component={SitePlanBuilder} />
-        <Route path="/admin/guides" component={Guides} />
-        <Route path="/admin/schedule" component={ScheduleView} />
-        <Route path="/admin/materials" component={MaterialsView} />
-        <Route path="/admin/billing" component={BillingView} />
-        <Route path="/admin/portfolio-cms" component={PortfolioAdmin} />
-        <Route path="/admin/setup" component={SetupWizard} />
-        <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
-        <Route path="/admin/dev" component={DevDash} />
+        {/* Admin (protected) */}
+        <Route path="/admin" component={withAdminGuard(CommandCenter)} />
+        <Route path="/admin/projects" component={withAdminGuard(ProjectsList)} />
+        <Route path="/admin/projects/:id" component={withAdminGuard(ProjectDetail)} />
+        <Route path="/admin/field-reports/new" component={withAdminGuard(FieldReportNew)} />
+        <Route path="/admin/field-reports" component={withAdminGuard(FieldReportsList)} />
+        <Route path="/admin/clients/:id" component={withAdminGuard(ClientDetail)} />
+        <Route path="/admin/clients" component={withAdminGuard(ClientsList)} />
+        <Route path="/admin/estimates" component={withAdminGuard(EstimatesList)} />
+        <Route path="/admin/sub-contractors" component={withAdminGuard(SubContractorsList)} />
+        <Route path="/admin/ledger" component={withAdminGuard(LedgerView)} />
+        <Route path="/admin/site-plans" component={withAdminGuard(SitePlanBuilder)} />
+        <Route path="/admin/guides" component={withAdminGuard(Guides)} />
+        <Route path="/admin/schedule" component={withAdminGuard(ScheduleView)} />
+        <Route path="/admin/materials" component={withAdminGuard(MaterialsView)} />
+        <Route path="/admin/billing" component={withAdminGuard(BillingView)} />
+        <Route path="/admin/portfolio-cms" component={withAdminGuard(PortfolioAdmin)} />
+        <Route path="/admin/setup" component={withAdminGuard(SetupWizard)} />
+        <Route path="/admin/vision-studio" component={withAdminGuard(VisionStudioAdmin)} />
+        <Route path="/admin/dev" component={withAdminGuard(DevDash)} />
 
         {/* Client portal */}
         <Route path="/portal" component={PortalDashboard} />

@@ -1,7 +1,6 @@
 /**
- * Auth callback — handles magic link, OAuth provider, AND Auth0 redirects.
- * Supabase processes tokens from URL hash/PKCE; Auth0 SDK handles its own
- * code exchange. We redirect based on role once either provider resolves.
+ * Auth callback — handles Supabase password login + magic link + password reset.
+ * Redirects based on role from the users table.
  */
 import { ASSETS } from "@/const";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +8,6 @@ import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth0 } from "@auth0/auth0-react";
 
 type State = "loading" | "error";
 
@@ -19,104 +17,8 @@ export default function AuthCallback() {
   const [errorMsg, setErrorMsg] = useState("");
   const didRedirect = useRef(false);
 
-  // ── Auth0 state — useAuth0 throws if Auth0Provider is not mounted ─
-  let auth0User: any = null;
-  let auth0Authenticated = false;
-  let auth0Loading = false;
-  let auth0Error: Error | undefined;
-
-  try {
-    const a0 = useAuth0();
-    auth0User = a0.user;
-    auth0Authenticated = a0.isAuthenticated;
-    auth0Loading = a0.isLoading;
-    auth0Error = a0.error;
-  } catch {
-    // Auth0Provider not in tree — Supabase-only mode
-  }
-
-  // ── Auth0 → Supabase bridge ──────────────────────────────────────
-  let auth0GetToken: (() => Promise<string>) | null = null;
-  try {
-    const a0hook = useAuth0();
-    auth0GetToken = a0hook.getAccessTokenSilently;
-  } catch {}
-
   useEffect(() => {
-    if (auth0Error) {
-      setState("error");
-      setErrorMsg(auth0Error.message);
-      return;
-    }
-
-    if (!auth0Authenticated || !auth0User || didRedirect.current) return;
-
-    // Bridge Auth0 session → Supabase session
-    (async () => {
-      try {
-        // Get Auth0 access token
-        const auth0Token = auth0GetToken ? await auth0GetToken() : null;
-        if (!auth0Token) {
-          // Fallback: redirect using Auth0 roles only
-          didRedirect.current = true;
-          const roles: string[] =
-            auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
-          setLocation(roles.includes("admin") ? "/admin" : "/portal");
-          return;
-        }
-
-        // Call bridge function to create Supabase session
-        const res = await fetch("/api/auth0-bridge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ auth0Token }),
-        });
-
-        const data = await res.json();
-
-        if (data.bridged && data.access_token && data.refresh_token) {
-          // Set the Supabase session from bridge tokens
-          await supabase.auth.setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-          });
-
-          // Wait for session to propagate, then redirect by role
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData.session) {
-            didRedirect.current = true;
-            const { data: profile } = await supabase
-              .from("users")
-              .select("role")
-              .eq("id", sessionData.session.user.id)
-              .single();
-            setLocation(profile?.role === "admin" ? "/admin" : "/portal");
-            return;
-          }
-        }
-
-        // Fallback: redirect using Auth0 roles
-        didRedirect.current = true;
-        const roles: string[] =
-          auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
-        setLocation(roles.includes("admin") ? "/admin" : "/portal");
-      } catch (err: any) {
-        console.error("[Auth0 Bridge]", err);
-        // Still redirect — just without Supabase session
-        didRedirect.current = true;
-        const roles: string[] =
-          auth0User["https://pcb.app/roles"] ?? auth0User.roles ?? [];
-        setLocation(roles.includes("admin") ? "/admin" : "/portal");
-      }
-    })();
-  }, [auth0Authenticated, auth0User, auth0Error, setLocation]);
-
-  // ── Supabase redirect handling ───────────────────────────────────
-  useEffect(() => {
-    // If Auth0 already handled the redirect, skip Supabase
-    if (auth0Authenticated || auth0Loading) return;
-
-    // Check for error in URL (OAuth errors come back as query params or hash)
+    // Check for OAuth/magic-link error in URL
     const url = new URL(window.location.href);
     const hashParams = new URLSearchParams(window.location.hash.slice(1));
     const oauthError =
@@ -132,8 +34,8 @@ export default function AuthCallback() {
     }
 
     /**
-     * Reads role from public.users and navigates.
-     * Retries once — the DB trigger may not have fired yet on first login.
+     * Look up the user's role in public.users and redirect.
+     * Retries up to 3x in case the DB trigger hasn't fired yet.
      */
     async function redirectByRole(userId: string, attempt = 1) {
       if (didRedirect.current) return;
@@ -166,16 +68,17 @@ export default function AuthCallback() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session) {
+      if (
+        (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") &&
+        session
+      ) {
         await redirectByRole(session.user.id);
       } else if (event === "SIGNED_OUT") {
         setLocation("/auth/login");
-      } else if (event === "TOKEN_REFRESHED" && session) {
-        await redirectByRole(session.user.id);
       }
     });
 
-    // Fallback: session already exists
+    // Fallback: session already exists (e.g. from password login)
     supabase.auth.getSession().then(({ data }) => {
       if (data.session && !didRedirect.current) {
         redirectByRole(data.session.user.id);
@@ -183,7 +86,7 @@ export default function AuthCallback() {
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation, auth0Authenticated, auth0Loading]);
+  }, [setLocation]);
 
   if (state === "error") {
     return (
