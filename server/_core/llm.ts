@@ -127,7 +127,10 @@ async function invokeCloudflareLLM(
     throw new Error(`Cloudflare Workers AI: ${errMsg}`);
   }
 
-  let text = data.result.response;
+  let text =
+    typeof data.result.response === "string"
+      ? data.result.response
+      : JSON.stringify(data.result.response);
 
   // Clean markdown fences — Llama models often wrap JSON in various fence styles
   if (jsonMode) {
