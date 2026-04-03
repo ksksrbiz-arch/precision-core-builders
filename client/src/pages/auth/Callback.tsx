@@ -68,10 +68,7 @@ export default function AuthCallback() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (
-        (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") &&
-        session
-      ) {
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         await redirectByRole(session.user.id);
       } else if (event === "SIGNED_OUT") {
         setLocation("/auth/login");

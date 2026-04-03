@@ -54,7 +54,9 @@ export default function AuthLogin() {
     setLoading(false);
     if (authError) {
       if (authError.message?.includes("Invalid login")) {
-        setError("Invalid email or password. Check your credentials and try again.");
+        setError(
+          "Invalid email or password. Check your credentials and try again."
+        );
       } else {
         setError(authError.message);
       }
@@ -145,7 +147,8 @@ export default function AuthLogin() {
                   {email}
                 </p>
                 <p className="text-xs text-muted-foreground/60 font-light mb-6">
-                  Click the link to reset your password. It expires in 60 minutes.
+                  Click the link to reset your password. It expires in 60
+                  minutes.
                 </p>
                 <button
                   onClick={() => {

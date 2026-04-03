@@ -14,7 +14,6 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isAdmin, loading, user } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Still loading — show branded spinner
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-5">
@@ -31,14 +30,11 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not authenticated — redirect to login
   if (!isAuthenticated) {
-    // Use setTimeout to avoid React render-during-render warning
     setTimeout(() => setLocation("/auth/login"), 0);
     return null;
   }
 
-  // Authenticated but not admin — show access denied
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -58,9 +54,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
           </h2>
           <p className="text-sm text-muted-foreground font-light mb-2">
             Signed in as{" "}
-            <span className="text-foreground font-medium">
-              {user?.email}
-            </span>
+            <span className="text-foreground font-medium">{user?.email}</span>
           </p>
           <p className="text-xs text-muted-foreground/60 mb-6">
             This area is restricted to administrators. Contact your admin to
@@ -87,22 +81,21 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Admin — render children
   return <>{children}</>;
 }
 
 /**
- * withAdminGuard — HOC wrapper for route components.
- * Usage: <Route path="/admin" component={withAdminGuard(CommandCenter)} />
+ * withAdminGuard — HOC wrapper for Wouter route components.
+ * Uses explicit cast to satisfy Wouter's strict RouteComponentProps typing.
  */
-export function withAdminGuard<P extends object>(
-  Component: ComponentType<P>
-): ComponentType<P> {
-  return function GuardedComponent(props: P) {
-    return (
-      <AdminGuard>
-        <Component {...props} />
-      </AdminGuard>
-    );
-  };
+export function withAdminGuard<T extends ComponentType<any>>(Component: T): T {
+  const GuardedComponent = (props: any) => (
+    <AdminGuard>
+      <Component {...props} />
+    </AdminGuard>
+  );
+  GuardedComponent.displayName = `AdminGuard(${
+    (Component as any).displayName || (Component as any).name || "Component"
+  })`;
+  return GuardedComponent as unknown as T;
 }

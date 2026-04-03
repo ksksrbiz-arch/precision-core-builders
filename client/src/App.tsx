@@ -130,23 +130,59 @@ function Router() {
 
         {/* Admin (protected) */}
         <Route path="/admin" component={withAdminGuard(CommandCenter)} />
-        <Route path="/admin/projects" component={withAdminGuard(ProjectsList)} />
-        <Route path="/admin/projects/:id" component={withAdminGuard(ProjectDetail)} />
-        <Route path="/admin/field-reports/new" component={withAdminGuard(FieldReportNew)} />
-        <Route path="/admin/field-reports" component={withAdminGuard(FieldReportsList)} />
-        <Route path="/admin/clients/:id" component={withAdminGuard(ClientDetail)} />
+        <Route
+          path="/admin/projects"
+          component={withAdminGuard(ProjectsList)}
+        />
+        <Route
+          path="/admin/projects/:id"
+          component={withAdminGuard(ProjectDetail)}
+        />
+        <Route
+          path="/admin/field-reports/new"
+          component={withAdminGuard(FieldReportNew)}
+        />
+        <Route
+          path="/admin/field-reports"
+          component={withAdminGuard(FieldReportsList)}
+        />
+        <Route
+          path="/admin/clients/:id"
+          component={withAdminGuard(ClientDetail)}
+        />
         <Route path="/admin/clients" component={withAdminGuard(ClientsList)} />
-        <Route path="/admin/estimates" component={withAdminGuard(EstimatesList)} />
-        <Route path="/admin/sub-contractors" component={withAdminGuard(SubContractorsList)} />
+        <Route
+          path="/admin/estimates"
+          component={withAdminGuard(EstimatesList)}
+        />
+        <Route
+          path="/admin/sub-contractors"
+          component={withAdminGuard(SubContractorsList)}
+        />
         <Route path="/admin/ledger" component={withAdminGuard(LedgerView)} />
-        <Route path="/admin/site-plans" component={withAdminGuard(SitePlanBuilder)} />
+        <Route
+          path="/admin/site-plans"
+          component={withAdminGuard(SitePlanBuilder)}
+        />
         <Route path="/admin/guides" component={withAdminGuard(Guides)} />
-        <Route path="/admin/schedule" component={withAdminGuard(ScheduleView)} />
-        <Route path="/admin/materials" component={withAdminGuard(MaterialsView)} />
+        <Route
+          path="/admin/schedule"
+          component={withAdminGuard(ScheduleView)}
+        />
+        <Route
+          path="/admin/materials"
+          component={withAdminGuard(MaterialsView)}
+        />
         <Route path="/admin/billing" component={withAdminGuard(BillingView)} />
-        <Route path="/admin/portfolio-cms" component={withAdminGuard(PortfolioAdmin)} />
+        <Route
+          path="/admin/portfolio-cms"
+          component={withAdminGuard(PortfolioAdmin)}
+        />
         <Route path="/admin/setup" component={withAdminGuard(SetupWizard)} />
-        <Route path="/admin/vision-studio" component={withAdminGuard(VisionStudioAdmin)} />
+        <Route
+          path="/admin/vision-studio"
+          component={withAdminGuard(VisionStudioAdmin)}
+        />
         <Route path="/admin/dev" component={withAdminGuard(DevDash)} />
 
         {/* Client portal */}
