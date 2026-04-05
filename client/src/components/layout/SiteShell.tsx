@@ -15,7 +15,7 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
   { label: "About", href: "/about" },
@@ -30,12 +30,48 @@ const NAV_LINKS = [
 export function SiteNav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", h, { passive: true });
     return () => window.removeEventListener("scroll", h);
   }, []);
+
+  /* Focus management: move focus into nav on open, restore on close */
+  useEffect(() => {
+    if (open) {
+      navRef.current?.focus();
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setOpen(false);
+          menuBtnRef.current?.focus();
+        }
+      };
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [open]);
+
+  /* Keep Tab cycling within the open drawer */
+  const handleTrapFocus = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const focusable = navRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusable?.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   const currentPath =
     typeof window !== "undefined" ? window.location.pathname : "";
@@ -111,6 +147,7 @@ export function SiteNav() {
             Free Estimate <ArrowRight className="h-3.5 w-3.5" />
           </a>
           <button
+            ref={menuBtnRef}
             onClick={() => setOpen(o => !o)}
             className="lg:hidden p-2 text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label={open ? "Close menu" : "Open menu"}
@@ -129,7 +166,10 @@ export function SiteNav() {
           className="lg:hidden glass border-t border-border/50"
         >
           <nav
-            className="container py-5 flex flex-col gap-0"
+            ref={navRef}
+            tabIndex={-1}
+            onKeyDown={handleTrapFocus}
+            className="container py-5 flex flex-col gap-0 outline-none"
             aria-label="Mobile navigation"
           >
             {NAV_LINKS.map(n => (
