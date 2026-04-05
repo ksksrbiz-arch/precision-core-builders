@@ -133,7 +133,7 @@ export default function Estimator() {
 
       <SiteNav />
       <MobileCTABar />
-      <main className="pt-[68px] min-h-screen">
+      <main id="main-content" className="pt-[68px] min-h-screen">
         <div className="container py-16 sm:py-24 max-w-3xl">
           {/* Header */}
           <motion.div
