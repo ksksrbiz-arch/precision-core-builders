@@ -221,12 +221,14 @@ export default function Estimator() {
               <div className="space-y-5 mb-6">
                 <div>
                   <label
+                    htmlFor="est-sqft"
                     className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     Square Footage (approximate)
                   </label>
                   <input
+                    id="est-sqft"
                     type="number"
                     value={sqft}
                     onChange={e => setSqft(e.target.value)}
@@ -238,12 +240,17 @@ export default function Estimator() {
                 </div>
                 <div>
                   <label
+                    id="est-finish-group"
                     className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-3 font-medium"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     Finish Level
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div
+                    role="group"
+                    aria-labelledby="est-finish-group"
+                    className="grid grid-cols-3 gap-3"
+                  >
                     {(["low", "medium", "high"] as const).map(c => (
                       <button
                         key={c}
@@ -265,12 +272,14 @@ export default function Estimator() {
                 </div>
                 <div>
                   <label
+                    htmlFor="est-notes"
                     className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     Additional Notes (optional)
                   </label>
                   <textarea
+                    id="est-notes"
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                     rows={3}
@@ -457,21 +466,33 @@ export default function Estimator() {
                     free.
                   </p>
                   <div className="space-y-3">
+                    <label htmlFor="lead-name" className="sr-only">
+                      Your name
+                    </label>
                     <input
+                      id="lead-name"
                       value={leadName}
                       onChange={e => setLeadName(e.target.value)}
                       placeholder="Your name *"
                       className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
                     />
                     <div className="grid sm:grid-cols-2 gap-3">
+                      <label htmlFor="lead-email" className="sr-only">
+                        Email
+                      </label>
                       <input
+                        id="lead-email"
                         value={leadEmail}
                         onChange={e => setLeadEmail(e.target.value)}
                         placeholder="Email *"
                         type="email"
                         className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
                       />
+                      <label htmlFor="lead-phone" className="sr-only">
+                        Phone
+                      </label>
                       <input
+                        id="lead-phone"
                         value={leadPhone}
                         onChange={e => setLeadPhone(e.target.value)}
                         placeholder="Phone"
