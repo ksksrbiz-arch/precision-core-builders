@@ -78,7 +78,7 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
+  const { loading, user, isAdmin } = useAuth();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -111,6 +111,40 @@ export default function DashboardLayout({
           >
             <a href="/auth/login">Sign In</a>
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-6 p-8 max-w-sm w-full text-center">
+          <div className="h-14 w-14 border border-primary/40 flex items-center justify-center">
+            <Shield className="h-7 w-7 text-destructive" />
+          </div>
+          <div>
+            <h1
+              className="text-xl font-semibold tracking-tight mb-2"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Admin Access Required
+            </h1>
+            <p className="text-sm text-muted-foreground font-light">
+              This area is restricted to administrators.
+            </p>
+          </div>
+          <div className="flex gap-3 w-full">
+            <Button variant="outline" className="flex-1" asChild>
+              <a href="/portal">Go to Portal</a>
+            </Button>
+            <Button
+              className="flex-1 bg-primary text-primary-foreground"
+              asChild
+            >
+              <a href="/">Home</a>
+            </Button>
+          </div>
         </div>
       </div>
     );

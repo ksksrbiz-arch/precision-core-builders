@@ -10,6 +10,7 @@ import {
   IOSInstallHint,
 } from "./components/PWAInstallPrompt";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { ProtectedRoute } from "./components/RouteGuards";
 import Home from "./pages/Home";
 
 // Public pages
@@ -129,11 +130,35 @@ function Router() {
         <Route path="/admin/setup" component={SetupWizard} />
         <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
 
-        {/* Client portal */}
-        <Route path="/portal" component={PortalDashboard} />
-        <Route path="/portal/reports" component={PortalReports} />
-        <Route path="/portal/finishes" component={PortalFinishes} />
-        <Route path="/portal/ledger" component={PortalLedger} />
+        {/* Client portal — auth required */}
+        <Route path="/portal">
+          {() => (
+            <ProtectedRoute>
+              <PortalDashboard />
+            </ProtectedRoute>
+          )}
+        </Route>
+        <Route path="/portal/reports">
+          {() => (
+            <ProtectedRoute>
+              <PortalReports />
+            </ProtectedRoute>
+          )}
+        </Route>
+        <Route path="/portal/finishes">
+          {() => (
+            <ProtectedRoute>
+              <PortalFinishes />
+            </ProtectedRoute>
+          )}
+        </Route>
+        <Route path="/portal/ledger">
+          {() => (
+            <ProtectedRoute>
+              <PortalLedger />
+            </ProtectedRoute>
+          )}
+        </Route>
 
         {/* Service pages */}
         <Route path="/services/residential" component={LazyResidential} />

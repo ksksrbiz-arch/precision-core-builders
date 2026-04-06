@@ -504,3 +504,27 @@ export const visionStudioRequests = pgTable("vision_studio_requests", {
 export type VisionStudioRequest = typeof visionStudioRequests.$inferSelect;
 export type InsertVisionStudioRequest =
   typeof visionStudioRequests.$inferInsert;
+
+// ─── Billing Events (Stripe Webhook Records) ────────────────────────────────
+
+export const billingEvents = pgTable("billing_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  stripeEventId: varchar("stripe_event_id", { length: 100 }),
+  stripeInvoiceId: varchar("stripe_invoice_id", { length: 100 }),
+  eventType: varchar("event_type", { length: 50 }).notNull(),
+  amountCents: integer("amount_cents").notNull().default(0),
+  currency: varchar("currency", { length: 10 }).notNull().default("usd"),
+  clientEmail: varchar("client_email", { length: 255 }),
+  clientName: varchar("client_name", { length: 255 }),
+  description: text("description"),
+  invoiceUrl: text("invoice_url"),
+  invoicePdf: text("invoice_pdf"),
+  projectId: integer("project_id"),
+  metadata: text("metadata"), // JSONB stored as text for drizzle compat
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type BillingEvent = typeof billingEvents.$inferSelect;
+export type InsertBillingEvent = typeof billingEvents.$inferInsert;
