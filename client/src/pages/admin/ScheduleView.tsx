@@ -3,6 +3,7 @@
  * Calls /api/weather-schedule for Eugene OR forecast and task recommendations.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { GanttChart } from "@/components/GanttChart";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -313,6 +314,22 @@ export default function ScheduleView() {
               </div>
             </div>
           )}
+
+        {/* Gantt Chart Visualization */}
+        {selectedProject && (
+          <div className="mb-6">
+            <GanttChart
+              projectId={selectedProject}
+              items={scheduleItems ?? []}
+              weatherForecast={weather?.forecast?.[0]}
+              readOnly={false}
+              onTaskUpdate={(taskId, startDate, endDate) => {
+                console.log(`Task ${taskId} rescheduled to ${startDate} - ${endDate}`);
+                // TODO: Call tRPC mutation to update task dates
+              }}
+            />
+          </div>
+        )}
 
         {/* Status filter */}
         <div className="flex gap-0 border-b border-border/40 mb-5 overflow-x-auto">
