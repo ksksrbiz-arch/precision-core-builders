@@ -1,8 +1,8 @@
 import { lazy, Suspense } from "react";
-import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { ToastProvider } from "./components/ToastProvider";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { NetworkStatus } from "./components/NetworkStatus";
 import {
@@ -26,6 +26,7 @@ const VisionStudio = lazy(() => import("./pages/VisionStudio"));
 // Auth pages
 const AuthLogin = lazy(() => import("./pages/auth/Login"));
 const AuthCallback = lazy(() => import("./pages/auth/Callback"));
+const ResendLink = lazy(() => import("./pages/auth/ResendLink"));
 
 // Admin pages
 const CommandCenter = lazy(() => import("./pages/admin/CommandCenter"));
@@ -109,6 +110,7 @@ function Router() {
         {/* Auth */}
         <Route path="/auth/login" component={AuthLogin} />
         <Route path="/auth/callback" component={AuthCallback} />
+        <Route path="/auth/resend" component={ResendLink} />
 
         {/* Admin */}
         <Route path="/admin" component={CommandCenter} />
@@ -184,14 +186,15 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <NetworkStatus />
-          <Toaster />
-          <Router />
-          <MobileBottomNav />
-          <PWAInstallPrompt />
-          <IOSInstallHint />
-        </TooltipProvider>
+        <ToastProvider>
+          <TooltipProvider>
+            <NetworkStatus />
+            <Router />
+            <MobileBottomNav />
+            <PWAInstallPrompt />
+            <IOSInstallHint />
+          </TooltipProvider>
+        </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
