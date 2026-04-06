@@ -1,0 +1,5 @@
+# API calls → serverless functions
+/api/*  /.netlify/functions/:splat  200
+
+# SPA catch-all — all routes handled by client-side router
+/*  /index.html  200
