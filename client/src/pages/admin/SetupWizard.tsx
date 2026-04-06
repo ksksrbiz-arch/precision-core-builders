@@ -1,31 +1,37 @@
 /**
- * SetupWizard -- Eric's self-service configuration console.
- * Walks through Stripe account creation, grabs the API key,
- * and pushes it directly to Netlify env vars with one click.
- * All other configured keys shown as green checkmarks.
+ * SetupWizard -- Eric's self-service configuration console with live health checks.
+ * Walks through platform setup, tests all integrations in real-time,
+ * and provides actionable status for each service.
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import {
+  Activity,
+  AlertTriangle,
   CheckCircle2,
   ChevronDown,
-  ChevronRight,
   ChevronUp,
+  CloudRain,
+  CreditCard,
+  Database,
   ExternalLink,
   Key,
   Loader2,
-  RefreshCw,
-  Shield,
-  X,
-  CreditCard,
-  CloudRain,
-  Webhook,
   Map,
+  Mic,
+  RefreshCw,
+  Server,
+  Shield,
+  Sparkles,
+  Webhook,
+  Wrench,
+  XCircle,
+  Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// Admin token stored in sessionStorage — Eric enters once per browser session.
-// The actual token is set in Netlify env vars as SETUP_ADMIN_TOKEN.
+// ─── Admin Token Hook ────────────────────────────────────────────────────────
+
 function useAdminToken() {
   const [token, setTokenState] = useState(
     () => sessionStorage.getItem("pcb-setup-token") ?? ""
@@ -34,10 +40,36 @@ function useAdminToken() {
     sessionStorage.setItem("pcb-setup-token", t);
     setTokenState(t);
   };
-  return { token, setToken, isSet: !!token };
+  const clear = () => {
+    sessionStorage.removeItem("pcb-setup-token");
+    setTokenState("");
+  };
+  return { token, setToken, clear, isSet: !!token };
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+type ServiceStatus = {
+  id: string;
+  name: string;
+  status: "healthy" | "degraded" | "error" | "not_configured";
+  message: string;
+  latencyMs?: number;
+  details?: Record<string, unknown>;
+};
+
+type HealthResponse = {
+  status: "healthy" | "degraded" | "error" | "setup_required";
+  summary: {
+    healthy: number;
+    degraded: number;
+    errors: number;
+    notConfigured: number;
+    total: number;
+  };
+  services: ServiceStatus[];
+  timestamp: string;
+};
 
 type ServiceKey = {
   id: string;
@@ -46,41 +78,92 @@ type ServiceKey = {
   icon: typeof CreditCard;
   description: string;
   optional: boolean;
-  configured: boolean | null; // null = unknown
   guideSteps: string[];
   guideUrl: string;
   urlLabel: string;
   placeholder: string;
-  prefix?: string; // expected value prefix for validation
+  prefix?: string;
 };
 
 // ─── Service Definitions ──────────────────────────────────────────────────────
 
 const SERVICES: ServiceKey[] = [
   {
-    id: "anthropic",
-    label: "Claude AI (Anthropic)",
-    envKey: "ANTHROPIC_API_KEY",
-    icon: Shield,
+    id: "supabase",
+    label: "Supabase Database",
+    envKey: "SUPABASE_URL",
+    icon: Database,
     description:
-      "Powers field report generation, lead scoring, AI chat, and estimating.",
+      "Core database for projects, clients, field reports, and all platform data.",
     optional: false,
-    configured: true,
     guideSteps: [],
     guideUrl: "",
     urlLabel: "",
-    placeholder: "sk-ant-...",
+    placeholder: "Pre-configured",
+    prefix: "",
+  },
+  {
+    id: "cloudflare_ai",
+    label: "Cloudflare Workers AI",
+    envKey: "CF_API_TOKEN",
+    icon: Sparkles,
+    description:
+      "Free-tier AI for estimates, chat, and field reports (Llama 3.3 70B).",
+    optional: false,
+    guideSteps: [],
+    guideUrl: "",
+    urlLabel: "",
+    placeholder: "Pre-configured",
+    prefix: "",
+  },
+  {
+    id: "anthropic_ai",
+    label: "Claude AI (Fallback)",
+    envKey: "ANTHROPIC_API_KEY",
+    icon: Shield,
+    description:
+      "Premium AI fallback when Cloudflare rate limits are hit. Used sparingly.",
+    optional: false,
+    guideSteps: [],
+    guideUrl: "",
+    urlLabel: "",
+    placeholder: "Pre-configured",
     prefix: "sk-ant-",
   },
   {
+    id: "openai",
+    label: "OpenAI (Whisper)",
+    envKey: "OPENAI_API_KEY",
+    icon: Mic,
+    description: "Voice transcription for field reports via Whisper API.",
+    optional: false,
+    guideSteps: [],
+    guideUrl: "",
+    urlLabel: "",
+    placeholder: "Pre-configured",
+    prefix: "sk-",
+  },
+  {
+    id: "weather",
+    label: "OpenWeatherMap",
+    envKey: "OPENWEATHERMAP_API_KEY",
+    icon: CloudRain,
+    description: "Live 7-day Eugene OR weather forecast for smart scheduling.",
+    optional: false,
+    guideSteps: [],
+    guideUrl: "",
+    urlLabel: "",
+    placeholder: "Pre-configured",
+    prefix: "",
+  },
+  {
     id: "stripe",
-    label: "Stripe (Payments)",
+    label: "Stripe Payments",
     envKey: "STRIPE_SECRET_KEY",
     icon: CreditCard,
     description:
-      "Sends milestone invoices and creates client payment links. 100% optional.",
+      "Milestone invoicing and client payment links. 100% optional.",
     optional: true,
-    configured: null,
     guideSteps: [
       "Go to stripe.com and click Start now -- it is free to create an account.",
       "Enter your email and create a password, then verify your email.",
@@ -97,28 +180,13 @@ const SERVICES: ServiceKey[] = [
     prefix: "sk_",
   },
   {
-    id: "weather",
-    label: "OpenWeatherMap",
-    envKey: "OPENWEATHERMAP_API_KEY",
-    icon: CloudRain,
-    description: "Live 7-day Eugene OR weather forecast for smart scheduling.",
-    optional: false,
-    configured: true,
-    guideSteps: [],
-    guideUrl: "",
-    urlLabel: "",
-    placeholder: "Already configured",
-    prefix: "",
-  },
-  {
     id: "n8n",
-    label: "n8n (Automation Webhooks)",
+    label: "n8n Automation",
     envKey: "N8N_WEBHOOK_URL",
     icon: Webhook,
     description:
       "Sends SMS/email alerts when field reports are submitted or materials run short.",
     optional: true,
-    configured: null,
     guideSteps: [
       "Go to n8n.io and sign up for a free cloud account (or self-host -- both work).",
       "Click New Workflow and add a Webhook trigger node.",
@@ -140,7 +208,6 @@ const SERVICES: ServiceKey[] = [
     description:
       "Interactive job site maps on the Contact page and Project detail view.",
     optional: true,
-    configured: null,
     guideSteps: [
       "Go to console.cloud.google.com and sign in with your Google account.",
       "Click Select a project at the top, then New Project. Name it Precision Core Builders.",
@@ -156,20 +223,265 @@ const SERVICES: ServiceKey[] = [
   },
 ];
 
-// ─── Single service card ───────────────────────────────────────────────────────
+// ─── Status Badge Component ──────────────────────────────────────────────────
+
+function StatusBadge({
+  status,
+  latency,
+}: {
+  status: ServiceStatus["status"];
+  latency?: number;
+}) {
+  const config = {
+    healthy: {
+      icon: CheckCircle2,
+      color: "text-green-400",
+      bg: "bg-green-400/10 border-green-400/30",
+      label: "Healthy",
+    },
+    degraded: {
+      icon: AlertTriangle,
+      color: "text-amber-400",
+      bg: "bg-amber-400/10 border-amber-400/30",
+      label: "Degraded",
+    },
+    error: {
+      icon: XCircle,
+      color: "text-red-400",
+      bg: "bg-red-400/10 border-red-400/30",
+      label: "Error",
+    },
+    not_configured: {
+      icon: Wrench,
+      color: "text-muted-foreground",
+      bg: "bg-muted/10 border-border/40",
+      label: "Not Set",
+    },
+  };
+
+  const c = config[status];
+  const Icon = c.icon;
+
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={`flex items-center gap-1.5 px-2 py-0.5 border text-[10px] font-bold tracking-widest uppercase ${c.bg} ${c.color}`}
+        style={{ fontFamily: "var(--font-condensed)" }}
+      >
+        <Icon className="h-3 w-3" />
+        {c.label}
+      </span>
+      {latency !== undefined && (
+        <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+          {latency}ms
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Health Check Panel ──────────────────────────────────────────────────────
+
+function HealthCheckPanel({
+  adminToken,
+  onRefresh,
+}: {
+  adminToken: string;
+  onRefresh?: () => void;
+}) {
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+
+  const runHealthCheck = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/platform-health?adminToken=${encodeURIComponent(adminToken)}`
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      setHealth(data);
+      setLastChecked(new Date());
+      onRefresh?.();
+    } catch (err) {
+      setError(String(err));
+      toast.error("Health check failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [adminToken, onRefresh]);
+
+  // Auto-run on mount
+  useEffect(() => {
+    runHealthCheck();
+  }, [runHealthCheck]);
+
+  const statusColors = {
+    healthy: "border-green-400/40 bg-green-400/5",
+    degraded: "border-amber-400/40 bg-amber-400/5",
+    error: "border-red-400/40 bg-red-400/5",
+    setup_required: "border-primary/40 bg-primary/5",
+  };
+
+  const statusMessages = {
+    healthy: "All systems operational",
+    degraded: "Some services need attention",
+    error: "Critical issues detected",
+    setup_required: "Initial setup required",
+  };
+
+  return (
+    <div className="bg-card border border-border/60 mb-6">
+      {/* Header */}
+      <div className="flex items-center justify-between p-5 border-b border-border/40">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 border border-primary/40 bg-primary/10 flex items-center justify-center">
+            <Activity className="h-4.5 w-4.5 text-primary" />
+          </div>
+          <div>
+            <h2
+              className="text-sm font-semibold"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Platform Health
+            </h2>
+            <p className="text-[10px] text-muted-foreground">
+              {lastChecked
+                ? `Last checked ${lastChecked.toLocaleTimeString()}`
+                : "Checking..."}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={runHealthCheck}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase hover:bg-accent/20 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          <RefreshCw
+            className={`h-3 w-3 ${loading ? "animate-spin" : ""}`}
+          />
+          {loading ? "Checking..." : "Refresh"}
+        </button>
+      </div>
+
+      {/* Content */}
+      {error ? (
+        <div className="p-5">
+          <div className="flex items-center gap-3 text-red-400">
+            <XCircle className="h-5 w-5" />
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
+      ) : health ? (
+        <>
+          {/* Summary */}
+          <div
+            className={`p-4 border-b border-border/40 ${statusColors[health.status]}`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {health.status === "healthy" ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-400" />
+                ) : health.status === "error" ? (
+                  <XCircle className="h-5 w-5 text-red-400" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-amber-400" />
+                )}
+                <span className="text-sm font-medium">
+                  {statusMessages[health.status]}
+                </span>
+              </div>
+              <div className="flex gap-4">
+                <span className="text-[10px] text-muted-foreground">
+                  <span className="text-green-400 font-bold">
+                    {health.summary.healthy}
+                  </span>{" "}
+                  healthy
+                </span>
+                {health.summary.degraded > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    <span className="text-amber-400 font-bold">
+                      {health.summary.degraded}
+                    </span>{" "}
+                    degraded
+                  </span>
+                )}
+                {health.summary.errors > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    <span className="text-red-400 font-bold">
+                      {health.summary.errors}
+                    </span>{" "}
+                    errors
+                  </span>
+                )}
+                <span className="text-[10px] text-muted-foreground">
+                  <span className="text-muted-foreground/60 font-bold">
+                    {health.summary.notConfigured}
+                  </span>{" "}
+                  not set
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Services Grid */}
+          <div className="p-5">
+            <div className="grid gap-3">
+              {health.services.map(svc => (
+                <div
+                  key={svc.id}
+                  className="flex items-center justify-between p-3 bg-background/60 border border-border/40"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Server className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{svc.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {svc.message}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusBadge status={svc.status} latency={svc.latencyMs} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="p-8 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Service Configuration Card ──────────────────────────────────────────────
 
 function ServiceCard({
   svc,
+  healthStatus,
   adminToken,
+  onSaved,
 }: {
   svc: ServiceKey;
+  healthStatus?: ServiceStatus;
   adminToken: string;
+  onSaved: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(svc.configured === true);
-  const isConfigured = saved || svc.configured === true;
+
+  const isConfigured = healthStatus
+    ? healthStatus.status === "healthy" || healthStatus.status === "degraded"
+    : false;
+  const canConfigure = svc.guideSteps.length > 0;
 
   const save = async () => {
     if (!value.trim()) {
@@ -194,12 +506,12 @@ function ServiceCard({
       const data = await res.json();
       if (!res.ok || data.error)
         throw new Error(data.error ?? `HTTP ${res.status}`);
-      setSaved(true);
-      setOpen(false);
-      setValue("");
       toast.success(
         `${svc.label} configured! Redeploy triggered -- live in ~60s.`
       );
+      setOpen(false);
+      setValue("");
+      onSaved();
     } catch (err) {
       toast.error(String(err));
     } finally {
@@ -210,25 +522,31 @@ function ServiceCard({
   return (
     <div
       className={`bg-card border transition-colors ${
-        isConfigured ? "border-green-400/30" : "border-border/60"
+        isConfigured
+          ? "border-green-400/30"
+          : healthStatus?.status === "error"
+            ? "border-red-400/30"
+            : "border-border/60"
       }`}
     >
       {/* Header row */}
       <div
-        className={`flex items-center gap-4 p-5 ${!isConfigured && svc.guideSteps.length > 0 ? "cursor-pointer hover:bg-accent/20" : ""}`}
-        onClick={() =>
-          !isConfigured && svc.guideSteps.length > 0 && setOpen(v => !v)
-        }
+        className={`flex items-center gap-4 p-5 ${canConfigure && !isConfigured ? "cursor-pointer hover:bg-accent/20" : ""}`}
+        onClick={() => canConfigure && !isConfigured && setOpen(v => !v)}
       >
         <div
           className={`h-9 w-9 border flex items-center justify-center shrink-0 ${
             isConfigured
               ? "border-green-400/40 bg-green-400/10"
-              : "border-border/60"
+              : healthStatus?.status === "error"
+                ? "border-red-400/40 bg-red-400/10"
+                : "border-border/60"
           }`}
         >
           {isConfigured ? (
             <CheckCircle2 className="h-4.5 w-4.5 text-green-400" />
+          ) : healthStatus?.status === "error" ? (
+            <XCircle className="h-4.5 w-4.5 text-red-400" />
           ) : (
             <svc.icon className="h-4.5 w-4.5 text-muted-foreground" />
           )}
@@ -252,23 +570,14 @@ function ServiceCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {isConfigured ? (
-            <span
-              className="text-[10px] text-green-400 font-bold tracking-widest uppercase"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              ✓ Active
-            </span>
-          ) : (
-            <span
-              className="text-[10px] text-amber-400 font-bold tracking-widest uppercase"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Not set
-            </span>
+          {healthStatus && (
+            <StatusBadge
+              status={healthStatus.status}
+              latency={healthStatus.latencyMs}
+            />
           )}
-          {!isConfigured &&
-            svc.guideSteps.length > 0 &&
+          {canConfigure &&
+            !isConfigured &&
             (open ? (
               <ChevronUp className="h-4 w-4 text-muted-foreground" />
             ) : (
@@ -278,7 +587,7 @@ function ServiceCard({
       </div>
 
       {/* Expanded guide */}
-      {open && !isConfigured && (
+      {open && !isConfigured && canConfigure && (
         <div className="px-5 pb-5 border-t border-border/40">
           {/* Step-by-step */}
           <div className="mt-5 mb-5">
@@ -344,9 +653,9 @@ function ServiceCard({
                 {saving ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <Zap className="h-3.5 w-3.5" />
                 )}
-                {saving ? "Saving…" : "Save & Deploy"}
+                {saving ? "Saving..." : "Save & Deploy"}
               </button>
             </div>
             <p className="text-[10px] text-muted-foreground/50 mt-2">
@@ -361,15 +670,399 @@ function ServiceCard({
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// ─── Quick Actions Panel ─────────────────────────────────────────────────────
+
+function QuickActionsPanel({ adminToken }: { adminToken: string }) {
+  const [testingAI, setTestingAI] = useState(false);
+  const [testingDb, setTestingDb] = useState(false);
+
+  const testAI = async () => {
+    setTestingAI(true);
+    try {
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "Say 'AI is working!' in exactly those words.",
+          context: "system_test",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "AI test failed");
+      toast.success(`AI Response: ${data.reply?.slice(0, 50) ?? "OK"}...`);
+    } catch (err) {
+      toast.error(`AI Test Failed: ${err}`);
+    } finally {
+      setTestingAI(false);
+    }
+  };
+
+  const testDb = async () => {
+    setTestingDb(true);
+    try {
+      // Use the health check endpoint
+      const res = await fetch(
+        `/api/platform-health?adminToken=${encodeURIComponent(adminToken)}`
+      );
+      const data = await res.json();
+      const dbService = data.services?.find(
+        (s: ServiceStatus) => s.id === "supabase"
+      );
+      if (dbService?.status === "healthy") {
+        toast.success(`Database: ${dbService.message}`);
+      } else {
+        toast.error(`Database: ${dbService?.message ?? "Unknown error"}`);
+      }
+    } catch (err) {
+      toast.error(`DB Test Failed: ${err}`);
+    } finally {
+      setTestingDb(false);
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border/60 p-5 mb-6">
+      <p
+        className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-4"
+        style={{ fontFamily: "var(--font-condensed)" }}
+      >
+        <Wrench className="h-3 w-3 inline mr-1.5 text-primary" />
+        Quick Actions
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={testAI}
+          disabled={testingAI}
+          className="flex items-center gap-2 px-4 py-2 border border-border/60 text-[10px] font-bold tracking-widest uppercase hover:bg-accent/20 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          {testingAI ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Sparkles className="h-3 w-3" />
+          )}
+          Test AI
+        </button>
+        <button
+          onClick={testDb}
+          disabled={testingDb}
+          className="flex items-center gap-2 px-4 py-2 border border-border/60 text-[10px] font-bold tracking-widest uppercase hover:bg-accent/20 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          {testingDb ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Database className="h-3 w-3" />
+          )}
+          Test Database
+        </button>
+        <a
+          href="https://app.netlify.com/sites/precision-core/deploys"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2 border border-border/60 text-[10px] font-bold tracking-widest uppercase hover:bg-accent/20 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          <ExternalLink className="h-3 w-3" />
+          View Deploys
+        </a>
+        <a
+          href="https://supabase.com/dashboard/project/mdxfvxycwzauixuphjau"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2 border border-border/60 text-[10px] font-bold tracking-widest uppercase hover:bg-accent/20 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          <ExternalLink className="h-3 w-3" />
+          Supabase Dashboard
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── MCP Tools Panel ──────────────────────────────────────────────────────────
+
+type MCPAction = {
+  id: string;
+  name: string;
+  description: string;
+  icon: typeof Database;
+  category: "data" | "test" | "admin";
+  dangerous?: boolean;
+  requiresParams?: boolean;
+};
+
+const MCP_ACTIONS: MCPAction[] = [
+  {
+    id: "seed-demo-data",
+    name: "Seed Demo Data",
+    description: "Create sample client, project, field report, and materials for testing",
+    icon: Database,
+    category: "data",
+  },
+  {
+    id: "clear-demo-data",
+    name: "Clear Demo Data",
+    description: "Remove all demo projects and related records",
+    icon: XCircle,
+    category: "data",
+    dangerous: true,
+  },
+  {
+    id: "check-database",
+    name: "Check Database",
+    description: "Verify all required tables exist and count records",
+    icon: Activity,
+    category: "test",
+  },
+  {
+    id: "test-ai",
+    name: "Test AI Endpoint",
+    description: "Send a test prompt to Cloudflare Workers AI",
+    icon: Sparkles,
+    category: "test",
+  },
+  {
+    id: "test-weather",
+    name: "Test Weather API",
+    description: "Fetch current Eugene OR weather from OpenWeatherMap",
+    icon: CloudRain,
+    category: "test",
+  },
+  {
+    id: "test-voice",
+    name: "Test Voice API",
+    description: "Verify OpenAI Whisper API access for voice transcription",
+    icon: Mic,
+    category: "test",
+  },
+  {
+    id: "verify-stripe",
+    name: "Verify Stripe",
+    description: "Check Stripe connection and account status",
+    icon: CreditCard,
+    category: "test",
+  },
+  {
+    id: "get-stats",
+    name: "Platform Stats",
+    description: "Get counts of projects, clients, invoices, and reports",
+    icon: Server,
+    category: "admin",
+  },
+];
+
+type ActionResult = {
+  success: boolean;
+  action: string;
+  message: string;
+  data?: unknown;
+  durationMs: number;
+};
+
+function MCPToolsPanel({
+  adminToken,
+  onActionComplete,
+}: {
+  adminToken: string;
+  onActionComplete?: () => void;
+}) {
+  const [runningAction, setRunningAction] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<ActionResult | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const executeAction = async (actionId: string) => {
+    setRunningAction(actionId);
+    setLastResult(null);
+
+    try {
+      const res = await fetch("/api/platform-actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: actionId,
+          adminToken,
+        }),
+      });
+
+      const result: ActionResult = await res.json();
+      setLastResult(result);
+
+      if (result.success) {
+        toast.success(`${result.action}: ${result.message}`);
+        onActionComplete?.();
+      } else {
+        toast.error(`${result.action}: ${result.message}`);
+      }
+    } catch (err) {
+      toast.error(`Action failed: ${err}`);
+      setLastResult({
+        success: false,
+        action: actionId,
+        message: String(err),
+        durationMs: 0,
+      });
+    } finally {
+      setRunningAction(null);
+    }
+  };
+
+  const categories = [
+    { key: "test", label: "Test Services", icon: Zap },
+    { key: "data", label: "Data Management", icon: Database },
+    { key: "admin", label: "Administration", icon: Shield },
+  ] as const;
+
+  return (
+    <div className="bg-card border border-primary/30 p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <p
+          className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          <Zap className="h-3 w-3 inline mr-1.5" />
+          MCP Tools
+        </p>
+        <span className="text-[9px] text-muted-foreground/60 bg-primary/10 px-2 py-0.5 border border-primary/20">
+          Executable Actions
+        </span>
+      </div>
+
+      {categories.map(cat => {
+        const actions = MCP_ACTIONS.filter(a => a.category === cat.key);
+        if (actions.length === 0) return null;
+
+        return (
+          <div key={cat.key} className="mb-4 last:mb-0">
+            <p className="text-[9px] font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+              <cat.icon className="h-3 w-3" />
+              {cat.label}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {actions.map(action => {
+                const isRunning = runningAction === action.id;
+                const Icon = action.icon;
+
+                return (
+                  <button
+                    key={action.id}
+                    onClick={() => executeAction(action.id)}
+                    disabled={!!runningAction}
+                    className={`flex items-start gap-3 p-3 border text-left transition-colors disabled:opacity-50 ${
+                      action.dangerous
+                        ? "border-red-500/30 hover:bg-red-500/10"
+                        : "border-border/60 hover:bg-accent/20"
+                    }`}
+                  >
+                    <div
+                      className={`p-1.5 ${
+                        action.dangerous
+                          ? "bg-red-500/10 text-red-400"
+                          : "bg-primary/10 text-primary"
+                      }`}
+                    >
+                      {isRunning ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Icon className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-[11px] font-semibold text-foreground truncate"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {action.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/70 leading-tight mt-0.5">
+                        {action.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Last Result */}
+      {lastResult && (
+        <div
+          className={`mt-4 p-3 border ${
+            lastResult.success
+              ? "border-green-500/30 bg-green-500/5"
+              : "border-red-500/30 bg-red-500/5"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {lastResult.success ? (
+                <CheckCircle2 className="h-4 w-4 text-green-400" />
+              ) : (
+                <XCircle className="h-4 w-4 text-red-400" />
+              )}
+              <span className="text-[11px] font-medium">{lastResult.message}</span>
+            </div>
+            <span className="text-[9px] text-muted-foreground">
+              {lastResult.durationMs}ms
+            </span>
+          </div>
+
+          {lastResult.data && (
+            <div className="mt-2">
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="text-[9px] text-primary hover:underline flex items-center gap-1"
+              >
+                {showDetails ? (
+                  <>
+                    <ChevronUp className="h-3 w-3" /> Hide Details
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3 w-3" /> Show Details
+                  </>
+                )}
+              </button>
+              {showDetails && (
+                <pre className="mt-2 text-[10px] text-muted-foreground bg-input/50 p-2 overflow-x-auto border border-border/40">
+                  {JSON.stringify(lastResult.data, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function SetupWizard() {
-  const { token, setToken, isSet } = useAdminToken();
+  const { token, setToken, clear, isSet } = useAdminToken();
   const [tokenInput, setTokenInput] = useState("");
-  const configured = SERVICES.filter(s => s.configured === true).length;
-  const total = SERVICES.length;
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Auth gate — Eric enters his admin token once per session
+  // Fetch health on mount to populate service statuses
+  useEffect(() => {
+    if (!isSet) return;
+    fetch(`/api/platform-health?adminToken=${encodeURIComponent(token)}`)
+      .then(r => r.json())
+      .then(setHealth)
+      .catch(() => {});
+  }, [isSet, token, refreshKey]);
+
+  // Map health statuses to service IDs
+  const statusMap: Record<string, ServiceStatus> = {};
+  health?.services.forEach(s => {
+    statusMap[s.id] = s;
+  });
+
+  // Auth gate
   if (!isSet) {
     return (
       <DashboardLayout>
@@ -398,7 +1091,7 @@ export default function SetupWizard() {
                 if (e.key === "Enter" && tokenInput.trim())
                   setToken(tokenInput.trim());
               }}
-              placeholder="Paste your admin token…"
+              placeholder="Paste your admin token..."
               className="w-full bg-input border border-border text-sm text-foreground p-3 mb-4 focus:outline-none focus:border-primary/60"
             />
             <button
@@ -423,53 +1116,42 @@ export default function SetupWizard() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1
-            className="text-2xl font-semibold mb-1"
-            style={{ fontFamily: "var(--font-heading)" }}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1
+              className="text-2xl font-semibold mb-1"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Platform Setup
+            </h1>
+            <p className="text-sm text-muted-foreground font-light">
+              Configure and monitor your Digital Foreman platform integrations.
+            </p>
+          </div>
+          <button
+            onClick={clear}
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
           >
-            Platform Setup
-          </h1>
-          <p className="text-sm text-muted-foreground font-light">
-            One-time configuration for your Digital Foreman platform. Expand any
-            service to see a plain-English setup guide.
-          </p>
+            Sign out
+          </button>
         </div>
 
-        {/* Progress */}
-        <div className="bg-card border border-border/60 p-5 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <p
-              className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Setup Progress
-            </p>
-            <span className="text-sm font-bold text-primary">
-              {configured} / {total}
-            </span>
-          </div>
-          <div className="h-2 bg-input rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-500"
-              style={{ width: `${(configured / total) * 100}%` }}
-            />
-          </div>
-          <div className="flex gap-6 mt-3">
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-green-400" />
-              <span className="text-[10px] text-muted-foreground">Active</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="text-[10px] text-muted-foreground">
-                Not configured
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Health Check Panel */}
+        <HealthCheckPanel
+          adminToken={token}
+          onRefresh={() => setRefreshKey(k => k + 1)}
+        />
+
+        {/* Quick Actions */}
+        <QuickActionsPanel adminToken={token} />
+
+        {/* MCP Tools */}
+        <MCPToolsPanel
+          adminToken={token}
+          onActionComplete={() => setRefreshKey(k => k + 1)}
+        />
 
         {/* Info banner */}
         <div className="border border-primary/20 bg-primary/5 p-4 mb-6 flex gap-3">
@@ -488,7 +1170,13 @@ export default function SetupWizard() {
         {/* Service cards */}
         <div className="space-y-3">
           {SERVICES.map(svc => (
-            <ServiceCard key={svc.id} svc={svc} adminToken={token} />
+            <ServiceCard
+              key={svc.id}
+              svc={svc}
+              healthStatus={statusMap[svc.id]}
+              adminToken={token}
+              onSaved={() => setRefreshKey(k => k + 1)}
+            />
           ))}
         </div>
 
