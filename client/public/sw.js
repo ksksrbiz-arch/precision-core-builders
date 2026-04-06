@@ -161,10 +161,88 @@ self.addEventListener("sync", event => {
 });
 
 async function syncFieldReports() {
-  // TODO: Pull queued reports from IndexedDB and POST to server
-  // This enables Eric to file reports on-site with no signal,
-  // and have them sync when connectivity returns
-  console.log("[SW] Background sync: field reports");
+  const db = await openReportsDB();
+  const tx = db.transaction("queue", "readonly");
+  const store = tx.objectStore("queue");
+  const entries = await idbGetAll(store);
+  tx.oncomplete = () => db.close();
+
+  console.log(`[SW] Background sync: ${entries.length} queued report(s)`);
+
+  for (const entry of entries) {
+    try {
+      const headers = { Authorization: `Bearer ${entry.accessToken}` };
+      let body;
+
+      if (entry.type === "text") {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify({ text: entry.text });
+      } else {
+        // voice — reconstruct FormData from stored ArrayBuffer
+        const formData = new FormData();
+        const blob = new Blob([entry.audioData], { type: entry.audioMime });
+        formData.append("audio", blob, "field-memo.webm");
+        body = formData;
+      }
+
+      const res = await fetch(
+        `/api/voice-to-report?projectId=${entry.projectId}`,
+        { method: "POST", headers, body }
+      );
+
+      if (res.ok) {
+        // Remove from queue on success
+        const delTx = (await openReportsDB()).transaction("queue", "readwrite");
+        delTx.objectStore("queue").delete(entry.id);
+        await idbTxComplete(delTx);
+        console.log(`[SW] Synced report ${entry.id}`);
+
+        // Notify open windows
+        const clients = await self.clients.matchAll({ type: "window" });
+        for (const client of clients) {
+          client.postMessage({
+            type: "field-report-synced",
+            id: entry.id,
+            projectId: entry.projectId,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn(`[SW] Failed to sync report ${entry.id}:`, err);
+      // Will retry on next sync event
+    }
+  }
+}
+
+// ── IndexedDB helpers (no external deps in SW) ──────────────────────────
+
+function openReportsDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("pcb-field-reports", 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains("queue")) {
+        db.createObjectStore("queue", { keyPath: "id", autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbTxComplete(tx) {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 // ── Push notifications ────────────────────────────────────────────────────

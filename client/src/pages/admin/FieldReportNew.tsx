@@ -6,6 +6,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { trpc } from "@/lib/trpc";
+import { queueTextReport, queueVoiceReport } from "@/lib/offlineQueue";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   ArrowLeft,
@@ -101,6 +102,12 @@ export default function FieldReportNew() {
       setEditedSummary(data.report.summary ?? "");
       setStep("review");
     } catch (err) {
+      if (!navigator.onLine && audioBlob && projectId && accessToken) {
+        await queueVoiceReport(projectId, audioBlob, accessToken);
+        setError("You're offline. Report queued and will sync automatically.");
+        setStep("input");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Processing failed");
       setStep("input");
     }
@@ -126,6 +133,12 @@ export default function FieldReportNew() {
       setEditedSummary(data.report.summary ?? "");
       setStep("review");
     } catch (err) {
+      if (!navigator.onLine && textNotes.trim() && projectId && accessToken) {
+        await queueTextReport(projectId, textNotes.trim(), accessToken);
+        setError("You're offline. Report queued and will sync automatically.");
+        setStep("input");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Processing failed");
       setStep("input");
     }
