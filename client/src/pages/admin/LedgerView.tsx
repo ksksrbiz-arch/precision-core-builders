@@ -4,6 +4,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -19,7 +20,6 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const ENTRY_ICONS: Record<string, any> = {
   decision: Landmark,
@@ -51,6 +51,7 @@ export default function LedgerView() {
     amountDelta: "",
     visibleToClient: true,
   });
+  const { addToast } = useToast();
 
   const utils = trpc.useUtils();
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
@@ -69,7 +70,20 @@ export default function LedgerView() {
         amountDelta: "",
         visibleToClient: true,
       });
-      toast.success("Ledger entry recorded");
+      addToast({
+        type: "success",
+        title: "Recorded",
+        message: "Ledger entry recorded.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to record entry. Please try again.",
+        duration: 6000,
+      });
     },
   });
 

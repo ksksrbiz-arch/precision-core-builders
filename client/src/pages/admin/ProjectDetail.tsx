@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
+import { useToast } from "@/components/ToastProvider";
 import { ArrowLeft, Plus, Calendar, DollarSign, MapPin } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { useState } from "react";
@@ -12,6 +13,7 @@ export default function ProjectDetail() {
     "overview" | "reports" | "schedule" | "materials" | "ledger"
   >("overview");
   const projectId = parseInt(id ?? "0");
+  const { addToast } = useToast();
 
   const { data: project, isLoading } = trpc.projects.getById.useQuery({
     id: projectId,
@@ -34,12 +36,55 @@ export default function ProjectDetail() {
   );
 
   const utils = trpc.useUtils();
-  const updateProgress = trpc.projects.updateProgress.useMutation({
-    onSuccess: () => utils.projects.getById.invalidate({ id: projectId }),
+  const updateProgressMut = trpc.projects.updateProgress.useMutation({
+    onSuccess: () => {
+      utils.projects.getById.invalidate({ id: projectId });
+      addToast({
+        type: "success",
+        title: "Updated",
+        message: "Project progress saved.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to update progress. Please try again.",
+        duration: 6000,
+      });
+    },
   });
-  const appendLedger = trpc.ledger.append.useMutation({
-    onSuccess: () => utils.ledger.list.invalidate({ projectId }),
+  
+  const updateProgress = {
+    mutate: updateProgressMut.mutate,
+    isPending: updateProgressMut.isPending,
+  };
+
+  const appendLedgerMut = trpc.ledger.append.useMutation({
+    onSuccess: () => {
+      utils.ledger.list.invalidate({ projectId });
+      addToast({
+        type: "success",
+        title: "Saved",
+        message: "Ledger entry added.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to add ledger entry. Please try again.",
+        duration: 6000,
+      });
+    },
   });
+  
+  const appendLedger = {
+    mutate: appendLedgerMut.mutate,
+    isPending: appendLedgerMut.isPending,
+  };
 
   if (isLoading)
     return (

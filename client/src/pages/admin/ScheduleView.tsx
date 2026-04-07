@@ -4,6 +4,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GanttChart } from "@/components/GanttChart";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -145,6 +146,7 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
 
 export default function ScheduleView() {
   const [, setLocation] = useLocation();
+  const { addToast } = useToast();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -161,7 +163,23 @@ export default function ScheduleView() {
     { enabled: !!selectedProject }
   );
   const updateStatus = trpc.schedule.updateStatus.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => {
+      refetch();
+      addToast({
+        type: "success",
+        title: "Updated",
+        message: "Task status updated.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to update task status. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const fetchWeather = async (projectId?: number) => {

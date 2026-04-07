@@ -4,6 +4,7 @@
  * and provides actionable status for each service.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { useToast } from "@/components/ToastProvider";
 import {
   Activity,
   AlertTriangle,
@@ -28,7 +29,6 @@ import {
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 // ─── Admin Token Hook ────────────────────────────────────────────────────────
 
@@ -308,7 +308,7 @@ function HealthCheckPanel({
       onRefresh?.();
     } catch (err) {
       setError(String(err));
-      toast.error("Health check failed");
+      addToast({ type: "error", title: "Error", message: "Health check failed.", duration: 6000 });
     } finally {
       setLoading(false);
     }
@@ -485,11 +485,16 @@ function ServiceCard({
 
   const save = async () => {
     if (!value.trim()) {
-      toast.error("Paste your key first");
+      addToast({ type: "error", title: "Error", message: "Paste your key first.", duration: 6000 });
       return;
     }
     if (svc.prefix && !value.trim().startsWith(svc.prefix)) {
-      toast.error(`Key should start with "${svc.prefix}"`);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: `Key should start with "${svc.prefix}".`,
+        duration: 6000,
+      });
       return;
     }
     setSaving(true);
@@ -506,14 +511,22 @@ function ServiceCard({
       const data = await res.json();
       if (!res.ok || data.error)
         throw new Error(data.error ?? `HTTP ${res.status}`);
-      toast.success(
-        `${svc.label} configured! Redeploy triggered -- live in ~60s.`
-      );
+      addToast({
+        type: "success",
+        title: "Configured",
+        message: `${svc.label} configured! Redeploy triggered -- live in ~60s.`,
+        duration: 4000,
+      });
       setOpen(false);
       setValue("");
       onSaved();
     } catch (err) {
-      toast.error(String(err));
+      addToast({
+        type: "error",
+        title: "Error",
+        message: String(err),
+        duration: 6000,
+      });
     } finally {
       setSaving(false);
     }
@@ -672,7 +685,13 @@ function ServiceCard({
 
 // ─── Quick Actions Panel ─────────────────────────────────────────────────────
 
-function QuickActionsPanel({ adminToken }: { adminToken: string }) {
+function QuickActionsPanel({
+  adminToken,
+  addToast,
+}: {
+  adminToken: string;
+  addToast: any;
+}) {
   const [testingAI, setTestingAI] = useState(false);
   const [testingDb, setTestingDb] = useState(false);
 
@@ -689,9 +708,19 @@ function QuickActionsPanel({ adminToken }: { adminToken: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "AI test failed");
-      toast.success(`AI Response: ${data.reply?.slice(0, 50) ?? "OK"}...`);
+      addToast({
+        type: "success",
+        title: "AI Ready",
+        message: `AI Response: ${data.reply?.slice(0, 50) ?? "OK"}...`,
+        duration: 4000,
+      });
     } catch (err) {
-      toast.error(`AI Test Failed: ${err}`);
+      addToast({
+        type: "error",
+        title: "AI Test Failed",
+        message: String(err),
+        duration: 6000,
+      });
     } finally {
       setTestingAI(false);
     }
@@ -709,12 +738,27 @@ function QuickActionsPanel({ adminToken }: { adminToken: string }) {
         (s: ServiceStatus) => s.id === "supabase"
       );
       if (dbService?.status === "healthy") {
-        toast.success(`Database: ${dbService.message}`);
+        addToast({
+          type: "success",
+          title: "Database Ready",
+          message: `Database: ${dbService.message}`,
+          duration: 4000,
+        });
       } else {
-        toast.error(`Database: ${dbService?.message ?? "Unknown error"}`);
+        addToast({
+          type: "error",
+          title: "Database Error",
+          message: `Database: ${dbService?.message ?? "Unknown error"}`,
+          duration: 6000,
+        });
       }
     } catch (err) {
-      toast.error(`DB Test Failed: ${err}`);
+      addToast({
+        type: "error",
+        title: "DB Test Failed",
+        message: String(err),
+        duration: 6000,
+      });
     } finally {
       setTestingDb(false);
     }
@@ -890,13 +934,28 @@ function MCPToolsPanel({
       setLastResult(result);
 
       if (result.success) {
-        toast.success(`${result.action}: ${result.message}`);
+        addToast({
+          type: "success",
+          title: result.action,
+          message: result.message,
+          duration: 4000,
+        });
         onActionComplete?.();
       } else {
-        toast.error(`${result.action}: ${result.message}`);
+        addToast({
+          type: "error",
+          title: result.action,
+          message: result.message,
+          duration: 6000,
+        });
       }
     } catch (err) {
-      toast.error(`Action failed: ${err}`);
+      addToast({
+        type: "error",
+        title: "Action Failed",
+        message: String(err),
+        duration: 6000,
+      });
       setLastResult({
         success: false,
         action: actionId,
@@ -1043,6 +1102,7 @@ function MCPToolsPanel({
 
 export default function SetupWizard() {
   const { token, setToken, clear, isSet } = useAdminToken();
+  const { addToast } = useToast();
   const [tokenInput, setTokenInput] = useState("");
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -1145,7 +1205,7 @@ export default function SetupWizard() {
         />
 
         {/* Quick Actions */}
-        <QuickActionsPanel adminToken={token} />
+        <QuickActionsPanel adminToken={token} addToast={addToast} />
 
         {/* MCP Tools */}
         <MCPToolsPanel

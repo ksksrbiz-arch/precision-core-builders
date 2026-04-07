@@ -3,6 +3,7 @@
  * Uses portfolioRouter: listAdmin, create, update, togglePublished, delete.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   Eye,
@@ -16,7 +17,6 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const BLANK_FORM = {
   title: "",
@@ -51,6 +51,7 @@ export default function PortfolioAdmin() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(BLANK_FORM);
+  const { addToast } = useToast();
 
   const utils = trpc.useUtils();
   const { data: projects, isLoading } = trpc.portfolio.listAdmin.useQuery();
@@ -58,37 +59,87 @@ export default function PortfolioAdmin() {
   const create = trpc.portfolio.create.useMutation({
     onSuccess: () => {
       utils.portfolio.listAdmin.invalidate();
-      toast.success("Portfolio project created");
+      addToast({
+        type: "success",
+        title: "Created",
+        message: "Portfolio project created.",
+        duration: 4000,
+      });
       setShowForm(false);
       setForm(BLANK_FORM);
     },
-    onError: e => toast.error(e.message),
+    onError: (e: any) => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: e?.message || "Failed to create project. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const update = trpc.portfolio.update?.useMutation?.({
     onSuccess: () => {
       utils.portfolio.listAdmin.invalidate();
-      toast.success("Project updated");
+      addToast({
+        type: "success",
+        title: "Updated",
+        message: "Project updated.",
+        duration: 4000,
+      });
       setShowForm(false);
       setEditId(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: e?.message || "Failed to update project. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const togglePublished = trpc.portfolio.togglePublished.useMutation({
-    onSuccess: data => {
+    onSuccess: (data) => {
       utils.portfolio.listAdmin.invalidate();
-      toast.success(data.published ? "Published to portfolio" : "Unpublished");
+      addToast({
+        type: "success",
+        title: data.published ? "Published" : "Unpublished",
+        message: data.published
+          ? "Project added to public portfolio."
+          : "Project removed from public portfolio.",
+        duration: 4000,
+      });
     },
-    onError: e => toast.error(e.message),
+    onError: (e: any) => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: e?.message || "Failed to update publication status. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const deleteProject = trpc.portfolio.delete?.useMutation?.({
     onSuccess: () => {
       utils.portfolio.listAdmin.invalidate();
-      toast.success("Project deleted");
+      addToast({
+        type: "success",
+        title: "Deleted",
+        message: "Project deleted.",
+        duration: 4000,
+      });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: e?.message || "Failed to delete project. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const handleEdit = (p: any) => {

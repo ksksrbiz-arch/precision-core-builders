@@ -3,6 +3,7 @@
  * Creates payment links and formal invoices for project milestones.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2,
@@ -16,7 +17,6 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 type Invoice = {
   invoiceId?: string;
@@ -60,6 +60,7 @@ export default function BillingView() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [stripeNotConfigured, setStripeNotConfigured] = useState(false);
+  const { addToast } = useToast();
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
   const { data: clients } = trpc.clients.list.useQuery({ pageSize: 50 });
@@ -81,11 +82,21 @@ export default function BillingView() {
   const createPayment = async () => {
     const amountCents = Math.round(parseFloat(amount) * 100);
     if (!amountCents || !description) {
-      toast.error("Amount and description are required");
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Amount and description are required.",
+        duration: 6000,
+      });
       return;
     }
     if (mode === "invoice" && !clientEmail) {
-      toast.error("Client email is required for invoices");
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Client email is required for invoices.",
+        duration: 6000,
+      });
       return;
     }
 
@@ -126,16 +137,25 @@ export default function BillingView() {
         type: mode,
       };
       setInvoices(prev => [newInvoice, ...prev]);
-      toast.success(
-        mode === "payment_link"
-          ? "Payment link created!"
-          : "Invoice sent to client!"
-      );
+      addToast({
+        type: "success",
+        title: "Created",
+        message:
+          mode === "payment_link"
+            ? "Payment link created and copied."
+            : "Invoice sent to client.",
+        duration: 4000,
+      });
       setAmount("");
       setDescription("");
       setShowForm(false);
     } catch (err) {
-      toast.error(String(err));
+      addToast({
+        type: "error",
+        title: "Error",
+        message: String(err),
+        duration: 6000,
+      });
     } finally {
       setLoading(false);
     }

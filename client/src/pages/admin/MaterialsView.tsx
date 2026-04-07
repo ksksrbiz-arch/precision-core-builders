@@ -3,6 +3,7 @@
  * Calls /api/material-procurement to generate Purchase Orders for shortages.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -18,7 +19,6 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 type PurchaseOrder = {
   id: string;
@@ -51,6 +51,7 @@ export default function MaterialsView() {
     phaseNeeded: "",
     notes: "",
   });
+  const { addToast } = useToast();
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
   const {
@@ -77,14 +78,31 @@ export default function MaterialsView() {
         phaseNeeded: "",
         notes: "",
       });
-      toast.success("Material added");
+      addToast({
+        type: "success",
+        title: "Added",
+        message: "Material added to inventory.",
+        duration: 4000,
+      });
     },
-    onError: err => toast.error(err.message),
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to add material. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const generatePO = async () => {
     if (!selectedProject) {
-      toast.error("Select a project first");
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Select a project first.",
+        duration: 6000,
+      });
       return;
     }
     setGeneratingPO(true);
@@ -99,17 +117,30 @@ export default function MaterialsView() {
       const data = await res.json();
       if (data.purchaseOrders?.length > 0) {
         setPurchaseOrders(data.purchaseOrders);
-        toast.success(
-          `Generated ${data.purchaseOrders.length} PO${data.purchaseOrders.length > 1 ? "s" : ""} for ${data.shortagesFound} shortage${data.shortagesFound > 1 ? "s" : ""}`
-        );
+        addToast({
+          type: "success",
+          title: "Generated",
+          message: `Generated ${data.purchaseOrders.length} PO${data.purchaseOrders.length > 1 ? "s" : ""} for ${data.shortagesFound} shortage${data.shortagesFound > 1 ? "s" : ""}`,
+          duration: 4000,
+        });
         refetch();
       } else {
-        toast.info("No shortages found — all materials are fully ordered.");
+        addToast({
+          type: "info",
+          title: "Info",
+          message: "No shortages found — all materials are fully ordered.",
+          duration: 4000,
+        });
       }
     } catch (err) {
       const msg = String(err);
       setPoError(msg);
-      toast.error("PO generation failed");
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "PO generation failed.",
+        duration: 6000,
+      });
     } finally {
       setGeneratingPO(false);
     }

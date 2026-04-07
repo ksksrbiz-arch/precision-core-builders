@@ -3,6 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -27,7 +28,6 @@ import {
   Wrench,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const TRADES = [
   "Electrical",
@@ -55,6 +55,7 @@ export default function SubContractorsList() {
     licenseNumber: "",
     notes: "",
   });
+  const { addToast } = useToast();
 
   const utils = trpc.useUtils();
   const { data: subs, isLoading } = trpc.subContractors.list.useQuery();
@@ -71,14 +72,58 @@ export default function SubContractorsList() {
         licenseNumber: "",
         notes: "",
       });
+      addToast({
+        type: "success",
+        title: "Added",
+        message: "Sub-contractor added to roster.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to add sub-contractor. Please try again.",
+        duration: 6000,
+      });
     },
   });
   const deleteMut = trpc.subContractors.delete.useMutation({
-    onSuccess: () => utils.subContractors.list.invalidate(),
+    onSuccess: () => {
+      utils.subContractors.list.invalidate();
+      addToast({
+        type: "success",
+        title: "Removed",
+        message: "Sub-contractor deleted.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to delete sub-contractor. Please try again.",
+        duration: 6000,
+      });
+    },
   });
   const briefMut = trpc.subContractors.sendBriefing.useMutation({
-    onSuccess: d => toast.success(`Briefing sent to ${d.subName}`),
-    onError: e => toast.error(e.message),
+    onSuccess: (d) => {
+      addToast({
+        type: "success",
+        title: "Sent",
+        message: `Briefing sent to ${d.subName}.`,
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to send briefing. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const tradeColor = (trade: string | null) => {

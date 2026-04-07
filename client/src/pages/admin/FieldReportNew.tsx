@@ -3,6 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
@@ -22,6 +23,7 @@ type Step = "select" | "record" | "processing" | "review" | "done";
 export default function FieldReportNew() {
   const [, setLocation] = useLocation();
   const { accessToken } = useAuth();
+  const { addToast } = useToast();
   const [step, setStep] = useState<Step>("select");
   const [projectId, setProjectId] = useState<number | null>(null);
   const [recording, setRecording] = useState(false);
@@ -35,7 +37,25 @@ export default function FieldReportNew() {
   const chunksRef = useRef<Blob[]>([]);
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
-  const publishMutation = trpc.fieldReports.publish.useMutation();
+  const publishMutation = trpc.fieldReports.publish.useMutation({
+    onSuccess: () => {
+      addToast({
+        type: "success",
+        title: "Published",
+        message: "Field report sent to client.",
+        duration: 4000,
+      });
+      setStep("done");
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to publish report. Please try again.",
+        duration: 6000,
+      });
+    },
+  });
 
   const startRecording = async () => {
     try {

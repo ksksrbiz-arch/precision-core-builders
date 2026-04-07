@@ -3,6 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -43,6 +44,7 @@ export default function ClientsList() {
     notes: "",
     leadSource: "",
   });
+  const { addToast } = useToast();
 
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.clients.list.useQuery({
@@ -55,10 +57,40 @@ export default function ClientsList() {
       utils.clients.list.invalidate();
       setShowNew(false);
       resetForm();
+      addToast({
+        type: "success",
+        title: "Created",
+        message: "New client added.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to create client. Please try again.",
+        duration: 6000,
+      });
     },
   });
   const deleteMut = trpc.clients.delete.useMutation({
-    onSuccess: () => utils.clients.list.invalidate(),
+    onSuccess: () => {
+      utils.clients.list.invalidate();
+      addToast({
+        type: "success",
+        title: "Deleted",
+        message: "Client removed.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to delete client. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const resetForm = () =>

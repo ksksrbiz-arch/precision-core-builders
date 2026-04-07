@@ -3,6 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   Calculator,
@@ -19,6 +20,7 @@ import { useLocation } from "wouter";
 export default function EstimatesList() {
   const [, setLocation] = useLocation();
   const [page, setPage] = useState(1);
+  const { addToast } = useToast();
   const utils = trpc.useUtils();
 
   const { data, isLoading } = trpc.estimates.list.useQuery({
@@ -26,10 +28,42 @@ export default function EstimatesList() {
     pageSize: 20,
   });
   const sendMut = trpc.estimates.markSent.useMutation({
-    onSuccess: () => utils.estimates.list.invalidate(),
+    onSuccess: () => {
+      utils.estimates.list.invalidate();
+      addToast({
+        type: "success",
+        title: "Sent",
+        message: "Estimate sent to client.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to send estimate. Please try again.",
+        duration: 6000,
+      });
+    },
   });
   const approveMut = trpc.estimates.markApproved.useMutation({
-    onSuccess: () => utils.estimates.list.invalidate(),
+    onSuccess: () => {
+      utils.estimates.list.invalidate();
+      addToast({
+        type: "success",
+        title: "Approved",
+        message: "Estimate approved and locked.",
+        duration: 4000,
+      });
+    },
+    onError: () => {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to approve estimate. Please try again.",
+        duration: 6000,
+      });
+    },
   });
 
   const fmt = (n: number | string | null | undefined) =>
