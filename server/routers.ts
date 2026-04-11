@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { systemRouter } from "./_core/systemRouter";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router } from "./_core/trpc";
 
 export const appRouter = router({
   system: systemRouter,
@@ -14,8 +14,10 @@ export const appRouter = router({
 
     /**
      * Clears the session cookie and logs the user out.
+     * Implemented as publicProcedure so logout is idempotent even when
+     * the session cookie is already expired or invalid.
      */
-    logout: protectedProcedure.mutation(opts => {
+    logout: publicProcedure.mutation(opts => {
       opts.ctx.res.clearCookie(COOKIE_NAME, {
         ...getSessionCookieOptions(opts.ctx.req),
       });
