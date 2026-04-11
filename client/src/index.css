@@ -219,3 +219,95 @@
     opacity: 0.4;
   }
 }
+
+/* ── Mobile & PWA Enhancements ─────────────────────────────────────────── */
+@layer base {
+  /* Safe area insets for notched devices */
+  html {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Prevent rubber-band overscroll in PWA standalone */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
+  /* Prevent text selection on interactive elements (feels more native) */
+  button,
+  a,
+  [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Smoother touch scrolling everywhere */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Remove tap highlight on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Larger touch targets on mobile */
+  @media (max-width: 767px) {
+    button:not(.icon-btn),
+    [role="button"],
+    a[href] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Tighter padding on mobile */
+    main {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    /* Bottom padding for mobile nav bar */
+    main {
+      padding-bottom: 5.5rem !important;
+    }
+
+    /* Readable text sizes on small screens */
+    h1 {
+      font-size: 1.5rem !important;
+    }
+    h2 {
+      font-size: 1.25rem !important;
+    }
+  }
+
+  /* PWA standalone mode adjustments */
+  @media (display-mode: standalone) {
+    /* Extra top padding for status bar in standalone */
+    .sticky {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+}
+
+/* ── Pull-to-refresh prevention in standalone PWA ──────────────────────── */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* ── Smooth native-feeling transitions ─────────────────────────────────── */
+@layer utilities {
+  .touch-action-pan-y {
+    touch-action: pan-y;
+  }
+  .touch-action-none {
+    touch-action: none;
+  }
+  /* Active press state for buttons */
+  .press-scale:active {
+    transform: scale(0.97);
+    transition: transform 0.1s;
+  }
+}

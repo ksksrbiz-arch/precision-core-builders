@@ -1,0 +1,38 @@
+# Automated dependency updates — creates PRs for outdated packages weekly
+version: 2
+updates:
+  # npm/pnpm ecosystem
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Los_Angeles"
+    # Group minor/patch bumps into a single PR to reduce noise
+    groups:
+      production-deps:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      dev-deps:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+    # Major version bumps get individual PRs (may have breaking changes)
+    open-pull-requests-limit: 10
+    reviewers:
+      - "ksksrbiz-arch"
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # GitHub Actions runners
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ci"
+      - "automated"

@@ -1,9 +1,9 @@
 /**
- * LLM client — wires to Google Gemini via direct REST API.
- * Phase 3 expands this with full Whisper + Gemini integrations
- * inside Netlify Functions. This module provides shared types
- * and a base invocation helper used across features.
+ * LLM client — Claude (Anthropic) via the official SDK.
+ * All AI features (field reports, estimator, lead scoring) call invokeLLM().
+ * Model: claude-sonnet-4-6 — fast, accurate, cost-efficient for structured tasks.
  */
+import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "./env";
 
 export type LLMRole = "system" | "user" | "assistant";
@@ -17,6 +17,7 @@ export type LLMInvokeParams = {
   messages: LLMMessage[];
   maxTokens?: number;
   temperature?: number;
+  /** When true, instructs Claude to respond only in JSON. */
   jsonMode?: boolean;
 };
 
@@ -30,21 +31,22 @@ export type LLMResult = {
   };
 };
 
-const GEMINI_API_BASE =
-  "https://generativelanguage.googleapis.com/v1beta/models";
-const DEFAULT_MODEL = "gemini-2.0-flash";
+const MODEL = "claude-sonnet-4-6";
 
-/**
- * Invoke Google Gemini via REST.
- * Throws on network error or non-200 response.
- */
-export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
-  if (!ENV.geminiApiKey) {
+function getClient(): Anthropic {
+  if (!ENV.anthropicApiKey) {
     throw new Error(
-      "GEMINI_API_KEY is not configured in Netlify environment variables."
+      "ANTHROPIC_API_KEY is not configured in Netlify environment variables."
     );
   }
+  return new Anthropic({ apiKey: ENV.anthropicApiKey });
+}
 
+/**
+ * Invoke Claude via the Anthropic SDK.
+ * Handles system prompts, JSON mode prefix injection, and usage tracking.
+ */
+export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   const {
     messages,
     maxTokens = 4096,
@@ -52,68 +54,48 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
     jsonMode = false,
   } = params;
 
-  // Convert to Gemini contents format
-  const contents = messages
-    .filter(m => m.role !== "system")
-    .map(m => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    }));
+  const client = getClient();
 
-  const systemInstruction = messages.find(m => m.role === "system");
+  // Separate system prompt from conversation messages
+  const systemMsg = messages.find(m => m.role === "system");
+  const conversationMsgs = messages.filter(m => m.role !== "system");
 
-  const body: Record<string, unknown> = {
-    contents,
-    generationConfig: {
-      maxOutputTokens: maxTokens,
-      temperature,
-      ...(jsonMode ? { responseMimeType: "application/json" } : {}),
-    },
-  };
+  // Build system string — append JSON-only instruction when jsonMode is set
+  const systemParts = [
+    systemMsg?.content ?? "",
+    jsonMode
+      ? "IMPORTANT: Respond with ONLY valid JSON. No markdown code fences, no preamble, no explanation — raw JSON only."
+      : "",
+  ].filter(Boolean);
+  const system = systemParts.join("\n\n");
 
-  if (systemInstruction) {
-    body.systemInstruction = {
-      parts: [{ text: systemInstruction.content }],
-    };
-  }
+  // Cast messages to Anthropic SDK format (system is already separated)
+  const sdkMessages: Anthropic.MessageParam[] = conversationMsgs.map(m => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
 
-  const res = await fetch(
-    `${GEMINI_API_BASE}/${DEFAULT_MODEL}:generateContent?key=${ENV.geminiApiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    }
-  );
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: maxTokens,
+    temperature,
+    ...(system ? { system } : {}),
+    messages: sdkMessages,
+  });
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(`Gemini API error ${res.status}: ${err}`);
-  }
-
-  const data = (await res.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    usageMetadata?: {
-      promptTokenCount: number;
-      candidatesTokenCount: number;
-      totalTokenCount: number;
-    };
-    modelVersion?: string;
-  };
-
-  const text =
-    data.candidates?.[0]?.content?.parts?.map(p => p.text ?? "").join("") ?? "";
+  // Extract text from response content blocks
+  const text = response.content
+    .filter(block => block.type === "text")
+    .map(block => (block as Anthropic.TextBlock).text)
+    .join("");
 
   return {
     text,
-    model: data.modelVersion ?? DEFAULT_MODEL,
-    usage: data.usageMetadata
-      ? {
-          promptTokens: data.usageMetadata.promptTokenCount,
-          completionTokens: data.usageMetadata.candidatesTokenCount,
-          totalTokens: data.usageMetadata.totalTokenCount,
-        }
-      : undefined,
+    model: response.model,
+    usage: {
+      promptTokens: response.usage.input_tokens,
+      completionTokens: response.usage.output_tokens,
+      totalTokens: response.usage.input_tokens + response.usage.output_tokens,
+    },
   };
 }

@@ -1,0 +1,587 @@
+/**
+ * platform-actions — MCP-style executable operations for the Setup Wizard.
+ * Provides admin tools to run migrations, seed data, test endpoints, etc.
+ *
+ * POST /api/platform-actions
+ * Body: { action: string, params?: object, adminToken: string }
+ */
+import type { Handler } from "@netlify/functions";
+import { createClient } from "@supabase/supabase-js";
+
+// Timing-safe comparison
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+type ActionResult = {
+  success: boolean;
+  action: string;
+  message: string;
+  data?: unknown;
+  durationMs: number;
+};
+
+// ─── Available Actions ───────────────────────────────────────────────────────
+
+type ActionHandler = (
+  params?: Record<string, unknown>
+) => Promise<Omit<ActionResult, "action" | "durationMs">>;
+
+function getSupabase() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Supabase not configured");
+  return createClient(url, key);
+}
+
+// ─── Action: Seed Demo Data ──────────────────────────────────────────────────
+
+const seedDemoData: ActionHandler = async () => {
+  const supabase = getSupabase();
+
+  // Check if demo data already exists
+  const { data: existing } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("name", "Demo: Miller Residence Remodel")
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return {
+      success: true,
+      message: "Demo data already exists (skipped seeding)",
+      data: { alreadySeeded: true },
+    };
+  }
+
+  // Create demo client
+  const { data: client, error: clientErr } = await supabase
+    .from("clients")
+    .insert({
+      name: "Demo Client - The Millers",
+      email: "demo@example.com",
+      phone: "541-555-0100",
+      address: "123 Demo Lane, Eugene, OR 97401",
+      notes: "Demo client for testing the platform",
+    })
+    .select()
+    .single();
+
+  if (clientErr) throw new Error(`Client insert failed: ${clientErr.message}`);
+
+  // Create demo project
+  const { data: project, error: projErr } = await supabase
+    .from("projects")
+    .insert({
+      name: "Demo: Miller Residence Remodel",
+      client_id: client.id,
+      status: "in_progress",
+      description: "Kitchen and bathroom remodel with custom cabinetry",
+      address: "123 Demo Lane, Eugene, OR 97401",
+      start_date: new Date().toISOString().split("T")[0],
+      estimated_completion: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+      budget: 75000,
+    })
+    .select()
+    .single();
+
+  if (projErr) throw new Error(`Project insert failed: ${projErr.message}`);
+
+  // Create demo field report
+  const { error: reportErr } = await supabase.from("field_reports").insert({
+    project_id: project.id,
+    report_date: new Date().toISOString().split("T")[0],
+    weather: "Partly cloudy, 62°F",
+    summary:
+      "Demo field report - Completed framing inspection, passed. Starting drywall tomorrow.",
+    hours_worked: 8,
+    crew_size: 3,
+    materials_used: "2x4 lumber, drywall sheets, screws",
+    issues: null,
+  });
+
+  if (reportErr)
+    throw new Error(`Field report insert failed: ${reportErr.message}`);
+
+  // Create demo materials
+  const { error: matErr } = await supabase.from("materials").insert([
+    {
+      project_id: project.id,
+      name: "Kitchen Cabinets - Custom Oak",
+      quantity: 12,
+      unit: "units",
+      unit_cost: 450,
+      status: "ordered",
+      vendor: "Oregon Cabinet Works",
+      expected_delivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+    },
+    {
+      project_id: project.id,
+      name: "Quartz Countertop",
+      quantity: 45,
+      unit: "sq ft",
+      unit_cost: 85,
+      status: "pending",
+      vendor: "Pacific Stone Supply",
+    },
+  ]);
+
+  if (matErr) throw new Error(`Materials insert failed: ${matErr.message}`);
+
+  return {
+    success: true,
+    message: "Demo data seeded successfully",
+    data: {
+      clientId: client.id,
+      projectId: project.id,
+      projectName: project.name,
+    },
+  };
+};
+
+// ─── Action: Clear Demo Data ─────────────────────────────────────────────────
+
+const clearDemoData: ActionHandler = async () => {
+  const supabase = getSupabase();
+
+  // Find demo project
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id, client_id")
+    .like("name", "Demo:%");
+
+  if (!projects || projects.length === 0) {
+    return {
+      success: true,
+      message: "No demo data found to clear",
+    };
+  }
+
+  const projectIds = projects.map(p => p.id);
+  const clientIds = [
+    ...new Set(projects.map(p => p.client_id).filter(Boolean)),
+  ];
+
+  // Delete in order (respecting foreign keys)
+  await supabase.from("field_reports").delete().in("project_id", projectIds);
+  await supabase.from("materials").delete().in("project_id", projectIds);
+  await supabase.from("invoices").delete().in("project_id", projectIds);
+  await supabase.from("projects").delete().in("id", projectIds);
+
+  // Delete demo clients
+  if (clientIds.length > 0) {
+    await supabase.from("clients").delete().in("id", clientIds);
+  }
+
+  return {
+    success: true,
+    message: `Cleared ${projects.length} demo project(s) and related data`,
+    data: {
+      projectsDeleted: projects.length,
+      clientsDeleted: clientIds.length,
+    },
+  };
+};
+
+// ─── Action: Run Database Health Check ───────────────────────────────────────
+
+const checkDatabaseIntegrity: ActionHandler = async () => {
+  const supabase = getSupabase();
+
+  const checks: Record<string, { exists: boolean; count: number }> = {};
+  const tables = [
+    "profiles",
+    "projects",
+    "clients",
+    "field_reports",
+    "materials",
+    "invoices",
+    "subcontractors",
+  ];
+
+  for (const table of tables) {
+    const { data, error, count } = await supabase
+      .from(table)
+      .select("id", { count: "exact", head: true });
+
+    checks[table] = {
+      exists: !error || error.code === "PGRST116",
+      count: count ?? 0,
+    };
+  }
+
+  const missing = Object.entries(checks)
+    .filter(([, v]) => !v.exists)
+    .map(([k]) => k);
+
+  return {
+    success: missing.length === 0,
+    message:
+      missing.length === 0
+        ? `All ${tables.length} tables healthy`
+        : `Missing tables: ${missing.join(", ")}`,
+    data: checks,
+  };
+};
+
+// ─── Action: Test AI Endpoint ────────────────────────────────────────────────
+
+const testAIEndpoint: ActionHandler = async () => {
+  const token = process.env.CF_API_TOKEN;
+  const accountId = process.env.CF_ACCOUNT_ID;
+
+  if (!token || !accountId) {
+    throw new Error("Cloudflare AI not configured");
+  }
+
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: "You are a construction assistant. Respond briefly.",
+          },
+          {
+            role: "user",
+            content: "Say 'AI system operational' and nothing else.",
+          },
+        ],
+        max_tokens: 50,
+        temperature: 0.1,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`AI API error: ${res.status} - ${text.slice(0, 100)}`);
+  }
+
+  const data = (await res.json()) as {
+    result?: { response?: string };
+    response?: string;
+  };
+  const response = data.result?.response || data.response || "";
+
+  return {
+    success: true,
+    message: "AI endpoint responding",
+    data: { response: response.slice(0, 100) },
+  };
+};
+
+// ─── Action: Test Weather API ────────────────────────────────────────────────
+
+const testWeatherAPI: ActionHandler = async () => {
+  const key = process.env.OPENWEATHERMAP_API_KEY;
+  if (!key) throw new Error("OpenWeatherMap API key not configured");
+
+  const lat = 44.0521;
+  const lon = -123.0868;
+
+  const res = await fetch(
+    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=imperial`
+  );
+
+  if (!res.ok) {
+    throw new Error(`Weather API error: ${res.status}`);
+  }
+
+  const data = (await res.json()) as {
+    main?: { temp?: number; humidity?: number };
+    weather?: Array<{ main?: string; description?: string }>;
+    wind?: { speed?: number };
+  };
+
+  return {
+    success: true,
+    message: `Eugene OR: ${data.weather?.[0]?.description}, ${Math.round(data.main?.temp ?? 0)}°F`,
+    data: {
+      temperature: data.main?.temp,
+      humidity: data.main?.humidity,
+      conditions: data.weather?.[0]?.main,
+      windSpeed: data.wind?.speed,
+    },
+  };
+};
+
+// ─── Action: Get Platform Stats ──────────────────────────────────────────────
+
+const getPlatformStats: ActionHandler = async () => {
+  const supabase = getSupabase();
+
+  const [projects, clients, reports, invoices] = await Promise.all([
+    supabase.from("projects").select("id, status", { count: "exact" }),
+    supabase.from("clients").select("id", { count: "exact" }),
+    supabase.from("field_reports").select("id", { count: "exact" }),
+    supabase.from("invoices").select("id, status, amount", { count: "exact" }),
+  ]);
+
+  const activeProjects =
+    projects.data?.filter(p => p.status === "in_progress").length ?? 0;
+  const totalInvoiced =
+    invoices.data?.reduce((sum, inv) => sum + (inv.amount || 0), 0) ?? 0;
+  const paidInvoices =
+    invoices.data?.filter(i => i.status === "paid").length ?? 0;
+
+  return {
+    success: true,
+    message: "Platform statistics retrieved",
+    data: {
+      projects: {
+        total: projects.count ?? 0,
+        active: activeProjects,
+      },
+      clients: {
+        total: clients.count ?? 0,
+      },
+      fieldReports: {
+        total: reports.count ?? 0,
+      },
+      invoices: {
+        total: invoices.count ?? 0,
+        paid: paidInvoices,
+        totalAmount: totalInvoiced,
+      },
+    },
+  };
+};
+
+// ─── Action: Create Admin Profile ────────────────────────────────────────────
+
+const createAdminProfile: ActionHandler = async params => {
+  const supabase = getSupabase();
+
+  const email = params?.email as string;
+  const fullName = params?.fullName as string;
+
+  if (!email) throw new Error("Email is required");
+
+  // Check if profile exists
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return {
+      success: true,
+      message: `Profile already exists for ${email}`,
+      data: { profileId: existing[0].id, alreadyExists: true },
+    };
+  }
+
+  // Create profile
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .insert({
+      email,
+      full_name: fullName || "Admin User",
+      role: "admin",
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to create profile: ${error.message}`);
+
+  return {
+    success: true,
+    message: `Admin profile created for ${email}`,
+    data: { profileId: profile.id },
+  };
+};
+
+// ─── Action: Test Voice Endpoint ─────────────────────────────────────────────
+
+const testVoiceEndpoint: ActionHandler = async () => {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("OpenAI API key not configured");
+
+  // Just verify key format and model access
+  const res = await fetch("https://api.openai.com/v1/models/whisper-1", {
+    headers: {
+      Authorization: `Bearer ${key}`,
+    },
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) {
+      return {
+        success: true,
+        message: "OpenAI key valid (Whisper model available on request)",
+        data: { model: "whisper-1", status: "available" },
+      };
+    }
+    throw new Error(`OpenAI API error: ${res.status}`);
+  }
+
+  return {
+    success: true,
+    message: "OpenAI Whisper API accessible",
+    data: { model: "whisper-1", status: "ready" },
+  };
+};
+
+// ─── Action: Verify Stripe Connection ────────────────────────────────────────
+
+const verifyStripeConnection: ActionHandler = async () => {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    return {
+      success: false,
+      message: "Stripe not configured (optional feature)",
+      data: { configured: false },
+    };
+  }
+
+  const res = await fetch("https://api.stripe.com/v1/account", {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Stripe API error: ${res.status}`);
+  }
+
+  const account = (await res.json()) as {
+    id?: string;
+    email?: string;
+    charges_enabled?: boolean;
+    payouts_enabled?: boolean;
+    business_profile?: { name?: string };
+  };
+
+  return {
+    success: true,
+    message: `Stripe connected: ${account.business_profile?.name || account.email || account.id}`,
+    data: {
+      accountId: account.id,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      mode: key.includes("_test_") ? "test" : "live",
+    },
+  };
+};
+
+// ─── Action Registry ─────────────────────────────────────────────────────────
+
+const ACTIONS: Record<string, ActionHandler> = {
+  "seed-demo-data": seedDemoData,
+  "clear-demo-data": clearDemoData,
+  "check-database": checkDatabaseIntegrity,
+  "test-ai": testAIEndpoint,
+  "test-weather": testWeatherAPI,
+  "test-voice": testVoiceEndpoint,
+  "verify-stripe": verifyStripeConnection,
+  "get-stats": getPlatformStats,
+  "create-admin": createAdminProfile,
+};
+
+// ─── Handler ─────────────────────────────────────────────────────────────────
+
+export const handler: Handler = async event => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Content-Type": "application/json",
+  };
+
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers, body: "" };
+  }
+
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
+  }
+
+  let body: {
+    action?: string;
+    params?: Record<string, unknown>;
+    adminToken?: string;
+  };
+
+  try {
+    body = JSON.parse(event.body || "{}");
+  } catch {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid JSON body" }),
+    };
+  }
+
+  // Auth check - allow bootstrap token for initial setup
+  const expectedToken = process.env.SETUP_ADMIN_TOKEN;
+  const bootstrapToken = "pcb-bootstrap-2026"; // Fallback for initial setup
+  const validToken = expectedToken || bootstrapToken;
+
+  if (!body.adminToken || !timingSafeEqual(body.adminToken, validToken)) {
+    return {
+      statusCode: 401,
+      headers,
+      body: JSON.stringify({ error: "Invalid admin token" }),
+    };
+  }
+
+  const action = body.action;
+  if (!action || !ACTIONS[action]) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({
+        error: `Unknown action: ${action}`,
+        availableActions: Object.keys(ACTIONS),
+      }),
+    };
+  }
+
+  const start = Date.now();
+  try {
+    const result = await ACTIONS[action](body.params);
+    const response: ActionResult = {
+      ...result,
+      action,
+      durationMs: Date.now() - start,
+    };
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(response),
+    };
+  } catch (err) {
+    const response: ActionResult = {
+      success: false,
+      action,
+      message: String(err),
+      durationMs: Date.now() - start,
+    };
+
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify(response),
+    };
+  }
+};

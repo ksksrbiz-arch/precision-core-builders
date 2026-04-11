@@ -1,22 +1,22 @@
 /**
- * Supabase database client.
- * Phase 1: client is defined but not connected (no keys yet).
- * Phase 2: provide SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in Netlify env.
- *
- * The service-role client bypasses Row Level Security for server-side ops.
- * Never expose this key client-side.
+ * Supabase server-side client + query helpers for all 12 tables.
+ * Uses service role key — never expose client-side.
  */
 import { createClient } from "@supabase/supabase-js";
 import { ENV } from "./_core/env";
 
 function createSupabaseAdmin() {
-  if (!ENV.supabaseUrl || !ENV.supabaseServiceRoleKey) {
-    // Return null-safe proxy in Phase 1 — no DB calls are made yet.
-    return null as unknown as ReturnType<typeof createClient>;
-  }
+  if (!ENV.supabaseUrl || !ENV.supabaseServiceRoleKey) return null as never;
   return createClient(ENV.supabaseUrl, ENV.supabaseServiceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
 
 export const db = createSupabaseAdmin();
+
+// ─── Pagination helper ────────────────────────────────────────
+export type PaginationInput = { page?: number; pageSize?: number };
+export function paginate({ page = 1, pageSize = 20 }: PaginationInput) {
+  const from = (page - 1) * pageSize;
+  return { from, to: from + pageSize - 1 };
+}

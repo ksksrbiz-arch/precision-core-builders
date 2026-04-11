@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=5"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"
     />
 
     <title>
@@ -22,6 +22,33 @@
     <meta name="author" content="Precision Core Builders — Eric Tadlock" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://precisioncorebuilders.com/" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0C0A08" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="PCB Foreman" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="PCB Foreman" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Windows -->
+    <meta name="msapplication-TileColor" content="#0C0A08" />
+    <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+
+    <!-- Mobile optimization -->
+    <meta name="format-detection" content="telephone=yes" />
+    <meta name="HandheldFriendly" content="true" />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://precisioncorebuilders.com/" />
@@ -58,17 +85,52 @@
           "@type": "PostalAddress",
           "addressLocality": "Eugene",
           "addressRegion": "OR",
+          "postalCode": "97401",
           "addressCountry": "US"
         },
-        "founder": { "@type": "Person", "name": "Eric Tadlock" },
-        "license": "CCB #246527",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 44.0521,
+          "longitude": -123.0868
+        },
+        "founder": {
+          "@type": "Person",
+          "name": "Eric Tadlock",
+          "jobTitle": "Owner / Lead Carpenter"
+        },
         "foundingDate": "2004",
         "priceRange": "$$$$",
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "07:00",
+          "closes": "17:00"
+        },
+        "hasCredential": {
+          "@type": "EducationalOccupationalCredential",
+          "credentialCategory": "license",
+          "name": "Oregon Construction Contractors Board License CCB #246527"
+        },
         "areaServed": [
           { "@type": "City", "name": "Eugene" },
           { "@type": "City", "name": "Springfield" },
-          { "@type": "State", "name": "Oregon" }
-        ]
+          {
+            "@type": "AdministrativeArea",
+            "name": "Lane County, Oregon"
+          }
+        ],
+        "knowsAbout": [
+          "Custom Home Construction",
+          "Home Remodeling",
+          "Home Additions",
+          "Kitchen Remodeling",
+          "Bathroom Remodeling",
+          "Roofing",
+          "Interior & Exterior Painting",
+          "Cabinetry",
+          "Historic Restoration"
+        ],
+        "slogan": "Precise Construction. Core Values."
       }
     </script>
 

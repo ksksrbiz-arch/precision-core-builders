@@ -1,0 +1,45 @@
+name: "PR Security Gate"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+
+jobs:
+  audit-check:
+    name: Block vulnerable dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Security audit
+        run: |
+          set +e
+          AUDIT_OUTPUT=$(pnpm audit --audit-level high 2>&1)
+          AUDIT_EXIT=$?
+          echo "$AUDIT_OUTPUT"
+
+          if [ "$AUDIT_EXIT" -ne 0 ]; then
+            echo ""
+            echo "::error::HIGH or CRITICAL vulnerabilities detected. Fix before merging."
+            echo "Run 'pnpm audit' locally and update the affected packages."
+            exit 1
+          fi
+
+          echo "✅ No high/critical vulnerabilities found."
+
+      - name: Verify build
+        run: pnpm build

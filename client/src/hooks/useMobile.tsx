@@ -19,3 +19,33 @@ export function useIsMobile() {
 
   return !!isMobile;
 }
+
+/** Detect if running as installed PWA (standalone mode) */
+export function useIsStandalone() {
+  const [isStandalone, setIsStandalone] = React.useState(false);
+
+  React.useEffect(() => {
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as any).standalone === true;
+    setIsStandalone(standalone);
+
+    const mql = window.matchMedia("(display-mode: standalone)");
+    const onChange = (e: MediaQueryListEvent) => setIsStandalone(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isStandalone;
+}
+
+/** Detect touch-only device (no hover) */
+export function useIsTouchDevice() {
+  const [isTouch, setIsTouch] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsTouch("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  return isTouch;
+}

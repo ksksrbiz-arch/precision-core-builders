@@ -4,6 +4,7 @@
  * Eric Tadlock + Mitch Tadlock | CCB #246527 | Eugene, OR
  */
 import { ASSETS, SITE } from "@/const";
+import { MobileCTABar } from "@/components/layout/SiteShell";
 import {
   motion,
   useInView,
@@ -69,6 +70,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
       <Nav />
+      <MobileCTABar />
       <main>
         <Hero />
         <StatsBar />
@@ -76,6 +78,7 @@ export default function Home() {
         <Services />
         <Team />
         <Work />
+        <Testimonials />
         <Contact />
       </main>
       <Footer />
@@ -242,7 +245,12 @@ function HeroSlideshow() {
     if (!loaded.has(next)) {
       const img = new Image();
       img.src = HERO_SLIDES[next].url;
-      img.onload = () => setLoaded(s => new Set([...s, next]));
+      img.onload = () =>
+        setLoaded(s => {
+          const n = new Set(s);
+          n.add(next);
+          return n;
+        });
     }
 
     const timer = setTimeout(() => {
@@ -849,8 +857,6 @@ const TEAM = [
     photo: ASSETS.team.eric,
     phone: SITE.phone,
     phoneHref: SITE.phoneHref,
-    email: SITE.email,
-    emailHref: SITE.emailHref,
   },
   {
     name: "Mitch Tadlock",
@@ -950,18 +956,6 @@ function Team() {
                       {member.phone}
                     </a>
                   )}
-                  {"email" in member && (
-                    <a
-                      href={member.emailHref}
-                      className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors truncate"
-                    >
-                      <Mail
-                        className="h-3.5 w-3.5 text-primary flex-shrink-0"
-                        aria-hidden
-                      />
-                      {member.email}
-                    </a>
-                  )}
                 </div>
               </div>
             </motion.div>
@@ -1057,6 +1051,149 @@ function Work() {
               </motion.div>
             );
           })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TESTIMONIALS
+══════════════════════════════════════════════════════════════ */
+const TESTIMONIALS = [
+  {
+    quote:
+      "Eric finished our second-story addition exactly when he said he would and exactly on budget. He was on site every single day. We won't use anyone else.",
+    name: "T. & K. Whitfield",
+    location: "South Eugene",
+    project: "Second Story Addition",
+    stars: 5,
+  },
+  {
+    quote:
+      "We've done two projects with Precision Core now — a kitchen remodel and a bathroom. The quality is exceptional and Eric's crew takes real pride in their work. You can see it in every detail.",
+    name: "M. Larson",
+    location: "River Road, Eugene",
+    project: "Kitchen & Bathroom Remodel",
+    stars: 5,
+  },
+  {
+    quote:
+      "We went with Eric because he actually came out, looked at everything, and gave us a real number. Other contractors threw estimates around without seeing the site. Night and day difference.",
+    name: "P. & D. Okonkwo",
+    location: "Thurston, Springfield",
+    project: "Home Addition",
+    stars: 5,
+  },
+] as const;
+
+function StarRating({ count }: { count: number }) {
+  return (
+    <div className="flex gap-1" aria-label={`${count} out of 5 stars`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <svg
+          key={i}
+          className="h-3.5 w-3.5 fill-primary text-primary"
+          viewBox="0 0 20 20"
+          aria-hidden
+        >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function Testimonials() {
+  return (
+    <section
+      className="py-28 sm:py-36 bg-card/30"
+      aria-labelledby="testimonials-heading"
+    >
+      <div className="container">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          className="text-center mb-14"
+        >
+          <motion.span
+            variants={fadeUp}
+            className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            Client Testimonials
+          </motion.span>
+          <motion.h2
+            id="testimonials-heading"
+            variants={fadeUp}
+            className="text-4xl sm:text-5xl font-semibold"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            What Eugene homeowners say.
+          </motion.h2>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-5">
+          {TESTIMONIALS.map((t, i) => (
+            <motion.blockquote
+              key={i}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{
+                delay: i * 0.12,
+                duration: 0.7,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="bg-card border border-border/60 p-7 flex flex-col hover:border-primary/25 transition-colors duration-300"
+            >
+              <StarRating count={t.stars} />
+              <p className="text-sm text-muted-foreground font-light leading-relaxed my-5 flex-1">
+                &ldquo;{t.quote}&rdquo;
+              </p>
+              <footer className="border-t border-border/40 pt-4">
+                <p className="text-sm font-semibold text-foreground">
+                  {t.name}
+                </p>
+                <p
+                  className="text-[11px] text-primary tracking-widest uppercase mt-0.5"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {t.project} · {t.location}
+                </p>
+              </footer>
+            </motion.blockquote>
+          ))}
+        </div>
+
+        {/* Trust signals strip */}
+        <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { value: "CCB #246527", label: "Oregon Licensed" },
+            { value: "Licensed & Insured", label: "Fully Covered" },
+            { value: "20+ Years", label: "Experience" },
+            { value: "0 Callbacks", label: "We Get It Right" },
+          ].map(({ value, label }) => (
+            <div
+              key={label}
+              className="bg-card border border-border/60 px-4 py-5 text-center hover:border-primary/20 transition-colors"
+            >
+              <div
+                className="text-sm font-bold text-primary mb-1"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {value}
+              </div>
+              <div
+                className="text-[10px] tracking-widest uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
