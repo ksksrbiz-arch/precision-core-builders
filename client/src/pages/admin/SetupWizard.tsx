@@ -285,9 +285,11 @@ function StatusBadge({
 function HealthCheckPanel({
   adminToken,
   onRefresh,
+  addToast,
 }: {
   adminToken: string;
   onRefresh?: () => void;
+  addToast: any;
 }) {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -468,11 +470,13 @@ function ServiceCard({
   healthStatus,
   adminToken,
   onSaved,
+  addToast,
 }: {
   svc: ServiceKey;
   healthStatus?: ServiceStatus;
   adminToken: string;
   onSaved: () => void;
+  addToast: any;
 }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -908,9 +912,11 @@ type ActionResult = {
 function MCPToolsPanel({
   adminToken,
   onActionComplete,
+  addToast,
 }: {
   adminToken: string;
   onActionComplete?: () => void;
+  addToast: any;
 }) {
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ActionResult | null>(null);
@@ -1202,6 +1208,7 @@ export default function SetupWizard() {
         <HealthCheckPanel
           adminToken={token}
           onRefresh={() => setRefreshKey(k => k + 1)}
+          addToast={addToast}
         />
 
         {/* Quick Actions */}
@@ -1211,6 +1218,7 @@ export default function SetupWizard() {
         <MCPToolsPanel
           adminToken={token}
           onActionComplete={() => setRefreshKey(k => k + 1)}
+          addToast={addToast}
         />
 
         {/* Info banner */}
@@ -1236,6 +1244,7 @@ export default function SetupWizard() {
               healthStatus={statusMap[svc.id]}
               adminToken={token}
               onSaved={() => setRefreshKey(k => k + 1)}
+              addToast={addToast}
             />
           ))}
         </div>
