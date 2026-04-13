@@ -4,6 +4,8 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GanttChart } from "@/components/GanttChart";
+import { SkeletonCard } from "@/components/Skeletons";
+import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
@@ -162,24 +164,12 @@ export default function ScheduleView() {
     { projectId: selectedProject! },
     { enabled: !!selectedProject }
   );
-  const updateStatus = trpc.schedule.updateStatus.useMutation({
-    onSuccess: () => {
-      refetch();
-      addToast({
-        type: "success",
-        title: "Updated",
-        message: "Task status updated.",
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to update task status. Please try again.",
-        duration: 6000,
-      });
-    },
+  const updateStatus = useMutationWithToast(trpc.schedule.updateStatus.useMutation(), {
+    success: "Task Updated",
+    successMessage: "Task status updated.",
+    error: "Update Failed",
+    errorMessage: "Failed to update task status. Please try again.",
+    onSuccess: () => refetch(),
   });
 
   const fetchWeather = async (projectId?: number) => {
@@ -339,7 +329,7 @@ export default function ScheduleView() {
             <GanttChart
               projectId={selectedProject}
               items={scheduleItems ?? []}
-              weatherForecast={weather?.forecast?.[0]}
+              weatherForecast={weather?.forecast?.[0] as any}
               readOnly={false}
               onTaskUpdate={(taskId, startDate, endDate) => {
                 console.log(`Task ${taskId} rescheduled to ${startDate} - ${endDate}`);

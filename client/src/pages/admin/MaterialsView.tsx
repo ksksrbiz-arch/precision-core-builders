@@ -3,6 +3,8 @@
  * Calls /api/material-procurement to generate Purchase Orders for shortages.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { SkeletonCard } from "@/components/Skeletons";
+import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
@@ -64,34 +66,15 @@ export default function MaterialsView() {
     pageSize: 100,
   });
   const utils = trpc.useUtils();
-  const createMaterial = trpc.materials.create.useMutation({
+  const createMaterial = useMutationWithToast(trpc.materials.create.useMutation(), {
+    success: "Material Added",
+    successMessage: "Material added to inventory.",
+    error: "Add Failed",
+    errorMessage: "Failed to add material. Please try again.",
     onSuccess: () => {
       refetch();
       setShowAddForm(false);
-      setNewMaterial({
-        name: "",
-        category: "",
-        unit: "",
-        vendorName: "",
-        quantityNeeded: "",
-        unitPriceCurrent: "",
-        phaseNeeded: "",
-        notes: "",
-      });
-      addToast({
-        type: "success",
-        title: "Added",
-        message: "Material added to inventory.",
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to add material. Please try again.",
-        duration: 6000,
-      });
+      setNewMaterial({ name: "", category: "", unit: "", vendorName: "", quantityNeeded: "", unitPriceCurrent: "", phaseNeeded: "", notes: "" });
     },
   });
 

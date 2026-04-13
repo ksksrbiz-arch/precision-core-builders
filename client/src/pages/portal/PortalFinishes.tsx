@@ -8,7 +8,7 @@ import { ASSETS } from "@/const";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check, DollarSign, LogOut, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
-import { toast } from "sonner";
+import { useToast } from "@/components/ToastProvider";
 
 function PortalNav() {
   const { signOut } = useAuth();
@@ -28,6 +28,7 @@ function PortalNav() {
             { label: "Reports", href: "/portal/reports" },
             { label: "Selections", href: "/portal/finishes" },
             { label: "Ledger", href: "/portal/ledger" },
+            { label: "Payments", href: "/portal/payments" },
           ].map(n => (
             <a
               key={n.href}
@@ -52,6 +53,7 @@ function PortalNav() {
 }
 
 export default function PortalFinishes() {
+  const { addToast } = useToast();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
@@ -70,7 +72,7 @@ export default function PortalFinishes() {
   const approveMut = trpc.finishSelections.clientApprove.useMutation({
     onSuccess: () => {
       utils.finishSelections.list.invalidate();
-      toast.success("Selection approved");
+      addToast({ type: "success", title: "Selection Approved", message: "Your selection has been recorded.", duration: 4000 });
     },
   });
 

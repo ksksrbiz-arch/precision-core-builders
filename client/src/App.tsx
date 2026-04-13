@@ -55,6 +55,7 @@ const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
 const PortalReports = lazy(() => import("./pages/portal/PortalReports"));
 const PortalFinishes = lazy(() => import("./pages/portal/PortalFinishes"));
 const PortalLedger = lazy(() => import("./pages/portal/PortalLedger"));
+const PortalPayments = lazy(() => import("./pages/portal/PortalPayments"));
 
 // Service pages
 const LazyResidential = lazy(() =>
@@ -158,6 +159,13 @@ function Router() {
           {() => (
             <ProtectedRoute>
               <PortalLedger />
+            </ProtectedRoute>
+          )}
+        </Route>
+        <Route path="/portal/payments">
+          {() => (
+            <ProtectedRoute>
+              <PortalPayments />
             </ProtectedRoute>
           )}
         </Route>

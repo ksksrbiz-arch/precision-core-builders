@@ -3,7 +3,8 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
-import { useToast } from "@/components/ToastProvider";
+import { SkeletonCard } from "@/components/Skeletons";
+import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
   Calculator,
@@ -20,50 +21,24 @@ import { useLocation } from "wouter";
 export default function EstimatesList() {
   const [, setLocation] = useLocation();
   const [page, setPage] = useState(1);
-  const { addToast } = useToast();
   const utils = trpc.useUtils();
 
-  const { data, isLoading } = trpc.estimates.list.useQuery({
-    page,
-    pageSize: 20,
+  const { data, isLoading } = trpc.estimates.list.useQuery({ page, pageSize: 20 });
+
+  const sendMut = useMutationWithToast(trpc.estimates.markSent.useMutation(), {
+    success: "Estimate Sent",
+    successMessage: "Estimate sent to client.",
+    error: "Send Failed",
+    errorMessage: "Failed to send estimate. Please try again.",
+    invalidate: () => utils.estimates.list.invalidate(),
   });
-  const sendMut = trpc.estimates.markSent.useMutation({
-    onSuccess: () => {
-      utils.estimates.list.invalidate();
-      addToast({
-        type: "success",
-        title: "Sent",
-        message: "Estimate sent to client.",
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to send estimate. Please try again.",
-        duration: 6000,
-      });
-    },
-  });
-  const approveMut = trpc.estimates.markApproved.useMutation({
-    onSuccess: () => {
-      utils.estimates.list.invalidate();
-      addToast({
-        type: "success",
-        title: "Approved",
-        message: "Estimate approved and locked.",
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to approve estimate. Please try again.",
-        duration: 6000,
-      });
-    },
+
+  const approveMut = useMutationWithToast(trpc.estimates.markApproved.useMutation(), {
+    success: "Estimate Approved",
+    successMessage: "Estimate approved and locked.",
+    error: "Approve Failed",
+    errorMessage: "Failed to approve estimate. Please try again.",
+    invalidate: () => utils.estimates.list.invalidate(),
   });
 
   const fmt = (n: number | string | null | undefined) =>

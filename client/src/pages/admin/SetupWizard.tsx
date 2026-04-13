@@ -1075,7 +1075,7 @@ function MCPToolsPanel({
             </span>
           </div>
 
-          {lastResult.data && (
+          {(lastResult.data != null) && (
             <div className="mt-2">
               <button
                 onClick={() => setShowDetails(!showDetails)}
@@ -1093,7 +1093,7 @@ function MCPToolsPanel({
               </button>
               {showDetails && (
                 <pre className="mt-2 text-[10px] text-muted-foreground bg-input/50 p-2 overflow-x-auto border border-border/40">
-                  {JSON.stringify(lastResult.data, null, 2)}
+                  {JSON.stringify(lastResult.data as Record<string, unknown> | unknown[], null, 2)}
                 </pre>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { db, paginate } from "../db";
-import { adminProcedure, publicProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
 export const estimatesRouter = router({
@@ -116,6 +116,36 @@ export const estimatesRouter = router({
         .single();
       if (error) throw new Error(error.message);
       return data;
+    }),
+
+  /** Portal: list estimates/invoices for the authenticated client */
+  listForClient: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number().int().positive().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      // Find client record for this user
+      const { data: client } = await db
+        .from("clients")
+        .select("id")
+        .eq("user_id", ctx.user.id)
+        .maybeSingle();
+
+      if (!client) return { data: [], total: 0 };
+
+      let q = db
+        .from("estimates")
+        .select("*, projects(id,name,status,progress_percent)", { count: "exact" })
+        .eq("client_id", client.id)
+        .order("created_at", { ascending: false });
+
+      if (input.projectId) q = q.eq("project_id", input.projectId);
+
+      const { data, error, count } = await q;
+      if (error) throw new Error(error.message);
+      return { data: data ?? [], total: count ?? 0 };
     }),
 
   delete: adminProcedure

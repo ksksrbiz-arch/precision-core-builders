@@ -105,7 +105,7 @@ export function useRealtimeSubscription<T = any>(
           filter: buildFilter() || undefined,
         },
         (payload) => {
-          setData((prev) => [...prev, payload.new]);
+          setData((prev) => [...prev, payload.new as T]);
           onInsert?.(payload);
           // Invalidate related tRPC queries
           queryClient.invalidateQueries({ queryKey: [table] });

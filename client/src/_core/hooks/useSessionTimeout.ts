@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/lib/supabase";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useToast } from "@/components/ToastProvider";
 
 interface SessionTimeoutOptions {
@@ -24,8 +24,8 @@ export function useSessionTimeout(options: SessionTimeoutOptions = {}) {
   const { addToast } = useToast();
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [showWarning, setShowWarning] = useState(false);
-  const inactivityTimeoutRef = useRef<NodeJS.Timeout>();
-  const warningTimeoutRef = useRef<NodeJS.Timeout>();
+  const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastActivityRef = useRef(Date.now());
 
   // Reset activity timer on user interaction
