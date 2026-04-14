@@ -104,8 +104,8 @@ export function useRealtimeSubscription<T = any>(
           table: table,
           filter: buildFilter() || undefined,
         },
-        payload => {
-          setData(prev => [...prev, payload.new as T]);
+        (payload) => {
+          setData((prev) => [...prev, payload.new as T]);
           onInsert?.(payload);
           // Invalidate related tRPC queries
           queryClient.invalidateQueries({ queryKey: [table] });
@@ -120,8 +120,8 @@ export function useRealtimeSubscription<T = any>(
           table: table,
           filter: buildFilter() || undefined,
         },
-        payload => {
-          setData(prev =>
+        (payload) => {
+          setData((prev) =>
             prev.map((item: any) =>
               item.id === payload.new.id ? payload.new : item
             )
@@ -139,8 +139,8 @@ export function useRealtimeSubscription<T = any>(
           table: table,
           filter: buildFilter() || undefined,
         },
-        payload => {
-          setData(prev =>
+        (payload) => {
+          setData((prev) =>
             prev.filter((item: any) => item.id !== payload.old.id)
           );
           onDelete?.(payload);
@@ -148,7 +148,7 @@ export function useRealtimeSubscription<T = any>(
           setIsConnected(true);
         }
       )
-      .subscribe(status => {
+      .subscribe((status) => {
         setIsConnected(status === "SUBSCRIBED");
         if (status === "SUBSCRIBED") {
           console.log(`[Realtime] Subscribed to ${table}`);
@@ -184,9 +184,9 @@ export function useRealtimeProjects(filters?: {
   return useRealtimeSubscription(
     "projects",
     filters,
-    payload => console.log("[Realtime] Project created:", payload.new),
-    payload => console.log("[Realtime] Project updated:", payload.new),
-    payload => console.log("[Realtime] Project deleted:", payload.old)
+    (payload) => console.log("[Realtime] Project created:", payload.new),
+    (payload) => console.log("[Realtime] Project updated:", payload.new),
+    (payload) => console.log("[Realtime] Project deleted:", payload.old)
   );
 }
 
@@ -197,9 +197,9 @@ export function useRealtimeSchedule(projectId: number) {
   return useRealtimeSubscription(
     "schedule_items",
     { project_id: projectId },
-    payload => console.log("[Realtime] Task created:", payload.new),
-    payload => console.log("[Realtime] Task updated:", payload.new),
-    payload => console.log("[Realtime] Task deleted:", payload.old)
+    (payload) => console.log("[Realtime] Task created:", payload.new),
+    (payload) => console.log("[Realtime] Task updated:", payload.new),
+    (payload) => console.log("[Realtime] Task deleted:", payload.old)
   );
 }
 
@@ -210,8 +210,8 @@ export function useRealtimeFieldReports(projectId?: number) {
   return useRealtimeSubscription(
     "field_reports",
     projectId ? { project_id: projectId } : undefined,
-    payload => console.log("[Realtime] Report filed:", payload.new),
-    payload => console.log("[Realtime] Report updated:", payload.new)
+    (payload) => console.log("[Realtime] Report filed:", payload.new),
+    (payload) => console.log("[Realtime] Report updated:", payload.new)
   );
 }
 
@@ -222,9 +222,9 @@ export function useRealtimeMaterials(projectId: number) {
   return useRealtimeSubscription(
     "materials",
     { project_id: projectId },
-    payload => console.log("[Realtime] Material added:", payload.new),
-    payload => console.log("[Realtime] Material updated:", payload.new),
-    payload => console.log("[Realtime] Material removed:", payload.old)
+    (payload) => console.log("[Realtime] Material added:", payload.new),
+    (payload) => console.log("[Realtime] Material updated:", payload.new),
+    (payload) => console.log("[Realtime] Material removed:", payload.old)
   );
 }
 
@@ -235,7 +235,7 @@ export function useRealtimeMessages(projectId: number) {
   return useRealtimeSubscription(
     "client_communications",
     { project_id: projectId },
-    payload => console.log("[Realtime] Message received:", payload.new)
+    (payload) => console.log("[Realtime] Message received:", payload.new)
   );
 }
 
@@ -246,8 +246,8 @@ export function useRealtimeInvoices(clientId: string) {
   return useRealtimeSubscription(
     "invoices",
     { client_id: clientId },
-    payload => console.log("[Realtime] Invoice created:", payload.new),
-    payload => console.log("[Realtime] Invoice updated:", payload.new)
+    (payload) => console.log("[Realtime] Invoice created:", payload.new),
+    (payload) => console.log("[Realtime] Invoice updated:", payload.new)
   );
 }
 

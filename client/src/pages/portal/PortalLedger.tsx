@@ -58,6 +58,7 @@ function PortalNav() {
             { label: "Reports", href: "/portal/reports" },
             { label: "Selections", href: "/portal/finishes" },
             { label: "Ledger", href: "/portal/ledger" },
+            { label: "Payments", href: "/portal/payments" },
           ].map(n => (
             <a
               key={n.href}

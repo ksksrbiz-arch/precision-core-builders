@@ -161,7 +161,8 @@ const SERVICES: ServiceKey[] = [
     label: "Stripe Payments",
     envKey: "STRIPE_SECRET_KEY",
     icon: CreditCard,
-    description: "Milestone invoicing and client payment links. 100% optional.",
+    description:
+      "Milestone invoicing and client payment links. 100% optional.",
     optional: true,
     guideSteps: [
       "Go to stripe.com and click Start now -- it is free to create an account.",
@@ -284,15 +285,16 @@ function StatusBadge({
 function HealthCheckPanel({
   adminToken,
   onRefresh,
+  addToast,
 }: {
   adminToken: string;
   onRefresh?: () => void;
+  addToast: any;
 }) {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
-  const { addToast } = useToast();
 
   const runHealthCheck = useCallback(async () => {
     setLoading(true);
@@ -308,12 +310,7 @@ function HealthCheckPanel({
       onRefresh?.();
     } catch (err) {
       setError(String(err));
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Health check failed.",
-        duration: 6000,
-      });
+      addToast({ type: "error", title: "Error", message: "Health check failed.", duration: 6000 });
     } finally {
       setLoading(false);
     }
@@ -367,7 +364,9 @@ function HealthCheckPanel({
           className="flex items-center gap-2 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase hover:bg-accent/20 disabled:opacity-50 transition-colors"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
-          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-3 w-3 ${loading ? "animate-spin" : ""}`}
+          />
           {loading ? "Checking..." : "Refresh"}
         </button>
       </div>
@@ -471,16 +470,17 @@ function ServiceCard({
   healthStatus,
   adminToken,
   onSaved,
+  addToast,
 }: {
   svc: ServiceKey;
   healthStatus?: ServiceStatus;
   adminToken: string;
   onSaved: () => void;
+  addToast: any;
 }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
-  const { addToast } = useToast();
 
   const isConfigured = healthStatus
     ? healthStatus.status === "healthy" || healthStatus.status === "degraded"
@@ -489,12 +489,7 @@ function ServiceCard({
 
   const save = async () => {
     if (!value.trim()) {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Paste your key first.",
-        duration: 6000,
-      });
+      addToast({ type: "error", title: "Error", message: "Paste your key first.", duration: 6000 });
       return;
     }
     if (svc.prefix && !value.trim().startsWith(svc.prefix)) {
@@ -850,8 +845,7 @@ const MCP_ACTIONS: MCPAction[] = [
   {
     id: "seed-demo-data",
     name: "Seed Demo Data",
-    description:
-      "Create sample client, project, field report, and materials for testing",
+    description: "Create sample client, project, field report, and materials for testing",
     icon: Database,
     category: "data",
   },
@@ -918,14 +912,15 @@ type ActionResult = {
 function MCPToolsPanel({
   adminToken,
   onActionComplete,
+  addToast,
 }: {
   adminToken: string;
   onActionComplete?: () => void;
+  addToast: any;
 }) {
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ActionResult | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const { addToast } = useToast();
 
   const executeAction = async (actionId: string) => {
     setRunningAction(actionId);
@@ -1073,16 +1068,14 @@ function MCPToolsPanel({
               ) : (
                 <XCircle className="h-4 w-4 text-red-400" />
               )}
-              <span className="text-[11px] font-medium">
-                {lastResult.message}
-              </span>
+              <span className="text-[11px] font-medium">{lastResult.message}</span>
             </div>
             <span className="text-[9px] text-muted-foreground">
               {lastResult.durationMs}ms
             </span>
           </div>
 
-          {lastResult.data !== undefined && lastResult.data !== null && (
+          {(lastResult.data != null) && (
             <div className="mt-2">
               <button
                 onClick={() => setShowDetails(!showDetails)}
@@ -1100,7 +1093,7 @@ function MCPToolsPanel({
               </button>
               {showDetails && (
                 <pre className="mt-2 text-[10px] text-muted-foreground bg-input/50 p-2 overflow-x-auto border border-border/40">
-                  {JSON.stringify(lastResult.data, null, 2)}
+                  {JSON.stringify(lastResult.data as Record<string, unknown> | unknown[], null, 2)}
                 </pre>
               )}
             </div>
@@ -1215,6 +1208,7 @@ export default function SetupWizard() {
         <HealthCheckPanel
           adminToken={token}
           onRefresh={() => setRefreshKey(k => k + 1)}
+          addToast={addToast}
         />
 
         {/* Quick Actions */}
@@ -1224,6 +1218,7 @@ export default function SetupWizard() {
         <MCPToolsPanel
           adminToken={token}
           onActionComplete={() => setRefreshKey(k => k + 1)}
+          addToast={addToast}
         />
 
         {/* Info banner */}
@@ -1249,6 +1244,7 @@ export default function SetupWizard() {
               healthStatus={statusMap[svc.id]}
               adminToken={token}
               onSaved={() => setRefreshKey(k => k + 1)}
+              addToast={addToast}
             />
           ))}
         </div>

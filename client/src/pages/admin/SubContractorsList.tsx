@@ -3,7 +3,8 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
-import { useToast } from "@/components/ToastProvider";
+import { SkeletonCard } from "@/components/Skeletons";
+import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -55,75 +56,33 @@ export default function SubContractorsList() {
     licenseNumber: "",
     notes: "",
   });
-  const { addToast } = useToast();
-
   const utils = trpc.useUtils();
   const { data: subs, isLoading } = trpc.subContractors.list.useQuery();
-  const createMut = trpc.subContractors.create.useMutation({
+
+  const createMut = useMutationWithToast(trpc.subContractors.create.useMutation(), {
+    success: "Sub Added",
+    successMessage: "Sub-contractor added to roster.",
+    error: "Create Failed",
+    errorMessage: "Failed to add sub-contractor. Please try again.",
+    invalidate: () => utils.subContractors.list.invalidate(),
     onSuccess: () => {
-      utils.subContractors.list.invalidate();
       setShowNew(false);
-      setForm({
-        name: "",
-        company: "",
-        email: "",
-        phone: "",
-        trade: "",
-        licenseNumber: "",
-        notes: "",
-      });
-      addToast({
-        type: "success",
-        title: "Added",
-        message: "Sub-contractor added to roster.",
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to add sub-contractor. Please try again.",
-        duration: 6000,
-      });
+      setForm({ name: "", company: "", email: "", phone: "", trade: "", licenseNumber: "", notes: "" });
     },
   });
-  const deleteMut = trpc.subContractors.delete.useMutation({
-    onSuccess: () => {
-      utils.subContractors.list.invalidate();
-      addToast({
-        type: "success",
-        title: "Removed",
-        message: "Sub-contractor deleted.",
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to delete sub-contractor. Please try again.",
-        duration: 6000,
-      });
-    },
+
+  const deleteMut = useMutationWithToast(trpc.subContractors.delete.useMutation(), {
+    success: "Sub Removed",
+    successMessage: "Sub-contractor deleted.",
+    error: "Delete Failed",
+    errorMessage: "Failed to delete sub-contractor. Please try again.",
+    invalidate: () => utils.subContractors.list.invalidate(),
   });
-  const briefMut = trpc.subContractors.sendBriefing.useMutation({
-    onSuccess: d => {
-      addToast({
-        type: "success",
-        title: "Sent",
-        message: `Briefing sent to ${d.subName}.`,
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to send briefing. Please try again.",
-        duration: 6000,
-      });
-    },
+
+  const briefMut = useMutationWithToast(trpc.subContractors.sendBriefing.useMutation(), {
+    success: "Briefing Sent",
+    error: "Send Failed",
+    errorMessage: "Failed to send briefing. Please try again.",
   });
 
   const tradeColor = (trade: string | null) => {
@@ -244,9 +203,7 @@ export default function SubContractorsList() {
 
         {/* Sub list */}
         {isLoading ? (
-          <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
-            Loading…
-          </div>
+          <SkeletonCard count={4} />
         ) : !subs?.length ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <HardHat className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />

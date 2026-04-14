@@ -24,10 +24,8 @@ export function useSessionTimeout(options: SessionTimeoutOptions = {}) {
   const { addToast } = useToast();
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [showWarning, setShowWarning] = useState(false);
-  const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-  const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastActivityRef = useRef(Date.now());
 
   // Reset activity timer on user interaction
@@ -42,8 +40,7 @@ export function useSessionTimeout(options: SessionTimeoutOptions = {}) {
       setTimeRemaining(null);
 
       // Clear existing timeouts
-      if (inactivityTimeoutRef.current)
-        clearTimeout(inactivityTimeoutRef.current);
+      if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
 
       // Set warning timeout
@@ -99,8 +96,7 @@ export function useSessionTimeout(options: SessionTimeoutOptions = {}) {
       events.forEach(event => {
         window.removeEventListener(event, resetTimer);
       });
-      if (inactivityTimeoutRef.current)
-        clearTimeout(inactivityTimeoutRef.current);
+      if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
       clearInterval(countdownInterval);
     };

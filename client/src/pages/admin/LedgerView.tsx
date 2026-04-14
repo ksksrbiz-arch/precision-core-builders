@@ -4,7 +4,8 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
-import { useToast } from "@/components/ToastProvider";
+import { SkeletonCard } from "@/components/Skeletons";
+import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -51,40 +52,20 @@ export default function LedgerView() {
     amountDelta: "",
     visibleToClient: true,
   });
-  const { addToast } = useToast();
-
   const utils = trpc.useUtils();
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
   const { data, isLoading } = trpc.ledger.list.useQuery(
     { projectId: projectId!, page, pageSize: 50 },
     { enabled: !!projectId }
   );
-  const appendMut = trpc.ledger.append.useMutation({
-    onSuccess: () => {
-      utils.ledger.list.invalidate();
-      setShowNew(false);
-      setForm({
-        entryType: "note",
-        title: "",
-        description: "",
-        amountDelta: "",
-        visibleToClient: true,
-      });
-      addToast({
-        type: "success",
-        title: "Recorded",
-        message: "Ledger entry recorded.",
-        duration: 4000,
-      });
-    },
-    onError: () => {
-      addToast({
-        type: "error",
-        title: "Error",
-        message: "Failed to record entry. Please try again.",
-        duration: 6000,
-      });
-    },
+
+  const appendMut = useMutationWithToast(trpc.ledger.append.useMutation(), {
+    success: "Entry Recorded",
+    successMessage: "Ledger entry recorded.",
+    error: "Record Failed",
+    errorMessage: "Failed to record entry. Please try again.",
+    invalidate: () => utils.ledger.list.invalidate(),
+    onSuccess: () => { setShowNew(false); setForm({ entryType: "note", title: "", description: "", amountDelta: "", visibleToClient: true }); },
   });
 
   const fmtDate = (d: string) =>
