@@ -68,6 +68,11 @@ export default function PortalFinishes() {
     { projectId: project?.id! },
     { enabled: !!project?.id }
   );
+  const { data: budgetImpact } =
+    trpc.finishSelections.calcBudgetImpact.useQuery(
+      { projectId: project?.id! },
+      { enabled: !!project?.id }
+    );
 
   const approveMut = trpc.finishSelections.clientApprove.useMutation({
     onSuccess: () => {
@@ -78,7 +83,7 @@ export default function PortalFinishes() {
 
   const fmt = (n: number | string | null | undefined) =>
     n ? `$${Number(n).toLocaleString()}` : "—";
-  const totalDelta =
+  const totalDelta = budgetImpact?.totalDelta ??
     selections?.reduce(
       (sum: number, s: any) => sum + (Number(s.budget_delta) || 0),
       0
@@ -130,20 +135,29 @@ export default function PortalFinishes() {
 
             {/* Budget impact summary */}
             {selections && selections.length > 0 && (
-              <div
-                className={`inline-flex items-center gap-2 px-4 py-2 mb-8 border ${
-                  totalDelta > 0
-                    ? "border-red-400/30 bg-red-400/5 text-red-400"
-                    : totalDelta < 0
-                      ? "border-green-400/30 bg-green-400/5 text-green-400"
-                      : "border-border/60 bg-card text-muted-foreground"
-                }`}
-              >
-                <DollarSign className="h-3.5 w-3.5" />
-                <span className="text-sm font-semibold">
-                  Net budget impact: {totalDelta > 0 ? "+" : ""}
-                  {fmt(totalDelta)}
-                </span>
+              <div className="flex flex-wrap items-center gap-3 mb-8">
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-2 border ${
+                    totalDelta > 0
+                      ? "border-red-400/30 bg-red-400/5 text-red-400"
+                      : totalDelta < 0
+                        ? "border-green-400/30 bg-green-400/5 text-green-400"
+                        : "border-border/60 bg-card text-muted-foreground"
+                  }`}
+                >
+                  <DollarSign className="h-3.5 w-3.5" />
+                  <span className="text-sm font-semibold">
+                    Net budget impact: {totalDelta > 0 ? "+" : ""}
+                    {fmt(totalDelta)}
+                  </span>
+                </div>
+                {budgetImpact && budgetImpact.pendingApproval > 0 && (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 border border-amber-400/30 bg-amber-400/5 text-amber-400">
+                    <span className="text-sm font-semibold">
+                      {budgetImpact.pendingApproval} selection{budgetImpact.pendingApproval > 1 ? "s" : ""} awaiting your approval
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>

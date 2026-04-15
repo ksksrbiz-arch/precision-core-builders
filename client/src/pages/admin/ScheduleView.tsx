@@ -164,12 +164,26 @@ export default function ScheduleView() {
     { projectId: selectedProject! },
     { enabled: !!selectedProject }
   );
+  const lastStatusRef = { current: "" };
   const updateStatus = useMutationWithToast(trpc.schedule.updateStatus.useMutation(), {
     success: "Task Updated",
     successMessage: "Task status updated.",
     error: "Update Failed",
     errorMessage: "Failed to update task status. Please try again.",
-    onSuccess: () => refetch(),
+    onSuccess: () => {
+      refetch();
+      // Fire milestone_complete n8n event when task is marked complete
+      if (lastStatusRef.current === "complete") {
+        fetch("/api/n8n-webhook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "milestone_complete",
+            payload: { status: "complete" },
+          }),
+        }).catch(() => {});
+      }
+    },
   });
   const updateTask = useMutationWithToast(trpc.schedule.update.useMutation(), {
     success: "Task Rescheduled",
@@ -429,12 +443,14 @@ export default function ScheduleView() {
               >
                 {/* Status toggle */}
                 <button
-                  onClick={() =>
+                  onClick={() => {
+                    const nextStatus = cycleStatus(item.status);
+                    lastStatusRef.current = nextStatus;
                     updateStatus.mutate({
                       id: item.id,
-                      status: cycleStatus(item.status),
-                    })
-                  }
+                      status: nextStatus,
+                    });
+                  }}
                   className={`shrink-0 transition-colors hover:scale-110 ${cfg.color}`}
                   title={`Status: ${cfg.label} — click to advance`}
                 >
