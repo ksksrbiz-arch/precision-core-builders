@@ -16,10 +16,12 @@ import {
   Clock,
   CloudRain,
   Loader2,
+  Plus,
   RefreshCw,
   Sun,
   Thermometer,
   Wind,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -154,6 +156,14 @@ export default function ScheduleView() {
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: "",
+    taskType: "general",
+    plannedStartDate: "",
+    plannedEndDate: "",
+    notes: "",
+  });
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
   const {
@@ -191,6 +201,18 @@ export default function ScheduleView() {
     error: "Reschedule Failed",
     errorMessage: "Failed to update task dates. Please try again.",
     onSuccess: () => refetch(),
+  });
+
+  const createTask = useMutationWithToast(trpc.schedule.create.useMutation(), {
+    success: "Task Created",
+    successMessage: "Schedule task added.",
+    error: "Create Failed",
+    invalidate: () => trpc.useUtils().schedule.list.invalidate(),
+    onSuccess: (_data: any) => {
+      setShowAddTask(false);
+      setNewTask({ title: "", taskType: "general", plannedStartDate: "", plannedEndDate: "", notes: "" });
+      refetch();
+    },
   });
 
   const fetchWeather = async (projectId?: number) => {
@@ -253,17 +275,29 @@ export default function ScheduleView() {
               Smart scheduling with Eugene OR weather integration
             </p>
           </div>
-          <button
-            onClick={() => fetchWeather(selectedProject ?? undefined)}
-            disabled={weatherLoading}
-            className="flex items-center gap-2 border border-border/60 text-muted-foreground px-3 py-2 text-[11px] font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${weatherLoading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedProject && (
+              <button
+                onClick={() => setShowAddTask(v => !v)}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Task
+              </button>
+            )}
+            <button
+              onClick={() => fetchWeather(selectedProject ?? undefined)}
+              disabled={weatherLoading}
+              className="flex items-center gap-2 border border-border/60 text-muted-foreground px-3 py-2 text-[11px] font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${weatherLoading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Project selector */}
@@ -285,6 +319,92 @@ export default function ScheduleView() {
             ))}
           </div>
         </div>
+
+        {/* Add Task Form */}
+        {showAddTask && selectedProject && (
+          <div className="bg-card border border-primary/30 p-5 mb-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold">Add Schedule Task</p>
+              <button onClick={() => setShowAddTask(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+              <input
+                value={newTask.title}
+                onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))}
+                placeholder="Task title *"
+                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 sm:col-span-2 lg:col-span-2"
+              />
+              <select
+                value={newTask.taskType}
+                onChange={e => setNewTask(t => ({ ...t, taskType: e.target.value }))}
+                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+              >
+                {["general","framing","foundation","electrical","plumbing","hvac","roofing","drywall","painting","flooring","concrete","inspection","permit","demolition","landscaping","punch_list"].map(t => (
+                  <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={newTask.plannedStartDate}
+                onChange={e => setNewTask(t => ({ ...t, plannedStartDate: e.target.value }))}
+                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+              />
+              <input
+                type="date"
+                value={newTask.plannedEndDate}
+                onChange={e => setNewTask(t => ({ ...t, plannedEndDate: e.target.value }))}
+                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+              />
+              <textarea
+                value={newTask.notes}
+                onChange={e => setNewTask(t => ({ ...t, notes: e.target.value }))}
+                placeholder="Notes…"
+                rows={1}
+                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
+              />
+            </div>
+            <button
+              onClick={() => {
+                if (!newTask.title || !selectedProject) return;
+                const isInspection = newTask.taskType === "inspection";
+                createTask.mutate({
+                  projectId: selectedProject,
+                  title: newTask.title,
+                  taskType: newTask.taskType as any,
+                  plannedStart: newTask.plannedStartDate
+                    ? new Date(newTask.plannedStartDate).toISOString()
+                    : undefined,
+                  plannedEnd: newTask.plannedEndDate
+                    ? new Date(newTask.plannedEndDate).toISOString()
+                    : undefined,
+                  notes: newTask.notes || undefined,
+                });
+                // Fire inspection_scheduled n8n event
+                if (isInspection) {
+                  fetch("/api/n8n-webhook", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      event: "inspection_scheduled",
+                      payload: {
+                        projectId: selectedProject,
+                        title: newTask.title,
+                        scheduledDate: newTask.plannedStartDate,
+                      },
+                    }),
+                  }).catch(() => {});
+                }
+              }}
+              disabled={!newTask.title || createTask.isPending}
+              className="px-5 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              {createTask.isPending ? "Saving…" : "Add Task"}
+            </button>
+          </div>
+        )}
 
         {/* Weather bar */}
         {weatherLoading && (
