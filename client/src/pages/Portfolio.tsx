@@ -1,6 +1,6 @@
 /**
- * Portfolio — real PCB project photos from Webflow CDN.
- * Filterable by category. Full multi-page structure.
+ * Portfolio — pulls published projects from the CMS (portfolioRouter)
+ * with hardcoded fallback for when the DB is empty.
  */
 import {
   SiteNav,
@@ -8,6 +8,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { trpc } from "@/lib/trpc";
 import { ASSETS, SITE } from "@/const";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, MapPin, Phone, Star } from "lucide-react";
@@ -167,9 +168,26 @@ const TESTIMONIALS = [
 
 export default function Portfolio() {
   const [active, setActive] = useState<Category>("All");
+  const { data: dbProjects } = trpc.portfolio.listPublished.useQuery();
+
+  // Merge DB projects with hardcoded fallback. DB data takes priority.
+  const allProjects: Project[] = dbProjects?.length
+    ? dbProjects.map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        category: (p.category as Exclude<Category, "All">) ?? "Custom Homes",
+        location: p.location ?? "Eugene, OR",
+        year: p.completion_year ?? new Date().getFullYear(),
+        sqft: p.square_footage ?? 0,
+        highlight: p.short_description ?? "",
+        image: p.cover_image_url ?? ASSETS.portfolio[0],
+      }))
+    : PROJECTS;
 
   const filtered =
-    active === "All" ? PROJECTS : PROJECTS.filter(p => p.category === active);
+    active === "All"
+      ? allProjects
+      : allProjects.filter(p => p.category === active);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">

@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { adminProcedure, router } from "../_core/trpc";
 import { notifyOwner } from "../_core/notification";
+import { ENV } from "../_core/env";
 import { z } from "zod";
 
 export const subContractorsRouter = router({
@@ -129,6 +130,33 @@ export const subContractorsRouter = router({
         title: `Briefing sent to ${sub?.name ?? "sub-contractor"}`,
         content: briefingContent,
       });
+
+      // Also fire sub_notification n8n event to route directly to the sub
+      if (ENV.n8nWebhookUrl && (sub?.email || sub?.phone)) {
+        try {
+          await fetch(`${ENV.n8nWebhookUrl.replace(/\/$/, "")}/sub-notification`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: "sub_notification",
+              payload: {
+                subName: sub?.name,
+                subEmail: sub?.email,
+                subPhone: sub?.phone,
+                projectId: input.projectId,
+                projectName: project?.name,
+                scheduleDetails: input.scheduleDetails,
+                siteAccessCode: input.siteAccessCode,
+                safetyNotes: input.safetyNotes,
+                briefingContent,
+              },
+            }),
+            signal: AbortSignal.timeout(8000),
+          });
+        } catch {
+          // Non-fatal — briefing content is still returned to admin
+        }
+      }
 
       return { success: true, subName: sub?.name, briefingContent };
     }),

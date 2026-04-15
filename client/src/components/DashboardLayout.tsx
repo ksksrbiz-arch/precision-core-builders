@@ -36,6 +36,7 @@ import {
   Package,
   PanelLeft,
   Pencil,
+  Search,
   Settings,
   Shield,
   Users,
@@ -48,6 +49,7 @@ import { Button } from "./ui/button";
 
 const NAV = [
   { icon: LayoutDashboard, label: "Command Center", path: "/admin" },
+  { icon: Search, label: "Search", path: "/admin/search" },
   { icon: ClipboardList, label: "Projects", path: "/admin/projects" },
   { icon: Users, label: "Clients", path: "/admin/clients" },
   { icon: BookOpen, label: "Field Reports", path: "/admin/field-reports" },
