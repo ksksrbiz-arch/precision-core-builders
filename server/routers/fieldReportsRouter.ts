@@ -1,5 +1,6 @@
 import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { logAdminAction } from "../_core/auditLog";
 import { z } from "zod";
 
 export const fieldReportsRouter = router({
@@ -78,6 +79,10 @@ export const fieldReportsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "fieldReport.create", input.projectId, {
+        reportId: data.id,
+        reportDate: data.report_date,
+      });
       return data;
     }),
 
@@ -127,7 +132,7 @@ export const fieldReportsRouter = router({
 
   publish: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { data, error } = await db
         .from("field_reports")
         .update({
@@ -138,17 +143,37 @@ export const fieldReportsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(
+        db,
+        ctx,
+        "fieldReport.publish",
+        data.project_id,
+        { reportId: input.id }
+      );
       return data;
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Fetch project_id before deletion for audit log.
+      const { data: report } = await db
+        .from("field_reports")
+        .select("project_id")
+        .eq("id", input.id)
+        .single();
       const { error } = await db
         .from("field_reports")
         .delete()
         .eq("id", input.id);
       if (error) throw new Error(error.message);
+      await logAdminAction(
+        db,
+        ctx,
+        "fieldReport.delete",
+        report?.project_id,
+        { reportId: input.id }
+      );
       return { success: true };
     }),
 
