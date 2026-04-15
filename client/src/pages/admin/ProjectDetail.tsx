@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
-import { ArrowLeft, Plus, Calendar, DollarSign, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, DollarSign, MapPin, TrendingUp, TrendingDown } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { useState } from "react";
 import { StatusBadge } from "./CommandCenter";
@@ -10,7 +10,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "reports" | "schedule" | "materials" | "ledger"
+    "overview" | "reports" | "schedule" | "materials" | "ledger" | "profitability"
   >("overview");
   const projectId = parseInt(id ?? "0");
   const { data: project, isLoading } = trpc.projects.getById.useQuery({
@@ -31,6 +31,10 @@ export default function ProjectDetail() {
   const { data: ledger } = trpc.ledger.list.useQuery(
     { projectId },
     { enabled: activeTab === "ledger" }
+  );
+  const { data: profitability } = trpc.projects.profitability.useQuery(
+    { id: projectId },
+    { enabled: activeTab === "profitability" }
   );
 
   const utils = trpc.useUtils();
@@ -76,6 +80,7 @@ export default function ProjectDetail() {
     "schedule",
     "materials",
     "ledger",
+    "profitability",
   ] as const;
 
   return (
@@ -186,8 +191,9 @@ export default function ProjectDetail() {
 
         {/* Tab content */}
         {activeTab === "overview" && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
               { label: "Client", value: (project as any).clients?.name ?? "—" },
               { label: "Project Type", value: project.project_type ?? "—" },
               { label: "Status", value: project.status },
@@ -223,6 +229,9 @@ export default function ProjectDetail() {
                 <p className="text-sm text-foreground">{String(value)}</p>
               </div>
             ))}
+            </div>
+            {/* Status update control */}
+            <ProjectStatusUpdate projectId={projectId} currentStatus={project.status} />
           </div>
         )}
 
@@ -385,6 +394,130 @@ export default function ProjectDetail() {
             )}
           </div>
         )}
+
+        {activeTab === "profitability" && (
+          <div className="space-y-5">
+            {!profitability ? (
+              <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
+                Loading profitability data…
+              </div>
+            ) : (
+              <>
+                {/* Budget vs Actual header */}
+                <div
+                  className={`flex items-center gap-3 p-4 border ${
+                    profitability.onBudget
+                      ? "border-green-400/30 bg-green-400/5"
+                      : "border-red-400/30 bg-red-400/5"
+                  }`}
+                >
+                  {profitability.onBudget ? (
+                    <TrendingUp className="h-5 w-5 text-green-400 shrink-0" />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-red-400 shrink-0" />
+                  )}
+                  <div>
+                    <p
+                      className={`text-sm font-bold ${profitability.onBudget ? "text-green-400" : "text-red-400"}`}
+                    >
+                      {profitability.onBudget ? "On Budget" : "Over Budget"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Variance:{" "}
+                      <span
+                        className={`font-semibold ${profitability.onBudget ? "text-green-400" : "text-red-400"}`}
+                      >
+                        {profitability.variance >= 0 ? "+" : ""}
+                        {fmt(profitability.variance)}
+                      </span>{" "}
+                      · Margin:{" "}
+                      <span className="font-semibold text-foreground">
+                        {profitability.margin.toFixed(1)}%
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* KPI grid */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    {
+                      label: "Contracted Budget",
+                      value: fmt(profitability.contracted || profitability.estimated),
+                      sub: profitability.contracted ? "Contracted" : "Estimated",
+                    },
+                    {
+                      label: "Projected Cost",
+                      value: fmt(profitability.projectedCost),
+                      sub: profitability.actualCost
+                        ? "Actual reported"
+                        : "From materials",
+                    },
+                    {
+                      label: "Gross Margin",
+                      value: `${profitability.margin.toFixed(1)}%`,
+                      sub:
+                        profitability.margin >= 20
+                          ? "Healthy"
+                          : profitability.margin >= 10
+                            ? "Thin"
+                            : "At risk",
+                    },
+                    {
+                      label: "Materials Cost",
+                      value: fmt(profitability.materialsCost),
+                      sub: "Budgeted materials",
+                    },
+                    {
+                      label: "Change Orders",
+                      value: fmt(profitability.changeOrderTotal),
+                      sub:
+                        profitability.changeOrderTotal >= 0
+                          ? "Net additions"
+                          : "Net credits",
+                    },
+                    {
+                      label: "Completion",
+                      value: `${profitability.completionPercent}%`,
+                      sub: profitability.status?.replace(/_/g, " "),
+                    },
+                  ].map(({ label, value, sub }) => (
+                    <div
+                      key={label}
+                      className="bg-card border border-border/60 p-4"
+                    >
+                      <p
+                        className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {label}
+                      </p>
+                      <p
+                        className="text-xl font-bold"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {value}
+                      </p>
+                      {sub && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {sub}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Actual cost update */}
+                <div className="bg-card border border-border/60 p-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">
+                    Update Actual Cost
+                  </p>
+                  <ActualCostForm projectId={projectId} currentActual={profitability.actualCost} />
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
@@ -461,6 +594,120 @@ function LedgerEntryForm({
       >
         {append.isPending ? "Saving…" : "Add Entry"}
       </button>
+    </div>
+  );
+}
+
+function ActualCostForm({
+  projectId,
+  currentActual,
+}: {
+  projectId: number;
+  currentActual: number;
+}) {
+  const [value, setValue] = useState(currentActual ? String(currentActual) : "");
+  const utils = trpc.useUtils();
+  const mut = trpc.projects.updateProgress.useMutation({
+    onSuccess: () => {
+      utils.projects.profitability.invalidate({ id: projectId });
+      utils.projects.getById.invalidate({ id: projectId });
+    },
+  });
+
+  return (
+    <div className="flex gap-2">
+      <div className="relative flex-1">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+          $
+        </span>
+        <input
+          type="number"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          placeholder="0.00"
+          className="w-full pl-7 pr-3 py-2 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+        />
+      </div>
+      <button
+        onClick={() =>
+          value &&
+          mut.mutate({
+            id: projectId,
+            actualCost: parseFloat(value),
+          })
+        }
+        disabled={!value || mut.isPending}
+        className="px-4 py-2 text-[11px] font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-50 transition-colors"
+        style={{ fontFamily: "var(--font-condensed)" }}
+      >
+        {mut.isPending ? "Saving…" : "Save"}
+      </button>
+    </div>
+  );
+}
+
+const STATUS_OPTIONS = [
+  { value: "lead", label: "Lead" },
+  { value: "estimate_sent", label: "Estimate Sent" },
+  { value: "contracted", label: "Contracted" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "punch_list", label: "Punch List" },
+  { value: "complete", label: "Complete" },
+  { value: "on_hold", label: "On Hold" },
+];
+
+function ProjectStatusUpdate({
+  projectId,
+  currentStatus,
+}: {
+  projectId: number;
+  currentStatus: string;
+}) {
+  const [status, setStatus] = useState(currentStatus);
+  const utils = trpc.useUtils();
+  const mut = trpc.projects.update.useMutation({
+    onSuccess: () => {
+      utils.projects.getById.invalidate({ id: projectId });
+      // Fire project_status_changed n8n event
+      fetch("/api/n8n-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "project_status_changed",
+          payload: { projectId, newStatus: status },
+        }),
+      }).catch(() => {});
+    },
+  });
+
+  const isDirty = status !== currentStatus;
+
+  return (
+    <div className="bg-card border border-border/60 p-4">
+      <p className="text-xs font-semibold text-muted-foreground mb-3">
+        Update Project Status
+      </p>
+      <div className="flex gap-3 items-center">
+        <select
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+          className="flex-1 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+        >
+          {STATUS_OPTIONS.map(s => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => mut.mutate({ id: projectId, status: status as any })}
+          disabled={!isDirty || mut.isPending}
+          className="px-4 py-2 text-[11px] font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          {mut.isPending ? "Saving…" : "Save Status"}
+        </button>
+      </div>
     </div>
   );
 }

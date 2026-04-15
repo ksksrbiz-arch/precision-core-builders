@@ -1,6 +1,30 @@
 import { db } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { ENV } from "../_core/env";
 import { z } from "zod";
+
+async function dispatchViaN8n(payload: {
+  channel: string;
+  recipientId: string;
+  subject?: string;
+  body: string;
+  projectId?: number;
+}) {
+  if (!ENV.n8nWebhookUrl) return;
+  try {
+    await fetch(`${ENV.n8nWebhookUrl.replace(/\/$/, "")}/notify-client`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "client_notification",
+        payload,
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+  } catch {
+    // Non-fatal — notification is saved to DB regardless
+  }
+}
 
 export const notificationsRouter = router({
   list: protectedProcedure
@@ -56,6 +80,24 @@ export const notificationsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+
+      // Dispatch email/SMS via n8n for non-in_app channels
+      if (input.channel !== "in_app") {
+        await dispatchViaN8n({
+          channel: input.channel,
+          recipientId: input.recipientId,
+          subject: input.subject,
+          body: input.body,
+          projectId: input.projectId,
+        });
+
+        // Mark as sent
+        await db
+          .from("notifications")
+          .update({ status: "sent" })
+          .eq("id", data.id);
+      }
+
       return data;
     }),
 });

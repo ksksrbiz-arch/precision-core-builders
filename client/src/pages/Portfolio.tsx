@@ -1,6 +1,6 @@
 /**
- * Portfolio — real PCB project photos from Webflow CDN.
- * Filterable by category. Full multi-page structure.
+ * Portfolio — pulls published projects from the CMS (portfolioRouter)
+ * with hardcoded fallback for when the DB is empty.
  */
 import {
   SiteNav,
@@ -8,10 +8,12 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { trpc } from "@/lib/trpc";
 import { ASSETS, SITE } from "@/const";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, MapPin, Phone, Star } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -39,6 +41,7 @@ const CATEGORIES: Category[] = [
 
 type Project = {
   id: number;
+  slug?: string;
   title: string;
   category: Exclude<Category, "All">;
   location: string;
@@ -167,9 +170,28 @@ const TESTIMONIALS = [
 
 export default function Portfolio() {
   const [active, setActive] = useState<Category>("All");
+  const [, setLocation] = useLocation();
+  const { data: dbProjects } = trpc.portfolio.listPublished.useQuery();
+
+  // Merge DB projects with hardcoded fallback. DB data takes priority.
+  const allProjects: Project[] = dbProjects?.length
+    ? dbProjects.map((p: any) => ({
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        category: (p.category as Exclude<Category, "All">) ?? "Custom Homes",
+        location: p.location ?? "Eugene, OR",
+        year: p.completion_year ?? new Date().getFullYear(),
+        sqft: p.square_footage ?? 0,
+        highlight: p.short_description ?? "",
+        image: p.cover_image_url ?? ASSETS.portfolio[0],
+      }))
+    : PROJECTS;
 
   const filtered =
-    active === "All" ? PROJECTS : PROJECTS.filter(p => p.category === active);
+    active === "All"
+      ? allProjects
+      : allProjects.filter(p => p.category === active);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -266,7 +288,10 @@ export default function Portfolio() {
                       duration: 0.5,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="group bg-card border border-border/60 overflow-hidden hover:border-primary/25 hover:shadow-lg hover:shadow-black/20 transition-all duration-300"
+                    onClick={() =>
+                      project.slug && setLocation(`/portfolio/${project.slug}`)
+                    }
+                    className={`group bg-card border border-border/60 overflow-hidden hover:border-primary/25 hover:shadow-lg hover:shadow-black/20 transition-all duration-300 ${project.slug ? "cursor-pointer" : ""}`}
                   >
                     {/* Real photo */}
                     <div className="relative h-52 overflow-hidden bg-muted">

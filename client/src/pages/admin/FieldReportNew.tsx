@@ -106,6 +106,22 @@ export default function FieldReportNew() {
   const publishReport = async () => {
     if (!report?.id) return;
     await publishMutation.mutateAsync({ id: report.id });
+
+    // Fire field_report_created n8n event to notify client
+    fetch("/api/n8n-webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "field_report_created",
+        payload: {
+          reportId: report.id,
+          projectId: report.project_id,
+          reportDate: report.report_date,
+          publishedToClient: true,
+        },
+      }),
+    }).catch(() => {});
+
     setStep("done");
   };
 

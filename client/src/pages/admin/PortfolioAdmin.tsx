@@ -29,6 +29,7 @@ const BLANK_FORM = {
   completionYear: new Date().getFullYear(),
   squareFootage: "",
   coverImageUrl: "",
+  galleryImageUrls: "", // comma-separated URLs
   clientTestimonial: "",
   clientName: "",
   featured: false,
@@ -96,6 +97,13 @@ export default function PortfolioAdmin() {
       completionYear: p.completion_year ?? new Date().getFullYear(),
       squareFootage: p.square_footage ? String(p.square_footage) : "",
       coverImageUrl: p.cover_image_url ?? "",
+      galleryImageUrls: (() => {
+        try {
+          return (JSON.parse(p.gallery_image_urls ?? "[]") as string[]).join(", ");
+        } catch {
+          return "";
+        }
+      })(),
       clientTestimonial: p.client_testimonial ?? "",
       clientName: p.client_name ?? "",
       featured: p.featured ?? false,
@@ -123,6 +131,12 @@ export default function PortfolioAdmin() {
         ? parseInt(form.squareFootage)
         : undefined,
       coverImageUrl: form.coverImageUrl || undefined,
+      galleryImageUrls: form.galleryImageUrls
+        ? form.galleryImageUrls
+            .split(",")
+            .map((u: string) => u.trim())
+            .filter(Boolean)
+        : undefined,
       clientTestimonial: form.clientTestimonial || undefined,
       clientName: form.clientName || undefined,
       featured: form.featured,
@@ -277,6 +291,13 @@ export default function PortfolioAdmin() {
                 value={form.coverImageUrl}
                 onChange={f("coverImageUrl")}
                 placeholder="Cover image URL"
+                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 lg:col-span-3"
+              />
+
+              <input
+                value={form.galleryImageUrls}
+                onChange={f("galleryImageUrls")}
+                placeholder="Gallery image URLs (comma-separated)"
                 className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 lg:col-span-3"
               />
 

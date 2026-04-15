@@ -36,8 +36,10 @@ import {
   Package,
   PanelLeft,
   Pencil,
+  Search,
   Settings,
   Shield,
+  Sparkles,
   Users,
   Wrench,
 } from "lucide-react";
@@ -48,6 +50,8 @@ import { Button } from "./ui/button";
 
 const NAV = [
   { icon: LayoutDashboard, label: "Command Center", path: "/admin" },
+  { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+  { icon: Search, label: "Search", path: "/admin/search" },
   { icon: ClipboardList, label: "Projects", path: "/admin/projects" },
   { icon: Users, label: "Clients", path: "/admin/clients" },
   { icon: BookOpen, label: "Field Reports", path: "/admin/field-reports" },
@@ -55,6 +59,7 @@ const NAV = [
   { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
   { icon: BarChart3, label: "Estimates", path: "/admin/estimates" },
   { icon: Package, label: "Materials", path: "/admin/materials" },
+  { icon: Sparkles, label: "Finish Selections", path: "/admin/finishes" },
   { icon: Wrench, label: "Sub-Contractors", path: "/admin/sub-contractors" },
   { icon: Shield, label: "Ledger", path: "/admin/ledger" },
   { icon: CreditCard, label: "Billing", path: "/admin/billing" },
@@ -83,6 +88,18 @@ export default function DashboardLayout({
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
+
+  // Cmd+K / Ctrl+K → navigate to search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        window.location.href = "/admin/search";
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   if (loading) return <DashboardLayoutSkeleton />;
 

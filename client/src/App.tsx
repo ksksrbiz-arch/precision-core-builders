@@ -15,6 +15,7 @@ import Home from "./pages/Home";
 
 // Public pages
 const Portfolio = lazy(() => import("./pages/Portfolio"));
+const PortfolioDetail = lazy(() => import("./pages/PortfolioDetail"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Estimator = lazy(() => import("./pages/Estimator"));
 const About = lazy(() => import("./pages/About"));
@@ -49,6 +50,11 @@ const SubContractorsList = lazy(
 );
 const LedgerView = lazy(() => import("./pages/admin/LedgerView"));
 const VisionStudioAdmin = lazy(() => import("./pages/admin/VisionStudio"));
+const SearchView = lazy(() => import("./pages/admin/Search"));
+const FinishSelectionsAdmin = lazy(
+  () => import("./pages/admin/FinishSelectionsAdmin")
+);
+const Analytics = lazy(() => import("./pages/admin/Analytics"));
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -103,6 +109,7 @@ function Router() {
         <Route path="/about" component={About} />
         <Route path="/services" component={Services} />
         <Route path="/portfolio" component={Portfolio} />
+        <Route path="/portfolio/:slug" component={PortfolioDetail} />
         <Route path="/faq" component={FAQ} />
         <Route path="/contact" component={Contact} />
         <Route path="/estimator" component={Estimator} />
@@ -132,6 +139,9 @@ function Router() {
         <Route path="/admin/portfolio-cms" component={PortfolioAdmin} />
         <Route path="/admin/setup" component={SetupWizard} />
         <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
+        <Route path="/admin/search" component={SearchView} />
+        <Route path="/admin/finishes" component={FinishSelectionsAdmin} />
+        <Route path="/admin/analytics" component={Analytics} />
 
         {/* Client portal — auth required */}
         <Route path="/portal">

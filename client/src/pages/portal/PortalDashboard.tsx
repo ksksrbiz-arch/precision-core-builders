@@ -7,6 +7,9 @@ import { ASSETS, SITE } from "@/const";
 import { motion } from "framer-motion";
 import {
   Calendar,
+  CheckCircle2,
+  Circle,
+  Clock,
   FileText,
   LogOut,
   Mail,
@@ -69,6 +72,28 @@ export default function PortalDashboard() {
     { enabled: !!user }
   );
   const project = projects?.data?.[0];
+
+  // Upcoming schedule items for this project
+  const { data: schedule } = trpc.schedule.list.useQuery(
+    { projectId: project?.id! },
+    { enabled: !!project?.id }
+  );
+  const upcomingItems = (schedule ?? [])
+    .filter((s: any) => s.status !== "complete")
+    .sort(
+      (a: any, b: any) =>
+        new Date(a.planned_start_date ?? "").getTime() -
+        new Date(b.planned_start_date ?? "").getTime()
+    )
+    .slice(0, 5);
+
+  const STATUS_ICONS: Record<string, React.ElementType> = {
+    complete: CheckCircle2,
+    in_progress: Clock,
+    pending: Circle,
+    blocked: Clock,
+    deferred: Circle,
+  };
 
   if (loading) {
     return (
@@ -228,7 +253,7 @@ export default function PortalDashboard() {
               )}
 
               {/* Quick nav cards */}
-              <div className="grid sm:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   {
                     icon: FileText,
@@ -248,6 +273,12 @@ export default function PortalDashboard() {
                     href: "/portal/ledger",
                     desc: "Transparent record of all decisions",
                   },
+                  {
+                    icon: Calendar,
+                    label: "Payments",
+                    href: "/portal/payments",
+                    desc: "Invoices & milestone billing",
+                  },
                 ].map(({ icon: Icon, label, href, desc }) => (
                   <button
                     key={href}
@@ -262,6 +293,68 @@ export default function PortalDashboard() {
                   </button>
                 ))}
               </div>
+
+              {/* Upcoming Schedule */}
+              {upcomingItems.length > 0 && (
+                <div className="bg-card border border-border/60 p-5">
+                  <p
+                    className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-4"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Upcoming Milestones
+                  </p>
+                  <div className="space-y-2">
+                    {upcomingItems.map((item: any) => {
+                      const Icon =
+                        STATUS_ICONS[item.status] ?? Circle;
+                      const isActive = item.status === "in_progress";
+                      return (
+                        <div
+                          key={item.id}
+                          className={`flex items-center gap-3 p-3 border ${
+                            isActive
+                              ? "border-primary/30 bg-primary/5"
+                              : "border-border/40"
+                          }`}
+                        >
+                          <Icon
+                            className={`h-4 w-4 shrink-0 ${
+                              isActive
+                                ? "text-primary"
+                                : "text-muted-foreground/40"
+                            }`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {item.title}
+                            </p>
+                            {item.planned_start_date && (
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(
+                                  item.planned_start_date
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                                {item.planned_end_date &&
+                                  ` – ${new Date(item.planned_end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                              </p>
+                            )}
+                          </div>
+                          {isActive && (
+                            <span
+                              className="text-[9px] font-bold tracking-widest uppercase text-primary shrink-0"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              Active
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Contact Eric */}
               <div className="bg-card border border-border/60 p-5">

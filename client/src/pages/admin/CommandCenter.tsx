@@ -304,6 +304,7 @@ export default function CommandCenter() {
     shortagesOnly: true,
     pageSize: 10,
   });
+  const { data: weeklyReports } = trpc.fieldReports.weeklyStats.useQuery();
 
   // ── Supabase Realtime subscription ─────────────────────────────────────────
   const { isLive } = useRealtimeTable({
@@ -430,6 +431,83 @@ export default function CommandCenter() {
             sub="Material alerts"
           />
         </div>
+
+        {/* Profitability KPIs */}
+        {stats && (stats.totalEstimated > 0 || stats.totalActual > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="bg-card border border-border/60 p-5">
+              <p
+                className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Revenue Pipeline
+              </p>
+              <p
+                className="text-2xl font-bold text-foreground"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {fmt(stats.totalEstimated)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Across all projects
+              </p>
+            </div>
+            <div className="bg-card border border-border/60 p-5">
+              <p
+                className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Reported Costs
+              </p>
+              <p
+                className="text-2xl font-bold text-foreground"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {fmt(stats.totalActual)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Actual costs logged
+              </p>
+            </div>
+            <div
+              className={`p-5 border ${
+                stats.totalEstimated > stats.totalActual
+                  ? "bg-green-400/5 border-green-400/20"
+                  : stats.totalActual > 0
+                    ? "bg-red-400/5 border-red-400/20"
+                    : "bg-card border-border/60"
+              }`}
+            >
+              <p
+                className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Gross Margin
+              </p>
+              <p
+                className={`text-2xl font-bold ${
+                  stats.totalEstimated > stats.totalActual
+                    ? "text-green-400"
+                    : stats.totalActual > 0
+                      ? "text-red-400"
+                      : "text-foreground"
+                }`}
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {stats.totalEstimated > 0 && stats.totalActual > 0
+                  ? `${(((stats.totalEstimated - stats.totalActual) / stats.totalEstimated) * 100).toFixed(1)}%`
+                  : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {stats.totalEstimated > stats.totalActual
+                  ? "Portfolio on track"
+                  : stats.totalActual > 0
+                    ? "Review project costs"
+                    : "Log actual costs"}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Charts row */}
         <div className="grid lg:grid-cols-2 gap-4 mb-6">
@@ -617,6 +695,56 @@ export default function CommandCenter() {
             )}
           </div>
         </div>
+
+        {/* Field Report Activity Chart */}
+        {weeklyReports && weeklyReports.length > 0 && (
+          <div className="bg-card border border-border/60 p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <p
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Field Report Activity — Last 8 Weeks
+              </p>
+              <button
+                onClick={() => setLocation("/admin/field-reports")}
+                className="text-[10px] text-primary hover:underline tracking-wider uppercase"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                View all →
+              </button>
+            </div>
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={weeklyReports} barSize={16}>
+                <XAxis
+                  dataKey="week"
+                  tick={{ fontSize: 9, fill: "#7A7060" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 0,
+                    fontSize: 11,
+                  }}
+                />
+                <Bar dataKey="reports" name="Reports" fill="#8B7355" radius={[2,2,0,0]} />
+                <Bar dataKey="issues" name="Issues" fill="#C0392B" radius={[2,2,0,0]} opacity={0.7} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-4 mt-2">
+              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 bg-primary inline-block" /> Reports filed
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 bg-red-500 inline-block opacity-70" /> Reports with issues
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* AI Chat */}
         <div className="mb-2">

@@ -160,19 +160,26 @@ export const projectsRouter = router({
     .input(
       z.object({
         id: z.number().int().positive(),
-        completionPercent: z.number().int().min(0).max(100),
+        completionPercent: z.number().int().min(0).max(100).optional(),
         actualCost: z.number().nonnegative().optional(),
       })
     )
     .mutation(async ({ input }) => {
+      const updates: Record<string, unknown> = {};
+      if (input.completionPercent !== undefined)
+        updates.completion_percent = input.completionPercent;
+      if (input.actualCost !== undefined) updates.actual_cost = input.actualCost;
+      if (Object.keys(updates).length === 0) {
+        const { data: current } = await db
+          .from("projects")
+          .select()
+          .eq("id", input.id)
+          .single();
+        return current;
+      }
       const { data, error } = await db
         .from("projects")
-        .update({
-          completion_percent: input.completionPercent,
-          ...(input.actualCost !== undefined && {
-            actual_cost: input.actualCost,
-          }),
-        })
+        .update(updates)
         .eq("id", input.id)
         .select()
         .single();
@@ -208,4 +215,63 @@ export const projectsRouter = router({
       totalActual: all.reduce((s, p) => s + Number(p.actual_cost ?? 0), 0),
     };
   }),
+
+  profitability: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const [projectRes, materialsRes, ledgerRes] = await Promise.all([
+        db
+          .from("projects")
+          .select(
+            "id,name,estimated_budget,contracted_budget,actual_cost,completion_percent,status"
+          )
+          .eq("id", input.id)
+          .single(),
+        db
+          .from("materials")
+          .select("unit_price_current,quantity_needed,quantity_on_hand")
+          .eq("project_id", input.id),
+        db
+          .from("ledger_entries")
+          .select("amount_delta,entry_type")
+          .eq("project_id", input.id),
+      ]);
+
+      if (projectRes.error) throw new Error(projectRes.error.message);
+      const project = projectRes.data;
+
+      const materialsCost = (materialsRes.data ?? []).reduce(
+        (sum, m) =>
+          sum +
+          Number(m.unit_price_current ?? 0) * Number(m.quantity_needed ?? 0),
+        0
+      );
+
+      const changeOrderTotal = (ledgerRes.data ?? [])
+        .filter(e => e.entry_type === "change_order" || e.entry_type === "cost_adjustment")
+        .reduce((sum, e) => sum + Number(e.amount_delta ?? 0), 0);
+
+      const contracted = Number(project.contracted_budget ?? 0);
+      const estimated = Number(project.estimated_budget ?? 0);
+      const actualCost = Number(project.actual_cost ?? 0);
+      const budget = contracted || estimated;
+      const projectedCost = actualCost > 0 ? actualCost : materialsCost;
+      const margin = budget > 0 ? ((budget - projectedCost) / budget) * 100 : 0;
+      const variance = budget - projectedCost;
+
+      return {
+        projectId: input.id,
+        contracted,
+        estimated,
+        actualCost,
+        materialsCost,
+        changeOrderTotal,
+        projectedCost,
+        margin,
+        variance,
+        completionPercent: Number(project.completion_percent ?? 0),
+        status: project.status,
+        onBudget: variance >= 0,
+      };
+    }),
 });

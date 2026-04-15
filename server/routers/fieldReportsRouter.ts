@@ -167,4 +167,44 @@ export const fieldReportsRouter = router({
       if (error) throw new Error(error.message);
       return data ?? [];
     }),
+
+  // Analytics: report counts by week (last 8 weeks)
+  weeklyStats: adminProcedure.query(async () => {
+    const { data } = await db
+      .from("field_reports")
+      .select("report_date,published_to_client,issues_flagged")
+      .order("report_date", { ascending: true })
+      .gte(
+        "report_date",
+        new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString()
+      );
+
+    const weeks: Record<string, { week: string; reports: number; issues: number; published: number }> = {};
+    for (const r of data ?? []) {
+      const d = new Date(r.report_date);
+      // ISO week start (Monday)
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const weekStart = new Date(d.getFullYear(), d.getMonth(), diff);
+      const key = weekStart.toISOString().slice(0, 10);
+      if (!weeks[key]) {
+        weeks[key] = {
+          week: weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          reports: 0,
+          issues: 0,
+          published: 0,
+        };
+      }
+      weeks[key].reports++;
+      if (r.published_to_client) weeks[key].published++;
+      try {
+        const issues = JSON.parse(r.issues_flagged ?? "[]");
+        if (Array.isArray(issues) && issues.length > 0) weeks[key].issues++;
+      } catch {
+        // ignore
+      }
+    }
+
+    return Object.values(weeks).slice(-8);
+  }),
 });
