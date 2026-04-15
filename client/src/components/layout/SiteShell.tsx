@@ -2,11 +2,13 @@
  * SiteShell — shared nav + mobile sticky CTA + footer used on every page.
  * Keeps brand consistency and ensures CTAs are always visible.
  */
+import { DEV_BYPASS_KEY } from "@/_core/hooks/useAuth";
 import { ASSETS, SITE } from "@/const";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
   Facebook,
+  Lock,
   Mail,
   MapPin,
   Menu,
@@ -14,7 +16,7 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
   { label: "About", href: "/about" },
@@ -24,10 +26,102 @@ const NAV_LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
+/* ─── Dev Password Modal ────────────────────────────────────── */
+const DEV_PASSWORD = "devonly1034A";
+const TAP_TARGET = 7;
+const TAP_RESET_MS = 2000;
+
+interface DevPasswordModalProps {
+  onClose: () => void;
+}
+
+function DevPasswordModal({ onClose }: DevPasswordModalProps) {
+  const [value, setValue] = useState("");
+  const [error, setError] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (value === DEV_PASSWORD) {
+      localStorage.setItem(DEV_BYPASS_KEY, "true");
+      window.location.href = "/admin";
+    } else {
+      setError(true);
+      setValue("");
+      setTimeout(() => setError(false), 1200);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Developer access"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={
+          error ? { x: [-8, 8, -8, 8, 0] } : { opacity: 1, scale: 1 }
+        }
+        transition={{ duration: error ? 0.3 : 0.2 }}
+        className="bg-card border border-amber-500/30 shadow-2xl w-full max-w-[320px]"
+      >
+        <div className="p-6 flex flex-col items-center gap-4 text-center">
+          <div className="h-11 w-11 border border-amber-500/40 bg-amber-500/10 flex items-center justify-center">
+            <Lock className="h-5 w-5 text-amber-400" />
+          </div>
+          <p
+            className="text-[9px] tracking-[0.3em] uppercase text-amber-400/70 font-semibold"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            Developer Access
+          </p>
+          <form onSubmit={handleSubmit} className="w-full space-y-3">
+            <input
+              ref={inputRef}
+              type="password"
+              value={value}
+              onChange={e => setValue(e.target.value)}
+              placeholder="Enter password"
+              autoComplete="off"
+              className={`w-full bg-background border ${
+                error ? "border-destructive" : "border-border/60"
+              } px-4 py-3 text-sm text-center tracking-widest outline-none focus:border-amber-500/60 transition-colors`}
+            />
+            {error && (
+              <p className="text-[11px] text-destructive font-medium">
+                Incorrect password
+              </p>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-amber-500/20 border border-amber-500/40 text-amber-300 py-3 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-amber-500/30 transition-colors min-h-[48px]"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Unlock
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 /* ─── Top Nav ───────────────────────────────────────────────── */
 export function SiteNav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [showDevModal, setShowDevModal] = useState(false);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40);
@@ -35,7 +129,25 @@ export function SiteNav() {
     return () => window.removeEventListener("scroll", h);
   }, []);
 
+  function handleLogoTap(e: React.MouseEvent) {
+    const next = tapCount + 1;
+    if (next >= TAP_TARGET) {
+      e.preventDefault();
+      setTapCount(0);
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      setShowDevModal(true);
+    } else {
+      setTapCount(next);
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = setTimeout(() => setTapCount(0), TAP_RESET_MS);
+    }
+  }
+
   return (
+    <>
+      {showDevModal && (
+        <DevPasswordModal onClose={() => setShowDevModal(false)} />
+      )}
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
         scrolled
@@ -48,6 +160,7 @@ export function SiteNav() {
           href="/"
           aria-label="Precision Core Builders — Home"
           className="flex-shrink-0"
+          onClick={handleLogoTap}
         >
           <img
             src={ASSETS.logo}
@@ -147,6 +260,7 @@ export function SiteNav() {
         </motion.div>
       )}
     </header>
+    </>
   );
 }
 
