@@ -1,20 +1,43 @@
 /**
  * Login page — email magic link only (OAuth coming once provider creds are set).
  * Clean "Quiet Luxury" design matching PCB brand.
+ *
+ * Dev Mode: When VITE_DEV_MODE=true, shows a "Developer Access" panel with
+ * one-click dev login and displays credentials for use with Supabase auth.
  */
 import { ASSETS } from "@/const";
+import { DEV_BYPASS_KEY, DEV_MOCK_USER } from "@/_core/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Loader2, Mail, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Code2,
+  Loader2,
+  Lock,
+  Mail,
+  Shield,
+} from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 type Step = "idle" | "sent";
+
+// Dev credentials — also used as the Supabase user when Supabase is configured.
+const DEV_EMAIL = DEV_MOCK_USER.email;
+const DEV_PASSWORD = "DevAdmin2026!";
+
+const IS_DEV = import.meta.env.VITE_DEV_MODE === "true";
 
 export default function AuthLogin() {
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<Step>("idle");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [devOpen, setDevOpen] = useState(false);
+  const [devLoading, setDevLoading] = useState(false);
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +56,34 @@ export default function AuthLogin() {
     } else {
       setStep("sent");
     }
+  };
+
+  /**
+   * Dev bypass login — tries Supabase password auth first (if configured),
+   * then falls back to the local mock session stored in localStorage.
+   */
+  const handleDevLogin = async () => {
+    setDevLoading(true);
+    setError("");
+
+    // Try real Supabase password auth first
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: DEV_EMAIL,
+      password: DEV_PASSWORD,
+    });
+
+    if (!authError) {
+      // Supabase auth succeeded — navigate to admin
+      setDevLoading(false);
+      setLocation("/admin");
+      return;
+    }
+
+    // Supabase not configured or user doesn't exist — activate mock bypass
+    localStorage.setItem(DEV_BYPASS_KEY, "true");
+    setDevLoading(false);
+    // Force a full reload so useAuth picks up the localStorage flag
+    window.location.href = "/admin";
   };
 
   return (
@@ -203,6 +254,79 @@ export default function AuthLogin() {
                       : "Not configured"}
                   </span>
                 </div>
+
+                {/* ── Developer Access Panel (dev mode only) ────────────── */}
+                {IS_DEV && (
+                  <div className="mt-5 border border-amber-500/30 bg-amber-500/5">
+                    <button
+                      type="button"
+                      onClick={() => setDevOpen(o => !o)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-[10px] tracking-[0.15em] uppercase font-semibold text-amber-400/80 hover:text-amber-400 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Code2 className="h-3 w-3" />
+                        Developer Access
+                      </span>
+                      <ChevronDown
+                        className={`h-3 w-3 transition-transform ${devOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+
+                    <AnimatePresence>
+                      {devOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 space-y-3">
+                            {/* Credential display */}
+                            <div className="bg-black/30 border border-amber-500/20 p-3 font-mono text-[10px] space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-3 w-3 text-amber-400/60 shrink-0" />
+                                <span className="text-amber-300/80 select-all">
+                                  {DEV_EMAIL}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Lock className="h-3 w-3 text-amber-400/60 shrink-0" />
+                                <span className="text-amber-300/80 select-all">
+                                  {DEV_PASSWORD}
+                                </span>
+                              </div>
+                            </div>
+
+                            <p className="text-[9px] text-amber-400/50 leading-relaxed">
+                              Activates admin bypass. Uses Supabase password auth
+                              if configured, otherwise injects a local mock admin
+                              session. Never set VITE_DEV_MODE=true in production.
+                            </p>
+
+                            <button
+                              type="button"
+                              onClick={handleDevLogin}
+                              disabled={devLoading}
+                              className="w-full flex items-center justify-center gap-2 border border-amber-500/40 bg-amber-500/10 text-amber-300 py-2.5 text-[10px] font-bold tracking-[0.12em] uppercase hover:bg-amber-500/20 disabled:opacity-50 transition-all min-h-[40px]"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              {devLoading ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <>
+                                  <Code2 className="h-3.5 w-3.5" />
+                                  Login as Dev Admin
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

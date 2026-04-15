@@ -60,6 +60,7 @@ const FinishSelectionsAdmin = lazy(
   () => import("./pages/admin/FinishSelectionsAdmin")
 );
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
+const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -147,6 +148,7 @@ function Router() {
         <Route path="/admin/search" component={SearchView} />
         <Route path="/admin/finishes" component={FinishSelectionsAdmin} />
         <Route path="/admin/analytics" component={Analytics} />
+        <Route path="/admin/activity-log" component={ActivityLog} />
 
         {/* Client portal — auth required */}
         <Route path="/portal">
