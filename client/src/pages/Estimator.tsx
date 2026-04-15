@@ -8,6 +8,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import { ArrowRight, Loader2, CheckCircle2, DollarSign } from "lucide-react";
 import { useState } from "react";
@@ -49,6 +50,13 @@ type EstimateResult = {
 };
 
 export default function Estimator() {
+  useSEO({
+    title: "Free Project Estimator — Get a Cost Estimate",
+    description:
+      "Get an instant AI-powered construction cost estimate for your project. Precision Core Builders serves Eugene, Springfield, and Lane County, Oregon. No obligation.",
+    canonical: "https://precisioncorebuilders.com/estimator",
+  });
+
   const [step, setStep] = useState<Step>(1);
   const [projectType, setProjectType] = useState("");
   const [sqft, setSqft] = useState("");

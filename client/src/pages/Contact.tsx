@@ -8,6 +8,7 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -37,6 +38,13 @@ const inputCls =
   "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors";
 
 export default function Contact() {
+  useSEO({
+    title: "Contact Us — Free Estimate",
+    description:
+      "Contact Precision Core Builders for a free on-site estimate. Call Eric Tadlock at 541-852-5144 or fill out our form. Serving Eugene, Springfield, and Lane County, Oregon.",
+    canonical: "https://precisioncorebuilders.com/contact",
+  });
+
   const [status, setStatus] = useState<Status>("idle");
   const [fields, setFields] = useState({
     name: "",

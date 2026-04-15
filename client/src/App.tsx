@@ -9,6 +9,11 @@ import {
   PWAInstallPrompt,
   IOSInstallHint,
 } from "./components/PWAInstallPrompt";
+import {
+  ScrollProgressBar,
+  BackToTop,
+  SkipToContent,
+} from "./components/SiteEnhancements";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedRoute } from "./components/RouteGuards";
 import Home from "./pages/Home";
@@ -206,9 +211,14 @@ export default function App() {
       <ThemeProvider defaultTheme="dark">
         <ToastProvider>
           <TooltipProvider>
+            <SkipToContent />
+            <ScrollProgressBar />
             <NetworkStatus />
-            <Router />
+            <div id="main-content">
+              <Router />
+            </div>
             <MobileBottomNav />
+            <BackToTop />
             <PWAInstallPrompt />
             <IOSInstallHint />
           </TooltipProvider>

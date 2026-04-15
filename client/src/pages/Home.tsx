@@ -818,8 +818,8 @@ function Services() {
                   >
                     {s.title}
                   </h3>
-                  {/* Description slides up on hover */}
-                  <div className="overflow-hidden h-0 group-hover:h-auto transition-all duration-300">
+                  {/* Description: always visible on mobile, slides up on hover on desktop */}
+                  <div className="overflow-hidden lg:h-0 lg:group-hover:h-auto transition-all duration-300">
                     <p className="text-[12px] text-muted-foreground leading-relaxed font-light pb-3">
                       {s.desc}
                     </p>
@@ -901,7 +901,7 @@ function Team() {
           </motion.h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
           {TEAM.map((member, i) => (
             <motion.div
               key={member.name}
@@ -1367,7 +1367,11 @@ function Contact() {
           >
             <div className="bg-card border border-border/60 p-8 sm:p-10">
               {status === "success" ? (
-                <div className="text-center py-16">
+                <div
+                  className="text-center py-16"
+                  role="alert"
+                  aria-live="polite"
+                >
                   <div className="h-16 w-16 border border-primary/50 flex items-center justify-center mx-auto mb-6">
                     <CheckCircle2
                       className="h-8 w-8 text-primary"
@@ -1568,7 +1572,11 @@ function Contact() {
                     </div>
 
                     {status === "error" && (
-                      <p className="text-sm text-destructive" role="alert">
+                      <p
+                        className="text-sm text-destructive"
+                        role="alert"
+                        aria-live="assertive"
+                      >
                         Something went wrong. Please call us at{" "}
                         <a href={SITE.phoneHref} className="underline">
                           {SITE.phone}
