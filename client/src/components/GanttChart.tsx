@@ -66,6 +66,10 @@ const STATUS_COLORS: Record<string, string> = {
   deferred: "#f59e0b",
 };
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+/** Approximate pixels per day used for drag-to-reschedule sensitivity. */
+const PIXELS_PER_DAY = 5;
+
 function getDateNum(dateStr: string): number {
   return new Date(dateStr).getTime();
 }
@@ -98,7 +102,19 @@ export function GanttChart({
 
   useEffect(() => {
     if (dbItems) {
-      setTasks(dbItems as ScheduleItem[]);
+      // Map Supabase row fields to the ScheduleItem interface.
+      const mapped: ScheduleItem[] = (dbItems as any[]).map(row => ({
+        id: row.id,
+        project_id: row.project_id,
+        title: row.title ?? "",
+        status: row.status ?? "pending",
+        weather_sensitive: !!row.weather_sensitive,
+        planned_start: row.planned_start ?? null,
+        planned_end: row.planned_end ?? null,
+        assigned_to: row.assigned_to ?? null,
+        notes: row.notes ?? null,
+      }));
+      setTasks(mapped);
     }
   }, [dbItems]);
 
@@ -119,7 +135,6 @@ export function GanttChart({
     const data: GanttBarData[] = withDates.map(task => {
       const taskStart = getDateNum(task.planned_start!);
       const taskEnd = getDateNum(task.planned_end!);
-      const MS_PER_DAY = 1000 * 60 * 60 * 24;
       const start = (taskStart - min) / MS_PER_DAY;
       const duration = Math.max(1, (taskEnd - taskStart) / MS_PER_DAY);
 
@@ -154,7 +169,7 @@ export function GanttChart({
       const task = tasks.find(t => t.id === draggingTaskId);
       if (task?.planned_start && task?.planned_end) {
         const moved = e.clientX - dragStartPos;
-        const dragDays = Math.round(moved / 5); // ~5px per day
+        const dragDays = Math.round(moved / PIXELS_PER_DAY);
 
         if (dragDays !== 0) {
           const newStart = new Date(task.planned_start);
@@ -277,7 +292,7 @@ export function GanttChart({
                 type="number"
                 stroke="var(--muted-foreground)"
                 tick={{ fontSize: 11 }}
-                tickFormatter={v => `Day ${v}`}
+                tickFormatter={v => `Day ${Math.round(Math.max(0, v))}`}
               />
               <YAxis
                 type="category"
