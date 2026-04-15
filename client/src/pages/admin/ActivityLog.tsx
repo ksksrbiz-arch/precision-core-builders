@@ -259,12 +259,14 @@ export default function ActivityLog() {
           event: "INSERT",
           schema: "public",
           table: "ledger_entries",
-          filter: "title=like.[AUDIT]%",
         },
         payload => {
-          const entry = parseAuditEntry(
-            payload.new as Record<string, unknown>
-          );
+          const row = payload.new as Record<string, unknown>;
+          // Only handle [AUDIT] entries
+          const title = String(row.title ?? "");
+          if (!title.startsWith("[AUDIT]")) return;
+
+          const entry = parseAuditEntry(row);
           entry.source = "realtime";
           setEntries(prev => [...prev, entry]);
           setNewIds(prev => new Set(prev).add(entry.id));

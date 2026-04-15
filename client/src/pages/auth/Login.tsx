@@ -24,9 +24,11 @@ import { useLocation } from "wouter";
 
 type Step = "idle" | "sent";
 
-// Dev credentials — also used as the Supabase user when Supabase is configured.
+// Dev credentials — DEV_EMAIL matches the mock user; password is read from
+// the VITE_DEV_PASSWORD env var so it never ends up hardcoded in the bundle.
+// Both are only used in dev builds (VITE_DEV_MODE=true).
 const DEV_EMAIL = DEV_MOCK_USER.email;
-const DEV_PASSWORD = "DevAdmin2026!";
+const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD as string | undefined;
 
 const IS_DEV = import.meta.env.VITE_DEV_MODE === "true";
 
@@ -59,27 +61,30 @@ export default function AuthLogin() {
   };
 
   /**
-   * Dev bypass login — tries Supabase password auth first (if configured),
-   * then falls back to the local mock session stored in localStorage.
+   * Dev bypass login — tries Supabase password auth first (if configured and
+   * VITE_DEV_PASSWORD is set), then falls back to the local mock session
+   * stored in localStorage.
    */
   const handleDevLogin = async () => {
     setDevLoading(true);
     setError("");
 
-    // Try real Supabase password auth first
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: DEV_EMAIL,
-      password: DEV_PASSWORD,
-    });
+    // Try real Supabase password auth when a password is provided via env
+    if (DEV_PASSWORD) {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: DEV_EMAIL,
+        password: DEV_PASSWORD,
+      });
 
-    if (!authError) {
-      // Supabase auth succeeded — navigate to admin
-      setDevLoading(false);
-      setLocation("/admin");
-      return;
+      if (!authError) {
+        // Supabase auth succeeded — navigate to admin
+        setDevLoading(false);
+        setLocation("/admin");
+        return;
+      }
     }
 
-    // Supabase not configured or user doesn't exist — activate mock bypass
+    // Supabase not configured or no password set — activate mock bypass
     localStorage.setItem(DEV_BYPASS_KEY, "true");
     setDevLoading(false);
     // Force a full reload so useAuth picks up the localStorage flag
@@ -294,15 +299,20 @@ export default function AuthLogin() {
                               <div className="flex items-center gap-2">
                                 <Lock className="h-3 w-3 text-amber-400/60 shrink-0" />
                                 <span className="text-amber-300/80 select-all">
-                                  {DEV_PASSWORD}
+                                  {DEV_PASSWORD
+                                    ? DEV_PASSWORD
+                                    : "(set VITE_DEV_PASSWORD)"}
                                 </span>
                               </div>
                             </div>
 
                             <p className="text-[9px] text-amber-400/50 leading-relaxed">
-                              Activates admin bypass. Uses Supabase password auth
-                              if configured, otherwise injects a local mock admin
-                              session. Never set VITE_DEV_MODE=true in production.
+                              Activates admin bypass. Set{" "}
+                              <code>VITE_DEV_PASSWORD</code> in your{" "}
+                              <code>.env.local</code> to enable Supabase
+                              password auth. Without it, clicking the button
+                              injects a local mock admin session. Never set{" "}
+                              <code>VITE_DEV_MODE=true</code> in production.
                             </p>
 
                             <button
