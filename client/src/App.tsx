@@ -33,6 +33,7 @@ const VisionStudio = lazy(() => import("./pages/VisionStudio"));
 const AuthLogin = lazy(() => import("./pages/auth/Login"));
 const AuthCallback = lazy(() => import("./pages/auth/Callback"));
 const ResendLink = lazy(() => import("./pages/auth/ResendLink"));
+const DevLogin = lazy(() => import("./pages/auth/DevLogin"));
 
 // Admin pages
 const CommandCenter = lazy(() => import("./pages/admin/CommandCenter"));
@@ -125,6 +126,7 @@ function Router() {
         <Route path="/auth/login" component={AuthLogin} />
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/auth/resend" component={ResendLink} />
+        <Route path="/dev-login" component={DevLogin} />
 
         {/* Admin */}
         <Route path="/admin" component={CommandCenter} />
