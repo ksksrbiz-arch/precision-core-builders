@@ -633,7 +633,6 @@ function ActualCostForm({
           value &&
           mut.mutate({
             id: projectId,
-            completionPercent: 0, // preserve existing
             actualCost: parseFloat(value),
           })
         }

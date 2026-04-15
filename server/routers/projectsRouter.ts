@@ -169,7 +169,14 @@ export const projectsRouter = router({
       if (input.completionPercent !== undefined)
         updates.completion_percent = input.completionPercent;
       if (input.actualCost !== undefined) updates.actual_cost = input.actualCost;
-      if (Object.keys(updates).length === 0) return null;
+      if (Object.keys(updates).length === 0) {
+        const { data: current } = await db
+          .from("projects")
+          .select()
+          .eq("id", input.id)
+          .single();
+        return current;
+      }
       const { data, error } = await db
         .from("projects")
         .update(updates)

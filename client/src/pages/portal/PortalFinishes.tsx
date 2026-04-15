@@ -83,11 +83,7 @@ export default function PortalFinishes() {
 
   const fmt = (n: number | string | null | undefined) =>
     n ? `$${Number(n).toLocaleString()}` : "—";
-  const totalDelta = budgetImpact?.totalDelta ??
-    selections?.reduce(
-      (sum: number, s: any) => sum + (Number(s.budget_delta) || 0),
-      0
-    ) ?? 0;
+  const totalDelta = budgetImpact?.totalDelta ?? 0;
 
   // Group by room
   const grouped = (selections ?? []).reduce(

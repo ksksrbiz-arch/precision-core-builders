@@ -185,7 +185,7 @@ export const fieldReportsRouter = router({
       // ISO week start (Monday)
       const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-      const weekStart = new Date(d.setDate(diff));
+      const weekStart = new Date(d.getFullYear(), d.getMonth(), diff);
       const key = weekStart.toISOString().slice(0, 10);
       if (!weeks[key]) {
         weeks[key] = {

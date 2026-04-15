@@ -28,6 +28,7 @@ import {
 import { useLocation } from "wouter";
 
 const COLORS = ["#8B7355", "#6B8E23", "#5B7FA6", "#C0392B", "#7A7060", "#D4A574"];
+const PROJECT_NAME_MAX_LEN = 20;
 
 function fmt(n: number | null | undefined) {
   if (!n && n !== 0) return "—";
@@ -116,7 +117,7 @@ export default function Analytics() {
     )
     .slice(0, 10)
     .map((p, i) => ({
-      name: p.name.length > 20 ? p.name.slice(0, 20) + "…" : p.name,
+      name: p.name.length > PROJECT_NAME_MAX_LEN ? p.name.slice(0, PROJECT_NAME_MAX_LEN) + "…" : p.name,
       estimated: Number(p.estimated_budget ?? 0),
       actual: Number(p.actual_cost ?? 0),
       fill: COLORS[i % COLORS.length],

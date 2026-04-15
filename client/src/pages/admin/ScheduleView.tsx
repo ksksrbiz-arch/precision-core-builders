@@ -23,7 +23,7 @@ import {
   Wind,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 type WeatherDay = {
@@ -174,7 +174,7 @@ export default function ScheduleView() {
     { projectId: selectedProject! },
     { enabled: !!selectedProject }
   );
-  const lastStatusRef = { current: "" };
+  const lastStatusRef = useRef("");
   const updateStatus = useMutationWithToast(trpc.schedule.updateStatus.useMutation(), {
     success: "Task Updated",
     successMessage: "Task status updated.",
@@ -192,6 +192,7 @@ export default function ScheduleView() {
             payload: { status: "complete" },
           }),
         }).catch(() => {});
+        lastStatusRef.current = "";
       }
     },
   });

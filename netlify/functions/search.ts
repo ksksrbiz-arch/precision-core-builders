@@ -21,6 +21,15 @@ Given a natural-language query, extract the search intent and return JSON:
 }
 Return only valid JSON.`;
 
+/**
+ * Strips characters that are special in PostgREST ilike patterns to prevent
+ * query manipulation via LLM-generated keywords.
+ * Allows alphanumeric, spaces, hyphens, and apostrophes only.
+ */
+function sanitizeKeyword(raw: string): string {
+  return raw.replace(/[^a-zA-Z0-9 '\-]/g, "").slice(0, 50).trim();
+}
+
 const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -38,13 +47,14 @@ interface SearchResult {
 }
 
 async function searchProjects(keywords: string[], filters: Record<string, string | null>): Promise<SearchResult[]> {
-  const term = keywords.join(" | ");
+  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
+  if (!safeKeyword) return [];
   let q = db
     .from("projects")
     .select("id,name,status,address,city,estimated_budget,contracted_budget")
+    .or(`name.ilike.%${safeKeyword}%,address.ilike.%${safeKeyword}%`)
     .order("created_at", { ascending: false })
     .limit(5);
-  if (term) q = q.or(`name.ilike.%${keywords[0]}%,address.ilike.%${keywords[0]}%`);
   if (filters.status) q = q.eq("status", filters.status);
   const { data } = await q;
   return (data ?? []).map((p: any) => ({
@@ -58,11 +68,12 @@ async function searchProjects(keywords: string[], filters: Record<string, string
 }
 
 async function searchClients(keywords: string[]): Promise<SearchResult[]> {
-  if (!keywords.length) return [];
+  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
+  if (!safeKeyword) return [];
   const { data } = await db
     .from("clients")
     .select("id,name,email,phone,city")
-    .or(`name.ilike.%${keywords[0]}%,email.ilike.%${keywords[0]}%`)
+    .or(`name.ilike.%${safeKeyword}%,email.ilike.%${safeKeyword}%`)
     .limit(5);
   return (data ?? []).map((c: any) => ({
     type: "client",
@@ -74,11 +85,12 @@ async function searchClients(keywords: string[]): Promise<SearchResult[]> {
 }
 
 async function searchFieldReports(keywords: string[]): Promise<SearchResult[]> {
-  if (!keywords.length) return [];
+  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
+  if (!safeKeyword) return [];
   const { data } = await db
     .from("field_reports")
     .select("id,project_id,report_date,summary,transcription")
-    .or(`summary.ilike.%${keywords[0]}%,transcription.ilike.%${keywords[0]}%`)
+    .or(`summary.ilike.%${safeKeyword}%,transcription.ilike.%${safeKeyword}%`)
     .order("report_date", { ascending: false })
     .limit(5);
   return (data ?? []).map((r: any) => ({
@@ -91,11 +103,12 @@ async function searchFieldReports(keywords: string[]): Promise<SearchResult[]> {
 }
 
 async function searchMaterials(keywords: string[]): Promise<SearchResult[]> {
-  if (!keywords.length) return [];
+  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
+  if (!safeKeyword) return [];
   const { data } = await db
     .from("materials")
     .select("id,name,category,vendor_name,quantity_needed,quantity_on_hand,unit,unit_price_current")
-    .or(`name.ilike.%${keywords[0]}%,category.ilike.%${keywords[0]}%,vendor_name.ilike.%${keywords[0]}%`)
+    .or(`name.ilike.%${safeKeyword}%,category.ilike.%${safeKeyword}%,vendor_name.ilike.%${safeKeyword}%`)
     .limit(5);
   return (data ?? []).map((m: any) => ({
     type: "material",
@@ -108,11 +121,12 @@ async function searchMaterials(keywords: string[]): Promise<SearchResult[]> {
 }
 
 async function searchSchedule(keywords: string[]): Promise<SearchResult[]> {
-  if (!keywords.length) return [];
+  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
+  if (!safeKeyword) return [];
   const { data } = await db
     .from("schedule_items")
     .select("id,project_id,title,task_type,status,planned_start_date")
-    .or(`title.ilike.%${keywords[0]}%,task_type.ilike.%${keywords[0]}%`)
+    .or(`title.ilike.%${safeKeyword}%,task_type.ilike.%${safeKeyword}%`)
     .order("planned_start_date", { ascending: true })
     .limit(5);
   return (data ?? []).map((s: any) => ({
