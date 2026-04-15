@@ -171,6 +171,13 @@ export default function ScheduleView() {
     errorMessage: "Failed to update task status. Please try again.",
     onSuccess: () => refetch(),
   });
+  const updateTask = useMutationWithToast(trpc.schedule.update.useMutation(), {
+    success: "Task Rescheduled",
+    successMessage: "Task dates updated.",
+    error: "Reschedule Failed",
+    errorMessage: "Failed to update task dates. Please try again.",
+    onSuccess: () => refetch(),
+  });
 
   const fetchWeather = async (projectId?: number) => {
     setWeatherLoading(true);
@@ -329,11 +336,13 @@ export default function ScheduleView() {
             <GanttChart
               projectId={selectedProject}
               items={scheduleItems ?? []}
-              weatherForecast={weather?.forecast?.[0] as any}
               readOnly={false}
               onTaskUpdate={(taskId, startDate, endDate) => {
-                console.log(`Task ${taskId} rescheduled to ${startDate} - ${endDate}`);
-                // TODO: Call tRPC mutation to update task dates
+                updateTask.mutate({
+                  id: taskId,
+                  plannedStart: startDate.toISOString(),
+                  plannedEnd: endDate.toISOString(),
+                });
               }}
             />
           </div>
