@@ -4,6 +4,10 @@
  * Centralises the JWT verification pattern that was previously duplicated
  * across individual function files.  All functions that require an
  * authenticated user should call `verifyAuth()` at the top of their handler.
+ *
+ * Dev Mode: When NODE_ENV !== 'production' and the token is the well-known
+ * dev bypass token, returns a mock admin user so functions work without a
+ * live Supabase connection.
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -17,6 +21,16 @@ export type AuthUser = {
 export type AuthResult =
   | { ok: true; user: AuthUser }
   | { ok: false; statusCode: 401 | 403; message: string };
+
+/** The shared dev bypass token — must match the client-side constant. */
+const DEV_ADMIN_TOKEN = "dev-admin-token";
+
+/** Mock admin user returned in dev bypass mode. */
+const DEV_ADMIN_USER: AuthUser = {
+  id: "dev-admin-local",
+  email: "dev@precisioncorebuilders.com",
+  role: "admin",
+};
 
 /** Lazily-constructed Supabase admin client (service role). */
 function getSupabase() {
@@ -53,6 +67,11 @@ export async function verifyAuth(
 
   if (!token) {
     return { ok: false, statusCode: 401, message: "Missing authorization token" };
+  }
+
+  // Dev bypass — only valid outside production
+  if (token === DEV_ADMIN_TOKEN && process.env.NODE_ENV !== "production") {
+    return { ok: true, user: DEV_ADMIN_USER };
   }
 
   try {
