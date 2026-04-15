@@ -13,7 +13,7 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# PWA files — serve directly, don't redirect to SPA
+# Static files — serve directly, don't redirect to SPA
 [[redirects]]
   from = "/sw.js"
   to = "/sw.js"
@@ -27,6 +27,16 @@
 [[redirects]]
   from = "/offline.html"
   to = "/offline.html"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap.xml"
+  status = 200
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/robots.txt"
   status = 200
 
 # Redirect all other traffic to index.html for client-side routing

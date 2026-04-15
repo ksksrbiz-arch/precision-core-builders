@@ -10,6 +10,7 @@ import {
 import { TrustBar } from "@/components/layout/TrustBar";
 import { trpc } from "@/lib/trpc";
 import { ASSETS, SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, MapPin, Phone, Star } from "lucide-react";
 import { useState } from "react";
@@ -169,6 +170,13 @@ const TESTIMONIALS = [
 ];
 
 export default function Portfolio() {
+  useSEO({
+    title: "Our Work — Project Portfolio",
+    description:
+      "Browse completed projects by Precision Core Builders — custom homes, renovations, additions, and restorations in Eugene and Lane County, Oregon.",
+    canonical: "https://precisioncorebuilders.com/portfolio",
+  });
+
   const [active, setActive] = useState<Category>("All");
   const [, setLocation] = useLocation();
   const { data: dbProjects } = trpc.portfolio.listPublished.useQuery();
