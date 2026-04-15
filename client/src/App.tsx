@@ -15,6 +15,7 @@ import Home from "./pages/Home";
 
 // Public pages
 const Portfolio = lazy(() => import("./pages/Portfolio"));
+const PortfolioDetail = lazy(() => import("./pages/PortfolioDetail"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Estimator = lazy(() => import("./pages/Estimator"));
 const About = lazy(() => import("./pages/About"));
@@ -104,6 +105,7 @@ function Router() {
         <Route path="/about" component={About} />
         <Route path="/services" component={Services} />
         <Route path="/portfolio" component={Portfolio} />
+        <Route path="/portfolio/:slug" component={PortfolioDetail} />
         <Route path="/faq" component={FAQ} />
         <Route path="/contact" component={Contact} />
         <Route path="/estimator" component={Estimator} />

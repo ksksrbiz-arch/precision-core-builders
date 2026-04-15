@@ -304,6 +304,7 @@ export default function CommandCenter() {
     shortagesOnly: true,
     pageSize: 10,
   });
+  const { data: weeklyReports } = trpc.fieldReports.weeklyStats.useQuery();
 
   // ── Supabase Realtime subscription ─────────────────────────────────────────
   const { isLive } = useRealtimeTable({
@@ -694,6 +695,56 @@ export default function CommandCenter() {
             )}
           </div>
         </div>
+
+        {/* Field Report Activity Chart */}
+        {weeklyReports && weeklyReports.length > 0 && (
+          <div className="bg-card border border-border/60 p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <p
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Field Report Activity — Last 8 Weeks
+              </p>
+              <button
+                onClick={() => setLocation("/admin/field-reports")}
+                className="text-[10px] text-primary hover:underline tracking-wider uppercase"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                View all →
+              </button>
+            </div>
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={weeklyReports} barSize={16}>
+                <XAxis
+                  dataKey="week"
+                  tick={{ fontSize: 9, fill: "#7A7060" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 0,
+                    fontSize: 11,
+                  }}
+                />
+                <Bar dataKey="reports" name="Reports" fill="#8B7355" radius={[2,2,0,0]} />
+                <Bar dataKey="issues" name="Issues" fill="#C0392B" radius={[2,2,0,0]} opacity={0.7} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-4 mt-2">
+              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 bg-primary inline-block" /> Reports filed
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 bg-red-500 inline-block opacity-70" /> Reports with issues
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* AI Chat */}
         <div className="mb-2">
