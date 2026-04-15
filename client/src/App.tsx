@@ -54,6 +54,7 @@ const SearchView = lazy(() => import("./pages/admin/Search"));
 const FinishSelectionsAdmin = lazy(
   () => import("./pages/admin/FinishSelectionsAdmin")
 );
+const Analytics = lazy(() => import("./pages/admin/Analytics"));
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -140,6 +141,7 @@ function Router() {
         <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
         <Route path="/admin/search" component={SearchView} />
         <Route path="/admin/finishes" component={FinishSelectionsAdmin} />
+        <Route path="/admin/analytics" component={Analytics} />
 
         {/* Client portal — auth required */}
         <Route path="/portal">

@@ -191,8 +191,9 @@ export default function ProjectDetail() {
 
         {/* Tab content */}
         {activeTab === "overview" && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
               { label: "Client", value: (project as any).clients?.name ?? "—" },
               { label: "Project Type", value: project.project_type ?? "—" },
               { label: "Status", value: project.status },
@@ -228,6 +229,9 @@ export default function ProjectDetail() {
                 <p className="text-sm text-foreground">{String(value)}</p>
               </div>
             ))}
+            </div>
+            {/* Status update control */}
+            <ProjectStatusUpdate projectId={projectId} currentStatus={project.status} />
           </div>
         )}
 
@@ -639,6 +643,72 @@ function ActualCostForm({
       >
         {mut.isPending ? "Saving…" : "Save"}
       </button>
+    </div>
+  );
+}
+
+const STATUS_OPTIONS = [
+  { value: "lead", label: "Lead" },
+  { value: "estimate_sent", label: "Estimate Sent" },
+  { value: "contracted", label: "Contracted" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "punch_list", label: "Punch List" },
+  { value: "complete", label: "Complete" },
+  { value: "on_hold", label: "On Hold" },
+];
+
+function ProjectStatusUpdate({
+  projectId,
+  currentStatus,
+}: {
+  projectId: number;
+  currentStatus: string;
+}) {
+  const [status, setStatus] = useState(currentStatus);
+  const utils = trpc.useUtils();
+  const mut = trpc.projects.update.useMutation({
+    onSuccess: () => {
+      utils.projects.getById.invalidate({ id: projectId });
+      // Fire project_status_changed n8n event
+      fetch("/api/n8n-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "project_status_changed",
+          payload: { projectId, newStatus: status },
+        }),
+      }).catch(() => {});
+    },
+  });
+
+  const isDirty = status !== currentStatus;
+
+  return (
+    <div className="bg-card border border-border/60 p-4">
+      <p className="text-xs font-semibold text-muted-foreground mb-3">
+        Update Project Status
+      </p>
+      <div className="flex gap-3 items-center">
+        <select
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+          className="flex-1 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+        >
+          {STATUS_OPTIONS.map(s => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => mut.mutate({ id: projectId, status: status as any })}
+          disabled={!isDirty || mut.isPending}
+          className="px-4 py-2 text-[11px] font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          {mut.isPending ? "Saving…" : "Save Status"}
+        </button>
+      </div>
     </div>
   );
 }

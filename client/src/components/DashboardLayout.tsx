@@ -50,6 +50,7 @@ import { Button } from "./ui/button";
 
 const NAV = [
   { icon: LayoutDashboard, label: "Command Center", path: "/admin" },
+  { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
   { icon: Search, label: "Search", path: "/admin/search" },
   { icon: ClipboardList, label: "Projects", path: "/admin/projects" },
   { icon: Users, label: "Clients", path: "/admin/clients" },
