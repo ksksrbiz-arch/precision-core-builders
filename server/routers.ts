@@ -10,6 +10,7 @@ import { notificationsRouter } from "./routers/notificationsRouter";
 import { portfolioRouter } from "./routers/portfolioRouter";
 import { projectsRouter } from "./routers/projectsRouter";
 import { scheduleRouter } from "./routers/scheduleRouter";
+import { sitePlansRouter } from "./routers/sitePlansRouter";
 import { subContractorsRouter } from "./routers/subContractorsRouter";
 
 export const appRouter = router({
@@ -28,6 +29,7 @@ export const appRouter = router({
   finishSelections: finishSelectionsRouter,
   notifications: notificationsRouter,
   portfolio: portfolioRouter,
+  sitePlans: sitePlansRouter,
 });
 
 export type AppRouter = typeof appRouter;

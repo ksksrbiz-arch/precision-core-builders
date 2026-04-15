@@ -13,6 +13,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { trpc } from "@/lib/trpc";
+import { useToast } from "@/components/ToastProvider";
 import {
   ChevronDown,
   Download,
@@ -27,6 +29,7 @@ import {
   Save,
   Share2,
   Stamp,
+  Trash2,
   Upload,
   Zap,
 } from "lucide-react";
@@ -506,55 +509,36 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
   },
 ];
 
-// ── Saved plans mock ──────────────────────────────────────────────────────
-
-type SavedPlan = {
-  id: string;
-  name: string;
-  project: string;
-  updatedAt: string;
-  thumbnail?: string;
-};
-
 // ── Component ─────────────────────────────────────────────────────────────
 
 export default function SitePlanBuilder() {
   const [Excalidraw, setExcalidraw] = useState<any>(null);
+  const [exportToBlob, setExportToBlob] = useState<any>(null);
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [planName, setPlanName] = useState("Untitled Site Plan");
+  const [activePlanId, setActivePlanId] = useState<number | null>(null);
   const [activeStampCategory, setActiveStampCategory] = useState<string | null>(
     null
   );
   const [showStampPanel, setShowStampPanel] = useState(false);
-  const [savedPlans] = useState<SavedPlan[]>([
-    {
-      id: "1",
-      name: "Main Floor Layout",
-      project: "Johnson Residence",
-      updatedAt: "2026-03-28",
-    },
-    {
-      id: "2",
-      name: "Kitchen Remodel Spec",
-      project: "Willamette Cottage",
-      updatedAt: "2026-03-25",
-    },
-    {
-      id: "3",
-      name: "Foundation Plan",
-      project: "Eugene Office Build",
-      updatedAt: "2026-03-20",
-    },
-  ]);
   const [saving, setSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { addToast } = useToast();
 
-  // Dynamic import Excalidraw (it doesn't support SSR)
+  const { data: savedPlans } = trpc.sitePlans.list.useQuery({});
+  const createPlan = trpc.sitePlans.create.useMutation();
+  const updatePlan = trpc.sitePlans.update.useMutation();
+  const deletePlan = trpc.sitePlans.delete.useMutation();
+  const utils = trpc.useUtils();
+
+  // Dynamic import Excalidraw (it doesn't support SSR).
+  // Load exportToBlob alongside so it's cached before the first save.
   useEffect(() => {
     let cancelled = false;
     import("@excalidraw/excalidraw").then(mod => {
       if (!cancelled) {
         setExcalidraw(() => mod.Excalidraw);
+        setExportToBlob(() => mod.exportToBlob);
       }
     });
     return () => {
@@ -565,13 +549,109 @@ export default function SitePlanBuilder() {
   const handleSave = useCallback(async () => {
     if (!excalidrawAPI) return;
     setSaving(true);
-    const elements = excalidrawAPI.getSceneElements();
-    const appState = excalidrawAPI.getAppState();
-    // TODO: Save to Supabase — store elements + appState as JSON
-    console.log("Saving plan:", { name: planName, elements, appState });
-    await new Promise(r => setTimeout(r, 800));
-    setSaving(false);
-  }, [excalidrawAPI, planName]);
+    try {
+      const elements = JSON.stringify(excalidrawAPI.getSceneElements());
+      const appState = JSON.stringify(excalidrawAPI.getAppState());
+
+      // Generate a small thumbnail via exportToBlob (pre-loaded alongside Excalidraw)
+      let thumbnailDataUrl: string | undefined;
+      if (exportToBlob) {
+        try {
+          const blob = await exportToBlob({
+            elements: excalidrawAPI.getSceneElements(),
+            appState: {
+              ...excalidrawAPI.getAppState(),
+              exportWithDarkMode: true,
+              exportScale: 0.25,
+            },
+            files: excalidrawAPI.getFiles(),
+            maxWidthOrHeight: 400,
+          });
+          thumbnailDataUrl = await new Promise<string>(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (thumbErr) {
+          // Thumbnail is optional — log but don't fail save if it errors
+          console.warn("[SitePlanBuilder] Thumbnail generation failed:", thumbErr);
+        }
+      }
+
+      if (activePlanId) {
+        await updatePlan.mutateAsync({
+          id: activePlanId,
+          name: planName,
+          elements,
+          appState,
+          ...(thumbnailDataUrl && { thumbnailDataUrl }),
+        });
+      } else {
+        const created = await createPlan.mutateAsync({
+          name: planName,
+          elements,
+          appState,
+          ...(thumbnailDataUrl && { thumbnailDataUrl }),
+        });
+        setActivePlanId(created.id);
+      }
+
+      await utils.sitePlans.list.invalidate();
+      addToast({ type: "success", title: "Saved", message: "Site plan saved." });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: "Save failed",
+        message: err instanceof Error ? err.message : "Could not save plan.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }, [excalidrawAPI, exportToBlob, planName, activePlanId, createPlan, updatePlan, utils, addToast]);
+
+  const handleLoadPlan = useCallback(
+    async (planId: number, name: string) => {
+      if (!excalidrawAPI) return;
+      try {
+        // Fetch full plan data (elements + appState) from the server
+        const fullPlan = await utils.sitePlans.getById.fetch({ id: planId });
+        const parsedElements = JSON.parse(fullPlan.elements ?? "[]");
+        const parsedAppState = JSON.parse(fullPlan.app_state ?? "{}");
+        excalidrawAPI.updateScene({
+          elements: parsedElements,
+          appState: parsedAppState,
+        });
+        setPlanName(name);
+        setActivePlanId(planId);
+        addToast({ type: "success", title: "Loaded", message: `Opened "${name}".` });
+      } catch (err) {
+        console.error("[SitePlanBuilder] Load plan failed:", err);
+        addToast({ type: "error", title: "Load failed", message: "Could not load plan data." });
+      }
+    },
+    [excalidrawAPI, utils, addToast]
+  );
+
+  const handleDeletePlan = useCallback(
+    async (planId: number) => {
+      try {
+        await deletePlan.mutateAsync({ id: planId });
+        if (activePlanId === planId) {
+          setActivePlanId(null);
+          setPlanName("Untitled Site Plan");
+        }
+        await utils.sitePlans.list.invalidate();
+        addToast({ type: "success", title: "Deleted", message: "Plan deleted." });
+      } catch (err) {
+        addToast({
+          type: "error",
+          title: "Delete failed",
+          message: err instanceof Error ? err.message : "Could not delete plan.",
+        });
+      }
+    },
+    [deletePlan, activePlanId, utils, addToast]
+  );
 
   const handleExportPNG = useCallback(async () => {
     if (!excalidrawAPI) return;
@@ -820,19 +900,51 @@ export default function SitePlanBuilder() {
                   Saved Plans
                 </h4>
                 <div className="space-y-1">
-                  {savedPlans.map(plan => (
-                    <button
+                  {(savedPlans ?? []).length === 0 && (
+                    <p className="text-[10px] text-muted-foreground/60 px-2 py-1">
+                      No saved plans yet.
+                    </p>
+                  )}
+                  {(savedPlans ?? []).map(plan => (
+                    <div
                       key={plan.id}
-                      className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors"
+                      className={`group flex items-center gap-1 rounded-md hover:bg-muted/50 transition-colors ${
+                        activePlanId === plan.id ? "bg-primary/10" : ""
+                      }`}
                     >
-                      <p className="text-xs font-medium truncate">
-                        {plan.name}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {plan.project}
-                      </p>
-                    </button>
+                      <button
+                        className="flex-1 text-left px-2 py-1.5 min-w-0"
+                        onClick={() => handleLoadPlan(plan.id, plan.name)}
+                      >
+                        <p className={`text-xs font-medium truncate ${activePlanId === plan.id ? "text-primary" : ""}`}>
+                          {plan.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(plan.updated_at).toLocaleDateString()}
+                        </p>
+                      </button>
+                      <button
+                        onClick={() => handleDeletePlan(plan.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all mr-1 flex-shrink-0"
+                        title="Delete plan"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
                   ))}
+                  {/* New plan button */}
+                  <button
+                    onClick={() => {
+                      setActivePlanId(null);
+                      setPlanName("Untitled Site Plan");
+                      if (excalidrawAPI) {
+                        excalidrawAPI.updateScene({ elements: [] });
+                      }
+                    }}
+                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors mt-1 border border-dashed border-border/50"
+                  >
+                    <Plus className="h-3 w-3" /> New Plan
+                  </button>
                 </div>
               </div>
             </div>

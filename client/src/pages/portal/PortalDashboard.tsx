@@ -2,6 +2,7 @@
  * Client Portal — main dashboard showing their active project.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { ASSETS, SITE } from "@/const";
 import { motion } from "framer-motion";
@@ -65,6 +66,7 @@ function PortalNav() {
 export default function PortalDashboard() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
 
   // Get projects for this client
   const { data: projects } = trpc.projects.list.useQuery(
@@ -86,6 +88,20 @@ export default function PortalDashboard() {
         new Date(b.planned_start_date ?? "").getTime()
     )
     .slice(0, 5);
+
+  // Live updates: re-fetch when project or schedule data changes in Supabase
+  useRealtimeTable({
+    table: "projects",
+    onUpdate: () => {
+      utils.projects.list.invalidate();
+    },
+  });
+  useRealtimeTable({
+    table: "schedule_items",
+    onUpdate: () => {
+      if (project?.id) utils.schedule.list.invalidate({ projectId: project.id });
+    },
+  });
 
   const STATUS_ICONS: Record<string, React.ElementType> = {
     complete: CheckCircle2,
