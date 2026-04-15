@@ -39,6 +39,7 @@ import {
   Search,
   Settings,
   Shield,
+  Sparkles,
   Users,
   Wrench,
 } from "lucide-react";
@@ -57,6 +58,7 @@ const NAV = [
   { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
   { icon: BarChart3, label: "Estimates", path: "/admin/estimates" },
   { icon: Package, label: "Materials", path: "/admin/materials" },
+  { icon: Sparkles, label: "Finish Selections", path: "/admin/finishes" },
   { icon: Wrench, label: "Sub-Contractors", path: "/admin/sub-contractors" },
   { icon: Shield, label: "Ledger", path: "/admin/ledger" },
   { icon: CreditCard, label: "Billing", path: "/admin/billing" },

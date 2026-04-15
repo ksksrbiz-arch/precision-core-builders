@@ -99,4 +99,26 @@ export const finishSelectionsRouter = router({
       if (error) throw new Error(error.message);
       return { success: true };
     }),
+
+  calcBudgetImpact: protectedProcedure
+    .input(z.object({ projectId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const { data, error } = await db
+        .from("finish_selections")
+        .select("budget_delta,client_approved,eric_approved,room,category")
+        .eq("project_id", input.projectId);
+      if (error) throw new Error(error.message);
+      const items = data ?? [];
+      const totalDelta = items.reduce(
+        (sum, s) => sum + Number(s.budget_delta ?? 0),
+        0
+      );
+      const approvedDelta = items
+        .filter(s => s.client_approved && s.eric_approved)
+        .reduce((sum, s) => sum + Number(s.budget_delta ?? 0), 0);
+      const pendingApproval = items.filter(
+        s => !s.client_approved || !s.eric_approved
+      ).length;
+      return { totalDelta, approvedDelta, pendingApproval, total: items.length };
+    }),
 });

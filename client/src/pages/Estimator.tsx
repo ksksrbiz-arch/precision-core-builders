@@ -108,11 +108,35 @@ export default function Estimator() {
     formData.append("complexity", complexity);
     formData.append("sqft", sqft);
     formData.append("estimatedMid", String(result?.estimatedMid ?? 0));
+
+    // 1. Submit to Netlify Forms for CRM
     await fetch("/", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(formData as any).toString(),
     });
+
+    // 2. Fire lead_captured n8n event (non-blocking)
+    fetch("/api/n8n-webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "lead_captured",
+        payload: {
+          name: leadName,
+          email: leadEmail,
+          phone: leadPhone,
+          projectType,
+          complexity,
+          squareFootage: sqft,
+          estimatedMid: result?.estimatedMid,
+          estimatedLow: result?.estimatedLow,
+          estimatedHigh: result?.estimatedHigh,
+          source: "estimator",
+        },
+      }),
+    }).catch(() => {});
+
     setLeadSent(true);
   };
 
