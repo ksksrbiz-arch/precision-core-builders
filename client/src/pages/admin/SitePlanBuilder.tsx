@@ -513,6 +513,7 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
 
 export default function SitePlanBuilder() {
   const [Excalidraw, setExcalidraw] = useState<any>(null);
+  const [exportToBlob, setExportToBlob] = useState<any>(null);
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [planName, setPlanName] = useState("Untitled Site Plan");
   const [activePlanId, setActivePlanId] = useState<number | null>(null);
@@ -524,18 +525,20 @@ export default function SitePlanBuilder() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
-  const { data: savedPlans, refetch: refetchPlans } = trpc.sitePlans.list.useQuery({});
+  const { data: savedPlans } = trpc.sitePlans.list.useQuery({});
   const createPlan = trpc.sitePlans.create.useMutation();
   const updatePlan = trpc.sitePlans.update.useMutation();
   const deletePlan = trpc.sitePlans.delete.useMutation();
   const utils = trpc.useUtils();
 
-  // Dynamic import Excalidraw (it doesn't support SSR)
+  // Dynamic import Excalidraw (it doesn't support SSR).
+  // Load exportToBlob alongside so it's cached before the first save.
   useEffect(() => {
     let cancelled = false;
     import("@excalidraw/excalidraw").then(mod => {
       if (!cancelled) {
         setExcalidraw(() => mod.Excalidraw);
+        setExportToBlob(() => mod.exportToBlob);
       }
     });
     return () => {
@@ -550,27 +553,29 @@ export default function SitePlanBuilder() {
       const elements = JSON.stringify(excalidrawAPI.getSceneElements());
       const appState = JSON.stringify(excalidrawAPI.getAppState());
 
-      // Generate a small thumbnail via exportToBlob
+      // Generate a small thumbnail via exportToBlob (pre-loaded alongside Excalidraw)
       let thumbnailDataUrl: string | undefined;
-      try {
-        const { exportToBlob } = await import("@excalidraw/excalidraw");
-        const blob = await exportToBlob({
-          elements: excalidrawAPI.getSceneElements(),
-          appState: {
-            ...excalidrawAPI.getAppState(),
-            exportWithDarkMode: true,
-            exportScale: 0.25,
-          },
-          files: excalidrawAPI.getFiles(),
-          maxWidthOrHeight: 400,
-        });
-        thumbnailDataUrl = await new Promise<string>(resolve => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      } catch {
-        // Thumbnail is optional — don't fail save if it errors
+      if (exportToBlob) {
+        try {
+          const blob = await exportToBlob({
+            elements: excalidrawAPI.getSceneElements(),
+            appState: {
+              ...excalidrawAPI.getAppState(),
+              exportWithDarkMode: true,
+              exportScale: 0.25,
+            },
+            files: excalidrawAPI.getFiles(),
+            maxWidthOrHeight: 400,
+          });
+          thumbnailDataUrl = await new Promise<string>(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (thumbErr) {
+          // Thumbnail is optional — log but don't fail save if it errors
+          console.warn("[SitePlanBuilder] Thumbnail generation failed:", thumbErr);
+        }
       }
 
       if (activePlanId) {
@@ -602,7 +607,7 @@ export default function SitePlanBuilder() {
     } finally {
       setSaving(false);
     }
-  }, [excalidrawAPI, planName, activePlanId, createPlan, updatePlan, utils, addToast]);
+  }, [excalidrawAPI, exportToBlob, planName, activePlanId, createPlan, updatePlan, utils, addToast]);
 
   const handleLoadPlan = useCallback(
     async (planId: number, name: string) => {
@@ -619,7 +624,8 @@ export default function SitePlanBuilder() {
         setPlanName(name);
         setActivePlanId(planId);
         addToast({ type: "success", title: "Loaded", message: `Opened "${name}".` });
-      } catch {
+      } catch (err) {
+        console.error("[SitePlanBuilder] Load plan failed:", err);
         addToast({ type: "error", title: "Load failed", message: "Could not load plan data." });
       }
     },

@@ -24,7 +24,7 @@ export const sitePlansRouter = router({
         .order("updated_at", { ascending: false });
       if (input.projectId) q = q.eq("project_id", input.projectId);
       const { data, error } = await q;
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(`Failed to fetch site plans: ${error.message}`);
       return data ?? [];
     }),
 
@@ -37,7 +37,10 @@ export const sitePlansRouter = router({
         .select("*")
         .eq("id", input.id)
         .single();
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(
+          `Failed to fetch site plan with ID ${input.id}: ${error.message}`
+        );
       return data;
     }),
 
@@ -65,7 +68,7 @@ export const sitePlansRouter = router({
         })
         .select()
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(`Failed to create site plan: ${error.message}`);
       return data;
     }),
 
@@ -97,7 +100,10 @@ export const sitePlansRouter = router({
         .eq("id", id)
         .select()
         .single();
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(
+          `Failed to update site plan with ID ${id}: ${error.message}`
+        );
       return data;
     }),
 
@@ -109,7 +115,10 @@ export const sitePlansRouter = router({
         .from("site_plans")
         .delete()
         .eq("id", input.id);
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(
+          `Failed to delete site plan with ID ${input.id}: ${error.message}`
+        );
       return { success: true };
     }),
 });
