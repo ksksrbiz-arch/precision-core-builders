@@ -2,10 +2,9 @@
  * GanttChart Component — Task scheduling visualization with drag-and-drop
  *
  * Features:
- * - Horizontal task bars with date ranges
- * - Drag-and-drop task reordering
- * - Weather-dependent task highlighting
- * - Task dependencies visualization
+ * - Horizontal task bars with date ranges (stacked bar chart: spacer + duration)
+ * - Drag-and-drop task rescheduling via onTaskUpdate callback
+ * - Weather-sensitive task highlighting
  * - Real-time updates via Supabase
  * - Mobile responsive
  */
@@ -20,57 +19,51 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  Cell as RechartsCell,
 } from "recharts";
-import { AlertTriangle, Cloud, CloudRain, Droplets } from "lucide-react";
+import { CloudRain } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+// ScheduleItem matches the Supabase schedule_items column names returned by
+// the scheduleRouter.list query.
 export interface ScheduleItem {
   id: number;
   project_id: number;
-  task_name: string;
-  start_date: string;
-  end_date: string;
-  status: "planned" | "in_progress" | "completed" | "blocked";
-  weather_dependent: boolean;
-  assigned_to?: string;
-  dependencies?: number[];
-  notes?: string;
+  title: string;
+  status: "pending" | "in_progress" | "complete" | "blocked" | "deferred";
+  weather_sensitive: boolean;
+  planned_start?: string | null;
+  planned_end?: string | null;
+  assigned_to?: string | null;
+  notes?: string | null;
 }
 
 export interface GanttChartProps {
   projectId: number;
   items?: ScheduleItem[];
   onTaskUpdate?: (taskId: number, startDate: Date, endDate: Date) => void;
-  weatherForecast?: WeatherData;
   readOnly?: boolean;
-}
-
-interface WeatherData {
-  date: string;
-  condition: "clear" | "cloudy" | "rainy" | "stormy";
-  temperature: number;
-  precipitation: number;
 }
 
 interface GanttBarData {
   id: number;
   name: string;
+  /** Days offset from the earliest task start (spacer). */
   start: number;
+  /** Duration in days (the colored portion). */
   duration: number;
   status: string;
-  weatherDependent: boolean;
+  weatherSensitive: boolean;
   startDate: string;
   endDate: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  completed: "#10b981",
+  complete: "#10b981",
   in_progress: "#3b82f6",
-  planned: "#8b7355",
+  pending: "#8b7355",
   blocked: "#ef4444",
+  deferred: "#f59e0b",
 };
 
 function getDateNum(dateStr: string): number {
@@ -81,149 +74,141 @@ function dateToISO(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
+function getBarColor(bar: GanttBarData): string {
+  if (bar.weatherSensitive) return "#eab308";
+  return STATUS_COLORS[bar.status] ?? "#8b7355";
+}
+
 export function GanttChart({
   projectId,
   items = [],
   onTaskUpdate,
-  weatherForecast,
   readOnly = false,
 }: GanttChartProps) {
   const [tasks, setTasks] = useState<ScheduleItem[]>(items);
   const [chartData, setChartData] = useState<GanttBarData[]>([]);
-  const [minDate, setMinDate] = useState<number>(0);
-  const [maxDate, setMaxDate] = useState<number>(0);
   const [draggingTaskId, setDraggingTaskId] = useState<number | null>(null);
   const [dragStartPos, setDragStartPos] = useState<number>(0);
   const dragRef = useRef<HTMLDivElement>(null);
 
-  // Fetch schedule items from database
+  // Fetch schedule items from database (overrides prop items when available)
   const { data: dbItems, isLoading } = trpc.schedule.list.useQuery({
     projectId,
   });
 
   useEffect(() => {
     if (dbItems) {
-      setTasks(dbItems);
+      setTasks(dbItems as ScheduleItem[]);
     }
   }, [dbItems]);
 
-  // Build chart data from tasks
+  // Rebuild chart data whenever tasks change
   useEffect(() => {
-    if (tasks.length === 0) return;
+    const withDates = tasks.filter(t => t.planned_start && t.planned_end);
+    if (withDates.length === 0) {
+      setChartData([]);
+      return;
+    }
 
-    const dates = tasks.flatMap(t => [
-      getDateNum(t.start_date),
-      getDateNum(t.end_date),
+    const timestamps = withDates.flatMap(t => [
+      getDateNum(t.planned_start!),
+      getDateNum(t.planned_end!),
     ]);
-    const min = Math.min(...dates);
-    const max = Math.max(...dates);
-    const totalDays = (max - min) / (1000 * 60 * 60 * 24);
+    const min = Math.min(...timestamps);
 
-    setMinDate(min);
-    setMaxDate(max);
-
-    const data = tasks.map(task => {
-      const taskStart = getDateNum(task.start_date);
-      const start = (taskStart - min) / (1000 * 60 * 60 * 24);
-      const duration =
-        (getDateNum(task.end_date) - taskStart) / (1000 * 60 * 60 * 24);
+    const data: GanttBarData[] = withDates.map(task => {
+      const taskStart = getDateNum(task.planned_start!);
+      const taskEnd = getDateNum(task.planned_end!);
+      const MS_PER_DAY = 1000 * 60 * 60 * 24;
+      const start = (taskStart - min) / MS_PER_DAY;
+      const duration = Math.max(1, (taskEnd - taskStart) / MS_PER_DAY);
 
       return {
         id: task.id,
-        name: task.task_name,
+        name: task.title,
         start,
         duration,
         status: task.status,
-        weatherDependent: task.weather_dependent,
-        startDate: task.start_date,
-        endDate: task.end_date,
+        weatherSensitive: task.weather_sensitive,
+        startDate: task.planned_start!,
+        endDate: task.planned_end!,
       };
     });
 
     setChartData(data);
   }, [tasks]);
 
-  // Handle drag-and-drop on bar
+  // Drag-and-drop reschedule
   const handleBarMouseDown = (e: React.MouseEvent, taskId: number) => {
     if (readOnly) return;
     setDraggingTaskId(taskId);
     setDragStartPos(e.clientX);
   };
 
-  // Handle mouse move during drag
   useEffect(() => {
     if (draggingTaskId === null) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragRef.current) return;
-
-      const moved = e.clientX - dragStartPos;
-      const dragDistance = moved / 100; // pixels to days conversion
-    };
 
     const handleMouseUp = (e: MouseEvent) => {
       if (draggingTaskId === null || !dragRef.current) return;
 
       const task = tasks.find(t => t.id === draggingTaskId);
-      if (!task) return;
+      if (task?.planned_start && task?.planned_end) {
+        const moved = e.clientX - dragStartPos;
+        const dragDays = Math.round(moved / 5); // ~5px per day
 
-      const moved = e.clientX - dragStartPos;
-      const dragDays = Math.round(moved / 5); // ~5px per day
+        if (dragDays !== 0) {
+          const newStart = new Date(task.planned_start);
+          newStart.setDate(newStart.getDate() + dragDays);
 
-      if (dragDays !== 0) {
-        const newStart = new Date(task.start_date);
-        newStart.setDate(newStart.getDate() + dragDays);
+          const newEnd = new Date(task.planned_end);
+          newEnd.setDate(newEnd.getDate() + dragDays);
 
-        const newEnd = new Date(task.end_date);
-        newEnd.setDate(newEnd.getDate() + dragDays);
+          if (onTaskUpdate) {
+            onTaskUpdate(task.id, newStart, newEnd);
+          }
 
-        // Update via tRPC
-        if (onTaskUpdate) {
-          onTaskUpdate(task.id, newStart, newEnd);
+          // Optimistic update
+          setTasks(prev =>
+            prev.map(t =>
+              t.id === draggingTaskId
+                ? {
+                    ...t,
+                    planned_start: dateToISO(newStart),
+                    planned_end: dateToISO(newEnd),
+                  }
+                : t
+            )
+          );
         }
-
-        // Optimistic update
-        setTasks(
-          tasks.map(t =>
-            t.id === draggingTaskId
-              ? {
-                  ...t,
-                  start_date: dateToISO(newStart),
-                  end_date: dateToISO(newEnd),
-                }
-              : t
-          )
-        );
       }
 
       setDraggingTaskId(null);
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
+    return () => document.removeEventListener("mouseup", handleMouseUp);
   }, [draggingTaskId, dragStartPos, tasks, onTaskUpdate]);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload) return null;
-    const data = payload[0].payload as GanttBarData;
+    if (!active || !payload?.length) return null;
+    const bar = payload[0].payload as GanttBarData;
     return (
       <div className="bg-popover border border-border p-2 text-xs rounded shadow-lg">
-        <p className="font-semibold text-foreground">{data.name}</p>
-        <p className="text-muted-foreground">{data.startDate}</p>
-        <p className="text-muted-foreground">{data.endDate}</p>
-        <p className="text-muted-foreground capitalize">
-          {data.status.replace("_", " ")}
+        <p className="font-semibold text-foreground">{bar.name}</p>
+        <p className="text-muted-foreground">
+          {new Date(bar.startDate).toLocaleDateString()}
         </p>
-        {data.weatherDependent && (
-          <p className="text-yellow-600 text-[10px] flex items-center gap-1 mt-1">
+        <p className="text-muted-foreground">
+          {new Date(bar.endDate).toLocaleDateString()}
+        </p>
+        <p className="text-muted-foreground capitalize">
+          {bar.status.replace("_", " ")}
+        </p>
+        {bar.weatherSensitive && (
+          <p className="text-yellow-500 text-[10px] flex items-center gap-1 mt-1">
             <CloudRain className="h-3 w-3" />
-            Weather-dependent
+            Weather-sensitive
           </p>
         )}
       </div>
@@ -234,26 +219,28 @@ export function GanttChart({
     return (
       <Card>
         <CardContent className="pt-6 flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading schedule...</div>
+          <div className="text-muted-foreground">Loading schedule…</div>
         </CardContent>
       </Card>
     );
   }
 
-  if (tasks.length === 0) {
+  if (chartData.length === 0) {
     return (
       <Card>
         <CardContent className="pt-6 flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-muted-foreground mb-2">No tasks scheduled</p>
+            <p className="text-muted-foreground mb-2">No dated tasks</p>
             <p className="text-xs text-muted-foreground/70">
-              Create schedule items to visualize project timeline
+              Set planned start and end dates on tasks to see the Gantt chart.
             </p>
           </div>
         </CardContent>
       </Card>
     );
   }
+
+  const chartHeight = Math.max(300, chartData.length * 44);
 
   return (
     <Card ref={dragRef}>
@@ -262,11 +249,11 @@ export function GanttChart({
           <CardTitle className="text-lg">Project Schedule</CardTitle>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-amber-500 rounded-sm"></div>
-              <span>Weather-dependent</span>
+              <div className="w-3 h-3 bg-yellow-500 rounded-sm" />
+              <span>Weather-sensitive</span>
             </div>
             {!readOnly && (
-              <span className="text-[10px]">Drag to reschedule</span>
+              <span className="text-[10px]">Drag bars to reschedule</span>
             )}
           </div>
         </div>
@@ -274,63 +261,60 @@ export function GanttChart({
 
       <CardContent>
         <div className="overflow-x-auto">
-          <ResponsiveContainer width="100%" height={Math.max(300, tasks.length * 40)}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <BarChart
               data={chartData}
-              margin={{ top: 20, right: 30, left: 200, bottom: 60 }}
               layout="vertical"
+              margin={{ top: 10, right: 30, left: 180, bottom: 10 }}
+              barCategoryGap="20%"
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--border)"
+                horizontal={false}
+              />
               <XAxis
                 type="number"
                 stroke="var(--muted-foreground)"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 11 }}
+                tickFormatter={v => `Day ${v}`}
               />
               <YAxis
                 type="category"
                 dataKey="name"
-                width={180}
-                tick={{ fontSize: 12 }}
+                width={170}
+                tick={{ fontSize: 11 }}
                 stroke="var(--muted-foreground)"
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} cursor={false} />
 
+              {/* Transparent spacer pushes each bar to its start offset */}
+              <Bar dataKey="start" stackId="gantt" fill="transparent" />
+
+              {/* Colored duration bar */}
               <Bar
                 dataKey="duration"
-                fill="#8b7355"
-                shape={
-                  <g>
-                    {chartData.map((bar, idx) => (
-                      <g key={idx}>
-                        <rect
-                          x={bar.start * 30}
-                          y={idx * 40}
-                          width={bar.duration * 30}
-                          height={30}
-                          fill={
-                            bar.weatherDependent
-                              ? "#eab308"
-                              : STATUS_COLORS[bar.status] || "#8b7355"
-                          }
-                          opacity={0.8}
-                          stroke={
-                            draggingTaskId === bar.id ? "#000" : "transparent"
-                          }
-                          strokeWidth={draggingTaskId === bar.id ? 2 : 0}
-                          style={{ cursor: !readOnly ? "grab" : "default" }}
-                          onMouseDown={e => handleBarMouseDown(e, bar.id)}
-                        />
-                      </g>
-                    ))}
-                  </g>
+                stackId="gantt"
+                radius={[2, 2, 2, 2]}
+                style={{ cursor: readOnly ? "default" : "grab" }}
+                onMouseDown={(data: any, _idx: number, e: React.MouseEvent) =>
+                  handleBarMouseDown(e, data.id)
                 }
-              />
+              >
+                {chartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={getBarColor(entry)}
+                    opacity={draggingTaskId === entry.id ? 0.6 : 0.85}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Legend */}
-        <div className="mt-6 grid grid-cols-2 gap-4 text-xs border-t border-border pt-4">
+        <div className="mt-4 grid grid-cols-2 gap-4 text-xs border-t border-border pt-4">
           <div className="space-y-2">
             <p className="font-semibold text-foreground">Status</p>
             {Object.entries(STATUS_COLORS).map(([status, color]) => (
@@ -338,20 +322,19 @@ export function GanttChart({
                 <div
                   className="w-3 h-3 rounded-sm"
                   style={{ backgroundColor: color }}
-                ></div>
+                />
                 <span className="text-muted-foreground capitalize">
                   {status.replace("_", " ")}
                 </span>
               </div>
             ))}
           </div>
-
           <div className="space-y-2">
             <p className="font-semibold text-foreground">Notes</p>
             <ul className="text-muted-foreground space-y-1">
-              <li>• Yellow bars: Weather-dependent tasks</li>
-              <li>• Drag to reschedule (if editable)</li>
-              <li>• Updated in real-time from database</li>
+              <li>• Yellow bars: Weather-sensitive tasks</li>
+              {!readOnly && <li>• Drag bars horizontally to reschedule</li>}
+              <li>• Only tasks with dates are shown</li>
             </ul>
           </div>
         </div>
