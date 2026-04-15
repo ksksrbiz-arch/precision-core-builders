@@ -528,3 +528,27 @@ export const billingEvents = pgTable("billing_events", {
 
 export type BillingEvent = typeof billingEvents.$inferSelect;
 export type InsertBillingEvent = typeof billingEvents.$inferInsert;
+
+// ─── Site Plans (Excalidraw canvas data) ─────────────────────────────────────
+
+export const sitePlans = pgTable("site_plans", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id, {
+    onDelete: "set null",
+  }),
+  authorId: uuid("author_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  name: varchar("name", { length: 300 }).notNull().default("Untitled Site Plan"),
+  /** JSON-serialised Excalidraw elements array */
+  elements: text("elements").notNull().default("[]"),
+  /** JSON-serialised Excalidraw appState partial */
+  appState: text("app_state").notNull().default("{}"),
+  /** Base-64 PNG thumbnail (small, generated on save) */
+  thumbnailDataUrl: text("thumbnail_data_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type SitePlan = typeof sitePlans.$inferSelect;
+export type InsertSitePlan = typeof sitePlans.$inferInsert;
