@@ -80,7 +80,7 @@ export async function logAdminAction(
   });
 
   // Only persist to ledger when a valid project ID is available.
-  if (!projectId || projectId <= 0) return;
+  if (!projectId || !Number.isInteger(projectId) || projectId <= 0) return;
 
   try {
     const { error } = await db.from("ledger_entries").insert({

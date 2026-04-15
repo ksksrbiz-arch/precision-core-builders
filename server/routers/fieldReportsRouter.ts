@@ -157,11 +157,14 @@ export const fieldReportsRouter = router({
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
       // Fetch project_id before deletion for audit log.
-      const { data: report } = await db
+      const { data: report, error: fetchError } = await db
         .from("field_reports")
         .select("project_id")
         .eq("id", input.id)
         .single();
+      if (fetchError || !report) {
+        throw new Error(fetchError?.message ?? "Field report not found");
+      }
       const { error } = await db
         .from("field_reports")
         .delete()
@@ -171,7 +174,7 @@ export const fieldReportsRouter = router({
         db,
         ctx,
         "fieldReport.delete",
-        report?.project_id,
+        report.project_id,
         { reportId: input.id }
       );
       return { success: true };

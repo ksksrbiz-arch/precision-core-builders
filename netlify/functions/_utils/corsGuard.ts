@@ -40,7 +40,13 @@ const ALLOWED_ORIGINS = buildAllowedOrigins();
 
 /**
  * Determine whether `origin` is trusted.
- * `null`/`undefined` origins (direct/server-to-server calls) are allowed.
+ *
+ * `null`/`undefined` origins (direct/server-to-server calls, e.g. curl, Postman,
+ * or n8n webhooks) are allowed.  This is a deliberate tradeoff: requiring an
+ * `Origin` header would break legitimate server-to-server integrations such as
+ * n8n workflows and health-check monitors.  Authentication (verifyAuth/verifyAdmin)
+ * provides the primary protection for sensitive operations; CORS provides an
+ * additional browser-level defence-in-depth layer.
  */
 export function isOriginAllowed(origin: string | undefined | null): boolean {
   if (!origin) return true; // server-to-server or curl — allow
