@@ -2,10 +2,11 @@
  * ScrollProgressBar — thin gold bar at top of viewport showing scroll depth.
  * Respects prefers-reduced-motion by using opacity-only fallback.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function ScrollProgressBar() {
   const [progress, setProgress] = useState(0);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const update = () => {
@@ -13,10 +14,21 @@ export function ScrollProgressBar() {
       const docHeight =
         document.documentElement.scrollHeight - window.innerHeight;
       setProgress(docHeight > 0 ? (scrollTop / docHeight) * 100 : 0);
+      rafRef.current = null;
     };
-    window.addEventListener("scroll", update, { passive: true });
+
+    const onScroll = () => {
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(update);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
     update();
-    return () => window.removeEventListener("scroll", update);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   if (progress <= 0) return null;
@@ -37,18 +49,37 @@ export function ScrollProgressBar() {
 /**
  * BackToTop — floating button that appears after scrolling down,
  * smoothly returns user to the top of the page.
+ * Respects prefers-reduced-motion.
  */
 export function BackToTop() {
   const [visible, setVisible] = useState(false);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const h = () => setVisible(window.scrollY > 600);
-    window.addEventListener("scroll", h, { passive: true });
-    return () => window.removeEventListener("scroll", h);
+    const update = () => {
+      setVisible(window.scrollY > 600);
+      rafRef.current = null;
+    };
+
+    const onScroll = () => {
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(update);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  const scrollTop = () =>
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const scrollTop = () => {
+    const prefersReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    window.scrollTo({ top: 0, behavior: prefersReduced ? "auto" : "smooth" });
+  };
 
   return (
     <button

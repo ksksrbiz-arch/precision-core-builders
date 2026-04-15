@@ -12,47 +12,75 @@ interface SEOOptions {
 
 const SITE_NAME = "Precision Core Builders";
 
+function getOrCreateMeta(
+  selector: string,
+  attrName: string,
+  attrValue: string
+): HTMLMetaElement {
+  let el = document.querySelector<HTMLMetaElement>(selector);
+  if (!el) {
+    el = document.createElement("meta");
+    el.setAttribute(attrName, attrValue);
+    document.head.appendChild(el);
+  }
+  return el;
+}
+
+function getOrCreateLink(
+  selector: string,
+  rel: string
+): HTMLLinkElement {
+  let el = document.querySelector<HTMLLinkElement>(selector);
+  if (!el) {
+    el = document.createElement("link");
+    el.rel = rel;
+    document.head.appendChild(el);
+  }
+  return el;
+}
+
 export function useSEO({ title, description, canonical }: SEOOptions) {
   useEffect(() => {
-    // Update document title
-    document.title = `${title} | ${SITE_NAME}`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
 
-    // Update meta description
+    // Document title
+    document.title = fullTitle;
+
+    // Meta description
     if (description) {
-      let metaDesc = document.querySelector<HTMLMetaElement>(
-        'meta[name="description"]'
+      const metaDesc = getOrCreateMeta(
+        'meta[name="description"]',
+        "name",
+        "description"
       );
-      if (metaDesc) {
-        metaDesc.content = description;
-      }
+      metaDesc.content = description;
     }
 
-    // Update OG title
-    let ogTitle = document.querySelector<HTMLMetaElement>(
-      'meta[property="og:title"]'
+    // OG title
+    const ogTitle = getOrCreateMeta(
+      'meta[property="og:title"]',
+      "property",
+      "og:title"
     );
-    if (ogTitle) {
-      ogTitle.content = `${title} | ${SITE_NAME}`;
-    }
+    ogTitle.content = fullTitle;
 
-    // Update OG description
+    // OG description
     if (description) {
-      let ogDesc = document.querySelector<HTMLMetaElement>(
-        'meta[property="og:description"]'
+      const ogDesc = getOrCreateMeta(
+        'meta[property="og:description"]',
+        "property",
+        "og:description"
       );
-      if (ogDesc) {
-        ogDesc.content = description;
-      }
+      ogDesc.content = description;
     }
 
-    // Update canonical
+    // Canonical
     if (canonical) {
-      let canonicalEl = document.querySelector<HTMLLinkElement>(
-        'link[rel="canonical"]'
+      const canonicalEl = getOrCreateLink(
+        'link[rel="canonical"]',
+        "canonical"
       );
-      if (canonicalEl) {
-        canonicalEl.href = canonical;
-      }
+      canonicalEl.href = canonical;
     }
 
     // Reset to default on unmount
