@@ -1,5 +1,6 @@
 import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { logAdminAction } from "../_core/auditLog";
 import { z } from "zod";
 
 const ProjectStatusEnum = z.enum([
@@ -78,7 +79,7 @@ export const projectsRouter = router({
 
   create: adminProcedure
     .input(CreateProjectInput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { data, error } = await db
         .from("projects")
         .insert({
@@ -102,6 +103,11 @@ export const projectsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "project.create", data.id, {
+        name: data.name,
+        clientId: data.client_id,
+        status: data.status,
+      });
       return data;
     }),
 
@@ -111,7 +117,7 @@ export const projectsRouter = router({
         .object({ id: z.number().int().positive() })
         .merge(CreateProjectInput.partial())
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const {
         id,
         clientId,
@@ -153,6 +159,12 @@ export const projectsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "project.update", id, {
+        updatedFields: Object.keys(rest).concat(
+          clientId !== undefined ? ["clientId"] : [],
+          projectType !== undefined ? ["projectType"] : []
+        ),
+      });
       return data;
     }),
 
@@ -189,7 +201,10 @@ export const projectsRouter = router({
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      await logAdminAction(db, ctx, "project.delete", input.id, {
+        projectId: input.id,
+      });
       const { error } = await db.from("projects").delete().eq("id", input.id);
       if (error) throw new Error(error.message);
       return { success: true };

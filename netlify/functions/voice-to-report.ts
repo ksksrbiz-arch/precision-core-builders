@@ -7,6 +7,9 @@ import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
 import { transcribeAudio } from "../../server/_core/voiceTranscription";
 import { invokeLLM } from "../../server/_core/llm";
+import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
+import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
+import { verifyAuth } from "./_utils/authGuard";
 
 const db = createClient(
   process.env.SUPABASE_URL!,
@@ -27,49 +30,56 @@ Extract and return ONLY valid JSON in this exact format:
 Be concise, professional, and factual. If a category has nothing to report, use an empty array.`;
 
 export const handler: Handler = async event => {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  };
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
 
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+    return { statusCode: 200, headers, body: "" };
   }
+
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: corsHeaders,
+      headers,
       body: JSON.stringify({ error: "Method not allowed" }),
     };
   }
 
   try {
-    // Verify auth
-    const token = event.headers["authorization"]?.replace("Bearer ", "");
-    if (!token)
+    // Require authentication — voice reports are always admin-submitted.
+    const authResult = await verifyAuth(event.headers);
+    if (!authResult.ok) {
       return {
-        statusCode: 401,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: "Unauthorized" }),
+        statusCode: authResult.statusCode,
+        headers,
+        body: JSON.stringify({ error: authResult.message }),
       };
+    }
 
-    const {
-      data: { user },
-      error: authError,
-    } = await db.auth.getUser(token);
-    if (authError || !user)
+    // Rate limit: 5 transcriptions per hour per authenticated user.
+    const rl = checkRateLimit(`voice:${authResult.user.id}`, {
+      maxRequests: 5,
+      windowMs: 60 * 60_000,
+    });
+    if (!rl.allowed) {
       return {
-        statusCode: 401,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: "Unauthorized" }),
+        statusCode: 429,
+        headers: { ...headers, ...rateLimitHeaders(rl) },
+        body: JSON.stringify({
+          error: "Voice report limit reached. Please wait before submitting again.",
+        }),
       };
+    }
 
     // Parse multipart body
     const body = event.body;
     if (!body)
       return {
         statusCode: 400,
-        headers: corsHeaders,
+        headers,
         body: JSON.stringify({ error: "No body" }),
       };
 
@@ -81,7 +91,7 @@ export const handler: Handler = async event => {
     if (!projectId) {
       return {
         statusCode: 400,
-        headers: corsHeaders,
+        headers,
         body: JSON.stringify({ error: "projectId required" }),
       };
     }
@@ -156,7 +166,7 @@ export const handler: Handler = async event => {
       .from("field_reports")
       .insert({
         project_id: projectId,
-        author_id: user.id,
+        author_id: authResult.user.id,
         report_date: new Date().toISOString(),
         transcription: transcription.text,
         summary: reportData.summary,
@@ -173,17 +183,18 @@ export const handler: Handler = async event => {
 
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers,
       body: JSON.stringify({ success: true, report }),
     };
   } catch (err) {
     console.error("[voice-to-report]", err);
     return {
       statusCode: 500,
-      headers: corsHeaders,
+      headers,
       body: JSON.stringify({
         error: err instanceof Error ? err.message : "Internal error",
       }),
     };
   }
 };
+

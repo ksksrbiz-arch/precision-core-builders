@@ -1,6 +1,9 @@
 import type { Handler } from "@netlify/functions";
 import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "../../server/_core/env";
+import { checkRateLimit, getClientIp, rateLimitHeaders } from "./_utils/rateLimiter";
+import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
+import { verifyAuth } from "./_utils/authGuard";
 
 /**
  * Vision Studio — Claude Vision API endpoint.
@@ -46,21 +49,46 @@ const MODE_PROMPTS: Record<AnalysisMode, string> = {
 };
 
 export const handler: Handler = async event => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Content-Type": "application/json",
-  };
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
 
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers, body: "" };
   }
+
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
       headers,
       body: JSON.stringify({ error: "Method not allowed" }),
+    };
+  }
+
+  // Vision analysis requires authentication — it processes private site photos.
+  const authResult = await verifyAuth(event.headers);
+  if (!authResult.ok) {
+    return {
+      statusCode: authResult.statusCode,
+      headers,
+      body: JSON.stringify({ error: authResult.message }),
+    };
+  }
+
+  // Rate limit: 15 analyses per hour per authenticated user.
+  const rl = checkRateLimit(`vision:${authResult.user.id}`, {
+    maxRequests: 15,
+    windowMs: 60 * 60_000,
+  });
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...headers, ...rateLimitHeaders(rl) },
+      body: JSON.stringify({
+        error: "Analysis limit reached. Please wait before submitting more photos.",
+      }),
     };
   }
 
