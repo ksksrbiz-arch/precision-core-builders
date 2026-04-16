@@ -38,8 +38,10 @@ const DevLogin = lazy(() => import("./pages/auth/DevLogin"));
 // Admin pages
 const CommandCenter = lazy(() => import("./pages/admin/CommandCenter"));
 const ProjectsList = lazy(() => import("./pages/admin/ProjectsList"));
+const ProjectNew = lazy(() => import("./pages/admin/ProjectNew"));
 const ProjectDetail = lazy(() => import("./pages/admin/ProjectDetail"));
 const FieldReportNew = lazy(() => import("./pages/admin/FieldReportNew"));
+const FieldReportDetail = lazy(() => import("./pages/admin/FieldReportDetail"));
 const SitePlanBuilder = lazy(() => import("./pages/admin/SitePlanBuilder"));
 const Guides = lazy(() => import("./pages/admin/Guides"));
 const ScheduleView = lazy(() => import("./pages/admin/ScheduleView"));
@@ -62,6 +64,9 @@ const FinishSelectionsAdmin = lazy(
 );
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
+const NotificationsView = lazy(
+  () => import("./pages/admin/NotificationsView")
+);
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -131,8 +136,10 @@ function Router() {
         {/* Admin */}
         <Route path="/admin" component={CommandCenter} />
         <Route path="/admin/projects" component={ProjectsList} />
+        <Route path="/admin/projects/new" component={ProjectNew} />
         <Route path="/admin/projects/:id" component={ProjectDetail} />
         <Route path="/admin/field-reports/new" component={FieldReportNew} />
+        <Route path="/admin/field-reports/:id" component={FieldReportDetail} />
         <Route path="/admin/field-reports" component={FieldReportsList} />
         <Route path="/admin/clients/:id" component={ClientDetail} />
         <Route path="/admin/clients" component={ClientsList} />
@@ -151,6 +158,7 @@ function Router() {
         <Route path="/admin/finishes" component={FinishSelectionsAdmin} />
         <Route path="/admin/analytics" component={Analytics} />
         <Route path="/admin/activity-log" component={ActivityLog} />
+        <Route path="/admin/notifications" component={NotificationsView} />
 
         {/* Client portal — auth required */}
         <Route path="/portal">

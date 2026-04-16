@@ -153,6 +153,29 @@ export const fieldReportsRouter = router({
       return data;
     }),
 
+  unpublish: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const { data, error } = await db
+        .from("field_reports")
+        .update({
+          published_to_client: false,
+          published_at: null,
+        })
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      await logAdminAction(
+        db,
+        ctx,
+        "fieldReport.unpublish",
+        data.project_id,
+        { reportId: input.id }
+      );
+      return data;
+    }),
+
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
