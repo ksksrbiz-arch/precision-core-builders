@@ -5,6 +5,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { trpc } from "@/lib/trpc";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
   BookOpen,
   Calendar,
@@ -22,12 +23,21 @@ export default function FieldReportsList() {
   const [, setLocation] = useLocation();
   const [page, setPage] = useState(1);
   const [projectId, setProjectId] = useState<number | undefined>(undefined);
+  const utils = trpc.useUtils();
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
   const { data, isLoading } = trpc.fieldReports.list.useQuery({
     page,
     pageSize: 20,
     projectId,
+  });
+
+  // Live: new reports appear without manual refresh
+  useRealtimeTable({
+    table: "field_reports",
+    onUpdate: () => {
+      utils.fieldReports.list.invalidate();
+    },
   });
 
   const parseJSON = (s: string | null): string[] => {
@@ -114,7 +124,9 @@ export default function FieldReportsList() {
                 <button
                   key={report.id}
                   onClick={() =>
-                    setLocation(`/admin/projects/${report.project_id}`)
+                    setLocation(
+                      `/admin/projects/${report.project_id}?tab=reports`
+                    )
                   }
                   className="w-full text-left bg-card border border-border/60 p-5 hover:border-primary/30 hover:bg-primary/[0.02] transition-all"
                 >
@@ -149,6 +161,7 @@ export default function FieldReportsList() {
                           <Clock className="h-3 w-3" /> Draft
                         </span>
                       )}
+                      <Eye className="h-3.5 w-3.5 text-muted-foreground/30" />
                     </div>
                   </div>
 
