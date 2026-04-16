@@ -150,9 +150,6 @@ export function useRealtimeSubscription<T = any>(
       )
       .subscribe((status) => {
         setIsConnected(status === "SUBSCRIBED");
-        if (status === "SUBSCRIBED") {
-          console.log(`[Realtime] Subscribed to ${table}`);
-        }
       });
 
     subscriptionRef.current = subscription;
@@ -181,26 +178,14 @@ export function useRealtimeProjects(filters?: {
   user_id?: string;
   status?: string;
 }) {
-  return useRealtimeSubscription(
-    "projects",
-    filters,
-    (payload) => console.log("[Realtime] Project created:", payload.new),
-    (payload) => console.log("[Realtime] Project updated:", payload.new),
-    (payload) => console.log("[Realtime] Project deleted:", payload.old)
-  );
+  return useRealtimeSubscription("projects", filters);
 }
 
 /**
  * Specialized hook for schedule items
  */
 export function useRealtimeSchedule(projectId: number) {
-  return useRealtimeSubscription(
-    "schedule_items",
-    { project_id: projectId },
-    (payload) => console.log("[Realtime] Task created:", payload.new),
-    (payload) => console.log("[Realtime] Task updated:", payload.new),
-    (payload) => console.log("[Realtime] Task deleted:", payload.old)
-  );
+  return useRealtimeSubscription("schedule_items", { project_id: projectId });
 }
 
 /**
@@ -209,9 +194,7 @@ export function useRealtimeSchedule(projectId: number) {
 export function useRealtimeFieldReports(projectId?: number) {
   return useRealtimeSubscription(
     "field_reports",
-    projectId ? { project_id: projectId } : undefined,
-    (payload) => console.log("[Realtime] Report filed:", payload.new),
-    (payload) => console.log("[Realtime] Report updated:", payload.new)
+    projectId ? { project_id: projectId } : undefined
   );
 }
 
@@ -219,36 +202,23 @@ export function useRealtimeFieldReports(projectId?: number) {
  * Specialized hook for materials/procurement
  */
 export function useRealtimeMaterials(projectId: number) {
-  return useRealtimeSubscription(
-    "materials",
-    { project_id: projectId },
-    (payload) => console.log("[Realtime] Material added:", payload.new),
-    (payload) => console.log("[Realtime] Material updated:", payload.new),
-    (payload) => console.log("[Realtime] Material removed:", payload.old)
-  );
+  return useRealtimeSubscription("materials", { project_id: projectId });
 }
 
 /**
  * Specialized hook for client communications
  */
 export function useRealtimeMessages(projectId: number) {
-  return useRealtimeSubscription(
-    "client_communications",
-    { project_id: projectId },
-    (payload) => console.log("[Realtime] Message received:", payload.new)
-  );
+  return useRealtimeSubscription("client_communications", {
+    project_id: projectId,
+  });
 }
 
 /**
  * Specialized hook for billing/invoices
  */
 export function useRealtimeInvoices(clientId: string) {
-  return useRealtimeSubscription(
-    "invoices",
-    { client_id: clientId },
-    (payload) => console.log("[Realtime] Invoice created:", payload.new),
-    (payload) => console.log("[Realtime] Invoice updated:", payload.new)
-  );
+  return useRealtimeSubscription("invoices", { client_id: clientId });
 }
 
 /**
