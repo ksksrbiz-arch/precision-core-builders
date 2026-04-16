@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
-import { ArrowLeft, Plus, Calendar, DollarSign, MapPin, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, DollarSign, MapPin, Pencil, Save, TrendingUp, TrendingDown, X } from "lucide-react";
 import { useLocation, useParams, useSearch } from "wouter";
 import { useState } from "react";
 import { StatusBadge } from "./CommandCenter";
@@ -20,6 +20,24 @@ export default function ProjectDetail() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab(search));
+  const [editingOverview, setEditingOverview] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    description: string;
+    projectType: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    estimatedBudget: string;
+    contractedBudget: string;
+    estimatedStartDate: string;
+    estimatedEndDate: string;
+    permitNumbers: string;
+    siteCamUrl: string;
+    clientPortalEnabled: boolean;
+  } | null>(null);
+
   const projectId = parseInt(id ?? "0");
   const { data: project, isLoading } = trpc.projects.getById.useQuery({
     id: projectId,
@@ -54,15 +72,81 @@ export default function ProjectDetail() {
     invalidate: () => utils.projects.getById.invalidate({ id: projectId }),
   });
 
-  const appendLedger = useMutationWithToast(trpc.ledger.append.useMutation(), {
-    success: "Entry Saved",
-    successMessage: "Ledger entry added.",
+  const updateProject = useMutationWithToast(trpc.projects.update.useMutation(), {
+    success: "Project Saved",
+    successMessage: "Project details updated.",
     error: "Save Failed",
-    errorMessage: "Failed to add ledger entry. Please try again.",
-    invalidate: () => utils.ledger.list.invalidate({ projectId }),
+    errorMessage: "Failed to update project. Please try again.",
+    invalidate: () => utils.projects.getById.invalidate({ id: projectId }),
+    onSuccess: () => setEditingOverview(false),
   });
 
 
+  const startEditOverview = () => {
+    if (!project) return;
+    setEditForm({
+      name: project.name ?? "",
+      description: project.description ?? "",
+      projectType: project.project_type ?? "",
+      address: project.address ?? "",
+      city: project.city ?? "",
+      state: project.state ?? "OR",
+      zip: project.zip ?? "",
+      estimatedBudget: project.estimated_budget ? String(project.estimated_budget) : "",
+      contractedBudget: project.contracted_budget ? String(project.contracted_budget) : "",
+      estimatedStartDate: project.estimated_start_date
+        ? new Date(project.estimated_start_date).toISOString().split("T")[0]
+        : "",
+      estimatedEndDate: project.estimated_end_date
+        ? new Date(project.estimated_end_date).toISOString().split("T")[0]
+        : "",
+      permitNumbers: project.permit_numbers ?? "",
+      siteCamUrl: project.site_cam_url ?? "",
+      clientPortalEnabled: project.client_portal_enabled ?? true,
+    });
+    setEditingOverview(true);
+  };
+
+  const cancelEditOverview = () => {
+    setEditingOverview(false);
+    setEditForm(null);
+  };
+
+  const saveEditOverview = () => {
+    if (!editForm || !editForm.name) return;
+    updateProject.mutate({
+      id: projectId,
+      name: editForm.name,
+      description: editForm.description || undefined,
+      projectType: editForm.projectType || undefined,
+      address: editForm.address || undefined,
+      city: editForm.city || undefined,
+      state: editForm.state || "OR",
+      zip: editForm.zip || undefined,
+      estimatedBudget: editForm.estimatedBudget
+        ? parseFloat(editForm.estimatedBudget)
+        : undefined,
+      contractedBudget: editForm.contractedBudget
+        ? parseFloat(editForm.contractedBudget)
+        : undefined,
+      estimatedStartDate: editForm.estimatedStartDate
+        ? new Date(editForm.estimatedStartDate).toISOString()
+        : undefined,
+      estimatedEndDate: editForm.estimatedEndDate
+        ? new Date(editForm.estimatedEndDate).toISOString()
+        : undefined,
+      permitNumbers: editForm.permitNumbers || undefined,
+      siteCamUrl: editForm.siteCamUrl || undefined,
+      clientPortalEnabled: editForm.clientPortalEnabled,
+    });
+  };
+
+  const ef = editForm;
+  const setEf = (key: string, value: string | boolean) =>
+    setEditForm(prev => (prev ? { ...prev, [key]: value } : prev));
+
+  const inputCls =
+    "w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60";
 
   if (isLoading)
     return (
@@ -200,44 +284,210 @@ export default function ProjectDetail() {
         {/* Tab content */}
         {activeTab === "overview" && (
           <div className="space-y-4">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-              { label: "Client", value: (project as any).clients?.name ?? "—" },
-              { label: "Project Type", value: project.project_type ?? "—" },
-              { label: "Status", value: project.status },
-              {
-                label: "Estimated Budget",
-                value: fmt(project.estimated_budget),
-              },
-              {
-                label: "Contracted Budget",
-                value: fmt(project.contracted_budget),
-              },
-              { label: "Actual Cost", value: fmt(project.actual_cost) },
-              {
-                label: "License",
-                value: project.license_number ?? "CCB #246527",
-              },
-              {
-                label: "Portal Enabled",
-                value: project.client_portal_enabled ? "Yes" : "No",
-              },
-              {
-                label: "Permit Numbers",
-                value: project.permit_numbers ?? "None on file",
-              },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-card border border-border/60 p-4">
-                <p
-                  className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {label}
-                </p>
-                <p className="text-sm text-foreground">{String(value)}</p>
+            {editingOverview && ef ? (
+              /* Edit form */
+              <div className="bg-card border border-primary/30 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p
+                    className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Edit Project Details
+                  </p>
+                  <button
+                    onClick={cancelEditOverview}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label
+                      className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Project Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={ef.name}
+                      onChange={e => setEf("name", e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label
+                      className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Description
+                    </label>
+                    <textarea
+                      value={ef.description}
+                      onChange={e => setEf("description", e.target.value)}
+                      rows={2}
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
+                  {[
+                    { key: "projectType", label: "Project Type", type: "text" },
+                    { key: "address", label: "Address", type: "text" },
+                    { key: "city", label: "City", type: "text" },
+                    { key: "state", label: "State", type: "text" },
+                    { key: "zip", label: "ZIP", type: "text" },
+                    { key: "permitNumbers", label: "Permit Numbers", type: "text" },
+                    { key: "siteCamUrl", label: "Site Camera URL", type: "url" },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label
+                        className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {f.label}
+                      </label>
+                      <input
+                        type={f.type}
+                        value={(ef as any)[f.key]}
+                        onChange={e => setEf(f.key, e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  ))}
+                  {[
+                    { key: "estimatedBudget", label: "Estimated Budget ($)" },
+                    { key: "contractedBudget", label: "Contracted Budget ($)" },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label
+                        className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {f.label}
+                      </label>
+                      <input
+                        type="number"
+                        value={(ef as any)[f.key]}
+                        onChange={e => setEf(f.key, e.target.value)}
+                        min="0"
+                        className={inputCls}
+                      />
+                    </div>
+                  ))}
+                  {[
+                    { key: "estimatedStartDate", label: "Start Date" },
+                    { key: "estimatedEndDate", label: "End Date" },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label
+                        className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {f.label}
+                      </label>
+                      <input
+                        type="date"
+                        value={(ef as any)[f.key]}
+                        onChange={e => setEf(f.key, e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={ef.clientPortalEnabled}
+                      onChange={e => setEf("clientPortalEnabled", e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-10 h-5 rounded-full transition-colors ${
+                        ef.clientPortalEnabled ? "bg-primary" : "bg-input border border-border"
+                      }`}
+                    />
+                    <div
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        ef.clientPortalEnabled ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </div>
+                  <span className="text-sm text-foreground">
+                    Client portal access enabled
+                  </span>
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={cancelEditOverview}
+                    className="px-4 py-2 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveEditOverview}
+                    disabled={!ef.name || updateProject.isPending}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Save className="h-3 w-3" />
+                    {updateProject.isPending ? "Saving…" : "Save Changes"}
+                  </button>
+                </div>
               </div>
-            ))}
-            </div>
+            ) : (
+              /* Read view */
+              <>
+                <div className="flex justify-end mb-1">
+                  <button
+                    onClick={startEditOverview}
+                    className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Pencil className="h-3 w-3" /> Edit Details
+                  </button>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                  { label: "Client", value: (project as any).clients?.name ?? "—" },
+                  { label: "Project Type", value: project.project_type ?? "—" },
+                  { label: "Status", value: project.status },
+                  {
+                    label: "Estimated Budget",
+                    value: fmt(project.estimated_budget),
+                  },
+                  {
+                    label: "Contracted Budget",
+                    value: fmt(project.contracted_budget),
+                  },
+                  { label: "Actual Cost", value: fmt(project.actual_cost) },
+                  {
+                    label: "License",
+                    value: project.license_number ?? "CCB #246527",
+                  },
+                  {
+                    label: "Portal Enabled",
+                    value: project.client_portal_enabled ? "Yes" : "No",
+                  },
+                  {
+                    label: "Permit Numbers",
+                    value: project.permit_numbers ?? "None on file",
+                  },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-card border border-border/60 p-4">
+                    <p
+                      className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      {label}
+                    </p>
+                    <p className="text-sm text-foreground">{String(value)}</p>
+                  </div>
+                ))}
+                </div>
+              </>
+            )}
             {/* Status update control */}
             <ProjectStatusUpdate projectId={projectId} currentStatus={project.status} />
           </div>

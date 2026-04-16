@@ -23,6 +23,7 @@ import {
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   BarChart3,
+  Bell,
   BookOpen,
   Calendar,
   Camera,
@@ -64,6 +65,7 @@ const NAV = [
   { icon: Wrench, label: "Sub-Contractors", path: "/admin/sub-contractors" },
   { icon: Shield, label: "Ledger", path: "/admin/ledger" },
   { icon: CreditCard, label: "Billing", path: "/admin/billing" },
+  { icon: Bell, label: "Notifications", path: "/admin/notifications" },
   { icon: Image, label: "Portfolio CMS", path: "/admin/portfolio-cms" },
   { icon: Camera, label: "Vision Studio", path: "/admin/vision-studio" },
   { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
