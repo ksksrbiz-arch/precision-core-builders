@@ -130,16 +130,19 @@ export function SiteNav() {
   }, []);
 
   function handleLogoTap(e: React.MouseEvent) {
+    e.preventDefault();
     const next = tapCount + 1;
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
     if (next >= TAP_TARGET) {
-      e.preventDefault();
       setTapCount(0);
-      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
       setShowDevModal(true);
     } else {
       setTapCount(next);
-      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
-      tapTimerRef.current = setTimeout(() => setTapCount(0), TAP_RESET_MS);
+      tapTimerRef.current = setTimeout(() => {
+        setTapCount(0);
+        // Single tap with no follow-up = user wants to go home
+        if (next === 1) window.location.href = "/";
+      }, TAP_RESET_MS);
     }
   }
 
