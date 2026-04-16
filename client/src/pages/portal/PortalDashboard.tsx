@@ -26,12 +26,16 @@ export default function PortalDashboard() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
 
-  // Get projects for this client
-  const { data: projects } = trpc.projects.list.useQuery(
+  // Portal clients use myProject; admins previewing the portal use list.
+  const isAdmin = user?.role === "admin";
+  const { data: myProject } = trpc.projects.myProject.useQuery(undefined, {
+    enabled: !!user && !isAdmin,
+  });
+  const { data: adminProjects } = trpc.projects.list.useQuery(
     { pageSize: 1 },
-    { enabled: !!user }
+    { enabled: !!user && isAdmin }
   );
-  const project = projects?.data?.[0];
+  const project = isAdmin ? adminProjects?.data?.[0] : myProject;
 
   // Upcoming schedule items for this project
   const { data: schedule } = trpc.schedule.list.useQuery(
@@ -51,7 +55,8 @@ export default function PortalDashboard() {
   useRealtimeTable({
     table: "projects",
     onUpdate: () => {
-      utils.projects.list.invalidate();
+      utils.projects.myProject.invalidate();
+      if (isAdmin) utils.projects.list.invalidate();
     },
   });
   useRealtimeTable({

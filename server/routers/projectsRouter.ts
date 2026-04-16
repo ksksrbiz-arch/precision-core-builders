@@ -56,6 +56,25 @@ export const projectsRouter = router({
       return { data: data ?? [], total: count ?? 0 };
     }),
 
+  // Returns the authenticated client's own active project (portal use).
+  myProject: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) return null;
+    // Admins don't use this endpoint; they use the admin list.
+    if (ctx.user.role === "admin") return null;
+    // Filter by the client row whose user_id matches the authenticated user.
+    // Supabase foreign-table filters use the `foreignTable.column` syntax.
+    const { data, error } = await db
+      .from("projects")
+      .select("*, clients!inner(id,name,email,phone,user_id)")
+      .eq("client_portal_enabled", true)
+      .eq("clients.user_id", ctx.user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ?? null;
+  }),
+
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input, ctx }) => {

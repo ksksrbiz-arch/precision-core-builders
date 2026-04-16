@@ -19,8 +19,8 @@ export type SessionUser = {
 };
 
 export type TrpcContext = {
-  req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  req?: CreateExpressContextOptions["req"];
+  res?: CreateExpressContextOptions["res"];
   user: SessionUser | null;
 };
 
