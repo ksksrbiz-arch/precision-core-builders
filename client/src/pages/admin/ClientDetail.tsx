@@ -217,7 +217,7 @@ export default function ClientDetail() {
                   <span className="text-lg font-bold text-primary">
                     {client.name
                       .split(" ")
-                      .map((n: string) => n[0])
+                      .map((word: string) => word[0])
                       .join("")
                       .toUpperCase()
                       .slice(0, 2)}

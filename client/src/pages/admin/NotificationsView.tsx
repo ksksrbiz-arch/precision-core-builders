@@ -215,9 +215,9 @@ export default function NotificationsView() {
                   className={selectCls}
                 >
                   <option value="">No project</option>
-                  {projects?.data?.map((p: any) => (
-                    <option key={p.id} value={String(p.id)}>
-                      {p.name}
+                  {projects?.data?.map((project: any) => (
+                    <option key={project.id} value={String(project.id)}>
+                      {project.name}
                     </option>
                   ))}
                 </select>

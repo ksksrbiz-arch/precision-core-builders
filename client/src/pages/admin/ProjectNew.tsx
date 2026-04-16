@@ -8,7 +8,16 @@ import { ArrowLeft, FolderPlus } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
-const STATUS_OPTIONS = [
+type ProjectStatus =
+  | "lead"
+  | "estimate_sent"
+  | "contracted"
+  | "in_progress"
+  | "punch_list"
+  | "complete"
+  | "on_hold";
+
+const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
   { value: "lead", label: "Lead" },
   { value: "estimate_sent", label: "Estimate Sent" },
   { value: "contracted", label: "Contracted" },
@@ -121,7 +130,7 @@ export default function ProjectNew() {
       clientId: parseInt(form.clientId),
       name: form.name,
       description: form.description || undefined,
-      status: form.status as any,
+      status: form.status as ProjectStatus,
       projectType: form.projectType || undefined,
       address: form.address || undefined,
       city: form.city || undefined,
