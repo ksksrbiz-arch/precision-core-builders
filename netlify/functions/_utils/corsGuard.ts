@@ -78,7 +78,7 @@ export function corsHeaders(
 ): Record<string, string> {
   const allowed = isOriginAllowed(origin);
   const allowOrigin =
-    allowed && origin ? origin : "https://precision-core.netlify.app";
+    allowed && origin ? origin : "https://precisioncorebuilders.com";
 
   return {
     "Access-Control-Allow-Origin": allowOrigin,

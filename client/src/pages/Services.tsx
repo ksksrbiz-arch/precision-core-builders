@@ -78,7 +78,7 @@ export default function ServicesPage() {
     title: "Construction Services — Eugene, Oregon",
     description:
       "Precision Core Builders offers residential construction, remodels, new builds, restoration, outdoor spaces, painting, roofing, and custom cabinets in Eugene, OR.",
-    canonical: "https://precision-core.netlify.app/services",
+    canonical: "https://precisioncorebuilders.com/services",
   });
 
   return (

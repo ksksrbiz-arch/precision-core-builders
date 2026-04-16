@@ -106,7 +106,7 @@ export default function FAQ() {
     title: "FAQ — Licensing, Permits & Process",
     description:
       "Answers to common questions about working with Precision Core Builders — licensing, permits, costs, timelines, and how we operate in Eugene, Oregon.",
-    canonical: "https://precision-core.netlify.app/faq",
+    canonical: "https://precisioncorebuilders.com/faq",
   });
 
   // Build FAQPage JSON-LD from the FAQ data

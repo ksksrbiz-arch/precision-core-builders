@@ -174,7 +174,7 @@ export default function Portfolio() {
     title: "Our Work — Project Portfolio",
     description:
       "Browse completed projects by Precision Core Builders — custom homes, renovations, additions, and restorations in Eugene and Lane County, Oregon.",
-    canonical: "https://precision-core.netlify.app/portfolio",
+    canonical: "https://precisioncorebuilders.com/portfolio",
   });
 
   const [active, setActive] = useState<Category>("All");
