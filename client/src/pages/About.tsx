@@ -61,7 +61,7 @@ export default function About() {
     title: "About Us — Eric & Mitch Tadlock",
     description:
       "Meet the Tadlock brothers — Eric and Mitch — the veteran carpenters behind Precision Core Builders. 20+ years of construction experience in Eugene, Oregon.",
-    canonical: "https://precisioncorebuilders.com/about",
+    canonical: "https://precision-core.netlify.app/about",
   });
 
   const heroRef = useRef(null);

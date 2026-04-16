@@ -42,7 +42,7 @@ export default function Contact() {
     title: "Contact Us — Free Estimate",
     description:
       "Contact Precision Core Builders for a free on-site estimate. Call Eric Tadlock at 541-852-5144 or fill out our form. Serving Eugene, Springfield, and Lane County, Oregon.",
-    canonical: "https://precisioncorebuilders.com/contact",
+    canonical: "https://precision-core.netlify.app/contact",
   });
 
   const [status, setStatus] = useState<Status>("idle");
