@@ -14,6 +14,16 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["server/**/*.test.ts", "server/**/*.spec.ts"],
+    include: [
+      "server/**/*.test.ts",
+      "server/**/*.spec.ts",
+      "netlify/functions/__tests__/onboarding-*.test.ts",
+      "client/src/pages/OnboardingWizard.test.ts",
+    ],
+    environmentMatchGlobs: [
+      ["client/**", "jsdom"],
+      ["netlify/**", "node"],
+      ["server/**", "node"],
+    ],
   },
 });

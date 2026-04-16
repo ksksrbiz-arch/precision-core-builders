@@ -49,6 +49,7 @@ const MaterialsView = lazy(() => import("./pages/admin/MaterialsView"));
 const BillingView = lazy(() => import("./pages/admin/BillingView"));
 const PortfolioAdmin = lazy(() => import("./pages/admin/PortfolioAdmin"));
 const SetupWizard = lazy(() => import("./pages/admin/SetupWizard"));
+const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
 const FieldReportsList = lazy(() => import("./pages/admin/FieldReportsList"));
 const ClientsList = lazy(() => import("./pages/admin/ClientsList"));
 const ClientDetail = lazy(() => import("./pages/admin/ClientDetail"));
@@ -64,9 +65,7 @@ const FinishSelectionsAdmin = lazy(
 );
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
-const NotificationsView = lazy(
-  () => import("./pages/admin/NotificationsView")
-);
+const NotificationsView = lazy(() => import("./pages/admin/NotificationsView"));
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -153,6 +152,9 @@ function Router() {
         <Route path="/admin/billing" component={BillingView} />
         <Route path="/admin/portfolio-cms" component={PortfolioAdmin} />
         <Route path="/admin/setup" component={SetupWizard} />
+
+        {/* Public token-gated onboarding wizard for new account owner */}
+        <Route path="/onboarding" component={OnboardingWizard} />
         <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
         <Route path="/admin/search" component={SearchView} />
         <Route path="/admin/finishes" component={FinishSelectionsAdmin} />
