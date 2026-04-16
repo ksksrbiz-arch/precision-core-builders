@@ -2,16 +2,24 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { ArrowLeft, Plus, Calendar, DollarSign, MapPin, TrendingUp, TrendingDown } from "lucide-react";
-import { useLocation, useParams } from "wouter";
+import { useLocation, useParams, useSearch } from "wouter";
 import { useState } from "react";
 import { StatusBadge } from "./CommandCenter";
+
+type TabId = "overview" | "reports" | "schedule" | "materials" | "ledger" | "profitability";
+
+function getInitialTab(search: string): TabId {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const tab = params.get("tab") as TabId | null;
+  const validTabs: TabId[] = ["overview", "reports", "schedule", "materials", "ledger", "profitability"];
+  return tab && validTabs.includes(tab) ? tab : "overview";
+}
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "reports" | "schedule" | "materials" | "ledger" | "profitability"
-  >("overview");
+  const search = useSearch();
+  const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab(search));
   const projectId = parseInt(id ?? "0");
   const { data: project, isLoading } = trpc.projects.getById.useQuery({
     id: projectId,

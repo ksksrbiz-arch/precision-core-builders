@@ -4,53 +4,11 @@
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { ASSETS } from "@/const";
+import { PortalLayout } from "@/components/layout/PortalLayout";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, DollarSign, LogOut, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, DollarSign, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/components/ToastProvider";
-
-function PortalNav() {
-  const { signOut } = useAuth();
-  return (
-    <header className="fixed top-0 inset-x-0 z-50 h-[64px] flex items-center border-b border-border/50 bg-background/95 backdrop-blur-md">
-      <div className="container flex items-center justify-between">
-        <a href="/" aria-label="Home">
-          <img
-            src={ASSETS.logo}
-            alt="Precision Core Builders"
-            className="h-8 w-auto"
-          />
-        </a>
-        <nav className="hidden sm:flex items-center gap-6">
-          {[
-            { label: "Overview", href: "/portal" },
-            { label: "Reports", href: "/portal/reports" },
-            { label: "Selections", href: "/portal/finishes" },
-            { label: "Ledger", href: "/portal/ledger" },
-            { label: "Payments", href: "/portal/payments" },
-          ].map(n => (
-            <a
-              key={n.href}
-              href={n.href}
-              className="text-[11px] font-semibold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              {n.label}
-            </a>
-          ))}
-        </nav>
-        <button
-          onClick={signOut}
-          className="flex items-center gap-2 text-[11px] font-semibold tracking-widest uppercase text-muted-foreground hover:text-destructive transition-colors"
-          style={{ fontFamily: "var(--font-condensed)" }}
-        >
-          <LogOut className="h-3.5 w-3.5" /> Sign Out
-        </button>
-      </div>
-    </header>
-  );
-}
 
 export default function PortalFinishes() {
   const { addToast } = useToast();
@@ -97,10 +55,8 @@ export default function PortalFinishes() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <PortalNav />
-      <main className="pt-[64px]">
-        <div className="container py-10 max-w-3xl">
+    <PortalLayout>
+      <div className="container py-10 max-w-3xl">
           <button
             onClick={() => setLocation("/portal")}
             className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary mb-6 transition-colors"
@@ -278,7 +234,6 @@ export default function PortalFinishes() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </PortalLayout>
   );
 }
