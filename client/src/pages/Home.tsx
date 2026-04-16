@@ -196,35 +196,38 @@ function Nav() {
 const HERO_SLIDES = [
   {
     // Sweeping aerial — partially-framed luxury home at golden hour
-    url: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=2000&q=90",
+    // Use w=1400&q=75 — visually indistinguishable from 2000/90 at full-bleed
+    // but ~60 % smaller payload. This URL also matches the <link rel="preload">
+    // in index.html so the browser fetches it before JS even runs.
+    url: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=75",
     alt: "Luxury custom home under construction — golden hour aerial view",
     // Ken Burns: slow zoom in from center
     animation: "hero-zoom-in",
   },
   {
     // Heavy timber framing — dramatic perspective looking up through rafters
-    url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=2000&q=90",
+    url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1400&q=75",
     alt: "Heavy timber frame construction — dramatic rafter perspective",
     // Ken Burns: slow drift right
     animation: "hero-drift-right",
   },
   {
     // Craftsman at work — carpenter precision detail shot, warm light
-    url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=2000&q=90",
+    url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1400&q=75",
     alt: "Master carpenter precision work — warm workshop light",
     // Ken Burns: slow pull back / zoom out
     animation: "hero-zoom-out",
   },
   {
     // Finished luxury home exterior — dramatic dusk sky, all lights on
-    url: "https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?auto=format&fit=crop&w=2000&q=90",
+    url: "https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?auto=format&fit=crop&w=1400&q=75",
     alt: "Completed custom home at dusk — lights glowing warm",
     // Ken Burns: slow drift left
     animation: "hero-drift-left",
   },
   {
     // Interior framing — daylight streaming through window openings, dust motes
-    url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=2000&q=90",
+    url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1400&q=75",
     alt: "Home framing interior — light streaming through window openings",
     // Ken Burns: diagonal zoom
     animation: "hero-zoom-diagonal",
@@ -330,6 +333,8 @@ function HeroSlideshow() {
             animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
           }}
           fetchPriority={current === 0 ? "high" : "auto"}
+          loading={current === 0 ? "eager" : "lazy"}
+          decoding={current === 0 ? "sync" : "async"}
         />
       </div>
 
