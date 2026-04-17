@@ -51,8 +51,15 @@ import { useCallback, useEffect, useState } from "react";
 const IS_DEV = import.meta.env.VITE_DEV_MODE === "true";
 const DEV_EMAIL = DEV_MOCK_USER.email;
 const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD as string | undefined;
-// Bootstrap token accepted by platform-health for initial/dev setup
-const HEALTH_TOKEN = "pcb-bootstrap-2026";
+// Bootstrap token accepted by platform-health for initial/dev setup.
+// Can be overridden via VITE_HEALTH_TOKEN env var; falls back to the
+// well-known bootstrap value that is already public in platform-health.ts.
+const HEALTH_TOKEN =
+  (import.meta.env.VITE_HEALTH_TOKEN as string | undefined) ??
+  "pcb-bootstrap-2026";
+
+// Partial features count as this fraction toward overall progress.
+const PARTIAL_FEATURE_WEIGHT = 0.5;
 
 type AuthState = "loading" | "ready" | "error";
 type Tab = "progress" | "apikeys";
@@ -288,7 +295,9 @@ function ProgressTab() {
     f => f.status === "partial"
   ).length;
   const overallPct = Math.round(
-    ((doneFeatures + partialFeatures * 0.5) / totalFeatures) * 100
+    ((doneFeatures + partialFeatures * PARTIAL_FEATURE_WEIGHT) /
+      totalFeatures) *
+      100
   );
 
   return (
@@ -431,15 +440,16 @@ function ApiKeysTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/platform-health?adminToken=${encodeURIComponent(HEALTH_TOKEN)}`
-      );
+      const res = await fetch("/api/platform-health", {
+        headers: { Authorization: `Bearer ${HEALTH_TOKEN}` },
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      if (!res.ok)
+        throw new Error(data.error ?? `Platform health check failed: HTTP ${res.status}`);
       setHealth(data);
       setLastChecked(new Date());
     } catch (err) {
-      setError(String(err));
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -766,7 +776,9 @@ export default function DevLogin() {
               <p className="text-[10px] text-muted-foreground/50">
                 {authMethod === "supabase"
                   ? "Supabase JWT · cross-browser"
-                  : "Mock session · this browser only"}
+                  : authMethod === "mock"
+                    ? "Mock session · this browser only"
+                    : ""}
               </p>
             </div>
           </div>
