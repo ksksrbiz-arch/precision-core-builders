@@ -20,6 +20,10 @@ interface TeaserProps {
   ctaLabel?: string;
   image?: string;
   imageAlt?: string;
+  /** Tailwind aspect class, e.g. "aspect-[3/4]" for portraits. Default "aspect-[4/3]". */
+  imageAspect?: string;
+  /** object-position class, e.g. "object-top" to avoid cropping faces. Default "object-center". */
+  imagePosition?: string;
   Icon?: ComponentType<{ className?: string }>;
   variant?: "card" | "feature";
   reverse?: boolean;
@@ -34,6 +38,8 @@ export function SectionTeaser({
   ctaLabel = "Learn more",
   image,
   imageAlt = "",
+  imageAspect = "aspect-[4/3]",
+  imagePosition = "object-center",
   Icon,
   variant = "card",
   reverse = false,
@@ -44,19 +50,19 @@ export function SectionTeaser({
       <motion.article
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
+        viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
         className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center ${
           reverse ? "lg:[&>*:first-child]:order-2" : ""
         } ${className}`}
       >
         {image && (
-          <div className="relative overflow-hidden rounded-sm aspect-[4/3] bg-muted">
+          <div className={`relative overflow-hidden rounded-sm ${imageAspect} bg-muted`}>
             <img
               src={image}
               alt={imageAlt}
               loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-[2s] ease-out hover:scale-105"
+              className={`w-full h-full object-cover ${imagePosition} transition-transform duration-[2s] ease-out hover:scale-105`}
             />
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 pointer-events-none" />
           </div>
@@ -94,7 +100,7 @@ export function SectionTeaser({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
+      viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className={className}
     >

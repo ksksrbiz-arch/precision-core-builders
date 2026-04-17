@@ -342,7 +342,7 @@ const STATS = [
 
 function StatCell({ value, suffix, label }: (typeof STATS)[number]) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, amount: 0.3 });
   const count = useCounter(value, inView);
   return (
     <div ref={ref} className="py-10 px-6 text-center">
@@ -398,6 +398,8 @@ function AboutTeaser() {
           ctaLabel="Meet the team"
           image={ASSETS.team.eric}
           imageAlt="Eric Tadlock, owner and lead carpenter at Precision Core Builders"
+          imageAspect="aspect-[3/4]"
+          imagePosition="object-top"
           variant="feature"
         />
 
@@ -461,7 +463,7 @@ function ServicesTeaser() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.7, ease }}
           className="max-w-2xl mb-16"
         >
@@ -503,7 +505,7 @@ function ServicesTeaser() {
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: "-80px" }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.8, ease }}
           className="border-t border-border/40 pt-10"
         >
@@ -563,7 +565,7 @@ function PortfolioTeaser() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.7, ease }}
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
         >
@@ -597,7 +599,7 @@ function PortfolioTeaser() {
               key={img}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.6, delay: i * 0.08, ease }}
             >
               <Link
@@ -649,7 +651,7 @@ function TestimonialTeaser() {
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
+        viewport={{ once: true, amount: 0.15 }}
         variants={stagger}
         className="max-w-4xl mx-auto px-6 md:px-10 text-center"
       >
