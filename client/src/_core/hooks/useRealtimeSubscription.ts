@@ -104,8 +104,8 @@ export function useRealtimeSubscription<T = any>(
           table: table,
           filter: buildFilter() || undefined,
         },
-        (payload) => {
-          setData((prev) => [...prev, payload.new as T]);
+        payload => {
+          setData(prev => [...prev, payload.new as T]);
           onInsert?.(payload);
           // Invalidate related tRPC queries
           queryClient.invalidateQueries({ queryKey: [table] });
@@ -120,8 +120,8 @@ export function useRealtimeSubscription<T = any>(
           table: table,
           filter: buildFilter() || undefined,
         },
-        (payload) => {
-          setData((prev) =>
+        payload => {
+          setData(prev =>
             prev.map((item: any) =>
               item.id === payload.new.id ? payload.new : item
             )
@@ -139,8 +139,8 @@ export function useRealtimeSubscription<T = any>(
           table: table,
           filter: buildFilter() || undefined,
         },
-        (payload) => {
-          setData((prev) =>
+        payload => {
+          setData(prev =>
             prev.filter((item: any) => item.id !== payload.old.id)
           );
           onDelete?.(payload);
@@ -148,7 +148,7 @@ export function useRealtimeSubscription<T = any>(
           setIsConnected(true);
         }
       )
-      .subscribe((status) => {
+      .subscribe(status => {
         setIsConnected(status === "SUBSCRIBED");
       });
 

@@ -539,7 +539,9 @@ export const sitePlans = pgTable("site_plans", {
   authorId: uuid("author_id").references(() => users.id, {
     onDelete: "set null",
   }),
-  name: varchar("name", { length: 300 }).notNull().default("Untitled Site Plan"),
+  name: varchar("name", { length: 300 })
+    .notNull()
+    .default("Untitled Site Plan"),
   /** JSON-serialised Excalidraw elements array */
   elements: text("elements").notNull().default("[]"),
   /** JSON-serialised Excalidraw appState partial */

@@ -119,6 +119,11 @@ export const finishSelectionsRouter = router({
       const pendingApproval = items.filter(
         s => !s.client_approved || !s.eric_approved
       ).length;
-      return { totalDelta, approvedDelta, pendingApproval, total: items.length };
+      return {
+        totalDelta,
+        approvedDelta,
+        pendingApproval,
+        total: items.length,
+      };
     }),
 });

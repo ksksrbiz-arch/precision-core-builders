@@ -6,7 +6,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
-import { Loader2, Mic, Square, Upload, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Loader2,
+  Mic,
+  Square,
+  Upload,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +67,7 @@ export function VoiceRecorder({
         mimeType: "audio/webm;codecs=opus",
       });
 
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = event => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
@@ -73,10 +80,11 @@ export function VoiceRecorder({
 
       // Timer
       timerRef.current = window.setInterval(() => {
-        setDuration((prev) => prev + 1);
+        setDuration(prev => prev + 1);
       }, 1000);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to access microphone";
+      const message =
+        err instanceof Error ? err.message : "Failed to access microphone";
       setErrorMsg(message);
       setState("error");
       onError?.(message);
@@ -96,12 +104,12 @@ export function VoiceRecorder({
     mediaRecorder.stop();
 
     // Wait for onstop event, then upload
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       mediaRecorder.onstop = () => resolve();
     });
 
     // Stop all audio tracks
-    streamRef.current.getTracks().forEach((track) => track.stop());
+    streamRef.current.getTracks().forEach(track => track.stop());
 
     // Upload audio
     await uploadAudio();
@@ -172,7 +180,7 @@ export function VoiceRecorder({
   useEffect(() => {
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -225,7 +233,7 @@ export function VoiceRecorder({
             {/* Animated Recording Indicator */}
             <div className="relative w-24 h-24 flex items-center justify-center">
               {/* Pulsing rings */}
-              {[0, 1, 2].map((i) => (
+              {[0, 1, 2].map(i => (
                 <motion.div
                   key={i}
                   className="absolute w-24 h-24 rounded-full border-2 border-red-500"
@@ -274,8 +282,12 @@ export function VoiceRecorder({
             {/* Progress Bar */}
             <div className="w-full">
               <div className="flex justify-between mb-2">
-                <p className="text-sm font-medium">Processing field report...</p>
-                <p className="text-sm text-muted-foreground">{uploadProgress}%</p>
+                <p className="text-sm font-medium">
+                  Processing field report...
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {uploadProgress}%
+                </p>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div

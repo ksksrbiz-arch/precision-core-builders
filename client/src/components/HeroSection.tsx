@@ -135,7 +135,7 @@ export function HeroSection({
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             {["Voice Reports", "Smart Scheduling", "Budget Control"].map(
-              (feature) => (
+              feature => (
                 <span
                   key={feature}
                   className="text-sm px-4 py-2 bg-white/10 rounded-full text-amber-50 border border-amber-900/30 backdrop-blur-sm"

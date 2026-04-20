@@ -86,20 +86,17 @@ export default function NotificationsView() {
   const set = (key: keyof SendFormState, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  const sendMut = useMutationWithToast(
-    trpc.notifications.send.useMutation(),
-    {
-      success: "Notification Sent",
-      successMessage: "Notification dispatched successfully.",
-      error: "Send Failed",
-      errorMessage: "Failed to send notification. Please check the inputs.",
-      invalidate: () => utils.notifications.list.invalidate(),
-      onSuccess: () => {
-        setShowCompose(false);
-        setForm(DEFAULT_FORM);
-      },
-    }
-  );
+  const sendMut = useMutationWithToast(trpc.notifications.send.useMutation(), {
+    success: "Notification Sent",
+    successMessage: "Notification dispatched successfully.",
+    error: "Send Failed",
+    errorMessage: "Failed to send notification. Please check the inputs.",
+    invalidate: () => utils.notifications.list.invalidate(),
+    onSuccess: () => {
+      setShowCompose(false);
+      setForm(DEFAULT_FORM);
+    },
+  });
 
   const handleSend = () => {
     if (!form.recipientId || !form.body) return;
@@ -118,8 +115,7 @@ export default function NotificationsView() {
     "w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60";
 
   // Get all client users who have userId set
-  const clientsWithUser =
-    clients?.data?.filter((c: any) => c.user_id) ?? [];
+  const clientsWithUser = clients?.data?.filter((c: any) => c.user_id) ?? [];
 
   return (
     <DashboardLayout>
@@ -346,14 +342,9 @@ export default function NotificationsView() {
               },
             ] as Array<{ channel: Channel; desc: string }>
           ).map(({ channel, desc }) => (
-            <div
-              key={channel}
-              className="bg-card border border-border/60 p-4"
-            >
+            <div key={channel} className="bg-card border border-border/60 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-primary">
-                  {CHANNEL_ICONS[channel]}
-                </span>
+                <span className="text-primary">{CHANNEL_ICONS[channel]}</span>
                 <p
                   className="text-[10px] font-bold tracking-[0.15em] uppercase text-foreground"
                   style={{ fontFamily: "var(--font-condensed)" }}

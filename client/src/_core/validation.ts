@@ -16,43 +16,54 @@ export interface ValidationResult {
 
 export const validators = {
   required: (fieldName: string = "This field"): ValidationRule => ({
-    test: (value) => Boolean(value?.toString().trim()),
+    test: value => Boolean(value?.toString().trim()),
     message: `${fieldName} is required.`,
   }),
 
   email: (): ValidationRule => ({
-    test: (value) =>
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value?.toString() || ""),
+    test: value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value?.toString() || ""),
     message: "Please enter a valid email address.",
   }),
 
-  minLength: (min: number, fieldName: string = "This field"): ValidationRule => ({
-    test: (value) => (value?.toString() || "").length >= min,
+  minLength: (
+    min: number,
+    fieldName: string = "This field"
+  ): ValidationRule => ({
+    test: value => (value?.toString() || "").length >= min,
     message: `${fieldName} must be at least ${min} characters.`,
   }),
 
-  maxLength: (max: number, fieldName: string = "This field"): ValidationRule => ({
-    test: (value) => (value?.toString() || "").length <= max,
+  maxLength: (
+    max: number,
+    fieldName: string = "This field"
+  ): ValidationRule => ({
+    test: value => (value?.toString() || "").length <= max,
     message: `${fieldName} must be at most ${max} characters.`,
   }),
 
-  minNumber: (min: number, fieldName: string = "This field"): ValidationRule => ({
-    test: (value) => Number(value) >= min,
+  minNumber: (
+    min: number,
+    fieldName: string = "This field"
+  ): ValidationRule => ({
+    test: value => Number(value) >= min,
     message: `${fieldName} must be at least ${min}.`,
   }),
 
-  maxNumber: (max: number, fieldName: string = "This field"): ValidationRule => ({
-    test: (value) => Number(value) <= max,
+  maxNumber: (
+    max: number,
+    fieldName: string = "This field"
+  ): ValidationRule => ({
+    test: value => Number(value) <= max,
     message: `${fieldName} must be at most ${max}.`,
   }),
 
   phone: (): ValidationRule => ({
-    test: (value) => /^\+?[\d\s\-()]{10,}$/.test(value?.toString() || ""),
+    test: value => /^\+?[\d\s\-()]{10,}$/.test(value?.toString() || ""),
     message: "Please enter a valid phone number.",
   }),
 
   url: (): ValidationRule => ({
-    test: (value) => {
+    test: value => {
       try {
         new URL(value);
         return true;
@@ -67,7 +78,7 @@ export const validators = {
     otherValue: any,
     fieldName: string = "This field"
   ): ValidationRule => ({
-    test: (value) => value === otherValue,
+    test: value => value === otherValue,
     message: `${fieldName} does not match.`,
   }),
 
@@ -78,19 +89,19 @@ export const validators = {
 
   // Number validation
   number: (): ValidationRule => ({
-    test: (value) => !isNaN(Number(value)) && value !== "",
+    test: value => !isNaN(Number(value)) && value !== "",
     message: "Please enter a valid number.",
   }),
 
   // Positive number
   positiveNumber: (): ValidationRule => ({
-    test: (value) => !isNaN(Number(value)) && Number(value) > 0,
+    test: value => !isNaN(Number(value)) && Number(value) > 0,
     message: "Please enter a positive number.",
   }),
 
   // Date validation
   date: (): ValidationRule => ({
-    test: (value) => {
+    test: value => {
       if (!value) return false;
       const date = new Date(value);
       return date instanceof Date && !isNaN(date.getTime());
@@ -100,7 +111,7 @@ export const validators = {
 
   // Future date
   futureDate: (): ValidationRule => ({
-    test: (value) => {
+    test: value => {
       if (!value) return false;
       const date = new Date(value);
       return date instanceof Date && date > new Date();
@@ -110,9 +121,11 @@ export const validators = {
 
   // Password strength
   passwordStrength: (): ValidationRule => ({
-    test: (value) => {
+    test: value => {
       // At least 8 chars, 1 uppercase, 1 lowercase, 1 number
-      return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(value?.toString() || "");
+      return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
+        value?.toString() || ""
+      );
     },
     message:
       "Password must be at least 8 characters with uppercase, lowercase, and numbers.",
@@ -185,7 +198,10 @@ export function getErrorMessage(error: Error | null | undefined): string {
   }
 
   // Network errors
-  if (error.message.includes("fetch failed") || error.message.includes("Network")) {
+  if (
+    error.message.includes("fetch failed") ||
+    error.message.includes("Network")
+  ) {
     return "Network error. Check your internet connection.";
   }
 

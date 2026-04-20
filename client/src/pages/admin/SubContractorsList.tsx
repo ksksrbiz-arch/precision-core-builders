@@ -59,31 +59,48 @@ export default function SubContractorsList() {
   const utils = trpc.useUtils();
   const { data: subs, isLoading } = trpc.subContractors.list.useQuery();
 
-  const createMut = useMutationWithToast(trpc.subContractors.create.useMutation(), {
-    success: "Sub Added",
-    successMessage: "Sub-contractor added to roster.",
-    error: "Create Failed",
-    errorMessage: "Failed to add sub-contractor. Please try again.",
-    invalidate: () => utils.subContractors.list.invalidate(),
-    onSuccess: () => {
-      setShowNew(false);
-      setForm({ name: "", company: "", email: "", phone: "", trade: "", licenseNumber: "", notes: "" });
-    },
-  });
+  const createMut = useMutationWithToast(
+    trpc.subContractors.create.useMutation(),
+    {
+      success: "Sub Added",
+      successMessage: "Sub-contractor added to roster.",
+      error: "Create Failed",
+      errorMessage: "Failed to add sub-contractor. Please try again.",
+      invalidate: () => utils.subContractors.list.invalidate(),
+      onSuccess: () => {
+        setShowNew(false);
+        setForm({
+          name: "",
+          company: "",
+          email: "",
+          phone: "",
+          trade: "",
+          licenseNumber: "",
+          notes: "",
+        });
+      },
+    }
+  );
 
-  const deleteMut = useMutationWithToast(trpc.subContractors.delete.useMutation(), {
-    success: "Sub Removed",
-    successMessage: "Sub-contractor deleted.",
-    error: "Delete Failed",
-    errorMessage: "Failed to delete sub-contractor. Please try again.",
-    invalidate: () => utils.subContractors.list.invalidate(),
-  });
+  const deleteMut = useMutationWithToast(
+    trpc.subContractors.delete.useMutation(),
+    {
+      success: "Sub Removed",
+      successMessage: "Sub-contractor deleted.",
+      error: "Delete Failed",
+      errorMessage: "Failed to delete sub-contractor. Please try again.",
+      invalidate: () => utils.subContractors.list.invalidate(),
+    }
+  );
 
-  const briefMut = useMutationWithToast(trpc.subContractors.sendBriefing.useMutation(), {
-    success: "Briefing Sent",
-    error: "Send Failed",
-    errorMessage: "Failed to send briefing. Please try again.",
-  });
+  const briefMut = useMutationWithToast(
+    trpc.subContractors.sendBriefing.useMutation(),
+    {
+      success: "Briefing Sent",
+      error: "Send Failed",
+      errorMessage: "Failed to send briefing. Please try again.",
+    }
+  );
 
   const tradeColor = (trade: string | null) => {
     const t = (trade ?? "").toLowerCase();

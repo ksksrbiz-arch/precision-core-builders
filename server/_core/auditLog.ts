@@ -24,6 +24,7 @@ export type AuditAction =
   | "client.delete"
   | "fieldReport.create"
   | "fieldReport.publish"
+  | "fieldReport.unpublish"
   | "fieldReport.delete"
   | "estimate.create"
   | "estimate.approve"

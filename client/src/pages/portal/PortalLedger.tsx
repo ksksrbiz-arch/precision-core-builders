@@ -111,8 +111,8 @@ export default function PortalLedger() {
           <div className="bg-card border border-border/60 p-12 text-center">
             <Shield className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground text-sm">
-              No ledger entries yet. Eric will record decisions as your
-              project progresses.
+              No ledger entries yet. Eric will record decisions as your project
+              progresses.
             </p>
           </div>
         ) : (

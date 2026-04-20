@@ -2,13 +2,14 @@
 
 **Last Updated:** April 6, 2026  
 **Overall Progress:** 45% complete (Foundation ~95% | Operations ~40% | Portal/Features ~15-25%)  
-**Next Milestone:** Complete Phase 2 (Gantt chart + real-time updates)  
+**Next Milestone:** Complete Phase 2 (Gantt chart + real-time updates)
 
 ---
 
 ## CRITICAL PATH: Next 48 Hours
 
 ### [CRITICAL-1] Complete Gantt Chart Component
+
 - **Why Critical:** Unlocks schedule management, weather integration, field reporting workflow
 - **Files:**
   - [ ] Create `client/src/components/GanttChart.tsx` (Recharts-based)
@@ -33,6 +34,7 @@
   - Real-time updates reflected in UI
 
 ### [CRITICAL-2] Implement Real-Time Updates via Supabase Realtime
+
 - **Why Critical:** Portal and admin pages need live data; clients see progress in real-time
 - **Pages to Update:**
   - [ ] `PortalDashboard.tsx` — Real-time project timeline
@@ -58,6 +60,7 @@
   - Graceful handling of disconnections
 
 ### [CRITICAL-3] Complete Project Estimator UI Form
+
 - **Why Critical:** Public-facing lead generation tool; drives client acquisition
 - **File:** `client/src/pages/Estimator.tsx`
 - **Form Fields:**
@@ -96,6 +99,7 @@
 ## PHASE 2: Core Operations (Priority 1 — Week 1)
 
 ### [PHASE2-1] Implement Field Report Publishing Workflow
+
 - **File:** `client/src/pages/admin/FieldReportNew.tsx`
 - **UI Flow:**
   - [ ] Show VoiceRecorder component
@@ -121,6 +125,7 @@
   - Client portal updates in real-time
 
 ### [PHASE2-2] Build Client Portal Dashboard
+
 - **File:** `client/src/pages/portal/PortalDashboard.tsx`
 - **Components:**
   - [ ] Project timeline (vertical or horizontal)
@@ -146,6 +151,7 @@
   - Mobile and desktop layouts work
 
 ### [PHASE2-3] Complete Schedule View Admin Page
+
 - **File:** `client/src/pages/admin/ScheduleView.tsx`
 - **Components:**
   - [ ] GanttChart component (from CRITICAL-1)
@@ -170,6 +176,7 @@
   - Crew/material constraints respected
 
 ### [PHASE2-4] Implement Material Shortage Alerts
+
 - **File:** Extend `netlify/functions/voice-to-report.ts`
 - **Logic:**
   - [ ] After report generation, check `materialsUsed` array
@@ -187,6 +194,7 @@
   - Alert includes quantity gap
 
 ### [PHASE2-5] Build Sub-Contractor Notification Workflow
+
 - **File:** New utility `server/_core/notifications.ts`
 - **Integration:**
   - [ ] When task assigned to sub-contractor, trigger n8n webhook
@@ -208,6 +216,7 @@
 ## PHASE 3: Client Experience (Priority 2 — Week 1-2)
 
 ### [PHASE3-1] Build Digital Finish Showroom
+
 - **File:** `client/src/pages/portal/PortalFinishes.tsx`
 - **Components:**
   - [ ] Product catalog (kitchen, bathroom, flooring, paint, fixtures)
@@ -234,6 +243,7 @@
   - Selections visible to Eric immediately
 
 ### [PHASE3-2] Implement Core Values Ledger
+
 - **File:** `client/src/pages/portal/PortalLedger.tsx` & admin version
 - **Components:**
   - [ ] Timeline of all decisions (chronological)
@@ -259,6 +269,7 @@
   - Entries cannot be modified or deleted
 
 ### [PHASE3-3] Build Stripe Billing Integration
+
 - **File:** `netlify/functions/stripe-billing.ts` + `BillingView.tsx`
 - **Features:**
   - [ ] Milestone-based invoice generation
@@ -288,6 +299,7 @@
 ## PHASE 4: Automation & Procurement (Priority 2 — Week 2)
 
 ### [PHASE4-1] Implement AI Lead Scoring
+
 - **File:** Complete `netlify/functions/lead-score.ts`
 - **Algorithm:**
   - [ ] Score based on project type (residential > commercial)
@@ -309,6 +321,7 @@
   - High-value leads highlighted for Eric
 
 ### [PHASE4-2] Build Material Procurement UI
+
 - **File:** `client/src/pages/admin/MaterialsView.tsx`
 - **Components:**
   - [ ] Inventory table (item, quantity, unit cost, vendor, status)
@@ -332,6 +345,7 @@
   - POs generated without manual data entry
 
 ### [PHASE4-3] Create n8n Workflows
+
 - **Workflows to Build:**
   - [ ] **Lead Intake:** Contact form → lead score → email to Eric
   - [ ] **Project Milestone:** Milestone reached → invoice generated → email sent
@@ -349,6 +363,7 @@
   - Workflows handle errors gracefully
 
 ### [PHASE4-4] Implement Vendor Pricing API Integration
+
 - **File:** Extend `netlify/functions/material-procurement.ts`
 - **Integrations:**
   - [ ] Home Depot API (inventory + pricing)
@@ -373,6 +388,7 @@
 ## PHASE 5: Analytics & Portfolio (Priority 3 — Week 2-3)
 
 ### [PHASE5-1] Complete Command Center Dashboard
+
 - **File:** `client/src/pages/admin/CommandCenter.tsx`
 - **Widgets:**
   - [ ] Active projects count + revenue
@@ -402,6 +418,7 @@
   - Mobile responsive
 
 ### [PHASE5-2] Build Profitability Tracking Dashboard
+
 - **File:** New page `client/src/pages/admin/ProfitabilityView.tsx`
 - **Metrics:**
   - [ ] Estimated vs Actual cost comparison
@@ -424,6 +441,7 @@
   - Actionable insights for pricing adjustments
 
 ### [PHASE5-3] Build Portfolio Showcase
+
 - **File:** `client/src/pages/Portfolio.tsx` + `PortfolioAdmin.tsx`
 - **Features:**
   - [ ] Project gallery (grid layout)
@@ -453,6 +471,7 @@
   - Generates high-quality leads
 
 ### [PHASE5-4] Implement Client Testimonials
+
 - **File:** New component `client/src/components/TestimonialSlider.tsx`
 - **Features:**
   - [ ] Testimonial form for clients (post-project)
@@ -480,6 +499,7 @@
 ## POLISH & OPTIMIZATION (Priority 3 — Week 3)
 
 ### [POLISH-1] Performance Optimization
+
 - [ ] Dynamic import for Mermaid diagram library (500KB reduction)
 - [ ] Dynamic import for KaTeX math library (76KB reduction)
 - [ ] Image lazy loading for portfolio
@@ -489,6 +509,7 @@
 - **Target:** Lighthouse 85+ across all metrics
 
 ### [POLISH-2] Accessibility & SEO Audit
+
 - [ ] WCAG 2.1 AA audit using axe DevTools
 - [ ] Fix any accessibility issues
 - [ ] Add meta tags (title, description) to all pages
@@ -499,6 +520,7 @@
 - [ ] **Target:** 100% WCAG AA compliance
 
 ### [POLISH-3] Error Tracking & Monitoring
+
 - [ ] Set up Sentry for error tracking
 - [ ] Add Sentry to Netlify environment
 - [ ] Log all Netlify Function errors
@@ -506,6 +528,7 @@
 - [ ] Create runbook for common errors
 
 ### [POLISH-4] Testing & Documentation
+
 - [ ] Write E2E tests for:
   - [ ] Voice recording → field report → publish
   - [ ] Estimator form → quote → save
@@ -519,6 +542,7 @@
 - [ ] Create deployment runbook
 
 ### [POLISH-5] Cross-Browser & Mobile Testing
+
 - [ ] Test on Chrome, Safari, Firefox, Edge
 - [ ] Test on iOS (iPhone 12+, iPhone SE)
 - [ ] Test on Android (Pixel 6+, Samsung S21+)
@@ -531,6 +555,7 @@
 ## INFRASTRUCTURE & DEVOPS
 
 ### [INFRA-1] Database Maintenance
+
 - [ ] Review RLS policies for security
 - [ ] Add indexes to frequently queried columns
 - [ ] Set up automated backups
@@ -538,6 +563,7 @@
 - [ ] Document schema and migration process
 
 ### [INFRA-2] Environment Variables
+
 - [ ] Verify all required env vars in Netlify dashboard:
   - [ ] SUPABASE_URL
   - [ ] SUPABASE_ANON_KEY
@@ -551,6 +577,7 @@
 - [ ] Document env var purpose and retrieval
 
 ### [INFRA-3] CI/CD Pipeline Enhancement
+
 - [ ] Add pre-commit hooks (prettier, eslint)
 - [ ] Add automated unit test execution in GitHub Actions
 - [ ] Add E2E tests to CI/CD (Playwright or Cypress)
@@ -559,6 +586,7 @@
 - [ ] Add staging environment deployment
 
 ### [INFRA-4] Domain & SSL Setup
+
 - [ ] Verify domain points to Netlify
 - [ ] SSL certificate auto-generated by Netlify
 - [ ] Set up www redirect (www.precisioncorebuilders.com → precisioncorebuilders.com)
@@ -569,6 +597,7 @@
 ## NICE-TO-HAVE FEATURES (Low Priority)
 
 ### [NICE-1] Advanced Features
+
 - [ ] Live site-cam integration (security camera feed)
 - [ ] 360-degree project walkthroughs (Three.js)
 - [ ] AI-powered change order management
@@ -578,12 +607,14 @@
 - [ ] Automated review request emails (Google, Yelp)
 
 ### [NICE-2] Mobile App (Future Phase)
+
 - [ ] React Native version for iOS/Android
 - [ ] Offline-first field reporting
 - [ ] Push notifications
 - [ ] Native camera integration
 
 ### [NICE-3] Marketing Automations
+
 - [ ] Google Ads integration
 - [ ] Lead magnet (free estimate PDF)
 - [ ] Email nurture sequences
@@ -594,31 +625,31 @@
 
 ## KNOWN BLOCKERS & DEPENDENCIES
 
-| Blocker | Impact | Owner | Status |
-|---------|--------|-------|--------|
-| Supabase Realtime setup | Real-time features | Claude | ⏳ Ready, pending implementation |
-| n8n workflow creation | Automation | Eric/Claude | ⏳ Pending |
-| Stripe API integration | Billing | Claude | ⏳ Scaffolded, pending completion |
-| Vendor API keys (Home Depot, Lowe's) | Material procurement | Eric | ⏳ Pending |
-| Netlify Identity setup | Authentication | Claude | ⏳ Pending |
-| Project photography | Portfolio | Eric | ⏳ Waiting for completed projects |
+| Blocker                              | Impact               | Owner       | Status                            |
+| ------------------------------------ | -------------------- | ----------- | --------------------------------- |
+| Supabase Realtime setup              | Real-time features   | Claude      | ⏳ Ready, pending implementation  |
+| n8n workflow creation                | Automation           | Eric/Claude | ⏳ Pending                        |
+| Stripe API integration               | Billing              | Claude      | ⏳ Scaffolded, pending completion |
+| Vendor API keys (Home Depot, Lowe's) | Material procurement | Eric        | ⏳ Pending                        |
+| Netlify Identity setup               | Authentication       | Claude      | ⏳ Pending                        |
+| Project photography                  | Portfolio            | Eric        | ⏳ Waiting for completed projects |
 
 ---
 
 ## SUCCESS METRICS
 
-| Metric | Target | Current | Owner |
-|--------|--------|---------|-------|
-| Build time | <15s | 10.82s ✅ | Claude |
-| Bundle size (gzip) | <1.2MB | 744KB ✅ | Claude |
-| TypeScript errors | 0 | 0 ✅ | Claude |
-| Test coverage | >80% | ~10% | Claude |
-| Lighthouse (Performance) | >85 | ~85 (est.) | Claude |
-| Lighthouse (SEO) | >80 | ~75 (est.) | Claude |
-| Field report publishing | <30s end-to-end | Pending | Claude |
-| Estimate generation | <5s | ~3s ✅ | Claude |
-| Client portal load | <2s | Pending | Claude |
-| WCAG AA compliance | 100% | ~90% (est.) | Claude |
+| Metric                   | Target          | Current     | Owner  |
+| ------------------------ | --------------- | ----------- | ------ |
+| Build time               | <15s            | 10.82s ✅   | Claude |
+| Bundle size (gzip)       | <1.2MB          | 744KB ✅    | Claude |
+| TypeScript errors        | 0               | 0 ✅        | Claude |
+| Test coverage            | >80%            | ~10%        | Claude |
+| Lighthouse (Performance) | >85             | ~85 (est.)  | Claude |
+| Lighthouse (SEO)         | >80             | ~75 (est.)  | Claude |
+| Field report publishing  | <30s end-to-end | Pending     | Claude |
+| Estimate generation      | <5s             | ~3s ✅      | Claude |
+| Client portal load       | <2s             | Pending     | Claude |
+| WCAG AA compliance       | 100%            | ~90% (est.) | Claude |
 
 ---
 

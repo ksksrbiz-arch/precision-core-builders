@@ -61,7 +61,9 @@ const BLANK = {
 function fmt(n: number | string | null | undefined) {
   if (!n && n !== 0) return "—";
   const v = Number(n);
-  return v >= 0 ? `+$${v.toLocaleString()}` : `-$${Math.abs(v).toLocaleString()}`;
+  return v >= 0
+    ? `+$${v.toLocaleString()}`
+    : `-$${Math.abs(v).toLocaleString()}`;
 }
 
 export default function FinishSelectionsAdmin() {
@@ -107,21 +109,22 @@ export default function FinishSelectionsAdmin() {
     }
   );
 
-  const del = useMutationWithToast(
-    trpc.finishSelections.delete.useMutation(),
-    {
-      success: "Deleted",
-      error: "Delete Failed",
-      invalidate: () => {
-        utils.finishSelections.list.invalidate();
-        utils.finishSelections.calcBudgetImpact.invalidate();
-      },
-    }
-  );
+  const del = useMutationWithToast(trpc.finishSelections.delete.useMutation(), {
+    success: "Deleted",
+    error: "Delete Failed",
+    invalidate: () => {
+      utils.finishSelections.list.invalidate();
+      utils.finishSelections.calcBudgetImpact.invalidate();
+    },
+  });
 
   const f =
     (key: keyof typeof BLANK) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
+    ) =>
       setForm(prev => ({ ...prev, [key]: e.target.value }));
 
   const handleSubmit = () => {
@@ -137,9 +140,10 @@ export default function FinishSelectionsAdmin() {
       imageUrl: form.imageUrl || undefined,
       unitPrice: form.unitPrice ? parseFloat(form.unitPrice) : undefined,
       quantity: form.quantity ? parseFloat(form.quantity) : undefined,
-      totalCost: form.unitPrice && form.quantity
-        ? parseFloat(form.unitPrice) * parseFloat(form.quantity)
-        : undefined,
+      totalCost:
+        form.unitPrice && form.quantity
+          ? parseFloat(form.unitPrice) * parseFloat(form.quantity)
+          : undefined,
       budgetDelta: form.budgetDelta ? parseFloat(form.budgetDelta) : undefined,
       notes: form.notes || undefined,
     });
@@ -175,7 +179,8 @@ export default function FinishSelectionsAdmin() {
               Finish Selections
             </h1>
             <p className="text-sm text-muted-foreground font-light mt-0.5">
-              Manage client-facing material and finish choices with budget impact.
+              Manage client-facing material and finish choices with budget
+              impact.
             </p>
           </div>
           {selectedProject && (
@@ -232,7 +237,10 @@ export default function FinishSelectionsAdmin() {
                 color: "text-foreground",
               },
             ].map(s => (
-              <div key={s.label} className="bg-card border border-border/60 p-4">
+              <div
+                key={s.label}
+                className="bg-card border border-border/60 p-4"
+              >
                 <p
                   className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
                   style={{ fontFamily: "var(--font-condensed)" }}
@@ -415,19 +423,28 @@ export default function FinishSelectionsAdmin() {
                               {sel.item_name}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {[sel.category, sel.brand, sel.color_name, sel.sku ? `SKU: ${sel.sku}` : null]
+                              {[
+                                sel.category,
+                                sel.brand,
+                                sel.color_name,
+                                sel.sku ? `SKU: ${sel.sku}` : null,
+                              ]
                                 .filter(Boolean)
                                 .join(" · ")}
                             </p>
                           </div>
                           <div className="text-right shrink-0 flex items-center gap-2">
-                            {sel.budget_delta != null && Number(sel.budget_delta) !== 0 && (
-                              <span
-                                className={`text-xs font-bold ${Number(sel.budget_delta) > 0 ? "text-red-400" : "text-green-400"}`}
-                              >
-                                {Number(sel.budget_delta) > 0 ? "+" : ""}${Math.abs(Number(sel.budget_delta)).toLocaleString()}
-                              </span>
-                            )}
+                            {sel.budget_delta != null &&
+                              Number(sel.budget_delta) !== 0 && (
+                                <span
+                                  className={`text-xs font-bold ${Number(sel.budget_delta) > 0 ? "text-red-400" : "text-green-400"}`}
+                                >
+                                  {Number(sel.budget_delta) > 0 ? "+" : ""}$
+                                  {Math.abs(
+                                    Number(sel.budget_delta)
+                                  ).toLocaleString()}
+                                </span>
+                              )}
                           </div>
                         </div>
 
@@ -442,11 +459,15 @@ export default function FinishSelectionsAdmin() {
                             className={`text-[9px] font-bold tracking-widest uppercase ${sel.client_approved ? "text-green-400" : "text-muted-foreground/40"}`}
                             style={{ fontFamily: "var(--font-condensed)" }}
                           >
-                            {sel.client_approved ? "✓ Client Approved" : "Awaiting Client"}
+                            {sel.client_approved
+                              ? "✓ Client Approved"
+                              : "Awaiting Client"}
                           </span>
                           {!sel.eric_approved && (
                             <button
-                              onClick={() => adminApprove.mutate({ id: sel.id })}
+                              onClick={() =>
+                                adminApprove.mutate({ id: sel.id })
+                              }
                               disabled={adminApprove.isPending}
                               className="text-[9px] font-bold tracking-widest uppercase text-primary border border-primary/30 px-2 py-0.5 hover:bg-primary/10 disabled:opacity-50 transition-all"
                               style={{ fontFamily: "var(--font-condensed)" }}

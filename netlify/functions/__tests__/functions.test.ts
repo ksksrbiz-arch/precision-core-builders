@@ -38,7 +38,7 @@ describe("estimate-project function", () => {
     const { handler } = await import("../estimate-project");
     const event = mockEvent("GET");
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(405);
   });
 
@@ -49,7 +49,7 @@ describe("estimate-project function", () => {
       // missing projectType
     });
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.body);
     expect(body.error).toMatch(/projectType/i);
@@ -63,7 +63,7 @@ describe("weather-schedule function", () => {
     const { handler } = await import("../weather-schedule");
     const event = mockEvent("POST");
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(405);
   });
 
@@ -72,7 +72,7 @@ describe("weather-schedule function", () => {
     const event = mockEvent("GET");
     event.queryStringParameters = { projectId: "1" };
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("forecast");
@@ -89,7 +89,7 @@ describe("ai-chat function", () => {
     const { handler } = await import("../ai-chat");
     const event = mockEvent("GET");
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(405);
   });
 
@@ -97,7 +97,7 @@ describe("ai-chat function", () => {
     const { handler } = await import("../ai-chat");
     const event = mockEvent("POST", {});
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.body);
     expect(body.error).toMatch(/messages/i);
@@ -111,7 +111,7 @@ describe("lead-score function", () => {
     const { handler } = await import("../lead-score");
     const event = mockEvent("GET");
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(405);
   });
 });
@@ -124,7 +124,7 @@ describe("platform-health function", () => {
     const event = mockEvent("GET");
     // No admin token provided
     const response = await handler(event as any, {} as any);
-    
+
     expect(response.statusCode).toBe(401);
   });
 });
@@ -136,15 +136,15 @@ describe("CORS and Security Headers", () => {
     const { handler: estimateHandler } = await import("../estimate-project");
     const { handler: weatherHandler } = await import("../weather-schedule");
     const { handler: chatHandler } = await import("../ai-chat");
-    
+
     const optionsEvent = mockEvent("OPTIONS");
-    
+
     const responses = await Promise.all([
       estimateHandler(optionsEvent as any, {} as any),
       weatherHandler(optionsEvent as any, {} as any),
       chatHandler(optionsEvent as any, {} as any),
     ]);
-    
+
     responses.forEach(response => {
       expect([200, 204]).toContain(response.statusCode);
       expect(response.headers).toHaveProperty("Access-Control-Allow-Origin");

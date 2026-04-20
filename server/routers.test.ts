@@ -9,14 +9,19 @@ import type { TRPCContext } from "./_core/context";
 
 // ─── Mock Context Helpers ───────────────────────────────────
 
-function createMockContext(userId?: string, role: "admin" | "user" = "user"): TRPCContext {
+function createMockContext(
+  userId?: string,
+  role: "admin" | "user" = "user"
+): TRPCContext {
   return {
     userId: userId ?? null,
-    user: userId ? {
-      id: userId,
-      email: `test${userId}@example.com`,
-      role,
-    } : null,
+    user: userId
+      ? {
+          id: userId,
+          email: `test${userId}@example.com`,
+          role,
+        }
+      : null,
     req: {} as any,
     res: {} as any,
   };
@@ -27,8 +32,8 @@ function createMockContext(userId?: string, role: "admin" | "user" = "user"): TR
 describe("App Router Structure", () => {
   it("exposes all 11 expected routers", () => {
     const procedures = Object.keys(appRouter._def.procedures);
-    const routers = new Set(procedures.map(p => p.split('.')[0]));
-    
+    const routers = new Set(procedures.map(p => p.split(".")[0]));
+
     expect(routers).toContain("auth");
     expect(routers).toContain("projects");
     expect(routers).toContain("clients");
@@ -81,7 +86,7 @@ describe("Projects Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     await expect(
       userCaller.projects.create({
         name: "Test Project",
@@ -96,7 +101,7 @@ describe("Projects Router", () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     // @ts-expect-error - testing invalid input
     await expect(caller.projects.get({ id: "invalid" })).rejects.toThrow();
   });
@@ -114,7 +119,7 @@ describe("Field Reports Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     await expect(
       userCaller.fieldReports.create({
         projectId: 1,
@@ -129,10 +134,10 @@ describe("Field Reports Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
-    await expect(
-      userCaller.fieldReports.publish({ id: 1 })
-    ).rejects.toThrow(/forbidden/i);
+
+    await expect(userCaller.fieldReports.publish({ id: 1 })).rejects.toThrow(
+      /forbidden/i
+    );
   });
 });
 
@@ -141,16 +146,16 @@ describe("Field Reports Router", () => {
 describe("Schedule Router", () => {
   it("schedule.list requires authentication", async () => {
     const caller = appRouter.createCaller(createMockContext());
-    await expect(
-      caller.schedule.list({ projectId: 1 })
-    ).rejects.toThrow(/unauthorized/i);
+    await expect(caller.schedule.list({ projectId: 1 })).rejects.toThrow(
+      /unauthorized/i
+    );
   });
 
   it("schedule.create validates task type enum", async () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     await expect(
       caller.schedule.create({
         projectId: 1,
@@ -166,7 +171,7 @@ describe("Schedule Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     await expect(
       userCaller.schedule.updateOrder({
         projectId: 1,
@@ -181,16 +186,16 @@ describe("Schedule Router", () => {
 describe("Materials Router", () => {
   it("materials.list requires authentication", async () => {
     const caller = appRouter.createCaller(createMockContext());
-    await expect(
-      caller.materials.list({ projectId: 1 })
-    ).rejects.toThrow(/unauthorized/i);
+    await expect(caller.materials.list({ projectId: 1 })).rejects.toThrow(
+      /unauthorized/i
+    );
   });
 
   it("materials.create validates numeric fields", async () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     await expect(
       caller.materials.create({
         projectId: 1,
@@ -214,10 +219,10 @@ describe("Estimates Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
-    await expect(
-      userCaller.estimates.approve({ id: 1 })
-    ).rejects.toThrow(/forbidden/i);
+
+    await expect(userCaller.estimates.approve({ id: 1 })).rejects.toThrow(
+      /forbidden/i
+    );
   });
 });
 
@@ -228,7 +233,7 @@ describe("Ledger Router (Immutable)", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     await expect(
       userCaller.ledger.append({
         projectId: 1,
@@ -250,11 +255,9 @@ describe("Ledger Router (Immutable)", () => {
     const caller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     // Should not throw - users can read ledger entries for their projects
-    await expect(
-      caller.ledger.list({ projectId: 1 })
-    ).resolves.toBeDefined();
+    await expect(caller.ledger.list({ projectId: 1 })).resolves.toBeDefined();
   });
 });
 
@@ -263,7 +266,7 @@ describe("Ledger Router (Immutable)", () => {
 describe("Portfolio Router", () => {
   it("portfolio.listPublished is publicly accessible", async () => {
     const caller = appRouter.createCaller(createMockContext());
-    
+
     // Should not throw - public endpoint
     await expect(caller.portfolio.listPublished()).resolves.toBeDefined();
   });
@@ -272,7 +275,7 @@ describe("Portfolio Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     await expect(
       userCaller.portfolio.create({
         title: "Test Project",
@@ -286,10 +289,10 @@ describe("Portfolio Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
-    await expect(
-      userCaller.portfolio.publish({ id: 1 })
-    ).rejects.toThrow(/forbidden/i);
+
+    await expect(userCaller.portfolio.publish({ id: 1 })).rejects.toThrow(
+      /forbidden/i
+    );
   });
 });
 
@@ -305,7 +308,7 @@ describe("Clients Router", () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     await expect(
       caller.clients.create({
         name: "Test Client",
@@ -323,15 +326,17 @@ describe("Sub-Contractors Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
-    await expect(userCaller.subContractors.list()).rejects.toThrow(/forbidden/i);
+
+    await expect(userCaller.subContractors.list()).rejects.toThrow(
+      /forbidden/i
+    );
   });
 
   it("subContractors.create validates trade enum", async () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     await expect(
       caller.subContractors.create({
         name: "Test Contractor",
@@ -357,7 +362,7 @@ describe("Finish Selections Router", () => {
     const clientCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     // Should not throw - clients can select finishes for their projects
     await expect(
       clientCaller.finishSelections.select({
@@ -382,7 +387,7 @@ describe("Notifications Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     // Should complete without error (RLS will filter to user's notifications)
     await expect(
       userCaller.notifications.markRead({ ids: [1, 2, 3] })
@@ -393,7 +398,7 @@ describe("Notifications Router", () => {
     const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
-    
+
     await expect(
       userCaller.notifications.send({
         recipientId: "other-user",
@@ -412,7 +417,7 @@ describe("Input Validation", () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     await expect(
       caller.projects.create({
         name: "", // Empty name should fail
@@ -427,7 +432,7 @@ describe("Input Validation", () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     await expect(
       caller.projects.create({
         name: "Test Project",
@@ -442,7 +447,7 @@ describe("Input Validation", () => {
     const caller = appRouter.createCaller(
       createMockContext("admin-1", "admin")
     );
-    
+
     await expect(
       caller.estimates.create({
         projectId: 1,
@@ -485,7 +490,7 @@ describe("Authorization Matrix", () => {
         budget: 50000,
       })
     ).rejects.toThrow(/forbidden/i);
-    
+
     await expect(
       adminCaller.projects.create({
         name: "Test",

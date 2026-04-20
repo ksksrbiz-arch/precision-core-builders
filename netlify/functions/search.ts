@@ -27,7 +27,10 @@ Return only valid JSON.`;
  * Allows alphanumeric, spaces, hyphens, and apostrophes only.
  */
 function sanitizeKeyword(raw: string): string {
-  return raw.replace(/[^a-zA-Z0-9 '\-]/g, "").slice(0, 50).trim();
+  return raw
+    .replace(/[^a-zA-Z0-9 '\-]/g, "")
+    .slice(0, 50)
+    .trim();
 }
 
 const headers = {
@@ -46,7 +49,10 @@ interface SearchResult {
   meta?: string;
 }
 
-async function searchProjects(keywords: string[], filters: Record<string, string | null>): Promise<SearchResult[]> {
+async function searchProjects(
+  keywords: string[],
+  filters: Record<string, string | null>
+): Promise<SearchResult[]> {
   const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
   if (!safeKeyword) return [];
   let q = db
@@ -61,9 +67,13 @@ async function searchProjects(keywords: string[], filters: Record<string, string
     type: "project",
     id: p.id,
     title: p.name,
-    subtitle: [p.city, p.status?.replace(/_/g, " ")].filter(Boolean).join(" · "),
+    subtitle: [p.city, p.status?.replace(/_/g, " ")]
+      .filter(Boolean)
+      .join(" · "),
     href: `/admin/projects/${p.id}`,
-    meta: p.contracted_budget ? `$${Number(p.contracted_budget).toLocaleString()}` : undefined,
+    meta: p.contracted_budget
+      ? `$${Number(p.contracted_budget).toLocaleString()}`
+      : undefined,
   }));
 }
 
@@ -97,7 +107,9 @@ async function searchFieldReports(keywords: string[]): Promise<SearchResult[]> {
     type: "field_report",
     id: r.id,
     title: `Field Report — ${new Date(r.report_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
-    subtitle: r.summary ? r.summary.slice(0, 100) + (r.summary.length > 100 ? "…" : "") : "No summary",
+    subtitle: r.summary
+      ? r.summary.slice(0, 100) + (r.summary.length > 100 ? "…" : "")
+      : "No summary",
     href: `/admin/field-reports`,
   }));
 }
@@ -107,8 +119,12 @@ async function searchMaterials(keywords: string[]): Promise<SearchResult[]> {
   if (!safeKeyword) return [];
   const { data } = await db
     .from("materials")
-    .select("id,name,category,vendor_name,quantity_needed,quantity_on_hand,unit,unit_price_current")
-    .or(`name.ilike.%${safeKeyword}%,category.ilike.%${safeKeyword}%,vendor_name.ilike.%${safeKeyword}%`)
+    .select(
+      "id,name,category,vendor_name,quantity_needed,quantity_on_hand,unit,unit_price_current"
+    )
+    .or(
+      `name.ilike.%${safeKeyword}%,category.ilike.%${safeKeyword}%,vendor_name.ilike.%${safeKeyword}%`
+    )
     .limit(5);
   return (data ?? []).map((m: any) => ({
     type: "material",
@@ -116,7 +132,9 @@ async function searchMaterials(keywords: string[]): Promise<SearchResult[]> {
     title: m.name,
     subtitle: [m.category, m.vendor_name].filter(Boolean).join(" · "),
     href: `/admin/materials`,
-    meta: m.unit_price_current ? `$${Number(m.unit_price_current).toFixed(2)}/${m.unit ?? "unit"}` : undefined,
+    meta: m.unit_price_current
+      ? `$${Number(m.unit_price_current).toFixed(2)}/${m.unit ?? "unit"}`
+      : undefined,
   }));
 }
 
@@ -133,24 +151,39 @@ async function searchSchedule(keywords: string[]): Promise<SearchResult[]> {
     type: "schedule_item",
     id: s.id,
     title: s.title,
-    subtitle: [s.task_type, s.status?.replace(/_/g, " ")].filter(Boolean).join(" · "),
+    subtitle: [s.task_type, s.status?.replace(/_/g, " ")]
+      .filter(Boolean)
+      .join(" · "),
     href: `/admin/schedule`,
-    meta: s.planned_start_date ? new Date(s.planned_start_date).toLocaleDateString() : undefined,
+    meta: s.planned_start_date
+      ? new Date(s.planned_start_date).toLocaleDateString()
+      : undefined,
   }));
 }
 
 export const handler: Handler = async event => {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers, body: "" };
-  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: "" };
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
+  if (event.httpMethod !== "POST")
+    return { statusCode: 405, headers, body: "" };
 
   try {
     const { query } = JSON.parse(event.body ?? "{}") as { query?: string };
     if (!query || query.trim().length < 2) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: "Query must be at least 2 characters." }) };
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "Query must be at least 2 characters." }),
+      };
     }
 
     // Extract intent via LLM
-    let intent: { entities: string[]; keywords: string[]; filters: Record<string, string | null>; summary: string };
+    let intent: {
+      entities: string[];
+      keywords: string[];
+      filters: Record<string, string | null>;
+      summary: string;
+    };
     try {
       const raw = await invokeLLM({
         messages: [
@@ -165,36 +198,59 @@ export const handler: Handler = async event => {
     } catch {
       // Fallback: treat entire query as keyword search across all entities
       intent = {
-        entities: ["projects", "clients", "field_reports", "materials", "schedule_items"],
+        entities: [
+          "projects",
+          "clients",
+          "field_reports",
+          "materials",
+          "schedule_items",
+        ],
         keywords: query.split(/\s+/).slice(0, 3),
         filters: {},
         summary: query,
       };
     }
 
-    const entities = intent.entities?.length ? intent.entities : ["projects", "clients", "field_reports", "materials"];
+    const entities = intent.entities?.length
+      ? intent.entities
+      : ["projects", "clients", "field_reports", "materials"];
     const keywords = intent.keywords?.length ? intent.keywords : [query];
 
     // Run parallel searches across requested entities
     const searches: Promise<SearchResult[]>[] = [];
-    if (entities.includes("projects")) searches.push(searchProjects(keywords, intent.filters ?? {}));
+    if (entities.includes("projects"))
+      searches.push(searchProjects(keywords, intent.filters ?? {}));
     if (entities.includes("clients")) searches.push(searchClients(keywords));
-    if (entities.includes("field_reports")) searches.push(searchFieldReports(keywords));
-    if (entities.includes("materials")) searches.push(searchMaterials(keywords));
-    if (entities.includes("schedule_items")) searches.push(searchSchedule(keywords));
+    if (entities.includes("field_reports"))
+      searches.push(searchFieldReports(keywords));
+    if (entities.includes("materials"))
+      searches.push(searchMaterials(keywords));
+    if (entities.includes("schedule_items"))
+      searches.push(searchSchedule(keywords));
 
     const resultSets = await Promise.allSettled(searches);
     const results: SearchResult[] = resultSets
-      .filter((r): r is PromiseFulfilledResult<SearchResult[]> => r.status === "fulfilled")
+      .filter(
+        (r): r is PromiseFulfilledResult<SearchResult[]> =>
+          r.status === "fulfilled"
+      )
       .flatMap(r => r.value);
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ results, summary: intent.summary, total: results.length }),
+      body: JSON.stringify({
+        results,
+        summary: intent.summary,
+        total: results.length,
+      }),
     };
   } catch (err) {
     console.error("[search]", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: String(err) }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: String(err) }),
+    };
   }
 };

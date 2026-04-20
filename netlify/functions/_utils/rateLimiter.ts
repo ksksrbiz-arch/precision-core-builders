@@ -70,7 +70,9 @@ export function checkRateLimit(
  * Build rate-limit response headers to include in denied (429) responses.
  * Also useful on allowed responses to communicate limit state to clients.
  */
-export function rateLimitHeaders(result: RateLimitResult): Record<string, string> {
+export function rateLimitHeaders(
+  result: RateLimitResult
+): Record<string, string> {
   const headers: Record<string, string> = {
     "X-RateLimit-Remaining": String(result.remaining),
   };

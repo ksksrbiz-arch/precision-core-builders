@@ -1,5 +1,10 @@
 import { db, paginate } from "../db";
-import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import {
+  adminProcedure,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "../_core/trpc";
 import { z } from "zod";
 
 export const estimatesRouter = router({
@@ -137,7 +142,9 @@ export const estimatesRouter = router({
 
       let q = db
         .from("estimates")
-        .select("*, projects(id,name,status,progress_percent)", { count: "exact" })
+        .select("*, projects(id,name,status,progress_percent)", {
+          count: "exact",
+        })
         .eq("client_id", client.id)
         .order("created_at", { ascending: false });
 

@@ -1,6 +1,10 @@
 import type { Handler } from "@netlify/functions";
 import { invokeLLM } from "../../server/_core/llm";
-import { checkRateLimit, getClientIp, rateLimitHeaders } from "./_utils/rateLimiter";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 
 const SYSTEM_PROMPT = `You are the Digital Foreman AI assistant for Precision Core Builders, owned by Eric Tadlock (CCB #246527), a master builder in Eugene, OR with 20+ years of experience.

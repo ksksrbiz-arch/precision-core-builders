@@ -68,9 +68,7 @@ function DevPasswordModal({ onClose }: DevPasswordModalProps) {
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
-        animate={
-          error ? { x: [-8, 8, -8, 8, 0] } : { opacity: 1, scale: 1 }
-        }
+        animate={error ? { x: [-8, 8, -8, 8, 0] } : { opacity: 1, scale: 1 }}
         transition={{ duration: error ? 0.3 : 0.2 }}
         className="bg-card border border-amber-500/30 shadow-2xl w-full max-w-[320px]"
       >
@@ -151,118 +149,118 @@ export function SiteNav() {
       {showDevModal && (
         <DevPasswordModal onClose={() => setShowDevModal(false)} />
       )}
-    <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="container h-[68px] flex items-center justify-between">
-        <a
-          href="/"
-          aria-label="Precision Core Builders — Home"
-          className="flex-shrink-0"
-          onClick={handleLogoTap}
-        >
-          <img
-            src={ASSETS.logo}
-            alt="Precision Core Builders"
-            className="h-9 w-auto"
-            fetchPriority="high"
-          />
-        </a>
-
-        {/* Desktop nav */}
-        <nav
-          className="hidden lg:flex items-center gap-7"
-          aria-label="Primary navigation"
-        >
-          {NAV_LINKS.map(n => (
-            <a
-              key={n.label}
-              href={n.href}
-              className="text-[12px] font-semibold tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              {n.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          {/* Phone — visible md+ */}
+      <header
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
+          scrolled
+            ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="container h-[68px] flex items-center justify-between">
           <a
-            href={SITE.phoneHref}
-            className="hidden md:flex items-center gap-2 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-            aria-label={`Call ${SITE.phone}`}
+            href="/"
+            aria-label="Precision Core Builders — Home"
+            className="flex-shrink-0"
+            onClick={handleLogoTap}
           >
-            <Phone className="h-3.5 w-3.5" />
-            {SITE.phone}
+            <img
+              src={ASSETS.logo}
+              alt="Precision Core Builders"
+              className="h-9 w-auto"
+              fetchPriority="high"
+            />
           </a>
-          <a
-            href="/contact"
-            className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            Free Estimate <ArrowRight className="h-3.5 w-3.5" />
-          </a>
-          <button
-            onClick={() => setOpen(o => !o)}
-            className="lg:hidden p-2 text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
 
-      {/* Mobile drawer */}
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
-        >
+          {/* Desktop nav */}
           <nav
-            className="container py-5 flex flex-col gap-0"
-            aria-label="Mobile navigation"
+            className="hidden lg:flex items-center gap-7"
+            aria-label="Primary navigation"
           >
             {NAV_LINKS.map(n => (
               <a
                 key={n.label}
                 href={n.href}
-                onClick={() => setOpen(false)}
-                className="py-4 text-[13px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors min-h-[48px] flex items-center"
+                className="text-[12px] font-semibold tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {n.label}
               </a>
             ))}
-            <div className="pt-5 pb-2 flex flex-col gap-3">
-              <a
-                href={SITE.phoneHref}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-2 border border-primary/50 text-primary py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                <Phone className="h-4 w-4" /> {SITE.phone}
-              </a>
-              <a
-                href="/contact"
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                Get Free Estimate <ArrowRight className="h-4 w-4" />
-              </a>
-            </div>
           </nav>
-        </motion.div>
-      )}
-    </header>
+
+          <div className="flex items-center gap-3">
+            {/* Phone — visible md+ */}
+            <a
+              href={SITE.phoneHref}
+              className="hidden md:flex items-center gap-2 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+              aria-label={`Call ${SITE.phone}`}
+            >
+              <Phone className="h-3.5 w-3.5" />
+              {SITE.phone}
+            </a>
+            <a
+              href="/contact"
+              className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+            <button
+              onClick={() => setOpen(o => !o)}
+              className="lg:hidden p-2 text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+            >
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile drawer */}
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
+          >
+            <nav
+              className="container py-5 flex flex-col gap-0"
+              aria-label="Mobile navigation"
+            >
+              {NAV_LINKS.map(n => (
+                <a
+                  key={n.label}
+                  href={n.href}
+                  onClick={() => setOpen(false)}
+                  className="py-4 text-[13px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors min-h-[48px] flex items-center"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {n.label}
+                </a>
+              ))}
+              <div className="pt-5 pb-2 flex flex-col gap-3">
+                <a
+                  href={SITE.phoneHref}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-2 border border-primary/50 text-primary py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <Phone className="h-4 w-4" /> {SITE.phone}
+                </a>
+                <a
+                  href="/contact"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Get Free Estimate <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+            </nav>
+          </motion.div>
+        )}
+      </header>
     </>
   );
 }

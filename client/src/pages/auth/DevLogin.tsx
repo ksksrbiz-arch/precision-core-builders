@@ -445,7 +445,9 @@ function ApiKeysTab() {
       });
       const data = await res.json();
       if (!res.ok)
-        throw new Error(data.error ?? `Platform health check failed: HTTP ${res.status}`);
+        throw new Error(
+          data.error ?? `Platform health check failed: HTTP ${res.status}`
+        );
       setHealth(data);
       setLastChecked(new Date());
     } catch (err) {
@@ -485,7 +487,9 @@ function ApiKeysTab() {
         </div>
         <div className="flex items-center gap-3">
           {health && (
-            <span className={`text-xs font-semibold capitalize ${overallColor}`}>
+            <span
+              className={`text-xs font-semibold capitalize ${overallColor}`}
+            >
               {health.summary.healthy}/{health.summary.total} healthy
             </span>
           )}
@@ -671,7 +675,11 @@ export default function DevLogin() {
         />
         <div className="w-full max-w-[380px]">
           <div className="flex justify-center mb-8">
-            <img src={ASSETS.logo} alt="Precision Core Builders" className="h-10 w-auto" />
+            <img
+              src={ASSETS.logo}
+              alt="Precision Core Builders"
+              className="h-10 w-auto"
+            />
           </div>
           <div className="bg-card border border-amber-500/30 shadow-xl shadow-black/20 p-8 text-center space-y-5">
             <div className="h-14 w-14 border border-amber-500/40 bg-amber-500/10 flex items-center justify-center mx-auto">

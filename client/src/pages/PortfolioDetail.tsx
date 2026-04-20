@@ -46,7 +46,11 @@ export default function PortfolioDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
 
-  const { data: project, isLoading, error } = trpc.portfolio.getBySlug.useQuery(
+  const {
+    data: project,
+    isLoading,
+    error,
+  } = trpc.portfolio.getBySlug.useQuery(
     { slug: slug ?? "" },
     { enabled: !!slug }
   );
@@ -176,11 +180,13 @@ export default function PortfolioDetail() {
                 {/* Description */}
                 {project.description && (
                   <div className="prose prose-sm max-w-none text-muted-foreground font-light leading-relaxed mb-10">
-                    {project.description.split("\n").map((para: string, i: number) => (
-                      <p key={i} className="mb-3">
-                        {para}
-                      </p>
-                    ))}
+                    {project.description
+                      .split("\n")
+                      .map((para: string, i: number) => (
+                        <p key={i} className="mb-3">
+                          {para}
+                        </p>
+                      ))}
                   </div>
                 )}
 

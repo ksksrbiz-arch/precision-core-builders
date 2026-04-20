@@ -65,7 +65,16 @@ export default function LedgerView() {
     error: "Record Failed",
     errorMessage: "Failed to record entry. Please try again.",
     invalidate: () => utils.ledger.list.invalidate(),
-    onSuccess: () => { setShowNew(false); setForm({ entryType: "note", title: "", description: "", amountDelta: "", visibleToClient: true }); },
+    onSuccess: () => {
+      setShowNew(false);
+      setForm({
+        entryType: "note",
+        title: "",
+        description: "",
+        amountDelta: "",
+        visibleToClient: true,
+      });
+    },
   });
 
   const fmtDate = (d: string) =>

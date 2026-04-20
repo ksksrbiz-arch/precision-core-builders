@@ -36,7 +36,12 @@ export function classifyError(error: Error | unknown): ApiError {
     message.includes("NetworkError") ||
     message.includes("ERR_NETWORK")
   ) {
-    return new ApiError("Network connection failed.", "network", undefined, true);
+    return new ApiError(
+      "Network connection failed.",
+      "network",
+      undefined,
+      true
+    );
   }
 
   // Timeout
@@ -151,10 +156,7 @@ export async function retryWithBackoff<T>(
       await new Promise(resolve => setTimeout(resolve, delay));
 
       // Exponential backoff for next attempt
-      backoff = Math.min(
-        backoff * opts.backoffMultiplier,
-        opts.maxBackoffMs
-      );
+      backoff = Math.min(backoff * opts.backoffMultiplier, opts.maxBackoffMs);
     }
   }
 
@@ -168,25 +170,22 @@ export async function fetchWithRetry(
   init?: RequestInit,
   retryOptions?: RetryOptions
 ): Promise<Response> {
-  return retryWithBackoff(
-    async () => {
-      const response = await fetch(url, {
-        ...init,
-        signal: AbortSignal.timeout(30000), // 30s timeout
-      });
+  return retryWithBackoff(async () => {
+    const response = await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(30000), // 30s timeout
+    });
 
-      if (!response.ok) {
-        const error = new Error(
-          `HTTP ${response.status}: ${response.statusText}`
-        );
-        (error as any).status = response.status;
-        throw error;
-      }
+    if (!response.ok) {
+      const error = new Error(
+        `HTTP ${response.status}: ${response.statusText}`
+      );
+      (error as any).status = response.status;
+      throw error;
+    }
 
-      return response;
-    },
-    retryOptions
-  );
+    return response;
+  }, retryOptions);
 }
 
 // ─── Error Recovery Suggestions ───────────────────────────────────────────

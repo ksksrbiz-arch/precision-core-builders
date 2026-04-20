@@ -143,13 +143,9 @@ export const fieldReportsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
-      await logAdminAction(
-        db,
-        ctx,
-        "fieldReport.publish",
-        data.project_id,
-        { reportId: input.id }
-      );
+      await logAdminAction(db, ctx, "fieldReport.publish", data.project_id, {
+        reportId: input.id,
+      });
       return data;
     }),
 
@@ -166,13 +162,9 @@ export const fieldReportsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
-      await logAdminAction(
-        db,
-        ctx,
-        "fieldReport.unpublish",
-        data.project_id,
-        { reportId: input.id }
-      );
+      await logAdminAction(db, ctx, "fieldReport.unpublish", data.project_id, {
+        reportId: input.id,
+      });
       return data;
     }),
 
@@ -193,13 +185,9 @@ export const fieldReportsRouter = router({
         .delete()
         .eq("id", input.id);
       if (error) throw new Error(error.message);
-      await logAdminAction(
-        db,
-        ctx,
-        "fieldReport.delete",
-        report.project_id,
-        { reportId: input.id }
-      );
+      await logAdminAction(db, ctx, "fieldReport.delete", report.project_id, {
+        reportId: input.id,
+      });
       return { success: true };
     }),
 
@@ -230,7 +218,10 @@ export const fieldReportsRouter = router({
         new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString()
       );
 
-    const weeks: Record<string, { week: string; reports: number; issues: number; published: number }> = {};
+    const weeks: Record<
+      string,
+      { week: string; reports: number; issues: number; published: number }
+    > = {};
     for (const r of data ?? []) {
       const d = new Date(r.report_date);
       // ISO week start (Monday)
@@ -240,7 +231,10 @@ export const fieldReportsRouter = router({
       const key = weekStart.toISOString().slice(0, 10);
       if (!weeks[key]) {
         weeks[key] = {
-          week: weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          week: weekStart.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
           reports: 0,
           issues: 0,
           published: 0,

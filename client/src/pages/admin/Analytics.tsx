@@ -27,15 +27,20 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 
-const COLORS = ["#8B7355", "#6B8E23", "#5B7FA6", "#C0392B", "#7A7060", "#D4A574"];
+const COLORS = [
+  "#8B7355",
+  "#6B8E23",
+  "#5B7FA6",
+  "#C0392B",
+  "#7A7060",
+  "#D4A574",
+];
 const PROJECT_NAME_MAX_LEN = 20;
 
 function fmt(n: number | null | undefined) {
   if (!n && n !== 0) return "—";
-  if (Math.abs(n) >= 1_000_000)
-    return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1_000)
-    return `$${(n / 1_000).toFixed(0)}k`;
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
   return `$${n.toFixed(0)}`;
 }
 
@@ -102,7 +107,11 @@ export default function Analytics() {
   const statusData = stats
     ? [
         { name: "Leads", value: stats.byStatus.lead, fill: COLORS[4] },
-        { name: "Contracted", value: stats.byStatus.contracted, fill: COLORS[2] },
+        {
+          name: "Contracted",
+          value: stats.byStatus.contracted,
+          fill: COLORS[2],
+        },
         { name: "Active", value: stats.byStatus.active, fill: COLORS[1] },
         { name: "Complete", value: stats.byStatus.complete, fill: COLORS[0] },
       ].filter(d => d.value > 0)
@@ -117,16 +126,17 @@ export default function Analytics() {
     )
     .slice(0, 10)
     .map((p, i) => ({
-      name: p.name.length > PROJECT_NAME_MAX_LEN ? p.name.slice(0, PROJECT_NAME_MAX_LEN) + "…" : p.name,
+      name:
+        p.name.length > PROJECT_NAME_MAX_LEN
+          ? p.name.slice(0, PROJECT_NAME_MAX_LEN) + "…"
+          : p.name,
       estimated: Number(p.estimated_budget ?? 0),
       actual: Number(p.actual_cost ?? 0),
       fill: COLORS[i % COLORS.length],
     }));
 
-  const totalReports =
-    weeklyReports?.reduce((s, w) => s + w.reports, 0) ?? 0;
-  const totalIssues =
-    weeklyReports?.reduce((s, w) => s + w.issues, 0) ?? 0;
+  const totalReports = weeklyReports?.reduce((s, w) => s + w.reports, 0) ?? 0;
+  const totalIssues = weeklyReports?.reduce((s, w) => s + w.issues, 0) ?? 0;
 
   return (
     <DashboardLayout>
@@ -210,10 +220,10 @@ export default function Analytics() {
             label="Material Shortages"
             value={shortages?.total ?? 0}
             sub="Need re-order"
-            trend={
-              (shortages?.total ?? 0) > 0 ? "down" : "neutral"
+            trend={(shortages?.total ?? 0) > 0 ? "down" : "neutral"}
+            color={
+              (shortages?.total ?? 0) > 0 ? "text-amber-400" : "text-foreground"
             }
-            color={(shortages?.total ?? 0) > 0 ? "text-amber-400" : "text-foreground"}
           />
           <KPICard
             label="Reports (8 Weeks)"
@@ -268,10 +278,7 @@ export default function Analytics() {
                       fontSize: 11,
                     }}
                   />
-                  <Legend
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: 10 }}
-                  />
+                  <Legend iconSize={8} wrapperStyle={{ fontSize: 10 }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -307,8 +314,19 @@ export default function Analytics() {
                       fontSize: 11,
                     }}
                   />
-                  <Bar dataKey="reports" name="Reports" fill="#8B7355" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="issues" name="Issues" fill="#C0392B" radius={[2, 2, 0, 0]} opacity={0.7} />
+                  <Bar
+                    dataKey="reports"
+                    name="Reports"
+                    fill="#8B7355"
+                    radius={[2, 2, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="issues"
+                    name="Issues"
+                    fill="#C0392B"
+                    radius={[2, 2, 0, 0]}
+                    opacity={0.7}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -355,8 +373,19 @@ export default function Analytics() {
                   }}
                   formatter={(v: number) => fmt(v)}
                 />
-                <Bar dataKey="estimated" name="Estimated" fill="#8B7355" radius={[0, 2, 2, 0]} opacity={0.6} />
-                <Bar dataKey="actual" name="Actual" fill="#6B8E23" radius={[0, 2, 2, 0]} />
+                <Bar
+                  dataKey="estimated"
+                  name="Estimated"
+                  fill="#8B7355"
+                  radius={[0, 2, 2, 0]}
+                  opacity={0.6}
+                />
+                <Bar
+                  dataKey="actual"
+                  name="Actual"
+                  fill="#6B8E23"
+                  radius={[0, 2, 2, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>

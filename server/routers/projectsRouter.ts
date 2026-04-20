@@ -199,7 +199,8 @@ export const projectsRouter = router({
       const updates: Record<string, unknown> = {};
       if (input.completionPercent !== undefined)
         updates.completion_percent = input.completionPercent;
-      if (input.actualCost !== undefined) updates.actual_cost = input.actualCost;
+      if (input.actualCost !== undefined)
+        updates.actual_cost = input.actualCost;
       if (Object.keys(updates).length === 0) {
         const { data: current } = await db
           .from("projects")
@@ -282,7 +283,11 @@ export const projectsRouter = router({
       );
 
       const changeOrderTotal = (ledgerRes.data ?? [])
-        .filter(e => e.entry_type === "change_order" || e.entry_type === "cost_adjustment")
+        .filter(
+          e =>
+            e.entry_type === "change_order" ||
+            e.entry_type === "cost_adjustment"
+        )
         .reduce((sum, e) => sum + Number(e.amount_delta ?? 0), 0);
 
       const contracted = Number(project.contracted_budget ?? 0);

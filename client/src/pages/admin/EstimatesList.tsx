@@ -23,7 +23,10 @@ export default function EstimatesList() {
   const [page, setPage] = useState(1);
   const utils = trpc.useUtils();
 
-  const { data, isLoading } = trpc.estimates.list.useQuery({ page, pageSize: 20 });
+  const { data, isLoading } = trpc.estimates.list.useQuery({
+    page,
+    pageSize: 20,
+  });
 
   const sendMut = useMutationWithToast(trpc.estimates.markSent.useMutation(), {
     success: "Estimate Sent",
@@ -33,13 +36,16 @@ export default function EstimatesList() {
     invalidate: () => utils.estimates.list.invalidate(),
   });
 
-  const approveMut = useMutationWithToast(trpc.estimates.markApproved.useMutation(), {
-    success: "Estimate Approved",
-    successMessage: "Estimate approved and locked.",
-    error: "Approve Failed",
-    errorMessage: "Failed to approve estimate. Please try again.",
-    invalidate: () => utils.estimates.list.invalidate(),
-  });
+  const approveMut = useMutationWithToast(
+    trpc.estimates.markApproved.useMutation(),
+    {
+      success: "Estimate Approved",
+      successMessage: "Estimate approved and locked.",
+      error: "Approve Failed",
+      errorMessage: "Failed to approve estimate. Please try again.",
+      invalidate: () => utils.estimates.list.invalidate(),
+    }
+  );
 
   const fmt = (n: number | string | null | undefined) =>
     n ? `$${Number(n).toLocaleString()}` : "—";

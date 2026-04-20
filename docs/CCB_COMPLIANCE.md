@@ -2,7 +2,7 @@
 
 **License:** Oregon CCB #246527  
 **Owner:** Eric Tadlock  
-**Last Updated:** April 2026  
+**Last Updated:** April 2026
 
 ---
 
@@ -29,27 +29,28 @@ All client-facing communications (portal messages, field report publications, le
 
 ### 2.1 Data Categories
 
-| Data Category | Examples | Storage | Access Control |
-|---|---|---|---|
-| **Client PII** | Name, email, phone, address | Supabase PostgreSQL | Admin + owning client via RLS |
-| **Project Data** | Budget, timeline, scope | Supabase PostgreSQL | Admin + owning client via RLS |
-| **Voice Memos** | Audio recordings | Netlify Blobs / Supabase Storage | Admin only |
-| **Site Photos** | Construction images | Netlify Blobs / Supabase Storage | Admin + authenticated users |
-| **Financial Data** | Invoices, payments, billing events | Supabase PostgreSQL | Admin only |
+| Data Category      | Examples                           | Storage                          | Access Control                |
+| ------------------ | ---------------------------------- | -------------------------------- | ----------------------------- |
+| **Client PII**     | Name, email, phone, address        | Supabase PostgreSQL              | Admin + owning client via RLS |
+| **Project Data**   | Budget, timeline, scope            | Supabase PostgreSQL              | Admin + owning client via RLS |
+| **Voice Memos**    | Audio recordings                   | Netlify Blobs / Supabase Storage | Admin only                    |
+| **Site Photos**    | Construction images                | Netlify Blobs / Supabase Storage | Admin + authenticated users   |
+| **Financial Data** | Invoices, payments, billing events | Supabase PostgreSQL              | Admin only                    |
 
 ### 2.2 Data Retention
 
-| Data Type | Retention Period | Basis |
-|---|---|---|
-| Project records | 6+ years post-completion | Oregon CCB OAR 812-003-0200 |
-| Financial records | 7 years | IRS / Oregon DOR guidance |
-| Audit logs | 6 years | CCB compliance / liability |
-| Voice memos | 2 years (or until transcribed and report saved) | Internal policy |
-| Client portal access | Duration of active project + 1 year | Client agreement |
+| Data Type            | Retention Period                                | Basis                       |
+| -------------------- | ----------------------------------------------- | --------------------------- |
+| Project records      | 6+ years post-completion                        | Oregon CCB OAR 812-003-0200 |
+| Financial records    | 7 years                                         | IRS / Oregon DOR guidance   |
+| Audit logs           | 6 years                                         | CCB compliance / liability  |
+| Voice memos          | 2 years (or until transcribed and report saved) | Internal policy             |
+| Client portal access | Duration of active project + 1 year             | Client agreement            |
 
 ### 2.3 Data Minimization
 
 The platform collects only the minimum data necessary to operate each feature:
+
 - AI transcription uses audio temporarily; the audio is not stored after transcription.
 - Estimates are stored for 30 days by default unless a client account is linked.
 - Vision Studio photos are not persisted after analysis unless explicitly saved.
@@ -70,12 +71,13 @@ The platform uses **Supabase Auth with magic links (OTP)**. Password-based login
 
 Two roles are enforced at every layer:
 
-| Role | Access |
-|---|---|
+| Role    | Access                                                           |
+| ------- | ---------------------------------------------------------------- |
 | `admin` | Eric (owner). Full access to all platform features and all data. |
-| `user` | Clients. Access restricted to their own project data via RLS. |
+| `user`  | Clients. Access restricted to their own project data via RLS.    |
 
 Access is enforced by:
+
 1. **Client-side:** `AdminRoute` and `ProtectedRoute` guards redirect unauthorized users.
 2. **tRPC layer:** `adminProcedure` and `protectedProcedure` throw `UNAUTHORIZED` / `FORBIDDEN` errors.
 3. **Database layer:** PostgreSQL Row-Level Security (RLS) policies prevent cross-tenant data access even if the API layer were bypassed.
@@ -99,18 +101,19 @@ RLS policies are defined in `drizzle/rls-policies.sql` and must be applied to th
 
 All AI-powered endpoints enforce per-IP and per-user rate limits to prevent abuse and control API costs:
 
-| Endpoint | Anonymous Limit | Authenticated Limit | Window |
-|---|---|---|---|
-| `/api/estimate-project` | 10 requests | 30 requests | 1 minute |
-| `/api/ai-chat` | 20 requests | 20 requests | 1 minute |
-| `/api/vision-studio` | Auth required | 15 analyses | 1 hour |
-| `/api/voice-to-report` | Auth required | 5 reports | 1 hour |
+| Endpoint                | Anonymous Limit | Authenticated Limit | Window   |
+| ----------------------- | --------------- | ------------------- | -------- |
+| `/api/estimate-project` | 10 requests     | 30 requests         | 1 minute |
+| `/api/ai-chat`          | 20 requests     | 20 requests         | 1 minute |
+| `/api/vision-studio`    | Auth required   | 15 analyses         | 1 hour   |
+| `/api/voice-to-report`  | Auth required   | 5 reports           | 1 hour   |
 
 Clients that exceed limits receive a `429 Too Many Requests` response with a `Retry-After` header.
 
 ### 4.2 CORS Policy
 
 The API only allows requests from trusted origins:
+
 - `https://precisioncorebuilders.com`
 - `https://www.precisioncorebuilders.com`
 - `https://precision-core.netlify.app`
@@ -172,13 +175,13 @@ In the event of a suspected data breach:
 
 ### 6.2 Key Rotation Schedule
 
-| Secret | Rotation Frequency |
-|---|---|
-| Supabase service-role key | Quarterly |
-| Anthropic API key | Annually or on personnel change |
-| OpenWeatherMap API key | Annually |
-| Stripe keys | Annually or on suspected compromise |
-| n8n webhook secret | Annually |
+| Secret                    | Rotation Frequency                  |
+| ------------------------- | ----------------------------------- |
+| Supabase service-role key | Quarterly                           |
+| Anthropic API key         | Annually or on personnel change     |
+| OpenWeatherMap API key    | Annually                            |
+| Stripe keys               | Annually or on suspected compromise |
+| n8n webhook secret        | Annually                            |
 
 ---
 
@@ -209,8 +212,8 @@ For security issues, vulnerabilities, or data requests, contact:
 **Eric Tadlock**  
 Precision Core Builders  
 CCB #246527  
-Eugene, OR 97401  
+Eugene, OR 97401
 
 ---
 
-*This document should be reviewed annually and updated after any significant infrastructure change.*
+_This document should be reviewed annually and updated after any significant infrastructure change._

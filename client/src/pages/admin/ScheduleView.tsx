@@ -175,27 +175,30 @@ export default function ScheduleView() {
     { enabled: !!selectedProject }
   );
   const lastStatusRef = useRef("");
-  const updateStatus = useMutationWithToast(trpc.schedule.updateStatus.useMutation(), {
-    success: "Task Updated",
-    successMessage: "Task status updated.",
-    error: "Update Failed",
-    errorMessage: "Failed to update task status. Please try again.",
-    onSuccess: () => {
-      refetch();
-      // Fire milestone_complete n8n event when task is marked complete
-      if (lastStatusRef.current === "complete") {
-        fetch("/api/n8n-webhook", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event: "milestone_complete",
-            payload: { status: "complete" },
-          }),
-        }).catch(() => {});
-        lastStatusRef.current = "";
-      }
-    },
-  });
+  const updateStatus = useMutationWithToast(
+    trpc.schedule.updateStatus.useMutation(),
+    {
+      success: "Task Updated",
+      successMessage: "Task status updated.",
+      error: "Update Failed",
+      errorMessage: "Failed to update task status. Please try again.",
+      onSuccess: () => {
+        refetch();
+        // Fire milestone_complete n8n event when task is marked complete
+        if (lastStatusRef.current === "complete") {
+          fetch("/api/n8n-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: "milestone_complete",
+              payload: { status: "complete" },
+            }),
+          }).catch(() => {});
+          lastStatusRef.current = "";
+        }
+      },
+    }
+  );
   const updateTask = useMutationWithToast(trpc.schedule.update.useMutation(), {
     success: "Task Rescheduled",
     successMessage: "Task dates updated.",
@@ -211,7 +214,13 @@ export default function ScheduleView() {
     invalidate: () => trpc.useUtils().schedule.list.invalidate(),
     onSuccess: (_data: any) => {
       setShowAddTask(false);
-      setNewTask({ title: "", taskType: "general", plannedStartDate: "", plannedEndDate: "", notes: "" });
+      setNewTask({
+        title: "",
+        taskType: "general",
+        plannedStartDate: "",
+        plannedEndDate: "",
+        notes: "",
+      });
       refetch();
     },
   });
@@ -326,41 +335,73 @@ export default function ScheduleView() {
           <div className="bg-card border border-primary/30 p-5 mb-5">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-semibold">Add Schedule Task</p>
-              <button onClick={() => setShowAddTask(false)} className="text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => setShowAddTask(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
               <input
                 value={newTask.title}
-                onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))}
+                onChange={e =>
+                  setNewTask(t => ({ ...t, title: e.target.value }))
+                }
                 placeholder="Task title *"
                 className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 sm:col-span-2 lg:col-span-2"
               />
               <select
                 value={newTask.taskType}
-                onChange={e => setNewTask(t => ({ ...t, taskType: e.target.value }))}
+                onChange={e =>
+                  setNewTask(t => ({ ...t, taskType: e.target.value }))
+                }
                 className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
               >
-                {["general","framing","foundation","electrical","plumbing","hvac","roofing","drywall","painting","flooring","concrete","inspection","permit","demolition","landscaping","punch_list"].map(t => (
-                  <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
+                {[
+                  "general",
+                  "framing",
+                  "foundation",
+                  "electrical",
+                  "plumbing",
+                  "hvac",
+                  "roofing",
+                  "drywall",
+                  "painting",
+                  "flooring",
+                  "concrete",
+                  "inspection",
+                  "permit",
+                  "demolition",
+                  "landscaping",
+                  "punch_list",
+                ].map(t => (
+                  <option key={t} value={t}>
+                    {t.replace(/_/g, " ")}
+                  </option>
                 ))}
               </select>
               <input
                 type="date"
                 value={newTask.plannedStartDate}
-                onChange={e => setNewTask(t => ({ ...t, plannedStartDate: e.target.value }))}
+                onChange={e =>
+                  setNewTask(t => ({ ...t, plannedStartDate: e.target.value }))
+                }
                 className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
               />
               <input
                 type="date"
                 value={newTask.plannedEndDate}
-                onChange={e => setNewTask(t => ({ ...t, plannedEndDate: e.target.value }))}
+                onChange={e =>
+                  setNewTask(t => ({ ...t, plannedEndDate: e.target.value }))
+                }
                 className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
               />
               <textarea
                 value={newTask.notes}
-                onChange={e => setNewTask(t => ({ ...t, notes: e.target.value }))}
+                onChange={e =>
+                  setNewTask(t => ({ ...t, notes: e.target.value }))
+                }
                 placeholder="Notes…"
                 rows={1}
                 className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"

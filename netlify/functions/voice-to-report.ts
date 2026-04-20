@@ -69,7 +69,8 @@ export const handler: Handler = async event => {
         statusCode: 429,
         headers: { ...headers, ...rateLimitHeaders(rl) },
         body: JSON.stringify({
-          error: "Voice report limit reached. Please wait before submitting again.",
+          error:
+            "Voice report limit reached. Please wait before submitting again.",
         }),
       };
     }
@@ -197,4 +198,3 @@ export const handler: Handler = async event => {
     };
   }
 };
-
