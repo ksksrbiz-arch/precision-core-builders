@@ -2,7 +2,61 @@
  * Comprehensive test suite for tRPC routers
  * Tests all 11 routers with focus on authorization and data validation
  */
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, vi } from "vitest";
+
+// Mock Supabase DB so tests run without a real database connection.
+// Each call to db.from() returns a chainable builder that resolves to
+// { data: [], error: null, count: 0 } for list queries and
+// { data: { id: 1 }, error: null } for single-row mutations.
+vi.mock("./db", () => {
+  function makeSingle() {
+    return Promise.resolve({
+      data: { id: 1, project_id: 1, recipient_id: "user-123" },
+      error: null,
+    });
+  }
+  function makeBuilder(): any {
+    const p: any = Promise.resolve({ data: [], error: null, count: 0 });
+    const chain = () => makeBuilder();
+    for (const m of [
+      "select",
+      "insert",
+      "update",
+      "delete",
+      "upsert",
+      "eq",
+      "neq",
+      "in",
+      "not",
+      "is",
+      "or",
+      "and",
+      "order",
+      "limit",
+      "range",
+      "filter",
+      "match",
+      "ilike",
+      "like",
+      "gte",
+      "lte",
+      "gt",
+      "lt",
+      "contains",
+      "overlaps",
+      "textSearch",
+    ]) {
+      p[m] = chain;
+    }
+    p.single = makeSingle;
+    p.maybeSingle = () => Promise.resolve({ data: null, error: null });
+    return p;
+  }
+  return {
+    db: { from: () => makeBuilder() },
+    paginate: () => ({ from: 0, to: 19 }),
+  };
+});
 import { appRouter } from "./routers";
 import { createContext } from "./_core/context";
 import type { TRPCContext } from "./_core/context";

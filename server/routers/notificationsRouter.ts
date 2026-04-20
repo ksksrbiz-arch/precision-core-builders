@@ -43,17 +43,16 @@ export const notificationsRouter = router({
     }),
 
   markRead: protectedProcedure
-    .input(z.object({ id: z.number().int().positive() }))
+    .input(z.object({ ids: z.array(z.number().int().positive()).min(1) }))
     .mutation(async ({ input, ctx }) => {
       const { data, error } = await db
         .from("notifications")
         .update({ read_at: new Date().toISOString(), status: "read" })
-        .eq("id", input.id)
+        .in("id", input.ids)
         .eq("recipient_id", ctx.user.id)
-        .select()
-        .single();
+        .select();
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     }),
 
   send: adminProcedure

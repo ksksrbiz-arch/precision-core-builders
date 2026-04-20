@@ -4,7 +4,7 @@ import { logAdminAction } from "../_core/auditLog";
 import { z } from "zod";
 
 export const fieldReportsRouter = router({
-  list: adminProcedure
+  list: protectedProcedure
     .input(
       z.object({
         projectId: z.number().int().positive().optional(),
@@ -57,7 +57,7 @@ export const fieldReportsRouter = router({
         .from("field_reports")
         .insert({
           project_id: input.projectId,
-          author_id: ctx.user.id,
+          author_id: ctx.user!.id,
           report_date: input.reportDate ?? new Date().toISOString(),
           transcription: input.transcription,
           summary: input.summary,

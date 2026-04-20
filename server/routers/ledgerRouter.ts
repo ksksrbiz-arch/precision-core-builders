@@ -13,8 +13,8 @@ const EntryTypeEnum = z.enum([
 ]);
 
 export const ledgerRouter = router({
-  // Admin: all entries
-  list: adminProcedure
+  // All authenticated users can read ledger entries for their projects
+  list: protectedProcedure
     .input(
       z.object({
         projectId: z.number().int().positive(),
@@ -69,7 +69,7 @@ export const ledgerRouter = router({
         .from("ledger_entries")
         .insert({
           project_id: input.projectId,
-          author_id: ctx.user.id,
+          author_id: ctx.user!.id,
           entry_type: input.entryType,
           title: input.title,
           description: input.description,

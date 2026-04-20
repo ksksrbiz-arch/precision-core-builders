@@ -207,7 +207,16 @@ export default function SubContractorsList() {
                 Cancel
               </button>
               <button
-                onClick={() => createMut.mutate(form)}
+                onClick={() =>
+                  createMut.mutate({
+                    ...form,
+                    trade: form.trade
+                      ? (form.trade.toLowerCase() as Parameters<
+                          typeof createMut.mutate
+                        >[0]["trade"])
+                      : undefined,
+                  })
+                }
                 disabled={!form.name || createMut.isPending}
                 className="px-4 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}

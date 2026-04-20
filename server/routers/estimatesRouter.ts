@@ -155,6 +155,22 @@ export const estimatesRouter = router({
       return { data: data ?? [], total: count ?? 0 };
     }),
 
+  approve: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const { data, error } = await db
+        .from("estimates")
+        .update({
+          approved_by_client: true,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }),
+
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {

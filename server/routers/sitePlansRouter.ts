@@ -62,7 +62,7 @@ export const sitePlansRouter = router({
         .insert({
           name: input.name,
           project_id: input.projectId ?? null,
-          author_id: ctx.user.id,
+          author_id: ctx.user!.id,
           elements: input.elements,
           app_state: input.appState,
           thumbnail_data_url: input.thumbnailDataUrl ?? null,

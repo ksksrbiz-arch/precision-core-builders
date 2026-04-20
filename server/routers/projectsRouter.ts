@@ -16,6 +16,8 @@ const ProjectStatusEnum = z.enum([
 const CreateProjectInput = z.object({
   clientId: z.number().int().positive(),
   name: z.string().min(1).max(300),
+  startDate: z.string().datetime().optional(),
+  budget: z.number().positive().optional(),
   description: z.string().optional(),
   status: ProjectStatusEnum.optional().default("lead"),
   projectType: z.string().max(100).optional(),
@@ -33,14 +35,17 @@ const CreateProjectInput = z.object({
 });
 
 export const projectsRouter = router({
-  list: adminProcedure
+  list: protectedProcedure
     .input(
-      z.object({
-        page: z.number().int().positive().optional(),
-        pageSize: z.number().int().min(1).max(100).optional(),
-        status: ProjectStatusEnum.optional(),
-        search: z.string().optional(),
-      })
+      z
+        .object({
+          page: z.number().int().positive().optional(),
+          pageSize: z.number().int().min(1).max(100).optional(),
+          status: ProjectStatusEnum.optional(),
+          search: z.string().optional(),
+        })
+        .optional()
+        .default({})
     )
     .query(async ({ input }) => {
       const { from, to } = paginate(input);

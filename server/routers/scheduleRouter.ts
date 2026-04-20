@@ -187,4 +187,24 @@ export const scheduleRouter = router({
       if (error) throw new Error(error.message);
       return data ?? [];
     }),
+
+  updateOrder: adminProcedure
+    .input(
+      z.object({
+        projectId: z.number().int().positive(),
+        updates: z.array(
+          z.object({ id: z.number().int(), order: z.number().int() })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      for (const { id, order } of input.updates) {
+        await db
+          .from("schedule_items")
+          .update({ order })
+          .eq("id", id)
+          .eq("project_id", input.projectId);
+      }
+      return { success: true };
+    }),
 });

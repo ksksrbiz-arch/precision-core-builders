@@ -1,5 +1,5 @@
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, router } from "./_core/trpc";
 import { clientsRouter } from "./routers/clientsRouter";
 import { estimatesRouter } from "./routers/estimatesRouter";
 import { fieldReportsRouter } from "./routers/fieldReportsRouter";
@@ -16,7 +16,7 @@ import { subContractorsRouter } from "./routers/subContractorsRouter";
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: protectedProcedure.query(opts => opts.ctx.user),
   }),
   projects: projectsRouter,
   clients: clientsRouter,
