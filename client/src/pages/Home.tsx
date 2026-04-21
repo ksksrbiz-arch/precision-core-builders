@@ -104,28 +104,28 @@ export default function Home() {
 ══════════════════════════════════════════════════════════════ */
 const HERO_SLIDES = [
   {
-    url: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=75",
-    alt: "Luxury custom home under construction — golden hour aerial view",
+    url: "/portfolio/signature-outdoor-01.jpg",
+    alt: "The Tadlock brothers' own home — pergola, deck, and cedar privacy fence, all built by Eric and Mitch themselves",
     animation: "hero-zoom-in",
   },
   {
-    url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1400&q=75",
-    alt: "Heavy timber frame construction — dramatic rafter perspective",
+    url: "/portfolio/signature-deck-01.jpg",
+    alt: "Covered pergola and composite deck on a Eugene home — built by Precision Core Builders",
     animation: "hero-drift-right",
   },
   {
-    url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1400&q=75",
-    alt: "Master carpenter precision work — warm workshop light",
+    url: "/portfolio/house-restoration-02.jpg",
+    alt: "Full home restoration at sunset — new roof, siding, and envelope by Precision Core Builders",
     animation: "hero-zoom-out",
   },
   {
-    url: "https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?auto=format&fit=crop&w=1400&q=75",
-    alt: "Completed custom home at dusk — lights glowing warm",
+    url: "/portfolio/signature-outdoor-01.jpg",
+    alt: "Backyard pergola over composite deck with horizontal cedar privacy fence — outdoor living by Precision Core Builders",
     animation: "hero-drift-left",
   },
   {
-    url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1400&q=75",
-    alt: "Home framing interior — light streaming through window openings",
+    url: "/portfolio/side-yard-shed-03.jpg",
+    alt: "Custom side-yard shed with matching siding and roofline — Eric Tadlock carpentry",
     animation: "hero-zoom-diagonal",
   },
 ] as const;
@@ -594,7 +594,7 @@ function PortfolioTeaser() {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {ASSETS.portfolio.slice(0, 4).map((img, i) => (
+          {["/portfolio/signature-outdoor-01.jpg", "/portfolio/house-restoration-02.jpg", "/portfolio/side-yard-shed-03.jpg", "/portfolio/bath-remodel-06.jpg"].map((img, i) => (
             <motion.div
               key={img}
               initial={{ opacity: 0, y: 20 }}
