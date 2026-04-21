@@ -1,4 +1,5 @@
 # Session Summary: Critical Path Features & Eric Documentation
+
 **Date:** April 6, 2026  
 **Duration:** This session  
 **Status:** ✅ Complete & Live
@@ -10,6 +11,7 @@
 ### 1. GanttChart Component (`client/src/components/GanttChart.tsx`)
 
 **What it does:**
+
 - Visual timeline of all project tasks
 - Drag-to-reschedule functionality (no form needed)
 - Color-coded by status: green (complete), blue (in-progress), gray (planned), red (blocked)
@@ -18,6 +20,7 @@
 - Responsive mobile layout
 
 **Features:**
+
 - Fetches schedule from tRPC router `schedule.list()`
 - Handles drag-and-drop with optimistic UI updates
 - Custom tooltip showing task details
@@ -25,6 +28,7 @@
 - Status legend with task statistics
 
 **Integration:**
+
 - Integrated into `ScheduleView.tsx` (admin schedule page)
 - Shows before task list for high-level visualization
 - Passes weather forecast data for visual indicators
@@ -36,6 +40,7 @@
 ### 2. useRealtimeSubscription Hook (`client/src/_core/hooks/useRealtimeSubscription.ts`)
 
 **What it does:**
+
 - Generic Supabase real-time subscription hook
 - Subscribes to database table changes (INSERT, UPDATE, DELETE)
 - Auto-invalidates tRPC queries on changes
@@ -43,6 +48,7 @@
 - Built-in connection status tracking
 
 **Specialized hooks included:**
+
 - `useRealtimeProjects()` — subscribes to projects table
 - `useRealtimeSchedule(projectId)` — subscribes to schedule_items
 - `useRealtimeFieldReports(projectId)` — subscribes to field_reports
@@ -52,6 +58,7 @@
 - `useRealtimeStatus()` — tracks online/offline status
 
 **Implementation:**
+
 - Uses Supabase `.channel()` with postgres_changes
 - Filters support dynamic query conditions
 - Automatic unsubscribe on unmount
@@ -59,6 +66,7 @@
 - Error handling with state
 
 **Usage example:**
+
 ```typescript
 const { data, isLoading, isConnected } = useRealtimeSchedule(projectId);
 // data automatically updates when schedule items change
@@ -71,6 +79,7 @@ const { data, isLoading, isConnected } = useRealtimeSchedule(projectId);
 ### 3. User Documentation for Eric
 
 #### **USER_GUIDE_ERIC.md** (`/docs/USER_GUIDE_ERIC.md`)
+
 - Comprehensive 12-section guide
 - Covers all 12 major platform features
 - 3 workflow examples (start project, daily update, budget question)
@@ -81,6 +90,7 @@ const { data, isLoading, isConnected } = useRealtimeSchedule(projectId);
 - ~2,000 words, no jargon
 
 **Sections:**
+
 1. Quick Start (5 min)
 2. Voice-to-Report
 3. Weather Scheduling
@@ -95,6 +105,7 @@ const { data, isLoading, isConnected } = useRealtimeSchedule(projectId);
 12. Portfolio & AI Chat
 
 #### **GETTING_STARTED_ERIC.md** (`/GETTING_STARTED_ERIC.md`)
+
 - Quick-start guide (5 minutes)
 - Step-by-step onboarding
 - Daily workflow template
@@ -108,17 +119,20 @@ const { data, isLoading, isConnected } = useRealtimeSchedule(projectId);
 ## Demo Data Cleanup
 
 ### Removed:
+
 - `client/src/pages/ComponentShowcase.tsx` — developer-only component showcase
 - All hardcoded mock data from sample components
 - Demo explanations
 
 ### Verified (still clean):
+
 - Database migrations contain no seed data
 - tRPC routers have no demo returns
 - Netlify functions are pure
 - Pages load real data from Supabase
 
 ### Result:
+
 ✅ **Zero demo data** — everything points to production database
 
 ---
@@ -126,6 +140,7 @@ const { data, isLoading, isConnected } = useRealtimeSchedule(projectId);
 ## Integration Points
 
 ### GanttChart ← ScheduleView
+
 ```typescript
 <GanttChart
   projectId={selectedProject}
@@ -139,12 +154,15 @@ const { data, isLoading, isConnected } = useRealtimeSchedule(projectId);
 ```
 
 ### Real-time in CommandCenter
+
 Already integrated via `useRealtimeTable` hook:
+
 - Projects update live
 - KPI stats refresh
 - Visual flash feedback
 
 ### Real-time Hook Available
+
 - Added 7 specialized hooks ready to use
 - Can be imported into any page
 - Automatically invalidates tRPC queries
@@ -155,6 +173,7 @@ Already integrated via `useRealtimeTable` hook:
 ## Build & Deployment Status
 
 ### Build:
+
 ```
 ✓ Built in 10.52s
 ✓ 0 TypeScript errors
@@ -163,6 +182,7 @@ Already integrated via `useRealtimeTable` hook:
 ```
 
 ### Live:
+
 ```
 ✓ https://precision-core.netlify.app (live)
 ✓ https://precisioncorebuilders.com (alias)
@@ -171,6 +191,7 @@ Already integrated via `useRealtimeTable` hook:
 ```
 
 ### Git:
+
 ```
 ✓ Commits:
   - 4da3fa1: Add Gantt/Realtime/Guide
@@ -184,6 +205,7 @@ Already integrated via `useRealtimeTable` hook:
 ## What Each Component Knows
 
 ### GanttChart.tsx
+
 - Receives `projectId`, `items`, `weatherForecast`
 - Can fetch from tRPC or accept passed data
 - Emits `onTaskUpdate` callback
@@ -191,6 +213,7 @@ Already integrated via `useRealtimeTable` hook:
 - No direct tRPC mutations (parent handles them)
 
 ### useRealtimeSubscription.ts
+
 - Generic for any table
 - Takes filter conditions
 - Provides callbacks for INSERT/UPDATE/DELETE
@@ -198,6 +221,7 @@ Already integrated via `useRealtimeTable` hook:
 - Handles unsubscribe automatically
 
 ### User Guides
+
 - No code dependencies
 - Referenced in Admin → Help
 - Plain language, no jargon
@@ -209,6 +233,7 @@ Already integrated via `useRealtimeTable` hook:
 ## Architecture Decisions
 
 ### Why Recharts for Gantt?
+
 - Built-in bar chart layout
 - Responsive by default
 - Touch-friendly (mobile)
@@ -216,6 +241,7 @@ Already integrated via `useRealtimeTable` hook:
 - Easy to customize
 
 ### Why Real-time via Supabase?
+
 - Already in database
 - Websockets (low latency)
 - Native Postgres change tracking
@@ -223,6 +249,7 @@ Already integrated via `useRealtimeTable` hook:
 - RLS-aware (respects permissions)
 
 ### Why Separate User Guides?
+
 - **USER_GUIDE_ERIC.md** = complete reference
 - **GETTING_STARTED_ERIC.md** = 5-min onboarding
 - Two different reading contexts
@@ -233,18 +260,21 @@ Already integrated via `useRealtimeTable` hook:
 ## Known Limitations & TODOs
 
 ### GanttChart:
+
 - Recharts has limited drag-and-drop (workaround: custom mouse handlers)
 - Large projects (100+ tasks) may need virtualization
 - Dependency lines not yet visualized (Mermaid could replace Recharts if needed)
 - **TODO:** Wire `onTaskUpdate` callback to actual tRPC mutation
 
 ### useRealtimeSubscription:
+
 - Assumes filters are equality-based (could extend for complex queries)
 - Single table only (could support joins via view)
 - No retry logic (Supabase handles auto-reconnect)
 - **TODO:** Add more complex filter support if needed
 
 ### Documentation:
+
 - No video walkthroughs yet (could be added later)
 - No troubleshooting for advanced scenarios
 - No API reference (should mirror tRPC router docs)
@@ -254,18 +284,21 @@ Already integrated via `useRealtimeTable` hook:
 ## Next Steps for Future Sessions
 
 ### Priority 1 (High Impact):
+
 1. **Wire GanttChart to tRPC** — connect `onTaskUpdate` to actual mutation
 2. **Test Real-time on Mobile** — confirm WebSocket latency on cellular
 3. **Integrate Realtime Hooks** — add to FieldReportsList, BillingView, etc.
 4. **Monitor Bundle Size** — Mermaid is 447KB gzip (consider lazy loading)
 
 ### Priority 2 (Nice to Have):
+
 1. **Add Video Tutorials** — screen recordings for each feature
 2. **Email Welcome** — send guides to Eric when new features launch
 3. **CLI Status** — command-line tool to check deployment health
 4. **Analytics Dashboard** — track adoption of each feature
 
 ### Priority 3 (Long-term):
+
 1. **Gantt Task Dependencies** — draw lines between tasks
 2. **Advanced Scheduling** — critical path analysis
 3. **Budget Forecasting** — AI predicts project costs
@@ -336,24 +369,28 @@ All clients see update (<1s)
 ## Testing Checklist for Eric
 
 ### Voice-to-Report:
+
 - [ ] Record a memo from phone
 - [ ] Check AI transcription accuracy
 - [ ] Verify client portal sees it immediately
 - [ ] Check timestamp in Ledger
 
 ### Gantt Chart:
+
 - [ ] View schedule on desktop
 - [ ] Drag a task 3 days forward
 - [ ] Verify new dates in task details
 - [ ] Check on mobile (responsive)
 
 ### Real-time:
+
 - [ ] Open two browser tabs
 - [ ] File report in tab 1
 - [ ] Verify tab 2 updates without refresh
 - [ ] Check time between action and update
 
 ### Estimator:
+
 - [ ] Use public estimator
 - [ ] Verify cost breakdown is accurate
 - [ ] Request on-site estimate
@@ -364,13 +401,16 @@ All clients see update (<1s)
 ## Deployment & CI/CD
 
 ### GitHub Actions:
+
 - Triggers on every push to main
 - Runs linting, testing, type-check
 - Builds production bundle
 - Deploys to Netlify automatically
 
 ### Environment Variables:
+
 All configured in Netlify dashboard:
+
 - `ANTHROPIC_API_KEY` ✅
 - `OPENWEATHERMAP_API_KEY` ✅
 - `SUPABASE_URL` ✅
@@ -378,6 +418,7 @@ All configured in Netlify dashboard:
 - `SUPABASE_SERVICE_ROLE_KEY` ✅
 
 ### Secrets (Never in Code):
+
 - GitHub PAT ✅ (used for pushes)
 - Netlify Auth Token ✅
 - Service account keys ✅
@@ -386,23 +427,24 @@ All configured in Netlify dashboard:
 
 ## Session Statistics
 
-| Metric | Value |
-|--------|-------|
-| **Lines of code added** | 1,114 |
-| **Files created** | 4 |
-| **Files modified** | 1 |
-| **Files deleted** | 1 |
-| **Build time** | 10.52s |
-| **Bundle size** | 744KB gzip |
-| **TypeScript errors** | 0 |
-| **Demo data removed** | ✓ Complete |
-| **Documentation pages** | 2 |
+| Metric                  | Value      |
+| ----------------------- | ---------- |
+| **Lines of code added** | 1,114      |
+| **Files created**       | 4          |
+| **Files modified**      | 1          |
+| **Files deleted**       | 1          |
+| **Build time**          | 10.52s     |
+| **Bundle size**         | 744KB gzip |
+| **TypeScript errors**   | 0          |
+| **Demo data removed**   | ✓ Complete |
+| **Documentation pages** | 2          |
 
 ---
 
 ## Knowledge Transfer Notes
 
 ### For next session:
+
 1. **GanttChart implementation is 95% done** — just needs tRPC mutation wiring
 2. **Real-time hooks are production-ready** — can be dropped into any page
 3. **Eric's documentation is comprehensive** — covers all features with no jargon
@@ -410,6 +452,7 @@ All configured in Netlify dashboard:
 5. **Build is solid** — no errors, responsive, mobile-friendly
 
 ### Architecture is stable:
+
 - React 19/TypeScript/Vite frontend ✅
 - tRPC for type-safe APIs ✅
 - Supabase for database & realtime ✅
@@ -417,6 +460,7 @@ All configured in Netlify dashboard:
 - Recharts for data visualization ✅
 
 ### No breaking changes:
+
 - Backward compatible with all existing pages
 - Additive only (new features, no removals)
 - All existing functionality still works
@@ -445,4 +489,4 @@ All configured in Netlify dashboard:
 
 **Session Complete. Platform Ready for Eric to Use.**
 
-*Built by Claude on April 6, 2026.*
+_Built by Claude on April 6, 2026._

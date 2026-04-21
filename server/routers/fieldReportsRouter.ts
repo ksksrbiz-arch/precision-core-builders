@@ -1,9 +1,10 @@
 import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { logAdminAction } from "../_core/auditLog";
 import { z } from "zod";
 
 export const fieldReportsRouter = router({
-  list: adminProcedure
+  list: protectedProcedure
     .input(
       z.object({
         projectId: z.number().int().positive().optional(),
@@ -56,7 +57,7 @@ export const fieldReportsRouter = router({
         .from("field_reports")
         .insert({
           project_id: input.projectId,
-          author_id: ctx.user.id,
+          author_id: ctx.user!.id,
           report_date: input.reportDate ?? new Date().toISOString(),
           transcription: input.transcription,
           summary: input.summary,
@@ -78,6 +79,10 @@ export const fieldReportsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "fieldReport.create", input.projectId, {
+        reportId: data.id,
+        reportDate: data.report_date,
+      });
       return data;
     }),
 
@@ -127,7 +132,7 @@ export const fieldReportsRouter = router({
 
   publish: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { data, error } = await db
         .from("field_reports")
         .update({
@@ -138,17 +143,51 @@ export const fieldReportsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "fieldReport.publish", data.project_id, {
+        reportId: input.id,
+      });
+      return data;
+    }),
+
+  unpublish: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const { data, error } = await db
+        .from("field_reports")
+        .update({
+          published_to_client: false,
+          published_at: null,
+        })
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "fieldReport.unpublish", data.project_id, {
+        reportId: input.id,
+      });
       return data;
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Fetch project_id before deletion for audit log.
+      const { data: report, error: fetchError } = await db
+        .from("field_reports")
+        .select("project_id")
+        .eq("id", input.id)
+        .single();
+      if (fetchError || !report) {
+        throw new Error(fetchError?.message ?? "Field report not found");
+      }
       const { error } = await db
         .from("field_reports")
         .delete()
         .eq("id", input.id);
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "fieldReport.delete", report.project_id, {
+        reportId: input.id,
+      });
       return { success: true };
     }),
 
@@ -167,4 +206,50 @@ export const fieldReportsRouter = router({
       if (error) throw new Error(error.message);
       return data ?? [];
     }),
+
+  // Analytics: report counts by week (last 8 weeks)
+  weeklyStats: adminProcedure.query(async () => {
+    const { data } = await db
+      .from("field_reports")
+      .select("report_date,published_to_client,issues_flagged")
+      .order("report_date", { ascending: true })
+      .gte(
+        "report_date",
+        new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString()
+      );
+
+    const weeks: Record<
+      string,
+      { week: string; reports: number; issues: number; published: number }
+    > = {};
+    for (const r of data ?? []) {
+      const d = new Date(r.report_date);
+      // ISO week start (Monday)
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const weekStart = new Date(d.getFullYear(), d.getMonth(), diff);
+      const key = weekStart.toISOString().slice(0, 10);
+      if (!weeks[key]) {
+        weeks[key] = {
+          week: weekStart.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
+          reports: 0,
+          issues: 0,
+          published: 0,
+        };
+      }
+      weeks[key].reports++;
+      if (r.published_to_client) weeks[key].published++;
+      try {
+        const issues = JSON.parse(r.issues_flagged ?? "[]");
+        if (Array.isArray(issues) && issues.length > 0) weeks[key].issues++;
+      } catch {
+        // ignore
+      }
+    }
+
+    return Object.values(weeks).slice(-8);
+  }),
 });

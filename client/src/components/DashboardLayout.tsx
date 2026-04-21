@@ -23,6 +23,7 @@ import {
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   BarChart3,
+  Bell,
   BookOpen,
   Calendar,
   Camera,
@@ -36,8 +37,11 @@ import {
   Package,
   PanelLeft,
   Pencil,
+  Radio,
+  Search,
   Settings,
   Shield,
+  Sparkles,
   Users,
   Wrench,
 } from "lucide-react";
@@ -48,6 +52,8 @@ import { Button } from "./ui/button";
 
 const NAV = [
   { icon: LayoutDashboard, label: "Command Center", path: "/admin" },
+  { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+  { icon: Search, label: "Search", path: "/admin/search" },
   { icon: ClipboardList, label: "Projects", path: "/admin/projects" },
   { icon: Users, label: "Clients", path: "/admin/clients" },
   { icon: BookOpen, label: "Field Reports", path: "/admin/field-reports" },
@@ -55,13 +61,16 @@ const NAV = [
   { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
   { icon: BarChart3, label: "Estimates", path: "/admin/estimates" },
   { icon: Package, label: "Materials", path: "/admin/materials" },
+  { icon: Sparkles, label: "Finish Selections", path: "/admin/finishes" },
   { icon: Wrench, label: "Sub-Contractors", path: "/admin/sub-contractors" },
   { icon: Shield, label: "Ledger", path: "/admin/ledger" },
   { icon: CreditCard, label: "Billing", path: "/admin/billing" },
+  { icon: Bell, label: "Notifications", path: "/admin/notifications" },
   { icon: Image, label: "Portfolio CMS", path: "/admin/portfolio-cms" },
   { icon: Camera, label: "Vision Studio", path: "/admin/vision-studio" },
   { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
   { icon: HelpCircle, label: "System Guide", path: "/admin/guides" },
+  { icon: Radio, label: "Activity Log", path: "/admin/activity-log" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "pcb-sidebar-width";
@@ -83,6 +92,18 @@ export default function DashboardLayout({
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
+
+  // Cmd+K / Ctrl+K → navigate to search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        window.location.href = "/admin/search";
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   if (loading) return <DashboardLayoutSkeleton />;
 

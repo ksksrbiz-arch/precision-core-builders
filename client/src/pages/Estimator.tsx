@@ -8,6 +8,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import { ArrowRight, Loader2, CheckCircle2, DollarSign } from "lucide-react";
 import { useState } from "react";
@@ -49,6 +50,13 @@ type EstimateResult = {
 };
 
 export default function Estimator() {
+  useSEO({
+    title: "Free Project Estimator — Get a Cost Estimate",
+    description:
+      "Get an instant AI-powered construction cost estimate for your project. Precision Core Builders serves Eugene, Springfield, and Lane County, Oregon. No obligation.",
+    canonical: "https://precisioncorebuilders.com/estimator",
+  });
+
   const [step, setStep] = useState<Step>(1);
   const [projectType, setProjectType] = useState("");
   const [sqft, setSqft] = useState("");
@@ -108,11 +116,35 @@ export default function Estimator() {
     formData.append("complexity", complexity);
     formData.append("sqft", sqft);
     formData.append("estimatedMid", String(result?.estimatedMid ?? 0));
+
+    // 1. Submit to Netlify Forms for CRM
     await fetch("/", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(formData as any).toString(),
     });
+
+    // 2. Fire lead_captured n8n event (non-blocking)
+    fetch("/api/n8n-webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "lead_captured",
+        payload: {
+          name: leadName,
+          email: leadEmail,
+          phone: leadPhone,
+          projectType,
+          complexity,
+          squareFootage: sqft,
+          estimatedMid: result?.estimatedMid,
+          estimatedLow: result?.estimatedLow,
+          estimatedHigh: result?.estimatedHigh,
+          source: "estimator",
+        },
+      }),
+    }).catch(() => {});
+
     setLeadSent(true);
   };
 

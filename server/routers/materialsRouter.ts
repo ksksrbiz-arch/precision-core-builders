@@ -1,5 +1,5 @@
 import { db, paginate } from "../db";
-import { adminProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
 const MaterialInput = z.object({
@@ -25,7 +25,7 @@ const MaterialInput = z.object({
 });
 
 export const materialsRouter = router({
-  list: adminProcedure
+  list: protectedProcedure
     .input(
       z.object({
         projectId: z.number().int().positive().optional(),

@@ -1,4 +1,3 @@
-
 # Precision Core Builders: Digital Foreman Platform User Guide
 
 > **Your platform URL:** Use the URL provided during handover. During development and pre-transfer it was `https://precision-core.netlify.app`; after the domain is set up it will be your custom domain (e.g. `https://precisioncorebuilders.com`). Replace any URL in this guide with your actual domain. All paths (e.g. `/admin`, `/estimator`) stay the same.
@@ -40,6 +39,7 @@ That's it. Everything else builds from these five actions.
 6. Your client **sees the report in their portal** within 60 seconds
 
 **Pro tips:**
+
 - Speak naturally — AI understands construction language
 - Voice notes are timestamped and archived forever
 - If you notice a material shortage in your report, the system flags it for procurement automatically
@@ -65,6 +65,7 @@ That's it. Everything else builds from these five actions.
 6. Your clients see the updated schedule in real-time
 
 **Pro tips:**
+
 - Mark tasks as "weather-dependent" when you create them
 - Schedule has full team visibility — subs see their assignments immediately
 - Rain rescheduling is automatic but you can override any time
@@ -84,6 +85,7 @@ That's it. Everything else builds from these five actions.
 4. Each person who uses it becomes a potential lead
 
 **For your team:**
+
 1. Go to **Admin → Estimates → List**
 2. You see all estimates generated
 3. Each estimate shows:
@@ -93,6 +95,7 @@ That's it. Everything else builds from these five actions.
    - Customer contact info (if they requested a quote)
 
 **Pro tips:**
+
 - Estimator uses Eugene, OR market data by default (accurate for your area)
 - All estimates are archived — you can reference them later
 - When a customer requests an on-site estimate, they go into your CRM (coming soon)
@@ -117,6 +120,7 @@ That's it. Everything else builds from these five actions.
    - **AI Chat** (bottom right) → Ask "What's my revenue trend?" or "Which projects are at risk?"
 
 **Pro tips:**
+
 - Refresh the page to see latest real-time updates
 - AI Chat remembers your project data — ask complex questions
 - Use this for morning briefings and end-of-day reviews
@@ -142,6 +146,7 @@ That's it. Everything else builds from these five actions.
 5. Full report is saved and linked to the project
 
 **Pro tips:**
+
 - Use finishes mode for client portal screenshots
 - Use structural mode before inspections
 - All photos are archived in the project — great for portfolio later
@@ -164,6 +169,7 @@ That's it. Everything else builds from these five actions.
 4. Client logs in (link only, no password)
 
 **What your client can do:**
+
 - **View Progress** → Photos, field reports, timeline
 - **Select Finishes** → Choose paint colors, tile, fixtures with live budget impact
 - **See Budget** → All invoices, change orders, contingency
@@ -171,6 +177,7 @@ That's it. Everything else builds from these five actions.
 - **Message You** → Built-in messaging (you respond in Admin)
 
 **Pro tips:**
+
 - Client sees updates within 60 seconds of your field report
 - Budget impacts appear immediately when they select a finish
 - All client activity is logged (approvals, decisions, changes)
@@ -194,6 +201,7 @@ That's it. Everything else builds from these five actions.
    - **Portal** → Settings for client access
 
 **Pro tips:**
+
 - Ledger is your insurance policy — every decision is timestamped
 - Use ledger for disputes, inspections, change order justification
 - All dates auto-sync to schedule (move a task, dates update everywhere)
@@ -220,6 +228,7 @@ That's it. Everything else builds from these five actions.
 4. When you need it, click **Order** (integrates with your vendor account eventually)
 
 **Pro tips:**
+
 - Mark materials as "critical" if they block the schedule
 - AI suggests cheaper alternatives automatically
 - When prices drop, you get notified
@@ -244,6 +253,7 @@ That's it. Everything else builds from these five actions.
 6. Money is in your account within 24 hours
 
 **Pro tips:**
+
 - You control milestone amounts and dates
 - Client sees invoice in portal immediately
 - All payments are backed up forever
@@ -268,6 +278,7 @@ That's it. Everything else builds from these five actions.
 5. They confirm receipt via SMS
 
 **Pro tips:**
+
 - Subs get automatic reminders 24 hours before their assignment
 - Weather delays update their schedule automatically
 - All sub communication is logged
@@ -291,6 +302,7 @@ That's it. Everything else builds from these five actions.
 4. Your website's portfolio section updates automatically
 
 **Pro tips:**
+
 - Portfolio drives new leads (proven work)
 - Photos are organized by category (kitchen, bath, whole-home, etc.)
 
@@ -309,6 +321,7 @@ That's it. Everything else builds from these five actions.
 - **"What was the issue on the Riverside project?"**
 
 **How to access:**
+
 1. Go to **Admin → Dashboard**
 2. Look for the **AI Chat** box (bottom right)
 3. Type your question
@@ -319,10 +332,13 @@ That's it. Everything else builds from these five actions.
 ## Integration With Your Existing Systems
 
 ### Stripe
+
 All invoicing and payments go through Stripe. You receive payments within 24 hours. No transaction fees for invoicing — only standard Stripe card fees on customer payments.
 
 ### n8n (Automation)
+
 Your n8n instance can trigger off events:
+
 - Project created → Notify team
 - Field report filed → Update client portal
 - Material arrived → Mark in inventory
@@ -331,6 +347,7 @@ Your n8n instance can trigger off events:
 (n8n workflows are set up in your account. Contact me to configure specific automations.)
 
 ### Supabase (Database)
+
 All your data lives in Supabase. Encrypted, backed up, HIPAA-compliant. You own it. You can export it anytime.
 
 ---
@@ -338,6 +355,7 @@ All your data lives in Supabase. Encrypted, backed up, HIPAA-compliant. You own 
 ## Mobile Experience
 
 The entire platform works on mobile:
+
 - iPhone/Android: Full responsive design
 - Portrait/Landscape: Optimized layouts
 - Offline: Voice recording works offline, syncs when back online
@@ -347,13 +365,13 @@ The entire platform works on mobile:
 
 ## Keyboard Shortcuts & Tips
 
-| Action | Shortcut |
-|--------|----------|
-| Jump to Dashboard | `D` |
-| New Field Report | `V` |
-| New Project | `P` |
-| Search | `Cmd+K` or `Ctrl+K` |
-| Open AI Chat | `?` |
+| Action            | Shortcut            |
+| ----------------- | ------------------- |
+| Jump to Dashboard | `D`                 |
+| New Field Report  | `V`                 |
+| New Project       | `P`                 |
+| Search            | `Cmd+K` or `Ctrl+K` |
+| Open AI Chat      | `?`                 |
 
 ---
 
@@ -425,22 +443,26 @@ Time: 5 minutes.
 ## Support & Troubleshooting
 
 ### The platform isn't loading?
+
 - Refresh the page
 - Clear your browser cache
 - Try a different browser
 - Check your internet connection
 
 ### I can't see real-time updates?
+
 - Supabase Realtime may be temporarily degraded
 - Refresh the page to manually sync
 - Check the "Connection Status" indicator (top right, if connected)
 
 ### A task didn't save?
+
 - Check your internet connection
 - Try again
 - Contact support with the project ID and time of the issue
 
 ### I need to export my data?
+
 Go to **Admin → Settings → Data Export** and download your complete project database as JSON or CSV.
 
 ---
@@ -460,4 +482,4 @@ You've got a fully operational digital construction company now. No friction, no
 
 **Built with precision. For precision. By Eric.**
 
-*Questions? This guide is always in your account under Admin → Help.*
+_Questions? This guide is always in your account under Admin → Help._

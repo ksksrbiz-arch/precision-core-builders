@@ -9,6 +9,7 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight, CheckCircle2, MapPin, Phone, Shield } from "lucide-react";
 import { useRef } from "react";
@@ -56,6 +57,13 @@ const VALUES = [
 ];
 
 export default function About() {
+  useSEO({
+    title: "About Us — Eric & Mitch Tadlock",
+    description:
+      "Meet the Tadlock brothers — Eric and Mitch — the veteran carpenters behind Precision Core Builders. 20+ years of construction experience in Eugene, Oregon.",
+    canonical: "https://precisioncorebuilders.com/about",
+  });
+
   const heroRef = useRef(null);
   const valuesRef = useRef(null);
   const inViewValues = useInView(valuesRef, { once: true, margin: "-80px" });

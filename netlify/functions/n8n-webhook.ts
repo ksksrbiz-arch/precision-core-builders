@@ -22,6 +22,7 @@ const VALID_EVENTS = [
   "payment_received",
   "field_report_created",
   "project_status_changed",
+  "client_notification",
 ] as const;
 
 type WebhookEvent = (typeof VALID_EVENTS)[number];

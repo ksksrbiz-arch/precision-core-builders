@@ -137,6 +137,26 @@ export default function BillingView() {
         type: mode,
       };
       setInvoices(prev => [newInvoice, ...prev]);
+
+      // Fire payment_received / invoice sent event via n8n-webhook
+      fetch("/api/n8n-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "milestone_complete",
+          payload: {
+            projectId: selectedProject,
+            projectName: selectedProjectData?.name,
+            milestoneLabel: description,
+            amountDollars: amountCents / 100,
+            clientEmail: clientEmail || undefined,
+            type: mode,
+          },
+        }),
+      }).catch(() => {
+        // Non-fatal
+      });
+
       addToast({
         type: "success",
         title: "Created",

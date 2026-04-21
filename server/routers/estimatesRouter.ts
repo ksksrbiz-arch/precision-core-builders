@@ -1,5 +1,10 @@
 import { db, paginate } from "../db";
-import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import {
+  adminProcedure,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "../_core/trpc";
 import { z } from "zod";
 
 export const estimatesRouter = router({
@@ -137,7 +142,9 @@ export const estimatesRouter = router({
 
       let q = db
         .from("estimates")
-        .select("*, projects(id,name,status,progress_percent)", { count: "exact" })
+        .select("*, projects(id,name,status,progress_percent)", {
+          count: "exact",
+        })
         .eq("client_id", client.id)
         .order("created_at", { ascending: false });
 
@@ -146,6 +153,22 @@ export const estimatesRouter = router({
       const { data, error, count } = await q;
       if (error) throw new Error(error.message);
       return { data: data ?? [], total: count ?? 0 };
+    }),
+
+  approve: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const { data, error } = await db
+        .from("estimates")
+        .update({
+          approved_by_client: true,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
     }),
 
   delete: adminProcedure

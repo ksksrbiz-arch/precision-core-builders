@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { getAccessToken } from "@/lib/supabase";
+import { DEV_BYPASS_KEY } from "@/_core/hooks/useAuth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { createRoot } from "react-dom/client";
@@ -37,6 +38,13 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       async headers() {
+        // In dev mode with the bypass active, send the dev token
+        if (
+          import.meta.env.VITE_DEV_MODE === "true" &&
+          localStorage.getItem(DEV_BYPASS_KEY) === "true"
+        ) {
+          return { Authorization: "Bearer dev-admin-token" };
+        }
         // Attach Supabase JWT so server context can verify identity
         const token = await getAccessToken();
         return token ? { Authorization: `Bearer ${token}` } : {};
@@ -65,7 +73,6 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
     navigator.serviceWorker
       .register("/sw.js")
       .then(reg => {
-        console.log("[SW] Registered:", reg.scope);
         // Check for updates every 30 min
         setInterval(() => reg.update(), 30 * 60 * 1000);
       })

@@ -1,6 +1,10 @@
 /**
  * tRPC context — verifies Supabase JWT from Authorization header.
  * Works for both local dev (Express) and Netlify Functions.
+ *
+ * Dev Mode: When NODE_ENV !== 'production' and the incoming token is the
+ * well-known dev bypass token, returns a mock admin user so the admin
+ * dashboard can be used without a live Supabase connection.
  */
 import { createClient } from "@supabase/supabase-js";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
@@ -15,10 +19,13 @@ export type SessionUser = {
 };
 
 export type TrpcContext = {
-  req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  req?: CreateExpressContextOptions["req"];
+  res?: CreateExpressContextOptions["res"];
   user: SessionUser | null;
 };
+
+/** The shared dev bypass token — matches the client-side constant. */
+const DEV_ADMIN_TOKEN = "dev-admin-token";
 
 /** Supabase admin client — used server-side only to verify JWTs. */
 function getSupabaseAdmin() {
@@ -42,6 +49,20 @@ export async function createContext(
 
   if (!token) {
     return { req: opts.req, res: opts.res, user: null };
+  }
+
+  // Dev bypass — only valid outside production
+  if (token === DEV_ADMIN_TOKEN && process.env.NODE_ENV !== "production") {
+    return {
+      req: opts.req,
+      res: opts.res,
+      user: {
+        id: "dev-admin-local",
+        email: "dev@precisioncorebuilders.com",
+        name: "Dev Admin",
+        role: "admin",
+      },
+    };
   }
 
   const admin = getSupabaseAdmin();

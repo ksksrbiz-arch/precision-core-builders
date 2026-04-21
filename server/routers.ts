@@ -1,5 +1,5 @@
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, router } from "./_core/trpc";
 import { clientsRouter } from "./routers/clientsRouter";
 import { estimatesRouter } from "./routers/estimatesRouter";
 import { fieldReportsRouter } from "./routers/fieldReportsRouter";
@@ -10,12 +10,13 @@ import { notificationsRouter } from "./routers/notificationsRouter";
 import { portfolioRouter } from "./routers/portfolioRouter";
 import { projectsRouter } from "./routers/projectsRouter";
 import { scheduleRouter } from "./routers/scheduleRouter";
+import { sitePlansRouter } from "./routers/sitePlansRouter";
 import { subContractorsRouter } from "./routers/subContractorsRouter";
 
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: protectedProcedure.query(opts => opts.ctx.user),
   }),
   projects: projectsRouter,
   clients: clientsRouter,
@@ -28,6 +29,7 @@ export const appRouter = router({
   finishSelections: finishSelectionsRouter,
   notifications: notificationsRouter,
   portfolio: portfolioRouter,
+  sitePlans: sitePlansRouter,
 });
 
 export type AppRouter = typeof appRouter;

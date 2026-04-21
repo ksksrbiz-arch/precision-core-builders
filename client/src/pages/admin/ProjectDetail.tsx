@@ -1,17 +1,71 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
-import { ArrowLeft, Plus, Calendar, DollarSign, MapPin } from "lucide-react";
-import { useLocation, useParams } from "wouter";
+import {
+  ArrowLeft,
+  Plus,
+  Calendar,
+  DollarSign,
+  MapPin,
+  Pencil,
+  Save,
+  TrendingUp,
+  TrendingDown,
+  X,
+} from "lucide-react";
+import { useLocation, useParams, useSearch } from "wouter";
 import { useState } from "react";
 import { StatusBadge } from "./CommandCenter";
+
+type TabId =
+  | "overview"
+  | "reports"
+  | "schedule"
+  | "materials"
+  | "ledger"
+  | "profitability";
+
+function getInitialTab(search: string): TabId {
+  const params = new URLSearchParams(
+    search.startsWith("?") ? search.slice(1) : search
+  );
+  const tab = params.get("tab") as TabId | null;
+  const validTabs: TabId[] = [
+    "overview",
+    "reports",
+    "schedule",
+    "materials",
+    "ledger",
+    "profitability",
+  ];
+  return tab && validTabs.includes(tab) ? tab : "overview";
+}
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "reports" | "schedule" | "materials" | "ledger"
-  >("overview");
+  const search = useSearch();
+  const [activeTab, setActiveTab] = useState<TabId>(() =>
+    getInitialTab(search)
+  );
+  const [editingOverview, setEditingOverview] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    description: string;
+    projectType: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    estimatedBudget: string;
+    contractedBudget: string;
+    estimatedStartDate: string;
+    estimatedEndDate: string;
+    permitNumbers: string;
+    siteCamUrl: string;
+    clientPortalEnabled: boolean;
+  } | null>(null);
+
   const projectId = parseInt(id ?? "0");
   const { data: project, isLoading } = trpc.projects.getById.useQuery({
     id: projectId,
@@ -32,25 +86,104 @@ export default function ProjectDetail() {
     { projectId },
     { enabled: activeTab === "ledger" }
   );
+  const { data: profitability } = trpc.projects.profitability.useQuery(
+    { id: projectId },
+    { enabled: activeTab === "profitability" }
+  );
 
   const utils = trpc.useUtils();
-  const updateProgress = useMutationWithToast(trpc.projects.updateProgress.useMutation(), {
-    success: "Progress Saved",
-    successMessage: "Project progress updated.",
-    error: "Update Failed",
-    errorMessage: "Failed to update progress. Please try again.",
-    invalidate: () => utils.projects.getById.invalidate({ id: projectId }),
-  });
+  const updateProgress = useMutationWithToast(
+    trpc.projects.updateProgress.useMutation(),
+    {
+      success: "Progress Saved",
+      successMessage: "Project progress updated.",
+      error: "Update Failed",
+      errorMessage: "Failed to update progress. Please try again.",
+      invalidate: () => utils.projects.getById.invalidate({ id: projectId }),
+    }
+  );
 
-  const appendLedger = useMutationWithToast(trpc.ledger.append.useMutation(), {
-    success: "Entry Saved",
-    successMessage: "Ledger entry added.",
-    error: "Save Failed",
-    errorMessage: "Failed to add ledger entry. Please try again.",
-    invalidate: () => utils.ledger.list.invalidate({ projectId }),
-  });
+  const updateProject = useMutationWithToast(
+    trpc.projects.update.useMutation(),
+    {
+      success: "Project Saved",
+      successMessage: "Project details updated.",
+      error: "Save Failed",
+      errorMessage: "Failed to update project. Please try again.",
+      invalidate: () => utils.projects.getById.invalidate({ id: projectId }),
+      onSuccess: () => setEditingOverview(false),
+    }
+  );
 
+  const startEditOverview = () => {
+    if (!project) return;
+    setEditForm({
+      name: project.name ?? "",
+      description: project.description ?? "",
+      projectType: project.project_type ?? "",
+      address: project.address ?? "",
+      city: project.city ?? "",
+      state: project.state ?? "OR",
+      zip: project.zip ?? "",
+      estimatedBudget: project.estimated_budget
+        ? String(project.estimated_budget)
+        : "",
+      contractedBudget: project.contracted_budget
+        ? String(project.contracted_budget)
+        : "",
+      estimatedStartDate: project.estimated_start_date
+        ? new Date(project.estimated_start_date).toISOString().split("T")[0]
+        : "",
+      estimatedEndDate: project.estimated_end_date
+        ? new Date(project.estimated_end_date).toISOString().split("T")[0]
+        : "",
+      permitNumbers: project.permit_numbers ?? "",
+      siteCamUrl: project.site_cam_url ?? "",
+      clientPortalEnabled: project.client_portal_enabled ?? true,
+    });
+    setEditingOverview(true);
+  };
 
+  const cancelEditOverview = () => {
+    setEditingOverview(false);
+    setEditForm(null);
+  };
+
+  const saveEditOverview = () => {
+    if (!editForm || !editForm.name) return;
+    updateProject.mutate({
+      id: projectId,
+      name: editForm.name,
+      description: editForm.description || undefined,
+      projectType: editForm.projectType || undefined,
+      address: editForm.address || undefined,
+      city: editForm.city || undefined,
+      state: editForm.state || "OR",
+      zip: editForm.zip || undefined,
+      estimatedBudget: editForm.estimatedBudget
+        ? parseFloat(editForm.estimatedBudget)
+        : undefined,
+      contractedBudget: editForm.contractedBudget
+        ? parseFloat(editForm.contractedBudget)
+        : undefined,
+      estimatedStartDate: editForm.estimatedStartDate
+        ? new Date(editForm.estimatedStartDate).toISOString()
+        : undefined,
+      estimatedEndDate: editForm.estimatedEndDate
+        ? new Date(editForm.estimatedEndDate).toISOString()
+        : undefined,
+      permitNumbers: editForm.permitNumbers || undefined,
+      siteCamUrl: editForm.siteCamUrl || undefined,
+      clientPortalEnabled: editForm.clientPortalEnabled,
+    });
+  };
+
+  const ef = editForm;
+  const setEf = (key: string, value: string | boolean) =>
+    setEditForm(prev => (prev ? { ...prev, [key]: value } : prev));
+
+  const inputCls =
+    "w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60";
 
   if (isLoading)
     return (
@@ -76,6 +209,7 @@ export default function ProjectDetail() {
     "schedule",
     "materials",
     "ledger",
+    "profitability",
   ] as const;
 
   return (
@@ -186,43 +320,239 @@ export default function ProjectDetail() {
 
         {/* Tab content */}
         {activeTab === "overview" && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { label: "Client", value: (project as any).clients?.name ?? "—" },
-              { label: "Project Type", value: project.project_type ?? "—" },
-              { label: "Status", value: project.status },
-              {
-                label: "Estimated Budget",
-                value: fmt(project.estimated_budget),
-              },
-              {
-                label: "Contracted Budget",
-                value: fmt(project.contracted_budget),
-              },
-              { label: "Actual Cost", value: fmt(project.actual_cost) },
-              {
-                label: "License",
-                value: project.license_number ?? "CCB #246527",
-              },
-              {
-                label: "Portal Enabled",
-                value: project.client_portal_enabled ? "Yes" : "No",
-              },
-              {
-                label: "Permit Numbers",
-                value: project.permit_numbers ?? "None on file",
-              },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-card border border-border/60 p-4">
-                <p
-                  className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {label}
-                </p>
-                <p className="text-sm text-foreground">{String(value)}</p>
+          <div className="space-y-4">
+            {editingOverview && ef ? (
+              /* Edit form */
+              <div className="bg-card border border-primary/30 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p
+                    className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Edit Project Details
+                  </p>
+                  <button
+                    onClick={cancelEditOverview}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label
+                      className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Project Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={ef.name}
+                      onChange={e => setEf("name", e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label
+                      className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Description
+                    </label>
+                    <textarea
+                      value={ef.description}
+                      onChange={e => setEf("description", e.target.value)}
+                      rows={2}
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
+                  {[
+                    { key: "projectType", label: "Project Type", type: "text" },
+                    { key: "address", label: "Address", type: "text" },
+                    { key: "city", label: "City", type: "text" },
+                    { key: "state", label: "State", type: "text" },
+                    { key: "zip", label: "ZIP", type: "text" },
+                    {
+                      key: "permitNumbers",
+                      label: "Permit Numbers",
+                      type: "text",
+                    },
+                    {
+                      key: "siteCamUrl",
+                      label: "Site Camera URL",
+                      type: "url",
+                    },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label
+                        className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {f.label}
+                      </label>
+                      <input
+                        type={f.type}
+                        value={(ef as any)[f.key]}
+                        onChange={e => setEf(f.key, e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  ))}
+                  {[
+                    { key: "estimatedBudget", label: "Estimated Budget ($)" },
+                    { key: "contractedBudget", label: "Contracted Budget ($)" },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label
+                        className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {f.label}
+                      </label>
+                      <input
+                        type="number"
+                        value={(ef as any)[f.key]}
+                        onChange={e => setEf(f.key, e.target.value)}
+                        min="0"
+                        className={inputCls}
+                      />
+                    </div>
+                  ))}
+                  {[
+                    { key: "estimatedStartDate", label: "Start Date" },
+                    { key: "estimatedEndDate", label: "End Date" },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label
+                        className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {f.label}
+                      </label>
+                      <input
+                        type="date"
+                        value={(ef as any)[f.key]}
+                        onChange={e => setEf(f.key, e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={ef.clientPortalEnabled}
+                      onChange={e =>
+                        setEf("clientPortalEnabled", e.target.checked)
+                      }
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-10 h-5 rounded-full transition-colors ${
+                        ef.clientPortalEnabled
+                          ? "bg-primary"
+                          : "bg-input border border-border"
+                      }`}
+                    />
+                    <div
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        ef.clientPortalEnabled
+                          ? "translate-x-5"
+                          : "translate-x-0.5"
+                      }`}
+                    />
+                  </div>
+                  <span className="text-sm text-foreground">
+                    Client portal access enabled
+                  </span>
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={cancelEditOverview}
+                    className="px-4 py-2 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveEditOverview}
+                    disabled={!ef.name || updateProject.isPending}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Save className="h-3 w-3" />
+                    {updateProject.isPending ? "Saving…" : "Save Changes"}
+                  </button>
+                </div>
               </div>
-            ))}
+            ) : (
+              /* Read view */
+              <>
+                <div className="flex justify-end mb-1">
+                  <button
+                    onClick={startEditOverview}
+                    className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Pencil className="h-3 w-3" /> Edit Details
+                  </button>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    {
+                      label: "Client",
+                      value: (project as any).clients?.name ?? "—",
+                    },
+                    {
+                      label: "Project Type",
+                      value: project.project_type ?? "—",
+                    },
+                    { label: "Status", value: project.status },
+                    {
+                      label: "Estimated Budget",
+                      value: fmt(project.estimated_budget),
+                    },
+                    {
+                      label: "Contracted Budget",
+                      value: fmt(project.contracted_budget),
+                    },
+                    { label: "Actual Cost", value: fmt(project.actual_cost) },
+                    {
+                      label: "License",
+                      value: project.license_number ?? "CCB #246527",
+                    },
+                    {
+                      label: "Portal Enabled",
+                      value: project.client_portal_enabled ? "Yes" : "No",
+                    },
+                    {
+                      label: "Permit Numbers",
+                      value: project.permit_numbers ?? "None on file",
+                    },
+                  ].map(({ label, value }) => (
+                    <div
+                      key={label}
+                      className="bg-card border border-border/60 p-4"
+                    >
+                      <p
+                        className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {label}
+                      </p>
+                      <p className="text-sm text-foreground">{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {/* Status update control */}
+            <ProjectStatusUpdate
+              projectId={projectId}
+              currentStatus={project.status}
+            />
           </div>
         )}
 
@@ -385,6 +715,137 @@ export default function ProjectDetail() {
             )}
           </div>
         )}
+
+        {activeTab === "profitability" && (
+          <div className="space-y-5">
+            {!profitability ? (
+              <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
+                Loading profitability data…
+              </div>
+            ) : (
+              <>
+                {/* Budget vs Actual header */}
+                <div
+                  className={`flex items-center gap-3 p-4 border ${
+                    profitability.onBudget
+                      ? "border-green-400/30 bg-green-400/5"
+                      : "border-red-400/30 bg-red-400/5"
+                  }`}
+                >
+                  {profitability.onBudget ? (
+                    <TrendingUp className="h-5 w-5 text-green-400 shrink-0" />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-red-400 shrink-0" />
+                  )}
+                  <div>
+                    <p
+                      className={`text-sm font-bold ${profitability.onBudget ? "text-green-400" : "text-red-400"}`}
+                    >
+                      {profitability.onBudget ? "On Budget" : "Over Budget"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Variance:{" "}
+                      <span
+                        className={`font-semibold ${profitability.onBudget ? "text-green-400" : "text-red-400"}`}
+                      >
+                        {profitability.variance >= 0 ? "+" : ""}
+                        {fmt(profitability.variance)}
+                      </span>{" "}
+                      · Margin:{" "}
+                      <span className="font-semibold text-foreground">
+                        {profitability.margin.toFixed(1)}%
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* KPI grid */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    {
+                      label: "Contracted Budget",
+                      value: fmt(
+                        profitability.contracted || profitability.estimated
+                      ),
+                      sub: profitability.contracted
+                        ? "Contracted"
+                        : "Estimated",
+                    },
+                    {
+                      label: "Projected Cost",
+                      value: fmt(profitability.projectedCost),
+                      sub: profitability.actualCost
+                        ? "Actual reported"
+                        : "From materials",
+                    },
+                    {
+                      label: "Gross Margin",
+                      value: `${profitability.margin.toFixed(1)}%`,
+                      sub:
+                        profitability.margin >= 20
+                          ? "Healthy"
+                          : profitability.margin >= 10
+                            ? "Thin"
+                            : "At risk",
+                    },
+                    {
+                      label: "Materials Cost",
+                      value: fmt(profitability.materialsCost),
+                      sub: "Budgeted materials",
+                    },
+                    {
+                      label: "Change Orders",
+                      value: fmt(profitability.changeOrderTotal),
+                      sub:
+                        profitability.changeOrderTotal >= 0
+                          ? "Net additions"
+                          : "Net credits",
+                    },
+                    {
+                      label: "Completion",
+                      value: `${profitability.completionPercent}%`,
+                      sub: profitability.status?.replace(/_/g, " "),
+                    },
+                  ].map(({ label, value, sub }) => (
+                    <div
+                      key={label}
+                      className="bg-card border border-border/60 p-4"
+                    >
+                      <p
+                        className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {label}
+                      </p>
+                      <p
+                        className="text-xl font-bold"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {value}
+                      </p>
+                      {sub && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {sub}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Actual cost update */}
+                <div className="bg-card border border-border/60 p-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">
+                    Update Actual Cost
+                  </p>
+                  <ActualCostForm
+                    projectId={projectId}
+                    currentActual={profitability.actualCost}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
@@ -461,6 +922,122 @@ function LedgerEntryForm({
       >
         {append.isPending ? "Saving…" : "Add Entry"}
       </button>
+    </div>
+  );
+}
+
+function ActualCostForm({
+  projectId,
+  currentActual,
+}: {
+  projectId: number;
+  currentActual: number;
+}) {
+  const [value, setValue] = useState(
+    currentActual ? String(currentActual) : ""
+  );
+  const utils = trpc.useUtils();
+  const mut = trpc.projects.updateProgress.useMutation({
+    onSuccess: () => {
+      utils.projects.profitability.invalidate({ id: projectId });
+      utils.projects.getById.invalidate({ id: projectId });
+    },
+  });
+
+  return (
+    <div className="flex gap-2">
+      <div className="relative flex-1">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+          $
+        </span>
+        <input
+          type="number"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          placeholder="0.00"
+          className="w-full pl-7 pr-3 py-2 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+        />
+      </div>
+      <button
+        onClick={() =>
+          value &&
+          mut.mutate({
+            id: projectId,
+            actualCost: parseFloat(value),
+          })
+        }
+        disabled={!value || mut.isPending}
+        className="px-4 py-2 text-[11px] font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-50 transition-colors"
+        style={{ fontFamily: "var(--font-condensed)" }}
+      >
+        {mut.isPending ? "Saving…" : "Save"}
+      </button>
+    </div>
+  );
+}
+
+const STATUS_OPTIONS = [
+  { value: "lead", label: "Lead" },
+  { value: "estimate_sent", label: "Estimate Sent" },
+  { value: "contracted", label: "Contracted" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "punch_list", label: "Punch List" },
+  { value: "complete", label: "Complete" },
+  { value: "on_hold", label: "On Hold" },
+];
+
+function ProjectStatusUpdate({
+  projectId,
+  currentStatus,
+}: {
+  projectId: number;
+  currentStatus: string;
+}) {
+  const [status, setStatus] = useState(currentStatus);
+  const utils = trpc.useUtils();
+  const mut = trpc.projects.update.useMutation({
+    onSuccess: () => {
+      utils.projects.getById.invalidate({ id: projectId });
+      // Fire project_status_changed n8n event
+      fetch("/api/n8n-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "project_status_changed",
+          payload: { projectId, newStatus: status },
+        }),
+      }).catch(() => {});
+    },
+  });
+
+  const isDirty = status !== currentStatus;
+
+  return (
+    <div className="bg-card border border-border/60 p-4">
+      <p className="text-xs font-semibold text-muted-foreground mb-3">
+        Update Project Status
+      </p>
+      <div className="flex gap-3 items-center">
+        <select
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+          className="flex-1 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+        >
+          {STATUS_OPTIONS.map(s => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => mut.mutate({ id: projectId, status: status as any })}
+          disabled={!isDirty || mut.isPending}
+          className="px-4 py-2 text-[11px] font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          {mut.isPending ? "Saving…" : "Save Status"}
+        </button>
+      </div>
     </div>
   );
 }

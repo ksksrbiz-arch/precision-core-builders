@@ -9,12 +9,18 @@ import {
   PWAInstallPrompt,
   IOSInstallHint,
 } from "./components/PWAInstallPrompt";
+import {
+  ScrollProgressBar,
+  BackToTop,
+  SkipToContent,
+} from "./components/SiteEnhancements";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedRoute } from "./components/RouteGuards";
 import Home from "./pages/Home";
 
 // Public pages
 const Portfolio = lazy(() => import("./pages/Portfolio"));
+const PortfolioDetail = lazy(() => import("./pages/PortfolioDetail"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Estimator = lazy(() => import("./pages/Estimator"));
 const About = lazy(() => import("./pages/About"));
@@ -27,12 +33,15 @@ const VisionStudio = lazy(() => import("./pages/VisionStudio"));
 const AuthLogin = lazy(() => import("./pages/auth/Login"));
 const AuthCallback = lazy(() => import("./pages/auth/Callback"));
 const ResendLink = lazy(() => import("./pages/auth/ResendLink"));
+const DevLogin = lazy(() => import("./pages/auth/DevLogin"));
 
 // Admin pages
 const CommandCenter = lazy(() => import("./pages/admin/CommandCenter"));
 const ProjectsList = lazy(() => import("./pages/admin/ProjectsList"));
+const ProjectNew = lazy(() => import("./pages/admin/ProjectNew"));
 const ProjectDetail = lazy(() => import("./pages/admin/ProjectDetail"));
 const FieldReportNew = lazy(() => import("./pages/admin/FieldReportNew"));
+const FieldReportDetail = lazy(() => import("./pages/admin/FieldReportDetail"));
 const SitePlanBuilder = lazy(() => import("./pages/admin/SitePlanBuilder"));
 const Guides = lazy(() => import("./pages/admin/Guides"));
 const ScheduleView = lazy(() => import("./pages/admin/ScheduleView"));
@@ -40,6 +49,7 @@ const MaterialsView = lazy(() => import("./pages/admin/MaterialsView"));
 const BillingView = lazy(() => import("./pages/admin/BillingView"));
 const PortfolioAdmin = lazy(() => import("./pages/admin/PortfolioAdmin"));
 const SetupWizard = lazy(() => import("./pages/admin/SetupWizard"));
+const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
 const FieldReportsList = lazy(() => import("./pages/admin/FieldReportsList"));
 const ClientsList = lazy(() => import("./pages/admin/ClientsList"));
 const ClientDetail = lazy(() => import("./pages/admin/ClientDetail"));
@@ -49,6 +59,13 @@ const SubContractorsList = lazy(
 );
 const LedgerView = lazy(() => import("./pages/admin/LedgerView"));
 const VisionStudioAdmin = lazy(() => import("./pages/admin/VisionStudio"));
+const SearchView = lazy(() => import("./pages/admin/Search"));
+const FinishSelectionsAdmin = lazy(
+  () => import("./pages/admin/FinishSelectionsAdmin")
+);
+const Analytics = lazy(() => import("./pages/admin/Analytics"));
+const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
+const NotificationsView = lazy(() => import("./pages/admin/NotificationsView"));
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -103,6 +120,7 @@ function Router() {
         <Route path="/about" component={About} />
         <Route path="/services" component={Services} />
         <Route path="/portfolio" component={Portfolio} />
+        <Route path="/portfolio/:slug" component={PortfolioDetail} />
         <Route path="/faq" component={FAQ} />
         <Route path="/contact" component={Contact} />
         <Route path="/estimator" component={Estimator} />
@@ -112,12 +130,15 @@ function Router() {
         <Route path="/auth/login" component={AuthLogin} />
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/auth/resend" component={ResendLink} />
+        <Route path="/dev-login" component={DevLogin} />
 
         {/* Admin */}
         <Route path="/admin" component={CommandCenter} />
         <Route path="/admin/projects" component={ProjectsList} />
+        <Route path="/admin/projects/new" component={ProjectNew} />
         <Route path="/admin/projects/:id" component={ProjectDetail} />
         <Route path="/admin/field-reports/new" component={FieldReportNew} />
+        <Route path="/admin/field-reports/:id" component={FieldReportDetail} />
         <Route path="/admin/field-reports" component={FieldReportsList} />
         <Route path="/admin/clients/:id" component={ClientDetail} />
         <Route path="/admin/clients" component={ClientsList} />
@@ -131,7 +152,15 @@ function Router() {
         <Route path="/admin/billing" component={BillingView} />
         <Route path="/admin/portfolio-cms" component={PortfolioAdmin} />
         <Route path="/admin/setup" component={SetupWizard} />
+
+        {/* Public token-gated onboarding wizard for new account owner */}
+        <Route path="/onboarding" component={OnboardingWizard} />
         <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
+        <Route path="/admin/search" component={SearchView} />
+        <Route path="/admin/finishes" component={FinishSelectionsAdmin} />
+        <Route path="/admin/analytics" component={Analytics} />
+        <Route path="/admin/activity-log" component={ActivityLog} />
+        <Route path="/admin/notifications" component={NotificationsView} />
 
         {/* Client portal — auth required */}
         <Route path="/portal">
@@ -196,9 +225,14 @@ export default function App() {
       <ThemeProvider defaultTheme="dark">
         <ToastProvider>
           <TooltipProvider>
+            <SkipToContent />
+            <ScrollProgressBar />
             <NetworkStatus />
-            <Router />
+            <div id="main-content">
+              <Router />
+            </div>
             <MobileBottomNav />
+            <BackToTop />
             <PWAInstallPrompt />
             <IOSInstallHint />
           </TooltipProvider>

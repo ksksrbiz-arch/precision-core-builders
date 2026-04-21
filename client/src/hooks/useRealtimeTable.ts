@@ -1,10 +1,10 @@
 /**
- * useRealtimeProjects — Supabase Realtime subscription for live project changes.
- * Wires postgres_changes on the projects table to a callback.
+ * useRealtimeTable — Supabase Realtime subscription for live table changes.
+ * Wires postgres_changes on the given table to a callback.
  * Returns: { isLive, lastEvent }
  */
 import { supabase } from "@/lib/supabase";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type RealtimePayload = {
   eventType: "INSERT" | "UPDATE" | "DELETE";
@@ -21,6 +21,10 @@ type UseRealtimeOptions = {
 export function useRealtimeTable({ table, onUpdate }: UseRealtimeOptions) {
   const [isLive, setIsLive] = useState(false);
   const [lastEvent, setLastEvent] = useState<RealtimePayload | null>(null);
+  // Keep callback ref stable so the subscription doesn't re-subscribe on every
+  // render while still always calling the latest version of onUpdate.
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
 
   useEffect(() => {
     const channel = supabase
@@ -36,7 +40,7 @@ export function useRealtimeTable({ table, onUpdate }: UseRealtimeOptions) {
             old: payload.old ?? null,
           };
           setLastEvent(event);
-          onUpdate?.(event);
+          onUpdateRef.current?.(event);
         }
       )
       .subscribe(status => {

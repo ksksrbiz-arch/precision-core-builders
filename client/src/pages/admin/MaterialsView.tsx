@@ -66,17 +66,30 @@ export default function MaterialsView() {
     pageSize: 100,
   });
   const utils = trpc.useUtils();
-  const createMaterial = useMutationWithToast(trpc.materials.create.useMutation(), {
-    success: "Material Added",
-    successMessage: "Material added to inventory.",
-    error: "Add Failed",
-    errorMessage: "Failed to add material. Please try again.",
-    onSuccess: () => {
-      refetch();
-      setShowAddForm(false);
-      setNewMaterial({ name: "", category: "", unit: "", vendorName: "", quantityNeeded: "", unitPriceCurrent: "", phaseNeeded: "", notes: "" });
-    },
-  });
+  const appendLedger = trpc.ledger.append.useMutation();
+  const createMaterial = useMutationWithToast(
+    trpc.materials.create.useMutation(),
+    {
+      success: "Material Added",
+      successMessage: "Material added to inventory.",
+      error: "Add Failed",
+      errorMessage: "Failed to add material. Please try again.",
+      onSuccess: () => {
+        refetch();
+        setShowAddForm(false);
+        setNewMaterial({
+          name: "",
+          category: "",
+          unit: "",
+          vendorName: "",
+          quantityNeeded: "",
+          unitPriceCurrent: "",
+          phaseNeeded: "",
+          notes: "",
+        });
+      },
+    }
+  );
 
   const generatePO = async () => {
     if (!selectedProject) {
@@ -106,6 +119,33 @@ export default function MaterialsView() {
           message: `Generated ${data.purchaseOrders.length} PO${data.purchaseOrders.length > 1 ? "s" : ""} for ${data.shortagesFound} shortage${data.shortagesFound > 1 ? "s" : ""}`,
           duration: 4000,
         });
+
+        // Log PO generation to ledger
+        const vendorSummary = data.purchaseOrders
+          .map((po: any) => `${po.vendor}: ${po.items?.length ?? 0} item(s)`)
+          .join("; ");
+        appendLedger.mutate({
+          projectId: selectedProject,
+          entryType: "decision",
+          title: `Purchase Orders Generated (${data.purchaseOrders.length} PO${data.purchaseOrders.length > 1 ? "s" : ""})`,
+          description: `AI-generated purchase orders for material shortages. ${vendorSummary}`,
+          visibleToClient: false,
+        });
+
+        // Fire material_shortage n8n event
+        fetch("/api/n8n-webhook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "material_shortage",
+            payload: {
+              projectId: selectedProject,
+              shortagesFound: data.shortagesFound,
+              purchaseOrderCount: data.purchaseOrders.length,
+            },
+          }),
+        }).catch(() => {});
+
         refetch();
       } else {
         addToast({

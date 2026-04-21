@@ -75,22 +75,24 @@ Implemented a **comprehensive error handling, graceful fallback, and account rec
 
 ## 📊 Error Types Handled
 
-| Type | Example | Retryable | Message |
-|------|---------|-----------|---------|
-| network | Fetch failed | ✅ | "Check your connection" |
-| timeout | 30s+ timeout | ✅ | "Your connection is slow" |
-| auth | 401, expired session | ❌ | "Please log in again" |
-| validation | 400, bad input | ❌ | "Please check your input" |
-| rate_limit | 429 | ✅ | "Too many requests, slow down" |
-| server | 500, 502, 503 | ✅ | "Server error, try again soon" |
-| unknown | Unexpected | ✅ | "Something went wrong" |
+| Type       | Example              | Retryable | Message                        |
+| ---------- | -------------------- | --------- | ------------------------------ |
+| network    | Fetch failed         | ✅        | "Check your connection"        |
+| timeout    | 30s+ timeout         | ✅        | "Your connection is slow"      |
+| auth       | 401, expired session | ❌        | "Please log in again"          |
+| validation | 400, bad input       | ❌        | "Please check your input"      |
+| rate_limit | 429                  | ✅        | "Too many requests, slow down" |
+| server     | 500, 502, 503        | ✅        | "Server error, try again soon" |
+| unknown    | Unexpected           | ✅        | "Something went wrong"         |
 
 ## 🔄 Updated Files
 
 ### Modified
+
 - `client/src/App.tsx` — Added ToastProvider, ResendLink route, fixed ErrorBoundary import
 
 ### New
+
 - `client/src/components/ToastProvider.tsx` (220 lines)
 - `client/src/components/ErrorPages.tsx` (260 lines)
 - `client/src/components/Skeletons.tsx` (170 lines)
@@ -138,6 +140,7 @@ Network Request: 200 OK ✓
 ## 📚 Usage Examples
 
 ### Toast Notifications
+
 ```typescript
 import { useToast } from "@/components/ToastProvider";
 
@@ -148,7 +151,7 @@ addToast({
   type: "error",
   title: "Upload Failed",
   message: "File too large (max 10MB)",
-  duration: 6000
+  duration: 6000,
 });
 
 // Success with action
@@ -156,20 +159,19 @@ addToast({
   type: "success",
   title: "Saved",
   message: "Your project has been saved",
-  action: { label: "View", onClick: () => navigate("/admin/projects") }
+  action: { label: "View", onClick: () => navigate("/admin/projects") },
 });
 ```
 
 ### Form Validation
+
 ```typescript
 const { validateForm } = useFieldValidator();
 
 const errors = validateForm(formData, {
   email: [validators.required("Email"), validators.email()],
   password: [validators.passwordStrength()],
-  confirmPassword: [
-    validators.match(formData.password, "Password")
-  ]
+  confirmPassword: [validators.match(formData.password, "Password")],
 });
 
 if (Object.keys(errors).length > 0) {
@@ -179,6 +181,7 @@ if (Object.keys(errors).length > 0) {
 ```
 
 ### Network Detection
+
 ```typescript
 const { isOnline, speed } = useNetworkStatus();
 const { enqueue } = useOfflineQueue();
@@ -188,7 +191,7 @@ const handleSubmit = async () => {
     addToast({
       type: "info",
       title: "Offline",
-      message: "Your submission will send when online"
+      message: "Your submission will send when online",
     });
     enqueue(() => submitForm(data));
     return;
@@ -198,18 +201,19 @@ const handleSubmit = async () => {
 ```
 
 ### API Retry Logic
+
 ```typescript
 import { fetchWithRetry, classifyError } from "@/_core/apiError";
 
 try {
   const response = await fetchWithRetry("/api/projects", {
     method: "POST",
-    body: JSON.stringify(projectData)
+    body: JSON.stringify(projectData),
   });
   const data = await response.json();
 } catch (error) {
   const apiError = classifyError(error);
-  
+
   if (apiError.type === "network") {
     // Try again later
   } else if (apiError.type === "auth") {
@@ -223,22 +227,26 @@ try {
 ## 📋 Integration TODO (Next Session)
 
 ### Priority 1: Wire into tRPC
+
 - [ ] Add toast handlers to all tRPC mutations
 - [ ] Add error classification to mutation callbacks
 - [ ] Test mutation error states
 
 ### Priority 2: UI Polish
+
 - [ ] Replace spinners with skeleton loaders
 - [ ] Add toast to VoiceRecorder for upload feedback
 - [ ] Add toast to ProjectDetail form saves
 - [ ] Add toast to ClientsList deletions
 
 ### Priority 3: Network Features
+
 - [ ] Queue voice recordings when offline
 - [ ] Queue field reports when offline
 - [ ] Show offline indicator in header
 
 ### Priority 4: Documentation
+
 - [ ] Add error handling section to GETTING_STARTED_ERIC.md
 - [ ] Create troubleshooting guide
 - [ ] Document rate limits
@@ -246,15 +254,19 @@ try {
 ## 🎯 Key Design Decisions
 
 ### Why Toast over Modal?
+
 Non-blocking UX allows users to continue working. Modals are disruptive.
 
 ### Why Exponential Backoff?
+
 Prevents overwhelming server, handles brief connectivity issues, industry standard.
 
 ### Why Offline Queue?
+
 Voice reports/photos should sync when connection restores, prevents data loss.
 
 ### Why Magic Links?
+
 No password complexity, more secure, modern UX expectation.
 
 ## ⚠️ Known Limitations
@@ -276,6 +288,7 @@ No password complexity, more secure, modern UX expectation.
 ## 📞 Integration Points for Eric
 
 **As the platform owner, Eric can now:**
+
 - ✅ See user-friendly error messages instead of generic failures
 - ✅ Trust that failed actions will auto-retry
 - ✅ Know when users are offline and data is queued

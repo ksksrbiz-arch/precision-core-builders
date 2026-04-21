@@ -5,6 +5,7 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import { ArrowRight, Phone } from "lucide-react";
 
@@ -101,8 +102,32 @@ const FAQS = [
 ];
 
 export default function FAQ() {
+  useSEO({
+    title: "FAQ — Licensing, Permits & Process",
+    description:
+      "Answers to common questions about working with Precision Core Builders — licensing, permits, costs, timelines, and how we operate in Eugene, Oregon.",
+    canonical: "https://precisioncorebuilders.com/faq",
+  });
+
+  // Build FAQPage JSON-LD from the FAQ data
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.flatMap(section =>
+      section.items.map(({ q, a }) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: { "@type": "Answer", text: a },
+      }))
+    ),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <SiteNav />
       <MobileCTABar />
       <main className="pt-[68px]">

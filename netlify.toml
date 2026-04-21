@@ -26,7 +26,7 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# PWA files — serve directly, don't redirect to SPA
+# Static files — serve directly, don't redirect to SPA
 [[redirects]]
   from = "/sw.js"
   to = "/sw.js"
@@ -40,6 +40,16 @@
 [[redirects]]
   from = "/offline.html"
   to = "/offline.html"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap.xml"
+  status = 200
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/robots.txt"
   status = 200
 
 # Redirect all other traffic to index.html for client-side routing
@@ -68,6 +78,10 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    # Strict Transport Security (HSTS) - force HTTPS for 1 year
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    # Content Security Policy - prevent XSS and injection attacks
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.openweathermap.org https://api.anthropic.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
     # Allow mic (voice reports), camera (site cam), geolocation (weather/site)
     # Uses structured-header syntax required by Chromium 116+
     Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self), interest-cohort=()"

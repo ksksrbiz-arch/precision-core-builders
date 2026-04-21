@@ -148,6 +148,19 @@ export const portfolioRouter = router({
       return data;
     }),
 
+  publish: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const { data, error } = await db
+        .from("portfolio_projects")
+        .update({ published: true })
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }),
+
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {

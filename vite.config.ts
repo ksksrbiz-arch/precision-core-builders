@@ -17,13 +17,33 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false, // Disable sourcemaps in production for security
   },
   server: {
     host: true,
     port: 3000,
     fs: {
       strict: true,
-      deny: ["**/.*"],
+      // Deny access to parent directories and hidden files
+      deny: [
+        "**/.*",
+        "**/.git/**",
+        "**/node_modules/**",
+        "**/package.json",
+        "**/package-lock.json",
+        "**/pnpm-lock.yaml",
+        "**/.env*",
+      ],
+      // Only allow access to specific directories
+      allow: [
+        path.resolve(import.meta.dirname, "client"),
+        path.resolve(import.meta.dirname, "shared"),
+      ],
+    },
+    // Prevent server.fs.deny bypass
+    strictPort: true,
+    cors: {
+      origin: false, // Disable CORS in development to prevent external requests
     },
   },
 });

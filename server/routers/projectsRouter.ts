@@ -1,5 +1,6 @@
 import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { logAdminAction } from "../_core/auditLog";
 import { z } from "zod";
 
 const ProjectStatusEnum = z.enum([
@@ -15,6 +16,8 @@ const ProjectStatusEnum = z.enum([
 const CreateProjectInput = z.object({
   clientId: z.number().int().positive(),
   name: z.string().min(1).max(300),
+  startDate: z.string().datetime().optional(),
+  budget: z.number().positive().optional(),
   description: z.string().optional(),
   status: ProjectStatusEnum.optional().default("lead"),
   projectType: z.string().max(100).optional(),
@@ -32,14 +35,17 @@ const CreateProjectInput = z.object({
 });
 
 export const projectsRouter = router({
-  list: adminProcedure
+  list: protectedProcedure
     .input(
-      z.object({
-        page: z.number().int().positive().optional(),
-        pageSize: z.number().int().min(1).max(100).optional(),
-        status: ProjectStatusEnum.optional(),
-        search: z.string().optional(),
-      })
+      z
+        .object({
+          page: z.number().int().positive().optional(),
+          pageSize: z.number().int().min(1).max(100).optional(),
+          status: ProjectStatusEnum.optional(),
+          search: z.string().optional(),
+        })
+        .optional()
+        .default({})
     )
     .query(async ({ input }) => {
       const { from, to } = paginate(input);
@@ -54,6 +60,25 @@ export const projectsRouter = router({
       if (error) throw new Error(error.message);
       return { data: data ?? [], total: count ?? 0 };
     }),
+
+  // Returns the authenticated client's own active project (portal use).
+  myProject: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) return null;
+    // Admins don't use this endpoint; they use the admin list.
+    if (ctx.user.role === "admin") return null;
+    // Filter by the client row whose user_id matches the authenticated user.
+    // Supabase foreign-table filters use the `foreignTable.column` syntax.
+    const { data, error } = await db
+      .from("projects")
+      .select("*, clients!inner(id,name,email,phone,user_id)")
+      .eq("client_portal_enabled", true)
+      .eq("clients.user_id", ctx.user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ?? null;
+  }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
@@ -78,7 +103,7 @@ export const projectsRouter = router({
 
   create: adminProcedure
     .input(CreateProjectInput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { data, error } = await db
         .from("projects")
         .insert({
@@ -102,6 +127,11 @@ export const projectsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "project.create", data.id, {
+        name: data.name,
+        clientId: data.client_id,
+        status: data.status,
+      });
       return data;
     }),
 
@@ -111,7 +141,7 @@ export const projectsRouter = router({
         .object({ id: z.number().int().positive() })
         .merge(CreateProjectInput.partial())
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const {
         id,
         clientId,
@@ -153,6 +183,12 @@ export const projectsRouter = router({
         .select()
         .single();
       if (error) throw new Error(error.message);
+      await logAdminAction(db, ctx, "project.update", id, {
+        updatedFields: Object.keys(rest).concat(
+          clientId !== undefined ? ["clientId"] : [],
+          projectType !== undefined ? ["projectType"] : []
+        ),
+      });
       return data;
     }),
 
@@ -160,19 +196,27 @@ export const projectsRouter = router({
     .input(
       z.object({
         id: z.number().int().positive(),
-        completionPercent: z.number().int().min(0).max(100),
+        completionPercent: z.number().int().min(0).max(100).optional(),
         actualCost: z.number().nonnegative().optional(),
       })
     )
     .mutation(async ({ input }) => {
+      const updates: Record<string, unknown> = {};
+      if (input.completionPercent !== undefined)
+        updates.completion_percent = input.completionPercent;
+      if (input.actualCost !== undefined)
+        updates.actual_cost = input.actualCost;
+      if (Object.keys(updates).length === 0) {
+        const { data: current } = await db
+          .from("projects")
+          .select()
+          .eq("id", input.id)
+          .single();
+        return current;
+      }
       const { data, error } = await db
         .from("projects")
-        .update({
-          completion_percent: input.completionPercent,
-          ...(input.actualCost !== undefined && {
-            actual_cost: input.actualCost,
-          }),
-        })
+        .update(updates)
         .eq("id", input.id)
         .select()
         .single();
@@ -182,7 +226,10 @@ export const projectsRouter = router({
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      await logAdminAction(db, ctx, "project.delete", input.id, {
+        projectId: input.id,
+      });
       const { error } = await db.from("projects").delete().eq("id", input.id);
       if (error) throw new Error(error.message);
       return { success: true };
@@ -208,4 +255,67 @@ export const projectsRouter = router({
       totalActual: all.reduce((s, p) => s + Number(p.actual_cost ?? 0), 0),
     };
   }),
+
+  profitability: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const [projectRes, materialsRes, ledgerRes] = await Promise.all([
+        db
+          .from("projects")
+          .select(
+            "id,name,estimated_budget,contracted_budget,actual_cost,completion_percent,status"
+          )
+          .eq("id", input.id)
+          .single(),
+        db
+          .from("materials")
+          .select("unit_price_current,quantity_needed,quantity_on_hand")
+          .eq("project_id", input.id),
+        db
+          .from("ledger_entries")
+          .select("amount_delta,entry_type")
+          .eq("project_id", input.id),
+      ]);
+
+      if (projectRes.error) throw new Error(projectRes.error.message);
+      const project = projectRes.data;
+
+      const materialsCost = (materialsRes.data ?? []).reduce(
+        (sum, m) =>
+          sum +
+          Number(m.unit_price_current ?? 0) * Number(m.quantity_needed ?? 0),
+        0
+      );
+
+      const changeOrderTotal = (ledgerRes.data ?? [])
+        .filter(
+          e =>
+            e.entry_type === "change_order" ||
+            e.entry_type === "cost_adjustment"
+        )
+        .reduce((sum, e) => sum + Number(e.amount_delta ?? 0), 0);
+
+      const contracted = Number(project.contracted_budget ?? 0);
+      const estimated = Number(project.estimated_budget ?? 0);
+      const actualCost = Number(project.actual_cost ?? 0);
+      const budget = contracted || estimated;
+      const projectedCost = actualCost > 0 ? actualCost : materialsCost;
+      const margin = budget > 0 ? ((budget - projectedCost) / budget) * 100 : 0;
+      const variance = budget - projectedCost;
+
+      return {
+        projectId: input.id,
+        contracted,
+        estimated,
+        actualCost,
+        materialsCost,
+        changeOrderTotal,
+        projectedCost,
+        margin,
+        variance,
+        completionPercent: Number(project.completion_percent ?? 0),
+        status: project.status,
+        onBudget: variance >= 0,
+      };
+    }),
 });

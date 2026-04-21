@@ -1,10 +1,11 @@
 # Precision Core Builders: Platform Audit & Status Report
+
 **Date:** April 6, 2026  
 **Auditor:** Claude  
 **Build Status:** ✅ Passing (10.82s)  
 **Bundle Size:** 1.8MB gzip (744KB) — Acceptable  
 **Live Site:** https://precision-core.netlify.app  
-**Repo:** https://github.com/ksksrbiz-arch/precision-core-builders.git  
+**Repo:** https://github.com/ksksrbiz-arch/precision-core-builders.git
 
 ---
 
@@ -13,9 +14,10 @@
 **Overall Completion:** ~45% of core features implemented  
 **Phase Status:** Phase 1 (Foundation) 95% complete | Phase 2 (Operations) 40% complete | Phase 3-5 (Portal/Analytics) 15-25% complete  
 **Deployment:** Live and stable on Netlify  
-**Last Update:** April 2, 2026 (navigation/error handling enhancements)  
+**Last Update:** April 2, 2026 (navigation/error handling enhancements)
 
 ### Key Metrics
+
 - ✅ **36 page files** (18 admin, 4 portal, 7 public, 7 auth/services)
 - ✅ **40+ UI components** (custom + 50+ shadcn/ui)
 - ✅ **9 Netlify Functions** (7 core, 2 supplementary)
@@ -30,23 +32,24 @@
 
 ### 1.1 Technology Stack Verification
 
-| Layer | Technology | Status | Notes |
-|-------|-----------|--------|-------|
-| **Frontend** | React 19 / Vite 8 | ✅ Ready | Zero build errors; 10.82s build time |
-| **Styling** | Tailwind CSS 4 | ✅ Ready | Custom "Quiet Luxury" palette configured |
-| **Animations** | Framer Motion | ✅ Ready | Used in HeroSection, VoiceRecorder |
-| **Routing** | Wouter 3.7 | ✅ Ready | Lazy-loaded pages with Suspense |
-| **State Management** | React Query 5 + tRPC 11 | ✅ Ready | Full end-to-end type safety |
-| **Forms** | React Hook Form + Zod 4 | ✅ Ready | Pre-configured validation |
-| **Charts** | Recharts 2 | ✅ Ready | Used in CommandCenter dashboard |
-| **Backend** | Netlify Functions | ✅ Ready | 9 functions deployed and working |
-| **Database** | Supabase (PostgreSQL) | ✅ Ready | 12 tables with RLS policies |
-| **Authentication** | Supabase Auth | ✅ Ready | JWT-based, admin/user roles |
-| **Deployment** | GitHub → Netlify CI/CD | ✅ Ready | Auto-deploys on push to main |
+| Layer                | Technology              | Status   | Notes                                    |
+| -------------------- | ----------------------- | -------- | ---------------------------------------- |
+| **Frontend**         | React 19 / Vite 8       | ✅ Ready | Zero build errors; 10.82s build time     |
+| **Styling**          | Tailwind CSS 4          | ✅ Ready | Custom "Quiet Luxury" palette configured |
+| **Animations**       | Framer Motion           | ✅ Ready | Used in HeroSection, VoiceRecorder       |
+| **Routing**          | Wouter 3.7              | ✅ Ready | Lazy-loaded pages with Suspense          |
+| **State Management** | React Query 5 + tRPC 11 | ✅ Ready | Full end-to-end type safety              |
+| **Forms**            | React Hook Form + Zod 4 | ✅ Ready | Pre-configured validation                |
+| **Charts**           | Recharts 2              | ✅ Ready | Used in CommandCenter dashboard          |
+| **Backend**          | Netlify Functions       | ✅ Ready | 9 functions deployed and working         |
+| **Database**         | Supabase (PostgreSQL)   | ✅ Ready | 12 tables with RLS policies              |
+| **Authentication**   | Supabase Auth           | ✅ Ready | JWT-based, admin/user roles              |
+| **Deployment**       | GitHub → Netlify CI/CD  | ✅ Ready | Auto-deploys on push to main             |
 
 ### 1.2 Build & Performance
 
 **Build System:**
+
 ```
 ✅ npm run build → 10.82s
 ✅ Vite optimized bundle
@@ -58,6 +61,7 @@
 ```
 
 **Bundle Analysis:**
+
 ```
 Total gzip: 744KB (target: <1.2MB) ✅
 Largest chunks:
@@ -67,6 +71,7 @@ Largest chunks:
 ```
 
 **Lighthouse Metrics (estimated):**
+
 - Performance: 85–90 (good for complex app)
 - Accessibility: 90+ (shadcn/ui well-scoped)
 - Best Practices: 85+ (CORS headers, security headers configured)
@@ -78,61 +83,62 @@ Largest chunks:
 
 ### 2.1 Public Pages (Visitor-Facing)
 
-| Page | File | Status | Implementation |
-|------|------|--------|-----------------|
-| **Home** | `Home.tsx` | ✅ 70% | Hero section live; feature list pending |
-| **About** | `About.tsx` | ⏳ 40% | Basic structure; Eric bio/testimonials pending |
-| **Contact** | `Contact.tsx` | ⏳ 30% | Form fields exist; n8n integration pending |
-| **Services** | `Services.tsx` | ⏳ 50% | Service listings exist; detailed descriptions pending |
-| **Portfolio** | `Portfolio.tsx` | ⏳ 30% | Gallery structure; project images/case studies pending |
-| **FAQ** | `FAQ.tsx` | ⏳ 40% | Accordion structure; content pending |
-| **Estimator** | `Estimator.tsx` | ⏳ 40% | Form scaffolding; AI integration pending |
-| **Vision Studio** | `VisionStudio.tsx` | ✅ 80% | Photo analysis UI live; some modes pending |
-| **404** | `NotFound.tsx` | ✅ 100% | Error page implemented |
-| **Component Showcase** | `ComponentShowcase.tsx` | ✅ 100% | Development tool for component testing |
+| Page                   | File                    | Status  | Implementation                                         |
+| ---------------------- | ----------------------- | ------- | ------------------------------------------------------ |
+| **Home**               | `Home.tsx`              | ✅ 70%  | Hero section live; feature list pending                |
+| **About**              | `About.tsx`             | ⏳ 40%  | Basic structure; Eric bio/testimonials pending         |
+| **Contact**            | `Contact.tsx`           | ⏳ 30%  | Form fields exist; n8n integration pending             |
+| **Services**           | `Services.tsx`          | ⏳ 50%  | Service listings exist; detailed descriptions pending  |
+| **Portfolio**          | `Portfolio.tsx`         | ⏳ 30%  | Gallery structure; project images/case studies pending |
+| **FAQ**                | `FAQ.tsx`               | ⏳ 40%  | Accordion structure; content pending                   |
+| **Estimator**          | `Estimator.tsx`         | ⏳ 40%  | Form scaffolding; AI integration pending               |
+| **Vision Studio**      | `VisionStudio.tsx`      | ✅ 80%  | Photo analysis UI live; some modes pending             |
+| **404**                | `NotFound.tsx`          | ✅ 100% | Error page implemented                                 |
+| **Component Showcase** | `ComponentShowcase.tsx` | ✅ 100% | Development tool for component testing                 |
 
 ### 2.2 Admin Pages (Eric's Command Center)
 
-| Page | File | Status | Implementation Notes |
-|------|------|--------|----------------------|
-| **Command Center** | `CommandCenter.tsx` | ✅ 85% | Dashboard with Recharts; real-time data pending |
-| **Projects List** | `ProjectsList.tsx` | ✅ 70% | Table view; pagination & filtering implemented |
-| **Project Detail** | `ProjectDetail.tsx` | ✅ 60% | Project timeline; edit form pending |
-| **Clients List** | `ClientsList.tsx` | ✅ 70% | Table view with search; client profiles pending |
-| **Client Detail** | `ClientDetail.tsx` | ✅ 60% | Contact info & project history; edit form pending |
-| **Field Reports** | `FieldReportsList.tsx` | ✅ 70% | List with filters; real-time updates pending |
-| **Field Report New** | `FieldReportNew.tsx` | ✅ 80% | Voice recorder integrated; publish workflow pending |
-| **Schedule View** | `ScheduleView.tsx` | ⏳ 50% | Gantt chart structure; drag-and-drop pending |
-| **Estimates List** | `EstimatesList.tsx` | ✅ 70% | List view; approval workflow pending |
-| **Materials View** | `MaterialsView.tsx` | ⏳ 40% | Inventory table; vendor integration pending |
-| **Sub-Contractors** | `SubContractorsList.tsx` | ⏳ 50% | Vendor list; scheduling workflow pending |
-| **Portfolio Admin** | `PortfolioAdmin.tsx` | ⏳ 40% | Portfolio item CRUD; media upload pending |
-| **Ledger View** | `LedgerView.tsx` | ⏳ 30% | Append-only log viewer; real-time sync pending |
-| **Billing View** | `BillingView.tsx` | ⏳ 20% | Invoice list; Stripe integration pending |
-| **Setup Wizard** | `SetupWizard.tsx` | ⏳ 40% | Environment config; database seed pending |
-| **System Guides** | `Guides.tsx` | ✅ 70% | Help documentation; embedded videos pending |
-| **Site Plan Builder** | `SitePlanBuilder.tsx` | ⏳ 50% | Excalidraw canvas; shape tools pending |
-| **Vision Studio (Admin)** | `VisionStudio.tsx` | ✅ 80% | Photo analysis modes; export pending |
+| Page                      | File                     | Status | Implementation Notes                                |
+| ------------------------- | ------------------------ | ------ | --------------------------------------------------- |
+| **Command Center**        | `CommandCenter.tsx`      | ✅ 85% | Dashboard with Recharts; real-time data pending     |
+| **Projects List**         | `ProjectsList.tsx`       | ✅ 70% | Table view; pagination & filtering implemented      |
+| **Project Detail**        | `ProjectDetail.tsx`      | ✅ 60% | Project timeline; edit form pending                 |
+| **Clients List**          | `ClientsList.tsx`        | ✅ 70% | Table view with search; client profiles pending     |
+| **Client Detail**         | `ClientDetail.tsx`       | ✅ 60% | Contact info & project history; edit form pending   |
+| **Field Reports**         | `FieldReportsList.tsx`   | ✅ 70% | List with filters; real-time updates pending        |
+| **Field Report New**      | `FieldReportNew.tsx`     | ✅ 80% | Voice recorder integrated; publish workflow pending |
+| **Schedule View**         | `ScheduleView.tsx`       | ⏳ 50% | Gantt chart structure; drag-and-drop pending        |
+| **Estimates List**        | `EstimatesList.tsx`      | ✅ 70% | List view; approval workflow pending                |
+| **Materials View**        | `MaterialsView.tsx`      | ⏳ 40% | Inventory table; vendor integration pending         |
+| **Sub-Contractors**       | `SubContractorsList.tsx` | ⏳ 50% | Vendor list; scheduling workflow pending            |
+| **Portfolio Admin**       | `PortfolioAdmin.tsx`     | ⏳ 40% | Portfolio item CRUD; media upload pending           |
+| **Ledger View**           | `LedgerView.tsx`         | ⏳ 30% | Append-only log viewer; real-time sync pending      |
+| **Billing View**          | `BillingView.tsx`        | ⏳ 20% | Invoice list; Stripe integration pending            |
+| **Setup Wizard**          | `SetupWizard.tsx`        | ⏳ 40% | Environment config; database seed pending           |
+| **System Guides**         | `Guides.tsx`             | ✅ 70% | Help documentation; embedded videos pending         |
+| **Site Plan Builder**     | `SitePlanBuilder.tsx`    | ⏳ 50% | Excalidraw canvas; shape tools pending              |
+| **Vision Studio (Admin)** | `VisionStudio.tsx`       | ✅ 80% | Photo analysis modes; export pending                |
 
 ### 2.3 Client Portal Pages
 
-| Page | File | Status | Implementation Notes |
-|------|------|--------|----------------------|
-| **Portal Dashboard** | `PortalDashboard.tsx` | ✅ 70% | Project timeline; real-time updates pending |
-| **Portal Finishes** | `PortalFinishes.tsx` | ⏳ 40% | Digital showroom structure; product catalog pending |
-| **Portal Ledger** | `PortalLedger.tsx` | ⏳ 30% | Decision log viewer; real-time sync pending |
-| **Portal Reports** | `PortalReports.tsx` | ⏳ 40% | Report list; photo gallery pending |
+| Page                 | File                  | Status | Implementation Notes                                |
+| -------------------- | --------------------- | ------ | --------------------------------------------------- |
+| **Portal Dashboard** | `PortalDashboard.tsx` | ✅ 70% | Project timeline; real-time updates pending         |
+| **Portal Finishes**  | `PortalFinishes.tsx`  | ⏳ 40% | Digital showroom structure; product catalog pending |
+| **Portal Ledger**    | `PortalLedger.tsx`    | ⏳ 30% | Decision log viewer; real-time sync pending         |
+| **Portal Reports**   | `PortalReports.tsx`   | ⏳ 40% | Report list; photo gallery pending                  |
 
 ### 2.4 Authentication Pages
 
-| Page | File | Status | Implementation |
-|------|------|--------|-----------------|
-| **Login** | `Login.tsx` | ✅ 90% | Email/password form; Netlify Identity integration pending |
-| **Auth Callback** | `Callback.tsx` | ✅ 100% | OAuth redirect handler |
+| Page              | File           | Status  | Implementation                                            |
+| ----------------- | -------------- | ------- | --------------------------------------------------------- |
+| **Login**         | `Login.tsx`    | ✅ 90%  | Email/password form; Netlify Identity integration pending |
+| **Auth Callback** | `Callback.tsx` | ✅ 100% | OAuth redirect handler                                    |
 
 ### 2.5 Core Components Inventory
 
 **High-Priority Components (Implemented & Working):**
+
 - ✅ `HeroSection.tsx` — Cinematic hero with animations
 - ✅ `VoiceRecorder.tsx` — Web Audio API recording
 - ✅ `DashboardLayout.tsx` — Admin nav + layout
@@ -144,6 +150,7 @@ Largest chunks:
 - ✅ `Map.tsx` — Interactive location map
 
 **UI Component Library (50+ shadcn/ui Components):**
+
 - Button, Card, Dialog, Input, Label, Select
 - Accordion, Alert, Badge, Breadcrumb, Calendar
 - Carousel, Chart, Checkbox, Collapsible, Command
@@ -159,58 +166,59 @@ Largest chunks:
 
 ### 3.1 Netlify Functions (Serverless API Endpoints)
 
-| Function | File | Status | Implementation |
-|----------|------|--------|-----------------|
-| **Voice-to-Report** | `voice-to-report.ts` | ✅ 90% | Whisper + Claude working; db save tested |
-| **Estimate Project** | `estimate-project.ts` | ✅ 90% | Claude cost calculation; db save tested |
-| **Weather Schedule** | `weather-schedule.ts` | ✅ 85% | OpenWeatherMap integration; schedule logic tested |
-| **AI Chat** | `ai-chat.ts` | ✅ 85% | Claude conversation; streaming pending |
-| **Vision Studio** | `vision-studio.ts` | ✅ 80% | Photo analysis modes implemented |
-| **Material Procurement** | `material-procurement.ts` | ⏳ 50% | Scaffold only; vendor API integration pending |
-| **Lead Score** | `lead-score.ts` | ⏳ 50% | Scaffold only; scoring algorithm pending |
-| **Stripe Billing** | `stripe-billing.ts` | ⏳ 40% | Scaffold with Stripe client; invoice workflow pending |
-| **Setup Environment** | `setup-env.ts` | ⏳ 50% | Env validation; database seed pending |
+| Function                 | File                      | Status | Implementation                                        |
+| ------------------------ | ------------------------- | ------ | ----------------------------------------------------- |
+| **Voice-to-Report**      | `voice-to-report.ts`      | ✅ 90% | Whisper + Claude working; db save tested              |
+| **Estimate Project**     | `estimate-project.ts`     | ✅ 90% | Claude cost calculation; db save tested               |
+| **Weather Schedule**     | `weather-schedule.ts`     | ✅ 85% | OpenWeatherMap integration; schedule logic tested     |
+| **AI Chat**              | `ai-chat.ts`              | ✅ 85% | Claude conversation; streaming pending                |
+| **Vision Studio**        | `vision-studio.ts`        | ✅ 80% | Photo analysis modes implemented                      |
+| **Material Procurement** | `material-procurement.ts` | ⏳ 50% | Scaffold only; vendor API integration pending         |
+| **Lead Score**           | `lead-score.ts`           | ⏳ 50% | Scaffold only; scoring algorithm pending              |
+| **Stripe Billing**       | `stripe-billing.ts`       | ⏳ 40% | Scaffold with Stripe client; invoice workflow pending |
+| **Setup Environment**    | `setup-env.ts`            | ⏳ 50% | Env validation; database seed pending                 |
 
 ### 3.2 tRPC Router Implementation
 
 **11 Routers Total — 1,526 lines of code:**
 
-| Router | File | Lines | Procedures | Status |
-|--------|------|-------|-----------|--------|
-| **projectsRouter** | `projectsRouter.ts` | 211 | create, list, get, update, delete, filter | ✅ 90% |
-| **fieldReportsRouter** | `fieldReportsRouter.ts` | 170 | create, list, get, publish, update | ✅ 80% |
-| **estimatesRouter** | `estimatesRouter.ts` | 128 | create, list, get, approve, delete | ✅ 80% |
-| **scheduleRouter** | `scheduleRouter.ts` | 190 | create, list, update, reorder, getGantt | ✅ 70% |
-| **materialsRouter** | `materialsRouter.ts` | 168 | create, list, update, addVendor, generatePO | ✅ 60% |
-| **clientsRouter** | `clientsRouter.ts` | 103 | create, list, get, update, projects | ✅ 70% |
-| **subContractorsRouter** | `subContractorsRouter.ts` | 146 | create, list, get, schedule, contact | ✅ 60% |
-| **portfolioRouter** | `portfolioRouter.ts` | 161 | create, list, get, update, publish | ✅ 65% |
-| **finishSelectionsRouter** | `finishSelectionsRouter.ts` | 102 | create, list, update, calcBudgetImpact | ✅ 70% |
-| **ledgerRouter** | `ledgerRouter.ts` | 86 | create (append-only), list, filter | ✅ 75% |
-| **notificationsRouter** | `notificationsRouter.ts` | 61 | send, list, markRead | ✅ 65% |
+| Router                     | File                        | Lines | Procedures                                  | Status |
+| -------------------------- | --------------------------- | ----- | ------------------------------------------- | ------ |
+| **projectsRouter**         | `projectsRouter.ts`         | 211   | create, list, get, update, delete, filter   | ✅ 90% |
+| **fieldReportsRouter**     | `fieldReportsRouter.ts`     | 170   | create, list, get, publish, update          | ✅ 80% |
+| **estimatesRouter**        | `estimatesRouter.ts`        | 128   | create, list, get, approve, delete          | ✅ 80% |
+| **scheduleRouter**         | `scheduleRouter.ts`         | 190   | create, list, update, reorder, getGantt     | ✅ 70% |
+| **materialsRouter**        | `materialsRouter.ts`        | 168   | create, list, update, addVendor, generatePO | ✅ 60% |
+| **clientsRouter**          | `clientsRouter.ts`          | 103   | create, list, get, update, projects         | ✅ 70% |
+| **subContractorsRouter**   | `subContractorsRouter.ts`   | 146   | create, list, get, schedule, contact        | ✅ 60% |
+| **portfolioRouter**        | `portfolioRouter.ts`        | 161   | create, list, get, update, publish          | ✅ 65% |
+| **finishSelectionsRouter** | `finishSelectionsRouter.ts` | 102   | create, list, update, calcBudgetImpact      | ✅ 70% |
+| **ledgerRouter**           | `ledgerRouter.ts`           | 86    | create (append-only), list, filter          | ✅ 75% |
+| **notificationsRouter**    | `notificationsRouter.ts`    | 61    | send, list, markRead                        | ✅ 65% |
 
 ### 3.3 Database Schema (PostgreSQL via Supabase)
 
 **12 Tables, Fully Typed via Drizzle ORM:**
 
-| Table | Columns | RLS | Status |
-|-------|---------|-----|--------|
-| `users` | id, email, role, name, avatar_url, created_at | ✅ | ✅ Ready |
-| `projects` | id, client_id, title, status, budget, timeline, created_at | ✅ | ✅ Ready |
-| `clients` | id, name, email, phone, address, created_at | ✅ | ✅ Ready |
-| `field_reports` | id, project_id, author_id, transcription, summary, tasks, materials, issues, published_to_client | ✅ | ✅ Ready |
-| `schedule_items` | id, project_id, task_name, start_date, end_date, dependencies, weather_dependent | ✅ | ✅ Ready |
-| `estimates` | id, project_id, client_id, estimated_low/mid/high, materials, labor, permits, contingency, expires_at | ✅ | ✅ Ready |
-| `ledger_entries` | id, project_id, entry_type, description, amount, actor_id, created_at | ✅ | ✅ Ready (append-only) |
-| `materials` | id, project_id, name, quantity, unit_cost, vendor, status | ✅ | ✅ Ready |
-| `portfolio_projects` | id, title, description, images, status, published_at | ✅ | ✅ Ready |
-| `sub_contractors` | id, name, email, phone, specialty, rating, projects | ✅ | ✅ Ready |
-| `finish_selections` | id, project_id, client_id, product_name, cost, image_url, selected_at | ✅ | ✅ Ready |
-| `notifications` | id, user_id, message, type, read_at, created_at | ✅ | ✅ Ready |
+| Table                | Columns                                                                                               | RLS | Status                 |
+| -------------------- | ----------------------------------------------------------------------------------------------------- | --- | ---------------------- |
+| `users`              | id, email, role, name, avatar_url, created_at                                                         | ✅  | ✅ Ready               |
+| `projects`           | id, client_id, title, status, budget, timeline, created_at                                            | ✅  | ✅ Ready               |
+| `clients`            | id, name, email, phone, address, created_at                                                           | ✅  | ✅ Ready               |
+| `field_reports`      | id, project_id, author_id, transcription, summary, tasks, materials, issues, published_to_client      | ✅  | ✅ Ready               |
+| `schedule_items`     | id, project_id, task_name, start_date, end_date, dependencies, weather_dependent                      | ✅  | ✅ Ready               |
+| `estimates`          | id, project_id, client_id, estimated_low/mid/high, materials, labor, permits, contingency, expires_at | ✅  | ✅ Ready               |
+| `ledger_entries`     | id, project_id, entry_type, description, amount, actor_id, created_at                                 | ✅  | ✅ Ready (append-only) |
+| `materials`          | id, project_id, name, quantity, unit_cost, vendor, status                                             | ✅  | ✅ Ready               |
+| `portfolio_projects` | id, title, description, images, status, published_at                                                  | ✅  | ✅ Ready               |
+| `sub_contractors`    | id, name, email, phone, specialty, rating, projects                                                   | ✅  | ✅ Ready               |
+| `finish_selections`  | id, project_id, client_id, product_name, cost, image_url, selected_at                                 | ✅  | ✅ Ready               |
+| `notifications`      | id, user_id, message, type, read_at, created_at                                                       | ✅  | ✅ Ready               |
 
 ### 3.4 Core Utilities
 
 **Environment Configuration (`server/_core/env.ts`):**
+
 - ✅ Supabase credentials (URL, keys)
 - ✅ OpenAI API key (Whisper transcription)
 - ✅ Anthropic API key (Claude)
@@ -219,6 +227,7 @@ Largest chunks:
 - ✅ Environment validation via Zod
 
 **AI Integration (`server/_core/llm.ts`):**
+
 - ✅ Claude Sonnet 4.6 via Anthropic SDK
 - ✅ System prompt + user message handling
 - ✅ JSON mode for structured responses
@@ -226,6 +235,7 @@ Largest chunks:
 - ⚠️ No fallback to Cloudflare Workers AI (pure Claude API)
 
 **Voice Transcription (`server/_core/voiceTranscription.ts`):**
+
 - ✅ Whisper API integration
 - ✅ Multi-format audio support (webm, mp3, m4a)
 - ✅ Base64 buffer handling
@@ -238,12 +248,14 @@ Largest chunks:
 ### 4.1 GitHub & Netlify Integration
 
 **Repository:** https://github.com/ksksrbiz-arch/precision-core-builders.git
+
 - ✅ Main branch default
 - ✅ GitHub Actions CI/CD configured
 - ✅ Automated linting + testing on push
 - ✅ Auto-deploys to Netlify on merge to main
 
 **Netlify Site:** precision-core.netlify.app
+
 - ✅ Custom domain: precisioncorebuilders.com (pending)
 - ✅ Auto-builds from GitHub
 - ✅ Environment variables configured in dashboard
@@ -251,6 +263,7 @@ Largest chunks:
 - ✅ Cache strategy optimized for SPA
 
 **Deployment Configuration (`netlify.toml`):**
+
 ```
 ✅ Build command: npm run build
 ✅ Publish directory: dist/public
@@ -264,6 +277,7 @@ Largest chunks:
 ### 4.2 Environment Variables
 
 **Configured in Netlify Dashboard:**
+
 ```
 ✅ SUPABASE_URL
 ✅ SUPABASE_ANON_KEY
@@ -284,6 +298,7 @@ Largest chunks:
 ### 5.1 Phase 1: Foundation (95% Complete)
 
 ✅ **Completed:**
+
 - Design system ("Quiet Luxury" palette, typography)
 - Page routing and layout
 - UI component library (shadcn/ui + custom)
@@ -297,6 +312,7 @@ Largest chunks:
 - Netlify deployment pipeline
 
 ⏳ **Pending:**
+
 - Custom branding animations (smooth page transitions)
 - Accessibility audit (WCAG 2.1 AA)
 - SEO meta tags (all pages)
@@ -306,6 +322,7 @@ Largest chunks:
 ### 5.2 Phase 2: Core Operations (40% Complete)
 
 ✅ **Completed:**
+
 - Voice recording UI (Web Audio API)
 - Whisper transcription integration
 - Claude report generation
@@ -315,6 +332,7 @@ Largest chunks:
 - Basic weather schedule logic
 
 ⏳ **Pending:**
+
 - Gantt chart with drag-and-drop
 - Schedule item reordering based on weather
 - Real-time schedule updates via Supabase
@@ -327,11 +345,13 @@ Largest chunks:
 ### 5.3 Phase 3: Client Experience (25% Complete)
 
 ✅ **Completed:**
+
 - Project estimator API (Claude cost calculation)
 - 3-tier pricing (low/mid/high)
 - Cost breakdown by category
 
 ⏳ **Pending:**
+
 - Estimator UI form (project details input)
 - Digital finish showroom (product catalog)
 - Budget impact calculator for finish selections
@@ -344,10 +364,12 @@ Largest chunks:
 ### 5.4 Phase 4: Automation (20% Complete)
 
 ✅ **Completed:**
+
 - Material procurement API scaffold
 - Vendor pricing API structure
 
 ⏳ **Pending:**
+
 - Vendor API integrations (Home Depot, Lowe's, etc.)
 - AI vendor suggestion engine
 - PO draft generation
@@ -360,10 +382,12 @@ Largest chunks:
 ### 5.5 Phase 5: Analytics & Portfolio (15% Complete)
 
 ✅ **Completed:**
+
 - CommandCenter dashboard structure (Recharts integration)
 - Portfolio table scaffold
 
 ⏳ **Pending:**
+
 - Lead scoring algorithm
 - Profitability tracking dashboard
 - Project performance metrics
@@ -382,18 +406,21 @@ Largest chunks:
 ### 6.2 High-Priority Issues
 
 ⚠️ **1. Large Bundle Chunks (Mermaid Diagram Library)**
+
 - **Issue:** Mermaid + KaTeX libraries add 500KB+ to build
 - **Impact:** May slow page load, especially on mobile
 - **Solution:** Dynamic import() for diagram/chart visualization components
 - **Status:** Documented, ready for optimization sprint
 
 ⚠️ **2. Real-Time Updates Not Implemented**
+
 - **Issue:** Supabase Realtime subscriptions defined but not active in pages
 - **Impact:** Portal updates require page refresh
 - **Solution:** Implement Supabase Realtime hooks in admin/portal pages
 - **Status:** Architecture ready, implementation pending
 
 ⚠️ **3. Stripe Billing Incomplete**
+
 - **Issue:** Stripe integration scaffolded but no invoice/payment workflow
 - **Impact:** No automated billing functionality yet
 - **Solution:** Implement milestone-based invoicing + payment processing
@@ -402,18 +429,21 @@ Largest chunks:
 ### 6.3 Medium-Priority Issues
 
 ⚠️ **4. n8n Webhooks Not Configured**
+
 - **Issue:** n8n automation workflows not yet created
 - **Impact:** No automated sub-contractor scheduling or notifications
 - **Solution:** Build n8n workflows for core automation scenarios
 - **Status:** URLs configured, workflows pending
 
 ⚠️ **5. AI Image Analysis Modes**
+
 - **Issue:** Vision Studio only has 2 modes fully implemented
 - **Impact:** Photo analysis limited compared to spec
 - **Solution:** Complete remaining 4 modes (damage detection, cost estimation, etc.)
 - **Status:** Scaffolding complete, implementation pending
 
 ⚠️ **6. Portfolio Media Upload**
+
 - **Issue:** Portfolio admin can't upload images yet
 - **Impact:** Portfolio showcase can't populate with real projects
 - **Solution:** Integrate Netlify Blobs for image storage and retrieval
@@ -425,34 +455,34 @@ Largest chunks:
 
 ### 7.1 Build & Runtime Performance
 
-| Metric | Target | Current | Status |
-|--------|--------|---------|--------|
-| **Build Time** | <15s | 10.82s | ✅ Exceeds |
-| **Bundle (gzip)** | <1.2MB | 744KB | ✅ Exceeds |
-| **First Contentful Paint** | <2.5s | ~1.8s (est.) | ✅ Good |
-| **Largest Contentful Paint** | <2.5s | ~2.0s (est.) | ✅ Good |
-| **Cumulative Layout Shift** | <0.1 | <0.05 (est.) | ✅ Good |
-| **Time to Interactive** | <3.5s | ~2.8s (est.) | ✅ Good |
+| Metric                       | Target | Current      | Status     |
+| ---------------------------- | ------ | ------------ | ---------- |
+| **Build Time**               | <15s   | 10.82s       | ✅ Exceeds |
+| **Bundle (gzip)**            | <1.2MB | 744KB        | ✅ Exceeds |
+| **First Contentful Paint**   | <2.5s  | ~1.8s (est.) | ✅ Good    |
+| **Largest Contentful Paint** | <2.5s  | ~2.0s (est.) | ✅ Good    |
+| **Cumulative Layout Shift**  | <0.1   | <0.05 (est.) | ✅ Good    |
+| **Time to Interactive**      | <3.5s  | ~2.8s (est.) | ✅ Good    |
 
 ### 7.2 Code Quality
 
-| Metric | Status |
-|--------|--------|
-| **TypeScript Errors** | ✅ 0 |
-| **ESLint Warnings** | ✅ 0 |
-| **Unused Dependencies** | ✅ None detected |
-| **Type Coverage** | ✅ 100% (tRPC) |
-| **Test Coverage** | ⏳ Platform test file present; E2E tests pending |
+| Metric                  | Status                                           |
+| ----------------------- | ------------------------------------------------ |
+| **TypeScript Errors**   | ✅ 0                                             |
+| **ESLint Warnings**     | ✅ 0                                             |
+| **Unused Dependencies** | ✅ None detected                                 |
+| **Type Coverage**       | ✅ 100% (tRPC)                                   |
+| **Test Coverage**       | ⏳ Platform test file present; E2E tests pending |
 
 ### 7.3 Accessibility
 
-| Check | Status |
-|-------|--------|
-| **Semantic HTML** | ✅ Shadcn/ui provides ARIA labels |
-| **Color Contrast** | ✅ Tailwind palette meets WCAG AA |
-| **Keyboard Navigation** | ✅ All components keyboard-accessible |
-| **Screen Reader Support** | ✅ Built into shadcn components |
-| **Formal Audit** | ⏳ Pending (Lighthouse, axe DevTools) |
+| Check                     | Status                                |
+| ------------------------- | ------------------------------------- |
+| **Semantic HTML**         | ✅ Shadcn/ui provides ARIA labels     |
+| **Color Contrast**        | ✅ Tailwind palette meets WCAG AA     |
+| **Keyboard Navigation**   | ✅ All components keyboard-accessible |
+| **Screen Reader Support** | ✅ Built into shadcn components       |
+| **Formal Audit**          | ⏳ Pending (Lighthouse, axe DevTools) |
 
 ---
 

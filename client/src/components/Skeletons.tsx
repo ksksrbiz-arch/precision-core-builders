@@ -10,9 +10,7 @@ export function SkeletonLine({
   width?: string;
 }) {
   return (
-    <div
-      className={`h-4 bg-muted/40 animate-pulse ${width} ${className}`}
-    />
+    <div className={`h-4 bg-muted/40 animate-pulse ${width} ${className}`} />
   );
 }
 
@@ -66,19 +64,11 @@ export function SkeletonTable({
   );
 }
 
-export function SkeletonAvatar({
-  size = "h-10 w-10",
-}: {
-  size?: string;
-}) {
+export function SkeletonAvatar({ size = "h-10 w-10" }: { size?: string }) {
   return <SkeletonBox width={size} height={size} className="rounded-full" />;
 }
 
-export function SkeletonButton({
-  className = "",
-}: {
-  className?: string;
-}) {
+export function SkeletonButton({ className = "" }: { className?: string }) {
   return (
     <SkeletonBox
       width="w-full"

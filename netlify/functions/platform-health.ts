@@ -117,7 +117,9 @@ async function checkCloudflareAI(): Promise<ServiceStatus> {
       id: "cloudflare_ai",
       name: "Cloudflare Workers AI",
       status: hasResponse ? "healthy" : "degraded",
-      message: hasResponse ? "AI responding normally" : "AI returned empty response",
+      message: hasResponse
+        ? "AI responding normally"
+        : "AI returned empty response",
       latencyMs: Date.now() - start,
     };
   } catch (err) {
@@ -410,8 +412,13 @@ export const handler: Handler = async event => {
     return { statusCode: 405, headers, body: "" };
   }
 
-  // Auth check - allow bootstrap token for initial setup
-  const adminToken = event.queryStringParameters?.adminToken;
+  // Auth check - accept token from Authorization header (preferred) or query string (legacy)
+  const authHeader =
+    event.headers?.authorization ?? event.headers?.Authorization ?? "";
+  const bearerToken = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : undefined;
+  const adminToken = bearerToken ?? event.queryStringParameters?.adminToken;
   const expectedToken = process.env.SETUP_ADMIN_TOKEN;
   const bootstrapToken = "pcb-bootstrap-2026"; // Fallback for initial setup
 
@@ -420,8 +427,9 @@ export const handler: Handler = async event => {
       statusCode: 503,
       headers,
       body: JSON.stringify({
-        error: "SETUP_ADMIN_TOKEN not configured. Use bootstrap token for initial setup.",
-        hint: "Use adminToken=pcb-bootstrap-2026 for first-time setup",
+        error:
+          "SETUP_ADMIN_TOKEN not configured. Use bootstrap token for initial setup.",
+        hint: "Send 'Authorization: Bearer pcb-bootstrap-2026' header for first-time setup",
       }),
     };
   }

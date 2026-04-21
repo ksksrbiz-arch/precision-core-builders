@@ -8,6 +8,7 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import { ArrowRight, Phone } from "lucide-react";
 
@@ -73,6 +74,13 @@ const SERVICES = [
 ] as const;
 
 export default function ServicesPage() {
+  useSEO({
+    title: "Construction Services — Eugene, Oregon",
+    description:
+      "Precision Core Builders offers residential construction, remodels, new builds, restoration, outdoor spaces, painting, roofing, and custom cabinets in Eugene, OR.",
+    canonical: "https://precisioncorebuilders.com/services",
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <SiteNav />

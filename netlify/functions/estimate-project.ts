@@ -1,6 +1,13 @@
 import type { Handler } from "@netlify/functions";
 import { invokeLLM } from "../../server/_core/llm";
 import { createClient } from "@supabase/supabase-js";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
+import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
+import { verifyAuth } from "./_utils/authGuard";
 
 const db = createClient(
   process.env.SUPABASE_URL!,
@@ -33,18 +40,47 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
 export const handler: Handler = async event => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  };
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
+
   if (event.httpMethod === "OPTIONS")
     return { statusCode: 200, headers, body: "" };
+
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "POST")
     return {
       statusCode: 405,
       headers,
       body: JSON.stringify({ error: "Method not allowed" }),
     };
+
+  // Rate limit: 10 req/min anonymous, 30 req/min authenticated.
+  const ip = getClientIp(event.headers);
+  let limitKey = `estimate-anon:${ip}`;
+  let maxRequests = 10;
+
+  const authHeader = event.headers["authorization"];
+  if (authHeader?.startsWith("Bearer ")) {
+    const authResult = await verifyAuth(event.headers);
+    if (authResult.ok) {
+      limitKey = `estimate-user:${authResult.user.id}`;
+      maxRequests = 30;
+    }
+  }
+
+  const rl = checkRateLimit(limitKey, { maxRequests, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...headers, ...rateLimitHeaders(rl) },
+      body: JSON.stringify({
+        error:
+          "Too many requests. Please wait before requesting another estimate.",
+      }),
+    };
+  }
 
   try {
     const input = JSON.parse(event.body ?? "{}");

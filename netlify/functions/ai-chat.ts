@@ -1,5 +1,11 @@
 import type { Handler } from "@netlify/functions";
 import { invokeLLM } from "../../server/_core/llm";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
+import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 
 const SYSTEM_PROMPT = `You are the Digital Foreman AI assistant for Precision Core Builders, owned by Eric Tadlock (CCB #246527), a master builder in Eugene, OR with 20+ years of experience.
 
@@ -15,16 +21,32 @@ Core values: Precise Construction. Core Values.
 Keep responses concise, professional, and practical. If asked about specific project data you don't have access to, say so clearly.`;
 
 export const handler: Handler = async event => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  };
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
 
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers, body: "" };
   }
+
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: "" };
+  }
+
+  // Rate limit: 20 requests per minute per IP.
+  const ip = getClientIp(event.headers);
+  const rl = checkRateLimit(`ai-chat:${ip}`, {
+    maxRequests: 20,
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...headers, ...rateLimitHeaders(rl) },
+      body: JSON.stringify({ error: "Too many requests. Please slow down." }),
+    };
   }
 
   try {

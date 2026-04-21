@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Admin and portal — private, block crawlers
+Disallow: /admin
+Disallow: /admin/
+Disallow: /portal
+Disallow: /portal/
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://precisioncorebuilders.com/sitemap.xml
