@@ -79,15 +79,51 @@ export const PROJECTS: Project[] = [
       caption: "From bare frame to outdoor living room",
     },
     photos: [
-      { file: "signature-outdoor-01.jpg", role: "hero", caption: "Finished outdoor living room" },
-      { file: "signature-deck-01.jpg", role: "hero", caption: "Raw cedar pergola stage" },
-      { file: "pergola-deck-01.jpg", role: "progress", caption: "Pergola framing install" },
-      { file: "pergola-deck-02.jpg", role: "progress", caption: "Deck progress" },
-      { file: "pergola-deck-03.jpg", role: "after", caption: "Composite step detail" },
-      { file: "cedar-fence-01.jpg", role: "progress", caption: "Cedar privacy fence going up" },
-      { file: "cedar-fence-02.jpg", role: "progress", caption: "Fence panel assembly" },
-      { file: "front-fence-01.jpg", role: "hero", caption: "Front hog-wire fence" },
-      { file: "front-fence-02.jpg", role: "hero", caption: "Matched-stain front and rear fencing" },
+      {
+        file: "signature-outdoor-01.jpg",
+        role: "hero",
+        caption: "Finished outdoor living room",
+      },
+      {
+        file: "signature-deck-01.jpg",
+        role: "hero",
+        caption: "Raw cedar pergola stage",
+      },
+      {
+        file: "pergola-deck-01.jpg",
+        role: "progress",
+        caption: "Pergola framing install",
+      },
+      {
+        file: "pergola-deck-02.jpg",
+        role: "progress",
+        caption: "Deck progress",
+      },
+      {
+        file: "pergola-deck-03.jpg",
+        role: "after",
+        caption: "Composite step detail",
+      },
+      {
+        file: "cedar-fence-01.jpg",
+        role: "progress",
+        caption: "Cedar privacy fence going up",
+      },
+      {
+        file: "cedar-fence-02.jpg",
+        role: "progress",
+        caption: "Fence panel assembly",
+      },
+      {
+        file: "front-fence-01.jpg",
+        role: "hero",
+        caption: "Front hog-wire fence",
+      },
+      {
+        file: "front-fence-02.jpg",
+        role: "hero",
+        caption: "Matched-stain front and rear fencing",
+      },
     ],
   },
 
@@ -251,7 +287,11 @@ export const PROJECTS: Project[] = [
     featured: true,
     hero: "bath-remodel-06.jpg",
     photos: [
-      { file: "bath-remodel-01.jpg", role: "progress", caption: "Schluter membrane going in" },
+      {
+        file: "bath-remodel-01.jpg",
+        role: "progress",
+        caption: "Schluter membrane going in",
+      },
       { file: "bath-remodel-02.jpg", role: "progress" },
       { file: "bath-remodel-03.jpg", role: "progress" },
       { file: "bath-remodel-04.jpg", role: "progress" },
@@ -382,12 +422,11 @@ export const CATEGORIES: ProjectCategory[] = [
 export const photoUrl = (file: string) => `/portfolio/${file}`;
 
 /** Find a project by slug */
-export const getProject = (slug: string) =>
-  PROJECTS.find((p) => p.slug === slug);
+export const getProject = (slug: string) => PROJECTS.find(p => p.slug === slug);
 
 /** Featured projects for homepage rail */
-export const featuredProjects = () => PROJECTS.filter((p) => p.featured);
+export const featuredProjects = () => PROJECTS.filter(p => p.featured);
 
 /** Projects filtered by category */
 export const projectsByCategory = (cat: ProjectCategory | "All") =>
-  cat === "All" ? PROJECTS : PROJECTS.filter((p) => p.category === cat);
+  cat === "All" ? PROJECTS : PROJECTS.filter(p => p.category === cat);
