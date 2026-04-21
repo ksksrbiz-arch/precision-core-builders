@@ -349,7 +349,7 @@ export default function CommandCenter() {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-7">
           <div>
             <div className="flex items-center gap-2">
               <h1
@@ -386,7 +386,7 @@ export default function CommandCenter() {
               })}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setLocation("/admin/field-reports/new")}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"

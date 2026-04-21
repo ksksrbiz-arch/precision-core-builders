@@ -850,14 +850,6 @@ type MCPAction = {
 
 const MCP_ACTIONS: MCPAction[] = [
   {
-    id: "seed-demo-data",
-    name: "Seed Demo Data",
-    description:
-      "Create sample client, project, field report, and materials for testing",
-    icon: Database,
-    category: "data",
-  },
-  {
     id: "clear-demo-data",
     name: "Clear Demo Data",
     description: "Remove all demo projects and related records",
