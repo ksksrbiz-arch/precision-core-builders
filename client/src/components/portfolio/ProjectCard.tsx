@@ -1,9 +1,12 @@
 /**
- * ProjectCard — editorial-style tile for the portfolio grid.
+ * ProjectCard — editorial tile for the portfolio grid.
+ * Uses ResponsiveImage for CLS-free loading and adds a quiet depth lift on
+ * hover (desktop) + tap-down feedback (mobile).
  * No dates. Ever.
  */
 import { Project, photoUrl } from "@/data/projects";
-import { motion } from "framer-motion";
+import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
+import { motion, useReducedMotion } from "framer-motion";
 import { useLocation } from "wouter";
 import { ArrowUpRight } from "lucide-react";
 
@@ -15,22 +18,42 @@ interface Props {
 export function ProjectCard({ project, index = 0 }: Props) {
   const [, setLocation] = useLocation();
   const heroSrc = photoUrl(project.hero);
+  const reduce = useReducedMotion();
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={reduce ? false : { opacity: 0, y: 24 }}
+      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.55, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative overflow-hidden rounded-lg bg-white cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500"
+      transition={{
+        duration: 0.55,
+        delay: index * 0.05,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className="group relative overflow-hidden rounded-lg bg-card cursor-pointer shadow-sm hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.45)] hover:-translate-y-1 transition-all duration-500 active:scale-[0.98] focus-within:ring-2 focus-within:ring-[#C8A84B] focus-within:ring-offset-2 focus-within:ring-offset-background"
       onClick={() => setLocation(`/portfolio/${project.slug}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setLocation(`/portfolio/${project.slug}`);
+        }
+      }}
+      aria-label={`View ${project.title}`}
     >
-      <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
-        <img
+      <div className="relative overflow-hidden">
+        <ResponsiveImage
           src={heroSrc}
           alt={project.title}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]"
+          aspectRatio="4/3"
+          imgClassName="transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
+        {/* subtle warm overlay on hover */}
+        <div
+          className="absolute inset-0 bg-[#8B7355]/0 group-hover:bg-[#8B7355]/10 transition-colors duration-500 pointer-events-none"
+          aria-hidden
         />
       </div>
       {project.tag === "Our Home" && (
@@ -38,20 +61,22 @@ export function ProjectCard({ project, index = 0 }: Props) {
           Our Home
         </div>
       )}
-      <div className="p-5">
-        <p className="text-[11px] uppercase tracking-[0.15em] text-neutral-500 mb-1.5">
+      <div className="p-4 md:p-5">
+        <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5">
           {project.category}
         </p>
-        <h3 className="font-heading text-lg md:text-xl text-neutral-900 leading-tight group-hover:text-[#8B7355] transition-colors">
+        <h3 className="font-heading text-lg md:text-xl text-foreground leading-tight group-hover:text-primary transition-colors">
           {project.title}
         </h3>
         {project.location && (
-          <p className="text-sm text-neutral-500 mt-1">{project.location}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {project.location}
+          </p>
         )}
-        <p className="mt-3 text-sm text-neutral-600 leading-relaxed line-clamp-2">
+        <p className="mt-2 md:mt-3 text-sm text-foreground/75 leading-relaxed line-clamp-2">
           {project.summary}
         </p>
-        <div className="mt-4 flex items-center gap-1 text-sm font-medium text-neutral-900 group-hover:text-[#8B7355] transition-colors">
+        <div className="mt-4 flex items-center gap-1 text-sm font-medium text-foreground group-hover:text-primary transition-colors">
           View project
           <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </div>

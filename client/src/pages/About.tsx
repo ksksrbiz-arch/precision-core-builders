@@ -96,13 +96,17 @@ export default function About() {
               </motion.span>
               <motion.h1
                 variants={fadeUp}
-                className="text-5xl sm:text-6xl font-semibold leading-tight mb-5"
-                style={{ fontFamily: "var(--font-heading)" }}
+                className="display-hero font-semibold mb-5"
               >
                 Reliable hands.
                 <br />
                 <em className="text-primary italic">Crafting your world.</em>
               </motion.h1>
+              <motion.span
+                variants={fadeUp}
+                className="heading-bar mb-5"
+                aria-hidden
+              />
               <motion.p
                 variants={fadeUp}
                 className="text-muted-foreground text-lg leading-relaxed font-light"
