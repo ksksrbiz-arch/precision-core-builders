@@ -23,8 +23,8 @@ This document details the security vulnerabilities discovered and fixed in the P
 - **Severity:** High
 - **Impact:** Development
 - **Type:** Path Traversal
-- **Affected:** vite < 8.1.0
-- **Fix:** Updated to vite@8.1.0
+- **Affected:** vite < 8.0.9
+- **Fix:** Updated to vite@8.0.9
 - **Additional mitigation:** Enhanced `vite.config.ts` with comprehensive deny patterns
 
 #### Issue #55: Arbitrary File Read via Vite Dev Server WebSocket
@@ -32,8 +32,8 @@ This document details the security vulnerabilities discovered and fixed in the P
 - **Severity:** High
 - **Impact:** Development
 - **Type:** Arbitrary File Read
-- **Affected:** vite < 8.1.0
-- **Fix:** Updated to vite@8.1.0
+- **Affected:** vite < 8.0.9
+- **Fix:** Updated to vite@8.0.9
 - **Additional mitigation:** Disabled CORS in development mode
 
 #### Issues #64, #63, #57: Path Traversal in Optimized Deps `.map` Handling
@@ -41,9 +41,9 @@ This document details the security vulnerabilities discovered and fixed in the P
 - **Severity:** Moderate
 - **Impact:** Development
 - **Type:** Path Traversal
-- **Affected:** vite < 8.1.0
+- **Affected:** vite < 8.0.9
 - **Detected in:** package-lock.json, pnpm-lock.yaml
-- **Fix:** Updated to vite@8.1.0
+- **Fix:** Updated to vite@8.0.9
 
 **Vite Security Enhancements:**
 
@@ -77,8 +77,8 @@ server: {
 - **Severity:** High
 - **Impact:** Direct
 - **Type:** SQL Injection
-- **Affected:** drizzle-orm < 0.50.0
-- **Fix:** Updated to drizzle-orm@0.50.0
+- **Affected:** drizzle-orm < 0.45.2
+- **Fix:** Updated to drizzle-orm@0.45.2
 - **Additional mitigation:** Code audit confirmed no raw SQL usage in codebase
 
 **Code Review Findings:**
@@ -153,15 +153,15 @@ Multiple XSS vulnerabilities in DOMPurify were addressed:
 ```json
 {
   "dependencies": {
-    "drizzle-orm": "^0.50.0" // was 0.45.2
+    "drizzle-orm": "^0.45.2" // was ^0.44.5
   },
   "devDependencies": {
-    "vite": "^8.1.0" // was 8.0.5
+    "vite": "^8.0.9" // was ^8.0.3
   },
   "pnpm": {
     "overrides": {
-      "vite": ">=8.1.0",
-      "drizzle-orm": ">=0.50.0",
+      "vite": ">=8.0.9",
+      "drizzle-orm": ">=0.45.2",
       "dompurify": ">=3.4.0",
       "mermaid": ">=10.9.4",
       "nanoid": ">=5.1.7",

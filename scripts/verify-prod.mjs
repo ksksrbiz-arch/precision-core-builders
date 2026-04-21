@@ -13,11 +13,37 @@
  */
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
-import { resolve, extname, join } from "node:path";
-import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
+import { resolve, extname, join, normalize, sep } from "node:path";
+import { chromium } from "playwright";
 
 const PORT = Number(process.env.VERIFY_PORT || 8765);
 const DIST = resolve(process.cwd(), "dist/public");
+// Optional override so sandboxed environments (or pinned CI images) can
+// point at a pre-provisioned Chromium; otherwise Playwright uses its
+// managed browser install.
+const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
+
+/**
+ * Resolve a URL path safely against DIST. Returns the absolute path iff
+ * it stays under DIST; otherwise returns null (traversal attempt).
+ * Handles percent-encoding, backslashes, and .. segments via normalize().
+ */
+function safeResolve(urlPath) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(urlPath);
+  } catch {
+    return null;
+  }
+  // Normalize separators and collapse .. / .
+  const normalized = normalize(decoded.replace(/\\/g, "/"));
+  const target = resolve(
+    DIST,
+    "." + (normalized.startsWith("/") ? normalized : "/" + normalized)
+  );
+  if (target !== DIST && !target.startsWith(DIST + sep)) return null;
+  return target;
+}
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -52,8 +78,12 @@ async function startServer() {
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://localhost:${PORT}`);
-      const safePath = url.pathname.replace(/\.\./g, "");
-      const target = join(DIST, safePath);
+      const target = safeResolve(url.pathname);
+      if (!target) {
+        res.statusCode = 403;
+        res.end("Forbidden");
+        return;
+      }
 
       // Try the exact file first
       try {
@@ -129,7 +159,7 @@ const isExternalOrigin = u => {
 
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+    ...(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {}),
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
   });
 

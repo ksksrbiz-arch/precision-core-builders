@@ -79,6 +79,7 @@ That's it. Everything else builds from these five actions.
 **How to use it:**
 
 **For yourself (to generate leads):**
+
 1. Share the link: `<your-domain>/estimator`
 2. Embed it on your website
 3. Share on social media, Google Local Services, and Nextdoor

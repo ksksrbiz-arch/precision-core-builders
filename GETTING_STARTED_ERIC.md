@@ -36,6 +36,7 @@ When a field report is filed or a task is updated, **all your portal tabs refres
 - Material shortage is flagged → notifications appear in real-time
 
 ### 3. **AI Project Estimator** ✅
+
 Already live. Public link: `<your-domain>/estimator`
 
 **How it works:**
@@ -69,6 +70,7 @@ Read: `/docs/USER_GUIDE_ERIC.md` (also in your admin account under Admin → Hel
 ## How to Get Started Today
 
 ### Step 1: Log In
+
 Go to: `<your-domain>/admin`
 
 ### Step 2: Create Your First Project
@@ -152,14 +154,14 @@ Share via:
 
 ## Key Credentials & Access
 
-| Item | Value |
-|------|-------|
-| **Live Site** | See `docs/HANDOVER.md` for confirmed domain |
-| **Admin Area** | `<your-domain>/admin` |
-| **Your License** | CCB #246527 |
-| **Email** | ericTadlock@precisioncorebuilders.com |
-| **Phone** | 541-852-5144 |
-| **Database** | Supabase (all your data) |
+| Item             | Value                                       |
+| ---------------- | ------------------------------------------- |
+| **Live Site**    | See `docs/HANDOVER.md` for confirmed domain |
+| **Admin Area**   | `<your-domain>/admin`                       |
+| **Your License** | CCB #246527                                 |
+| **Email**        | ericTadlock@precisioncorebuilders.com       |
+| **Phone**        | 541-852-5144                                |
+| **Database**     | Supabase (all your data)                    |
 
 ---
 
