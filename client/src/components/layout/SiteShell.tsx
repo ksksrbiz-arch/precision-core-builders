@@ -155,6 +155,7 @@ export function SiteNav() {
             ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
             : "bg-transparent"
         }`}
+        style={{ transform: "translateZ(0)", willChange: "background-color" }}
       >
         <div className="container h-[68px] flex items-center justify-between">
           <a
@@ -167,6 +168,8 @@ export function SiteNav() {
               src={ASSETS.logo}
               alt="Precision Core Builders"
               className="h-9 w-auto"
+              width="180"
+              height="36"
               fetchPriority="high"
             />
           </a>

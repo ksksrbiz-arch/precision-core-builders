@@ -31,8 +31,6 @@ export function ScrollProgressBar() {
     };
   }, []);
 
-  if (progress <= 0) return null;
-
   return (
     <div
       role="progressbar"
@@ -40,8 +38,13 @@ export function ScrollProgressBar() {
       aria-valuenow={Math.round(progress)}
       aria-valuemin={0}
       aria-valuemax={100}
+      aria-hidden={progress <= 0 ? "true" : "false"}
       className="fixed top-0 left-0 z-[60] h-[2px] bg-primary transition-all duration-75 motion-reduce:transition-none"
-      style={{ width: `${progress}%` }}
+      style={{
+        width: `${progress}%`,
+        opacity: progress > 0 ? 1 : 0,
+        pointerEvents: "none",
+      }}
     />
   );
 }
