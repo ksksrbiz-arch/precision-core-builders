@@ -16,6 +16,8 @@ const ProjectStatusEnum = z.enum([
 const CreateProjectInput = z.object({
   clientId: z.number().int().positive(),
   name: z.string().min(1).max(300),
+  startDate: z.string().datetime().optional(),
+  budget: z.number().positive().optional(),
   description: z.string().optional(),
   status: ProjectStatusEnum.optional().default("lead"),
   projectType: z.string().max(100).optional(),
@@ -33,14 +35,17 @@ const CreateProjectInput = z.object({
 });
 
 export const projectsRouter = router({
-  list: adminProcedure
+  list: protectedProcedure
     .input(
-      z.object({
-        page: z.number().int().positive().optional(),
-        pageSize: z.number().int().min(1).max(100).optional(),
-        status: ProjectStatusEnum.optional(),
-        search: z.string().optional(),
-      })
+      z
+        .object({
+          page: z.number().int().positive().optional(),
+          pageSize: z.number().int().min(1).max(100).optional(),
+          status: ProjectStatusEnum.optional(),
+          search: z.string().optional(),
+        })
+        .optional()
+        .default({})
     )
     .query(async ({ input }) => {
       const { from, to } = paginate(input);
@@ -199,7 +204,8 @@ export const projectsRouter = router({
       const updates: Record<string, unknown> = {};
       if (input.completionPercent !== undefined)
         updates.completion_percent = input.completionPercent;
-      if (input.actualCost !== undefined) updates.actual_cost = input.actualCost;
+      if (input.actualCost !== undefined)
+        updates.actual_cost = input.actualCost;
       if (Object.keys(updates).length === 0) {
         const { data: current } = await db
           .from("projects")
@@ -282,7 +288,11 @@ export const projectsRouter = router({
       );
 
       const changeOrderTotal = (ledgerRes.data ?? [])
-        .filter(e => e.entry_type === "change_order" || e.entry_type === "cost_adjustment")
+        .filter(
+          e =>
+            e.entry_type === "change_order" ||
+            e.entry_type === "cost_adjustment"
+        )
         .reduce((sum, e) => sum + Number(e.amount_delta ?? 0), 0);
 
       const contracted = Number(project.contracted_budget ?? 0);

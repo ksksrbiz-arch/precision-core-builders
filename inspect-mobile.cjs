@@ -1,11 +1,14 @@
-const { chromium } = require("/home/claude/.npm-global/lib/node_modules/playwright");
+const {
+  chromium,
+} = require("/home/claude/.npm-global/lib/node_modules/playwright");
 
 const URL = process.argv[2] || "http://localhost:5555/";
 
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "/home/claude/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
+    executablePath:
+      "/home/claude/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
   });
 
@@ -13,12 +16,15 @@ const URL = process.argv[2] || "http://localhost:5555/";
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
-    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
   });
   const page = await context.newPage();
 
   const errors = [];
-  page.on("console", msg => { if (msg.type() === "error") errors.push(msg.text()); });
+  page.on("console", msg => {
+    if (msg.type() === "error") errors.push(msg.text());
+  });
   page.on("pageerror", e => errors.push("PAGE: " + e.message));
 
   await page.goto(URL, { waitUntil: "networkidle", timeout: 15000 });
@@ -52,19 +58,24 @@ const URL = process.argv[2] || "http://localhost:5555/";
 
   // Image aspect sanity — find any img that's been squeezed
   const imgSanity = await page.evaluate(() => {
-    return [...document.querySelectorAll("img")].map(img => {
-      const r = img.getBoundingClientRect();
-      return {
-        src: img.src.slice(0, 80),
-        displayed: `${Math.round(r.width)}x${Math.round(r.height)}`,
-        natural: `${img.naturalWidth}x${img.naturalHeight}`,
-        fit: getComputedStyle(img).objectFit,
-        pos: getComputedStyle(img).objectPosition,
-      };
-    }).filter(i => i.displayed !== "0x0").slice(0, 15);
+    return [...document.querySelectorAll("img")]
+      .map(img => {
+        const r = img.getBoundingClientRect();
+        return {
+          src: img.src.slice(0, 80),
+          displayed: `${Math.round(r.width)}x${Math.round(r.height)}`,
+          natural: `${img.naturalWidth}x${img.naturalHeight}`,
+          fit: getComputedStyle(img).objectFit,
+          pos: getComputedStyle(img).objectPosition,
+        };
+      })
+      .filter(i => i.displayed !== "0x0")
+      .slice(0, 15);
   });
   console.log("\nImages rendered:");
-  imgSanity.forEach(i => console.log(" ", i.displayed, i.fit, i.pos, "|", i.src));
+  imgSanity.forEach(i =>
+    console.log(" ", i.displayed, i.fit, i.pos, "|", i.src)
+  );
 
   if (errors.length) {
     console.log("\nConsole/page errors:");

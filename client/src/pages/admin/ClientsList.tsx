@@ -54,7 +54,15 @@ export default function ClientsList() {
   });
 
   const resetForm = () =>
-    setForm({ name: "", email: "", phone: "", city: "", state: "OR", notes: "", leadSource: "" });
+    setForm({
+      name: "",
+      email: "",
+      phone: "",
+      city: "",
+      state: "OR",
+      notes: "",
+      leadSource: "",
+    });
 
   const createMut = useMutationWithToast(trpc.clients.create.useMutation(), {
     success: "Client Created",
@@ -62,7 +70,10 @@ export default function ClientsList() {
     error: "Create Failed",
     errorMessage: "Failed to create client. Please try again.",
     invalidate: () => utils.clients.list.invalidate(),
-    onSuccess: () => { setShowNew(false); resetForm(); },
+    onSuccess: () => {
+      setShowNew(false);
+      resetForm();
+    },
   });
 
   const deleteMut = useMutationWithToast(trpc.clients.delete.useMutation(), {
@@ -101,7 +112,10 @@ export default function ClientsList() {
             type="text"
             placeholder="Search by name or email..."
             value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            onChange={e => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="w-full pl-9 pr-4 py-2.5 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
           />
         </div>
@@ -132,7 +146,9 @@ export default function ClientsList() {
                   <input
                     type={f.type}
                     value={(form as any)[f.key]}
-                    onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    onChange={e =>
+                      setForm(prev => ({ ...prev, [f.key]: e.target.value }))
+                    }
                     className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
                   />
                 </div>
@@ -147,14 +163,19 @@ export default function ClientsList() {
               </label>
               <textarea
                 value={form.notes}
-                onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={e =>
+                  setForm(prev => ({ ...prev, notes: e.target.value }))
+                }
                 rows={2}
                 className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60 resize-none"
               />
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => { setShowNew(false); resetForm(); }}
+                onClick={() => {
+                  setShowNew(false);
+                  resetForm();
+                }}
                 className="px-4 py-2 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -178,7 +199,10 @@ export default function ClientsList() {
           <div className="bg-card border border-border/60 p-12 text-center">
             <Users className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground text-sm mb-3">No clients yet</p>
-            <button onClick={() => setShowNew(true)} className="text-primary text-sm underline">
+            <button
+              onClick={() => setShowNew(true)}
+              className="text-primary text-sm underline"
+            >
               Add your first client
             </button>
           </div>
@@ -188,7 +212,8 @@ export default function ClientsList() {
               const projectCount = client.projects?.length ?? 0;
               const activeProjects =
                 client.projects?.filter(
-                  (p: any) => p.status === "in_progress" || p.status === "contracted"
+                  (p: any) =>
+                    p.status === "in_progress" || p.status === "contracted"
                 ).length ?? 0;
               return (
                 <div
@@ -197,14 +222,21 @@ export default function ClientsList() {
                 >
                   <div className="h-11 w-11 bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <span className="text-sm font-bold text-primary">
-                      {client.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
+                      {client.name
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)}
                     </span>
                   </div>
                   <button
                     onClick={() => setLocation(`/admin/clients/${client.id}`)}
                     className="flex-1 min-w-0 text-left"
                   >
-                    <p className="text-sm font-semibold truncate">{client.name}</p>
+                    <p className="text-sm font-semibold truncate">
+                      {client.name}
+                    </p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                       {client.email && (
                         <span className="flex items-center gap-1 truncate">
@@ -225,12 +257,17 @@ export default function ClientsList() {
                       <span className="text-xs text-muted-foreground">
                         {projectCount} project{projectCount !== 1 ? "s" : ""}
                         {activeProjects > 0 && (
-                          <span className="text-primary ml-1">({activeProjects} active)</span>
+                          <span className="text-primary ml-1">
+                            ({activeProjects} active)
+                          </span>
                         )}
                       </span>
                     )}
                     {client.phone && (
-                      <a href={`tel:${client.phone}`} className="text-muted-foreground hover:text-primary transition-colors">
+                      <a
+                        href={`tel:${client.phone}`}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
                         <Phone className="h-3.5 w-3.5" />
                       </a>
                     )}
@@ -242,9 +279,12 @@ export default function ClientsList() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete {client.name}?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Delete {client.name}?
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            This permanently removes this client record. Active projects will remain.
+                            This permanently removes this client record. Active
+                            projects will remain.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

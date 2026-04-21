@@ -394,12 +394,16 @@ export default function ProjectNew() {
                 />
                 <div
                   className={`w-10 h-5 rounded-full transition-colors ${
-                    form.clientPortalEnabled ? "bg-primary" : "bg-input border border-border"
+                    form.clientPortalEnabled
+                      ? "bg-primary"
+                      : "bg-input border border-border"
                   }`}
                 />
                 <div
                   className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                    form.clientPortalEnabled ? "translate-x-5" : "translate-x-0.5"
+                    form.clientPortalEnabled
+                      ? "translate-x-5"
+                      : "translate-x-0.5"
                   }`}
                 />
               </div>

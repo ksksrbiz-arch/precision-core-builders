@@ -24,7 +24,8 @@ export const sitePlansRouter = router({
         .order("updated_at", { ascending: false });
       if (input.projectId) q = q.eq("project_id", input.projectId);
       const { data, error } = await q;
-      if (error) throw new Error(`Failed to fetch site plans: ${error.message}`);
+      if (error)
+        throw new Error(`Failed to fetch site plans: ${error.message}`);
       return data ?? [];
     }),
 
@@ -61,14 +62,15 @@ export const sitePlansRouter = router({
         .insert({
           name: input.name,
           project_id: input.projectId ?? null,
-          author_id: ctx.user.id,
+          author_id: ctx.user!.id,
           elements: input.elements,
           app_state: input.appState,
           thumbnail_data_url: input.thumbnailDataUrl ?? null,
         })
         .select()
         .single();
-      if (error) throw new Error(`Failed to create site plan: ${error.message}`);
+      if (error)
+        throw new Error(`Failed to create site plan: ${error.message}`);
       return data;
     }),
 
@@ -111,10 +113,7 @@ export const sitePlansRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { error } = await db
-        .from("site_plans")
-        .delete()
-        .eq("id", input.id);
+      const { error } = await db.from("site_plans").delete().eq("id", input.id);
       if (error)
         throw new Error(
           `Failed to delete site plan with ID ${input.id}: ${error.message}`

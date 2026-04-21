@@ -29,7 +29,7 @@ Before deploying, ensure you have:
 2. Click **"New Project"**
 3. Fill in:
    - **Name:** Precision Core Builders
-   - **Database Password:** *Generate and save securely*
+   - **Database Password:** _Generate and save securely_
    - **Region:** Choose closest to Eugene, OR (US West or US Central)
 4. Click **"Create new project"**
 5. Wait 2-3 minutes for project provisioning
@@ -160,6 +160,7 @@ pnpm install
 ```
 
 This script will:
+
 - ✅ Verify environment variables
 - ✅ Run Drizzle schema migration (creates 12 tables)
 - ✅ Apply RLS (Row-Level Security) policies
@@ -198,7 +199,7 @@ This script will:
 2. Click **"Add user" → "Create new user"**
 3. Fill in:
    - **Email:** eric@precisioncorebuilders.com
-   - **Password:** *Generate secure password*
+   - **Password:** _Generate secure password_
    - **Email Confirm:** ✅ Auto Confirm
 4. Click **"Create user"**
 
@@ -226,6 +227,7 @@ curl "https://your-site.netlify.app/api/platform-health?adminToken=your-admin-to
 ```
 
 Expected response:
+
 ```json
 {
   "status": "healthy",
@@ -326,14 +328,16 @@ Before announcing to clients:
 
 ### Issue: Admin can't log in
 
-**Fix:** 
+**Fix:**
+
 1. Verify user exists in Supabase Auth
 2. Run SQL to set role: `UPDATE users SET role = 'admin' WHERE email = '...'`
 3. Clear browser cache and try again
 
 ### Issue: Voice transcription fails
 
-**Fix:** 
+**Fix:**
+
 1. Verify `OPENAI_API_KEY` is set in Netlify
 2. Check OpenAI account has credits
 3. View Netlify function logs for error details
@@ -341,6 +345,7 @@ Before announcing to clients:
 ### Issue: Real-time updates don't work
 
 **Fix:**
+
 1. Verify replication is enabled in Supabase for relevant tables
 2. Check browser console for WebSocket connection errors
 3. Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set
@@ -350,11 +355,13 @@ Before announcing to clients:
 ## Maintenance
 
 ### Weekly Tasks
+
 - [ ] Review Netlify function logs for errors
 - [ ] Check Supabase database size (free tier = 500MB)
 - [ ] Verify automated backups running
 
 ### Monthly Tasks
+
 - [ ] Review API usage (OpenAI, Anthropic, OpenWeatherMap)
 - [ ] Update dependencies: `pnpm update`
 - [ ] Review and optimize Netlify bandwidth usage
@@ -376,6 +383,7 @@ Before announcing to clients:
 Your Digital Foreman platform is now live. 🎉
 
 **Next steps:**
+
 1. Create your first real project
 2. Record a voice field report
 3. Share the estimator link on your website

@@ -129,9 +129,7 @@ export default function FieldReportDetail() {
               {fmtDate(report.report_date)} ·{" "}
               <button
                 onClick={() =>
-                  setLocation(
-                    `/admin/projects/${(report as any).projects?.id}`
-                  )
+                  setLocation(`/admin/projects/${(report as any).projects?.id}`)
                 }
                 className="text-primary hover:underline"
               >
@@ -255,27 +253,28 @@ export default function FieldReportDetail() {
           )}
 
           {/* Material Shortages */}
-          {report.material_shortages && report.material_shortages.length > 0 && (
-            <div className="bg-card border border-red-400/30 bg-red-400/5 p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertCircle className="h-4 w-4 text-red-400" />
-                <p
-                  className="text-[9px] font-bold tracking-[0.2em] uppercase text-red-400/80"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Material Shortages
-                </p>
+          {report.material_shortages &&
+            report.material_shortages.length > 0 && (
+              <div className="bg-card border border-red-400/30 bg-red-400/5 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="h-4 w-4 text-red-400" />
+                  <p
+                    className="text-[9px] font-bold tracking-[0.2em] uppercase text-red-400/80"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Material Shortages
+                  </p>
+                </div>
+                <ul className="space-y-1.5">
+                  {report.material_shortages.map((s: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
+                      <span className="text-sm text-foreground">{s}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-1.5">
-                {report.material_shortages.map((s: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
-                    <span className="text-sm text-foreground">{s}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+            )}
         </div>
 
         {/* Raw Transcription */}

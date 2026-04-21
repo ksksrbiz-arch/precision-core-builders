@@ -731,16 +731,29 @@ export default function CommandCenter() {
                     fontSize: 11,
                   }}
                 />
-                <Bar dataKey="reports" name="Reports" fill="#8B7355" radius={[2,2,0,0]} />
-                <Bar dataKey="issues" name="Issues" fill="#C0392B" radius={[2,2,0,0]} opacity={0.7} />
+                <Bar
+                  dataKey="reports"
+                  name="Reports"
+                  fill="#8B7355"
+                  radius={[2, 2, 0, 0]}
+                />
+                <Bar
+                  dataKey="issues"
+                  name="Issues"
+                  fill="#C0392B"
+                  radius={[2, 2, 0, 0]}
+                  opacity={0.7}
+                />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex items-center gap-4 mt-2">
               <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="h-2 w-2 bg-primary inline-block" /> Reports filed
+                <span className="h-2 w-2 bg-primary inline-block" /> Reports
+                filed
               </span>
               <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="h-2 w-2 bg-red-500 inline-block opacity-70" /> Reports with issues
+                <span className="h-2 w-2 bg-red-500 inline-block opacity-70" />{" "}
+                Reports with issues
               </span>
             </div>
           </div>

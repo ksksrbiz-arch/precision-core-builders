@@ -574,7 +574,10 @@ export default function SitePlanBuilder() {
           });
         } catch (thumbErr) {
           // Thumbnail is optional — log but don't fail save if it errors
-          console.warn("[SitePlanBuilder] Thumbnail generation failed:", thumbErr);
+          console.warn(
+            "[SitePlanBuilder] Thumbnail generation failed:",
+            thumbErr
+          );
         }
       }
 
@@ -597,7 +600,11 @@ export default function SitePlanBuilder() {
       }
 
       await utils.sitePlans.list.invalidate();
-      addToast({ type: "success", title: "Saved", message: "Site plan saved." });
+      addToast({
+        type: "success",
+        title: "Saved",
+        message: "Site plan saved.",
+      });
     } catch (err) {
       addToast({
         type: "error",
@@ -607,7 +614,16 @@ export default function SitePlanBuilder() {
     } finally {
       setSaving(false);
     }
-  }, [excalidrawAPI, exportToBlob, planName, activePlanId, createPlan, updatePlan, utils, addToast]);
+  }, [
+    excalidrawAPI,
+    exportToBlob,
+    planName,
+    activePlanId,
+    createPlan,
+    updatePlan,
+    utils,
+    addToast,
+  ]);
 
   const handleLoadPlan = useCallback(
     async (planId: number, name: string) => {
@@ -623,10 +639,18 @@ export default function SitePlanBuilder() {
         });
         setPlanName(name);
         setActivePlanId(planId);
-        addToast({ type: "success", title: "Loaded", message: `Opened "${name}".` });
+        addToast({
+          type: "success",
+          title: "Loaded",
+          message: `Opened "${name}".`,
+        });
       } catch (err) {
         console.error("[SitePlanBuilder] Load plan failed:", err);
-        addToast({ type: "error", title: "Load failed", message: "Could not load plan data." });
+        addToast({
+          type: "error",
+          title: "Load failed",
+          message: "Could not load plan data.",
+        });
       }
     },
     [excalidrawAPI, utils, addToast]
@@ -641,12 +665,17 @@ export default function SitePlanBuilder() {
           setPlanName("Untitled Site Plan");
         }
         await utils.sitePlans.list.invalidate();
-        addToast({ type: "success", title: "Deleted", message: "Plan deleted." });
+        addToast({
+          type: "success",
+          title: "Deleted",
+          message: "Plan deleted.",
+        });
       } catch (err) {
         addToast({
           type: "error",
           title: "Delete failed",
-          message: err instanceof Error ? err.message : "Could not delete plan.",
+          message:
+            err instanceof Error ? err.message : "Could not delete plan.",
         });
       }
     },
@@ -916,7 +945,9 @@ export default function SitePlanBuilder() {
                         className="flex-1 text-left px-2 py-1.5 min-w-0"
                         onClick={() => handleLoadPlan(plan.id, plan.name)}
                       >
-                        <p className={`text-xs font-medium truncate ${activePlanId === plan.id ? "text-primary" : ""}`}>
+                        <p
+                          className={`text-xs font-medium truncate ${activePlanId === plan.id ? "text-primary" : ""}`}
+                        >
                           {plan.name}
                         </p>
                         <p className="text-[10px] text-muted-foreground">

@@ -119,6 +119,36 @@ export const finishSelectionsRouter = router({
       const pendingApproval = items.filter(
         s => !s.client_approved || !s.eric_approved
       ).length;
-      return { totalDelta, approvedDelta, pendingApproval, total: items.length };
+      return {
+        totalDelta,
+        approvedDelta,
+        pendingApproval,
+        total: items.length,
+      };
+    }),
+
+  select: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number().int().positive(),
+        category: z.string().max(100).optional(),
+        selection: z.string().min(1).max(300),
+        budgetImpact: z.number().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { data, error } = await db
+        .from("finish_selections")
+        .insert({
+          project_id: input.projectId,
+          item_name: input.selection,
+          category: input.category,
+          budget_delta: input.budgetImpact,
+          client_id: null,
+        })
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
     }),
 });

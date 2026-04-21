@@ -4,30 +4,32 @@
 
 **Team:** Claude Max (Agentic Implementation)  
 **Timeline:** 48 hours  
-**Environment:** Netlify-native, Supabase backend, tRPC API  
+**Environment:** Netlify-native, Supabase backend, tRPC API
 
 ---
 
 ## Hour Allocation
 
-| Phase | Task | Hours | Status |
-|-------|------|-------|--------|
-| **0-4h** | Landing Page Polish + Project Setup | 4h | ⏳ NEXT |
-| **4-10h** | Voice Recorder Component + Field Report UI | 6h | ⏳ QUEUED |
-| **10-16h** | Implement `estimate-project` Netlify Function | 6h | ⏳ QUEUED |
-| **16-22h** | Implement `weather-schedule` Netlify Function | 6h | ⏳ QUEUED |
-| **22-28h** | Build GanttChart + ScheduleView | 6h | ⏳ QUEUED |
-| **28-32h** | Material Procurement UI + Skeleton | 4h | ⏳ QUEUED |
-| **32-36h** | Testing + Deployment Prep | 4h | ⏳ QUEUED |
-| **36-48h** | Buffer + Final Polish | 12h | ⏳ QUEUED |
+| Phase      | Task                                          | Hours | Status    |
+| ---------- | --------------------------------------------- | ----- | --------- |
+| **0-4h**   | Landing Page Polish + Project Setup           | 4h    | ⏳ NEXT   |
+| **4-10h**  | Voice Recorder Component + Field Report UI    | 6h    | ⏳ QUEUED |
+| **10-16h** | Implement `estimate-project` Netlify Function | 6h    | ⏳ QUEUED |
+| **16-22h** | Implement `weather-schedule` Netlify Function | 6h    | ⏳ QUEUED |
+| **22-28h** | Build GanttChart + ScheduleView               | 6h    | ⏳ QUEUED |
+| **28-32h** | Material Procurement UI + Skeleton            | 4h    | ⏳ QUEUED |
+| **32-36h** | Testing + Deployment Prep                     | 4h    | ⏳ QUEUED |
+| **36-48h** | Buffer + Final Polish                         | 12h   | ⏳ QUEUED |
 
 ---
 
 ## TASK GROUP 1: Landing Page Polish (Hours 0-4)
 
 ### Task 1.1: Create Hero Section Component
+
 **File:** `client/src/components/HeroSection.tsx`  
 **Requirements:**
+
 - Full-bleed cinematic video background or gradient overlay
 - "Quiet Luxury" aesthetic with warm colors (beige, bronze tones)
 - Main headline: "Precision Construction. Core Values."
@@ -37,14 +39,17 @@
 - Responsive mobile-first design
 
 **Acceptance Criteria:**
+
 - [ ] Video/gradient loads without layout shift
 - [ ] CTA buttons route correctly
 - [ ] Mobile: stacked buttons, readable at 320px+
 - [ ] Lighthouse score: 85+
 
 ### Task 1.2: Polish Home.tsx Landing Page
+
 **File:** `client/src/pages/Home.tsx`  
 **Requirements:**
+
 - Import HeroSection
 - Add "Digital Foreman Features" section (4 cards):
   1. Voice Field Reports - "5-minute daily reports"
@@ -56,14 +61,17 @@
 - Add footer CTA
 
 **Acceptance Criteria:**
+
 - [ ] All sections visible, properly spaced
 - [ ] Images load from `client/public/images/`
 - [ ] No console errors
 - [ ] Passes accessibility audit
 
 ### Task 1.3: Create Asset Placeholders
+
 **Directory:** `client/public/images/`  
 **Files to create:**
+
 - `hero-background.webp` (cinematic landscape construction site)
 - `feature-voice.svg` (microphone icon)
 - `feature-weather.svg` (cloud + sun icon)
@@ -72,6 +80,7 @@
 - `testimonial-placeholder.jpg` (generic headshot)
 
 **Acceptance Criteria:**
+
 - [ ] All files optimized for web (<500KB each)
 - [ ] SVGs use brand colors
 - [ ] No broken image links in Home.tsx
@@ -81,8 +90,10 @@
 ## TASK GROUP 2: Voice Recorder Component (Hours 4-8)
 
 ### Task 2.1: Create VoiceRecorder Component
+
 **File:** `client/src/components/VoiceRecorder.tsx`  
 **Requirements:**
+
 - Use Web Audio API for recording
 - Visual waveform during recording
 - Record button (red circle) → Stop button
@@ -90,6 +101,7 @@
 - Error handling for permissions
 
 **Props:**
+
 ```typescript
 interface VoiceRecorderProps {
   projectId: number;
@@ -99,6 +111,7 @@ interface VoiceRecorderProps {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Records audio to 30+ seconds
 - [ ] Displays duration counter
 - [ ] Graceful fallback if microphone unavailable
@@ -106,8 +119,10 @@ interface VoiceRecorderProps {
 - [ ] Displays server response (report ID)
 
 ### Task 2.2: Build FieldReportNew Page
+
 **File:** `client/src/pages/admin/FieldReportNew.tsx`  
 **Requirements:**
+
 - Project selector dropdown
 - VoiceRecorder component
 - Preview of transcription (auto-filled after upload)
@@ -120,6 +135,7 @@ interface VoiceRecorderProps {
 - Save + Publish buttons
 
 **Acceptance Criteria:**
+
 - [ ] Form validates before submit
 - [ ] Project selector works
 - [ ] Audio uploads and transcription displays
@@ -127,14 +143,17 @@ interface VoiceRecorderProps {
 - [ ] Publish toggles notification
 
 ### Task 2.3: Integrate Voice-to-Report Netlify Function
+
 **File:** `client/src/lib/voiceToReport.ts`  
 **Requirements:**
+
 - Function to call `/api/voice-to-report` with audio blob
 - Auto-extract JSON response
 - Handle errors with user-friendly messages
 - Return: `{ reportId, transcription, summary, tasksCompleted, ... }`
 
 **Acceptance Criteria:**
+
 - [ ] Successfully uploads audio
 - [ ] Transcription returns within 15s
 - [ ] JSON parsing succeeds
@@ -145,8 +164,10 @@ interface VoiceRecorderProps {
 ## TASK GROUP 3: Estimate Project Netlify Function (Hours 10-16)
 
 ### Task 3.1: Implement `estimate-project` Netlify Function
+
 **File:** `netlify/functions/estimate-project.ts`  
 **Requirements:**
+
 - Endpoint: `POST /api/estimate-project`
 - Input validation with Zod
 - Claude API call with specialized estimator prompt
@@ -155,6 +176,7 @@ interface VoiceRecorderProps {
 - Return estimate ID + breakdown
 
 **Input Schema:**
+
 ```typescript
 {
   projectType: "new_build" | "remodel" | "addition" | "repair",
@@ -168,6 +190,7 @@ interface VoiceRecorderProps {
 ```
 
 **Output Response:**
+
 ```typescript
 {
   estimateId: number,
@@ -185,6 +208,7 @@ interface VoiceRecorderProps {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Validates input with Zod
 - [ ] Claude returns valid JSON
 - [ ] Database insert succeeds
@@ -192,8 +216,10 @@ interface VoiceRecorderProps {
 - [ ] Error handling for API failures
 
 ### Task 3.2: Create ProjectEstimator Component
+
 **File:** `client/src/components/ProjectEstimator.tsx`  
 **Requirements:**
+
 - Form inputs for estimate parameters
 - Real-time calculation (debounced)
 - Results display with 3-tier pricing
@@ -201,6 +227,7 @@ interface VoiceRecorderProps {
 - "Request Full Estimate" CTA → saves to DB
 
 **Acceptance Criteria:**
+
 - [ ] All form fields functional
 - [ ] Results update on parameter change
 - [ ] Charts render correctly
@@ -212,8 +239,10 @@ interface VoiceRecorderProps {
 ## TASK GROUP 4: Weather Schedule Netlify Function (Hours 16-22)
 
 ### Task 4.1: Implement `weather-schedule` Netlify Function
+
 **File:** `netlify/functions/weather-schedule.ts`  
 **Requirements:**
+
 - Endpoint: `POST /api/weather-schedule`
 - Input: projectId, next 7-day forecast
 - Call OpenWeatherMap API for Eugene, OR weather
@@ -225,13 +254,15 @@ interface VoiceRecorderProps {
 - Return updated schedule
 
 **Input Schema:**
+
 ```typescript
 {
-  projectId: number
+  projectId: number;
 }
 ```
 
 **Output Response:**
+
 ```typescript
 {
   projectId: number,
@@ -256,6 +287,7 @@ interface VoiceRecorderProps {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Calls OpenWeatherMap API successfully
 - [ ] Identifies adverse weather (rain > 40% chance)
 - [ ] Task reordering respects dependencies
@@ -263,8 +295,10 @@ interface VoiceRecorderProps {
 - [ ] Response time < 5s
 
 ### Task 4.2: Create Weather Integration in ScheduleView
+
 **File:** `client/src/pages/admin/ScheduleView.tsx` (update)  
 **Requirements:**
+
 - Display weather forecast for project location
 - Show which tasks are affected
 - "Apply Weather Adjustments" button
@@ -272,6 +306,7 @@ interface VoiceRecorderProps {
 - Undo button if adjustments made
 
 **Acceptance Criteria:**
+
 - [ ] Weather forecast displays correctly
 - [ ] Tasks highlight based on weather
 - [ ] "Apply" button works
@@ -282,8 +317,10 @@ interface VoiceRecorderProps {
 ## TASK GROUP 5: Gantt Chart Component (Hours 22-28)
 
 ### Task 5.1: Build GanttChart Component
+
 **File:** `client/src/components/GanttChart.tsx`  
 **Requirements:**
+
 - Use Recharts or custom SVG for rendering
 - Task bars with start/end dates
 - Drag-and-drop to reorder (within constraints)
@@ -293,6 +330,7 @@ interface VoiceRecorderProps {
 - Responsive to schedule item updates
 
 **Acceptance Criteria:**
+
 - [ ] Renders 20+ tasks without lag
 - [ ] Drag-and-drop functional
 - [ ] Dependency visualization clear
@@ -300,8 +338,10 @@ interface VoiceRecorderProps {
 - [ ] Updates when schedule changes
 
 ### Task 5.2: Build ScheduleView Admin Page
+
 **File:** `client/src/pages/admin/ScheduleView.tsx`  
 **Requirements:**
+
 - Project selector
 - GanttChart display
 - Weather forecast integration
@@ -310,6 +350,7 @@ interface VoiceRecorderProps {
 - Export to CSV button
 
 **Acceptance Criteria:**
+
 - [ ] GanttChart loads with project data
 - [ ] Weather forecast visible
 - [ ] Task creation works
@@ -321,8 +362,10 @@ interface VoiceRecorderProps {
 ## TASK GROUP 6: Material Procurement Skeleton (Hours 28-32)
 
 ### Task 6.1: Create MaterialProcurementUI Component
+
 **File:** `client/src/components/MaterialProcurementUI.tsx`  
 **Requirements:**
+
 - Material list table (name, quantity, unit, cost, vendor)
 - Search/filter by category
 - Add material form
@@ -331,6 +374,7 @@ interface VoiceRecorderProps {
 - Export PO button
 
 **Acceptance Criteria:**
+
 - [ ] Table displays materials
 - [ ] CRUD operations work
 - [ ] Shortages highlighted
@@ -338,8 +382,10 @@ interface VoiceRecorderProps {
 - [ ] Mobile: scrollable table
 
 ### Task 6.2: Update MaterialsView Page
+
 **File:** `client/src/pages/admin/MaterialsView.tsx`  
 **Requirements:**
+
 - MaterialProcurementUI component
 - Project selector
 - Phase tracking (foundation, framing, etc.)
@@ -347,6 +393,7 @@ interface VoiceRecorderProps {
 - Vendor comparison sidebar
 
 **Acceptance Criteria:**
+
 - [ ] Materials load for project
 - [ ] UI responsive
 - [ ] All buttons functional
@@ -357,7 +404,9 @@ interface VoiceRecorderProps {
 ## TASK GROUP 7: Testing & Deployment (Hours 32-40)
 
 ### Task 7.1: Test All Components
+
 **Checklist:**
+
 - [ ] Voice Recorder captures audio correctly
 - [ ] Field Report upload successful
 - [ ] Estimate calculations accurate (3-5 test cases)
@@ -368,7 +417,9 @@ interface VoiceRecorderProps {
 - [ ] No console errors or warnings
 
 ### Task 7.2: Test Netlify Functions Locally
+
 **Checklist:**
+
 - [ ] `voice-to-report` function works end-to-end
 - [ ] `estimate-project` returns correct format
 - [ ] `weather-schedule` API calls succeed
@@ -377,7 +428,9 @@ interface VoiceRecorderProps {
 - [ ] Response times acceptable
 
 ### Task 7.3: Prepare Deployment
+
 **Checklist:**
+
 - [ ] All env vars configured in Netlify dashboard
 - [ ] Database migrations run
 - [ ] Git branch created for this sprint
@@ -389,6 +442,7 @@ interface VoiceRecorderProps {
 ## TASK GROUP 8: Buffer & Polish (Hours 40-48)
 
 ### Task 8.1: Performance Optimization
+
 - [ ] Reduce bundle size: code-split large components
 - [ ] Lazy load images on landing page
 - [ ] Optimize Recharts (use memoization)
@@ -396,6 +450,7 @@ interface VoiceRecorderProps {
 - [ ] Lighthouse score: 85+
 
 ### Task 8.2: Final Polish
+
 - [ ] All buttons have proper hover states
 - [ ] Loading spinners present (Framer Motion)
 - [ ] Error messages are user-friendly
@@ -404,6 +459,7 @@ interface VoiceRecorderProps {
 - [ ] Documentation: README updated
 
 ### Task 8.3: Smoke Tests
+
 - [ ] Fresh deploy on Netlify
 - [ ] Test all critical flows:
   1. Create project → Record voice memo → Publish report
@@ -436,6 +492,7 @@ N8N_WEBHOOK_URL=[webhook url]
 ## Dependencies Already Available
 
 ✅ Installed and ready:
+
 - React 19 + Vite 8
 - tRPC 11 + React Query 5
 - Tailwind CSS 4
@@ -450,22 +507,23 @@ N8N_WEBHOOK_URL=[webhook url]
 
 ## Success Metrics (End of Sprint)
 
-| Metric | Target | Pass/Fail |
-|--------|--------|-----------|
-| **Voice-to-Report** | Record → Transcribe → Publish < 20s | ⏳ TBD |
-| **Estimate** | Calculate 3-tier price < 10s | ⏳ TBD |
-| **Weather Integration** | Fetch forecast + reorder < 5s | ⏳ TBD |
-| **Gantt Rendering** | 50 tasks @ 60fps | ⏳ TBD |
-| **Landing Page** | Lighthouse 85+ | ⏳ TBD |
-| **Build Time** | < 15s | ⏳ TBD |
-| **Bundle Size** | < 1.2MB (gzip) | ⏳ TBD |
-| **Deployment** | GitHub → Netlify < 3min | ⏳ TBD |
+| Metric                  | Target                              | Pass/Fail |
+| ----------------------- | ----------------------------------- | --------- |
+| **Voice-to-Report**     | Record → Transcribe → Publish < 20s | ⏳ TBD    |
+| **Estimate**            | Calculate 3-tier price < 10s        | ⏳ TBD    |
+| **Weather Integration** | Fetch forecast + reorder < 5s       | ⏳ TBD    |
+| **Gantt Rendering**     | 50 tasks @ 60fps                    | ⏳ TBD    |
+| **Landing Page**        | Lighthouse 85+                      | ⏳ TBD    |
+| **Build Time**          | < 15s                               | ⏳ TBD    |
+| **Bundle Size**         | < 1.2MB (gzip)                      | ⏳ TBD    |
+| **Deployment**          | GitHub → Netlify < 3min             | ⏳ TBD    |
 
 ---
 
 ## Implementation Notes
 
 ### Architecture Decisions
+
 - Use **Claude (not Gemini)** for all AI calls → faster, cheaper, more reliable
 - Use **Supabase PostgreSQL** for all data → simplifies infrastructure
 - Use **Recharts** for visualizations → lightweight, React-first
@@ -473,7 +531,9 @@ N8N_WEBHOOK_URL=[webhook url]
 - Store audio in **Supabase Storage** → automatic encryption + CDN
 
 ### Error Handling Pattern
+
 All Netlify Functions follow this pattern:
+
 ```typescript
 try {
   // Validate input
@@ -484,12 +544,13 @@ try {
   console.error(err);
   return {
     statusCode: err.statusCode || 500,
-    body: JSON.stringify({ error: err.message })
+    body: JSON.stringify({ error: err.message }),
   };
 }
 ```
 
 ### Performance Targets
+
 - Voice-to-report latency: Whisper (5-10s) + Claude (3-5s) = 10-15s total
 - Estimate calculation: Claude (3-5s)
 - Weather fetch: OpenWeatherMap (1-2s)
@@ -498,6 +559,7 @@ try {
 ---
 
 ## Git Workflow
+
 ```bash
 # Create feature branch
 git checkout -b feat/voice-estimator-weather-v1

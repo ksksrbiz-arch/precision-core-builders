@@ -24,6 +24,7 @@ export type AuditAction =
   | "client.delete"
   | "fieldReport.create"
   | "fieldReport.publish"
+  | "fieldReport.unpublish"
   | "fieldReport.delete"
   | "estimate.create"
   | "estimate.approve"
@@ -42,7 +43,7 @@ export type AuditAction =
   | "scheduleItem.delete";
 
 type AuditContext = {
-  user: { id: string; email?: string };
+  user: { id: string; email?: string } | null;
 };
 
 /**
@@ -63,8 +64,10 @@ export async function logAdminAction(
   projectId: number | undefined,
   details?: Record<string, unknown>
 ): Promise<void> {
+  const userId = ctx.user?.id ?? "unknown";
+  const userEmail = ctx.user?.email;
   const description = [
-    `User: ${ctx.user.email ?? ctx.user.id}`,
+    `User: ${userEmail ?? userId}`,
     `Action: ${action}`,
     details ? `Details: ${JSON.stringify(details)}` : null,
     `Timestamp: ${new Date().toISOString()}`,
@@ -74,7 +77,7 @@ export async function logAdminAction(
 
   // Always write to function/server logs for external log aggregation.
   console.info(`[AUDIT] ${action}`, {
-    userId: ctx.user.id,
+    userId,
     projectId,
     details,
   });
@@ -85,7 +88,7 @@ export async function logAdminAction(
   try {
     const { error } = await db.from("ledger_entries").insert({
       project_id: projectId,
-      author_id: ctx.user.id,
+      author_id: userId,
       entry_type: "note",
       title: `[AUDIT] ${action}`,
       description,

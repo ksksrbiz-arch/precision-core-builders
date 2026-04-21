@@ -5,14 +5,7 @@
 import { ASSETS } from "@/const";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowRight,
-  Check,
-  Loader2,
-  Lock,
-  Mail,
-  Shield,
-} from "lucide-react";
+import { ArrowRight, Check, Loader2, Lock, Mail, Shield } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -43,7 +36,7 @@ export default function AuthLogin() {
       setError(
         authError.message === "Invalid login credentials"
           ? "Email or password is incorrect."
-          : authError.message,
+          : authError.message
       );
       setLoading(false);
       return;
@@ -206,7 +199,7 @@ export default function AuthLogin() {
                         autoComplete="email"
                         required
                         value={email}
-                        onChange={(e) => {
+                        onChange={e => {
                           setEmail(e.target.value);
                           setError("");
                         }}
@@ -232,7 +225,7 @@ export default function AuthLogin() {
                         autoComplete="current-password"
                         required
                         value={password}
-                        onChange={(e) => {
+                        onChange={e => {
                           setPassword(e.target.value);
                           setError("");
                         }}
@@ -260,7 +253,8 @@ export default function AuthLogin() {
                 </form>
 
                 <p className="mt-4 text-[10px] text-muted-foreground/60 text-center font-light leading-relaxed">
-                  Forgot your password? Switch to magic link and we'll email you a sign-in link.
+                  Forgot your password? Switch to magic link and we'll email you
+                  a sign-in link.
                 </p>
 
                 <div className="mt-5 pt-5 border-t border-border/40 text-center">
@@ -335,7 +329,7 @@ export default function AuthLogin() {
                         autoComplete="email"
                         required
                         value={email}
-                        onChange={(e) => {
+                        onChange={e => {
                           setEmail(e.target.value);
                           setError("");
                         }}

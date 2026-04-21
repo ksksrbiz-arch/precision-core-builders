@@ -44,7 +44,8 @@ type LogEntry = {
 function levelFromAction(action: string): LogLevel {
   if (action.includes("delete")) return "warn";
   if (action.includes("error") || action.includes("fail")) return "error";
-  if (action.includes("publish") || action.includes("approve")) return "success";
+  if (action.includes("publish") || action.includes("approve"))
+    return "success";
   return "info";
 }
 
@@ -92,7 +93,10 @@ function fmt(iso: string) {
 
 // ── Level badge ───────────────────────────────────────────────────────────
 
-const LEVEL_STYLES: Record<LogLevel, { icon: React.ReactNode; cls: string; dot: string }> = {
+const LEVEL_STYLES: Record<
+  LogLevel,
+  { icon: React.ReactNode; cls: string; dot: string }
+> = {
   info: {
     icon: <Info className="h-3 w-3" />,
     cls: "text-sky-400/80 bg-sky-500/10 border-sky-500/20",
@@ -136,7 +140,11 @@ function LogRow({ entry, isNew }: { entry: LogEntry; isNew?: boolean }) {
   return (
     <motion.div
       layout
-      initial={isNew ? { opacity: 0, x: -8, backgroundColor: "rgba(200,168,75,0.08)" } : false}
+      initial={
+        isNew
+          ? { opacity: 0, x: -8, backgroundColor: "rgba(200,168,75,0.08)" }
+          : false
+      }
       animate={{ opacity: 1, x: 0, backgroundColor: "rgba(0,0,0,0)" }}
       transition={{ duration: 0.4 }}
       className="border-b border-border/30 last:border-0"
@@ -150,9 +158,7 @@ function LogRow({ entry, isNew }: { entry: LogEntry; isNew?: boolean }) {
         <span className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${dot}`} />
 
         {/* Timestamp */}
-        <span
-          className="font-mono text-[10px] text-muted-foreground/50 shrink-0 mt-0.5 w-[128px]"
-        >
+        <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0 mt-0.5 w-[128px]">
           {fmt(entry.timestamp)}
         </span>
 
@@ -365,7 +371,9 @@ export default function ActivityLog() {
               disabled={loading}
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border border-border/40 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-3 w-3 ${loading ? "animate-spin" : ""}`}
+              />
               Refresh
             </button>
 
@@ -425,22 +433,20 @@ export default function ActivityLog() {
           {/* Level filter */}
           <div className="flex items-center gap-1">
             <Filter className="h-3.5 w-3.5 text-muted-foreground/40" />
-            {(["all", "info", "success", "warn", "error"] as const).map(
-              lvl => (
-                <button
-                  key={lvl}
-                  type="button"
-                  onClick={() => setLevelFilter(lvl)}
-                  className={`px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider border transition-colors ${
-                    levelFilter === lvl
-                      ? "border-primary/50 bg-primary/10 text-primary"
-                      : "border-border/40 text-muted-foreground/50 hover:border-border"
-                  }`}
-                >
-                  {lvl}
-                </button>
-              )
-            )}
+            {(["all", "info", "success", "warn", "error"] as const).map(lvl => (
+              <button
+                key={lvl}
+                type="button"
+                onClick={() => setLevelFilter(lvl)}
+                className={`px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider border transition-colors ${
+                  levelFilter === lvl
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border/40 text-muted-foreground/50 hover:border-border"
+                }`}
+              >
+                {lvl}
+              </button>
+            ))}
           </div>
 
           {/* Auto-scroll toggle */}
@@ -557,8 +563,8 @@ export default function ActivityLog() {
               Dev Mode Active
             </strong>{" "}
             · You are logged in as{" "}
-            <code className="font-mono">dev@precisioncorebuilders.com</code> with
-            full admin access. The Activity Log above streams all{" "}
+            <code className="font-mono">dev@precisioncorebuilders.com</code>{" "}
+            with full admin access. The Activity Log above streams all{" "}
             <code className="font-mono">[AUDIT]</code> ledger entries in
             real-time via Supabase Realtime (requires Supabase connection).
             Server-side logs are visible in the Netlify Functions log viewer or

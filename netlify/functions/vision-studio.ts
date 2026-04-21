@@ -1,7 +1,11 @@
 import type { Handler } from "@netlify/functions";
 import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "../../server/_core/env";
-import { checkRateLimit, getClientIp, rateLimitHeaders } from "./_utils/rateLimiter";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import { verifyAuth } from "./_utils/authGuard";
 
@@ -87,7 +91,8 @@ export const handler: Handler = async event => {
       statusCode: 429,
       headers: { ...headers, ...rateLimitHeaders(rl) },
       body: JSON.stringify({
-        error: "Analysis limit reached. Please wait before submitting more photos.",
+        error:
+          "Analysis limit reached. Please wait before submitting more photos.",
       }),
     };
   }

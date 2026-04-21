@@ -28,7 +28,9 @@ type ActionResult = {
 
 // ─── Available Actions ───────────────────────────────────────────────────────
 
-type ActionHandler = (params?: Record<string, unknown>) => Promise<Omit<ActionResult, "action" | "durationMs">>;
+type ActionHandler = (
+  params?: Record<string, unknown>
+) => Promise<Omit<ActionResult, "action" | "durationMs">>;
 
 function getSupabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -97,14 +99,16 @@ const seedDemoData: ActionHandler = async () => {
     project_id: project.id,
     report_date: new Date().toISOString().split("T")[0],
     weather: "Partly cloudy, 62°F",
-    summary: "Demo field report - Completed framing inspection, passed. Starting drywall tomorrow.",
+    summary:
+      "Demo field report - Completed framing inspection, passed. Starting drywall tomorrow.",
     hours_worked: 8,
     crew_size: 3,
     materials_used: "2x4 lumber, drywall sheets, screws",
     issues: null,
   });
 
-  if (reportErr) throw new Error(`Field report insert failed: ${reportErr.message}`);
+  if (reportErr)
+    throw new Error(`Field report insert failed: ${reportErr.message}`);
 
   // Create demo materials
   const { error: matErr } = await supabase.from("materials").insert([
@@ -163,7 +167,9 @@ const clearDemoData: ActionHandler = async () => {
   }
 
   const projectIds = projects.map(p => p.id);
-  const clientIds = [...new Set(projects.map(p => p.client_id).filter(Boolean))];
+  const clientIds = [
+    ...new Set(projects.map(p => p.client_id).filter(Boolean)),
+  ];
 
   // Delete in order (respecting foreign keys)
   await supabase.from("field_reports").delete().in("project_id", projectIds);
@@ -179,7 +185,10 @@ const clearDemoData: ActionHandler = async () => {
   return {
     success: true,
     message: `Cleared ${projects.length} demo project(s) and related data`,
-    data: { projectsDeleted: projects.length, clientsDeleted: clientIds.length },
+    data: {
+      projectsDeleted: projects.length,
+      clientsDeleted: clientIds.length,
+    },
   };
 };
 
@@ -189,7 +198,15 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
   const supabase = getSupabase();
 
   const checks: Record<string, { exists: boolean; count: number }> = {};
-  const tables = ["profiles", "projects", "clients", "field_reports", "materials", "invoices", "subcontractors"];
+  const tables = [
+    "profiles",
+    "projects",
+    "clients",
+    "field_reports",
+    "materials",
+    "invoices",
+    "subcontractors",
+  ];
 
   for (const table of tables) {
     const { data, error, count } = await supabase
@@ -208,9 +225,10 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
 
   return {
     success: missing.length === 0,
-    message: missing.length === 0
-      ? `All ${tables.length} tables healthy`
-      : `Missing tables: ${missing.join(", ")}`,
+    message:
+      missing.length === 0
+        ? `All ${tables.length} tables healthy`
+        : `Missing tables: ${missing.join(", ")}`,
     data: checks,
   };
 };
@@ -255,7 +273,10 @@ const testAIEndpoint: ActionHandler = async () => {
     throw new Error(`AI API error: ${res.status} - ${text.slice(0, 100)}`);
   }
 
-  const data = (await res.json()) as { result?: { response?: string }; response?: string };
+  const data = (await res.json()) as {
+    result?: { response?: string };
+    response?: string;
+  };
   const response = data.result?.response || data.response || "";
 
   return {
@@ -312,9 +333,12 @@ const getPlatformStats: ActionHandler = async () => {
     supabase.from("invoices").select("id, status, amount", { count: "exact" }),
   ]);
 
-  const activeProjects = projects.data?.filter(p => p.status === "in_progress").length ?? 0;
-  const totalInvoiced = invoices.data?.reduce((sum, inv) => sum + (inv.amount || 0), 0) ?? 0;
-  const paidInvoices = invoices.data?.filter(i => i.status === "paid").length ?? 0;
+  const activeProjects =
+    projects.data?.filter(p => p.status === "in_progress").length ?? 0;
+  const totalInvoiced =
+    invoices.data?.reduce((sum, inv) => sum + (inv.amount || 0), 0) ?? 0;
+  const paidInvoices =
+    invoices.data?.filter(i => i.status === "paid").length ?? 0;
 
   return {
     success: true,
@@ -491,7 +515,11 @@ export const handler: Handler = async event => {
     };
   }
 
-  let body: { action?: string; params?: Record<string, unknown>; adminToken?: string };
+  let body: {
+    action?: string;
+    params?: Record<string, unknown>;
+    adminToken?: string;
+  };
 
   try {
     body = JSON.parse(event.body || "{}");

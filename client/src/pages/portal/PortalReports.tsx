@@ -7,12 +7,7 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  BookOpen,
-  Calendar,
-  CheckCircle2,
-} from "lucide-react";
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function PortalReports() {
@@ -193,4 +188,3 @@ export default function PortalReports() {
     </PortalLayout>
   );
 }
-

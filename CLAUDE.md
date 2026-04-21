@@ -48,6 +48,7 @@ This document primes AI assistants with the codebase structure, development work
 ### What's Scaffolded / Pending
 
 ⏳ **Missing Core Features:**
+
 - Gantt chart with drag-and-drop (critical blocker)
 - Real-time updates in portal/admin pages (architecture ready, implementation pending)
 - Field report publishing workflow (form ready, publish logic pending)

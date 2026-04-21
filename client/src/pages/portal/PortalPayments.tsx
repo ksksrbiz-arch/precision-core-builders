@@ -57,10 +57,11 @@ export default function PortalPayments() {
   );
   const project = projects?.data?.[0];
 
-  const { data: estimatesResult, isLoading } = trpc.estimates.listForClient.useQuery(
-    { projectId: project?.id },
-    { enabled: !!user }
-  );
+  const { data: estimatesResult, isLoading } =
+    trpc.estimates.listForClient.useQuery(
+      { projectId: project?.id },
+      { enabled: !!user }
+    );
 
   const estimates = estimatesResult?.data ?? [];
   const latestEstimate = estimates[0];
@@ -128,8 +129,8 @@ export default function PortalPayments() {
           >
             <Sparkles className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground text-sm">
-              No estimates on file yet. Eric will upload your project estimate once
-              the scope is finalized.
+              No estimates on file yet. Eric will upload your project estimate
+              once the scope is finalized.
             </p>
           </motion.div>
         ) : (
@@ -171,9 +172,19 @@ export default function PortalPayments() {
               <div className="p-5">
                 <div className="grid grid-cols-3 gap-4 mb-5">
                   {[
-                    { label: "Conservative", value: fmtMoney(latestEstimate.estimated_low) },
-                    { label: "Mid-Range", value: fmtMoney(latestEstimate.estimated_mid), highlight: true },
-                    { label: "Premium", value: fmtMoney(latestEstimate.estimated_high) },
+                    {
+                      label: "Conservative",
+                      value: fmtMoney(latestEstimate.estimated_low),
+                    },
+                    {
+                      label: "Mid-Range",
+                      value: fmtMoney(latestEstimate.estimated_mid),
+                      highlight: true,
+                    },
+                    {
+                      label: "Premium",
+                      value: fmtMoney(latestEstimate.estimated_high),
+                    },
                   ].map(r => (
                     <div
                       key={r.label}
@@ -200,19 +211,36 @@ export default function PortalPayments() {
                 </div>
 
                 {/* Cost Breakdown */}
-                {(latestEstimate.labor_cost || latestEstimate.materials_cost) && (
+                {(latestEstimate.labor_cost ||
+                  latestEstimate.materials_cost) && (
                   <div className="border border-border/40 divide-y divide-border/30 mb-4">
                     {[
                       { label: "Labor", value: latestEstimate.labor_cost },
-                      { label: "Materials", value: latestEstimate.materials_cost },
-                      { label: "Permits & Fees", value: latestEstimate.permits_cost },
-                      { label: "Contingency", value: latestEstimate.contingency },
+                      {
+                        label: "Materials",
+                        value: latestEstimate.materials_cost,
+                      },
+                      {
+                        label: "Permits & Fees",
+                        value: latestEstimate.permits_cost,
+                      },
+                      {
+                        label: "Contingency",
+                        value: latestEstimate.contingency,
+                      },
                     ]
                       .filter(r => r.value)
                       .map(r => (
-                        <div key={r.label} className="flex items-center justify-between px-4 py-2.5">
-                          <span className="text-xs text-muted-foreground">{r.label}</span>
-                          <span className="text-xs font-semibold">{fmtMoney(r.value)}</span>
+                        <div
+                          key={r.label}
+                          className="flex items-center justify-between px-4 py-2.5"
+                        >
+                          <span className="text-xs text-muted-foreground">
+                            {r.label}
+                          </span>
+                          <span className="text-xs font-semibold">
+                            {fmtMoney(r.value)}
+                          </span>
                         </div>
                       ))}
                   </div>
@@ -221,7 +249,9 @@ export default function PortalPayments() {
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Prepared {fmtDate(latestEstimate.created_at)}</span>
                   {latestEstimate.expires_at && (
-                    <span>Valid until {fmtDate(latestEstimate.expires_at)}</span>
+                    <span>
+                      Valid until {fmtDate(latestEstimate.expires_at)}
+                    </span>
                   )}
                 </div>
               </div>
@@ -247,7 +277,10 @@ export default function PortalPayments() {
 
                 <div className="divide-y divide-border/30">
                   {milestones.map((m, i) => (
-                    <div key={i} className="flex items-center gap-4 px-5 py-3.5">
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 px-5 py-3.5"
+                    >
                       <div
                         className={`h-7 w-7 flex items-center justify-center shrink-0 border ${
                           m.paid
@@ -267,7 +300,9 @@ export default function PortalPayments() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${m.paid ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                        <p
+                          className={`text-sm font-medium ${m.paid ? "text-muted-foreground line-through" : "text-foreground"}`}
+                        >
                           {m.label}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -320,7 +355,10 @@ export default function PortalPayments() {
                 </div>
                 <div className="divide-y divide-border/30">
                   {estimates.map((est: any) => (
-                    <div key={est.id} className="flex items-center justify-between px-5 py-3">
+                    <div
+                      key={est.id}
+                      className="flex items-center justify-between px-5 py-3"
+                    >
                       <div>
                         <p className="text-sm font-medium">
                           {est.projects?.name ?? "Project Estimate"}
@@ -333,14 +371,20 @@ export default function PortalPayments() {
                         <p className="text-sm font-semibold">
                           {fmtMoney(est.estimated_mid)}
                         </p>
-                        <p className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${
-                          est.approved_by_client
-                            ? "text-green-400"
+                        <p
+                          className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${
+                            est.approved_by_client
+                              ? "text-green-400"
+                              : est.sent_to_client
+                                ? "text-amber-400"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          {est.approved_by_client
+                            ? "Approved"
                             : est.sent_to_client
-                            ? "text-amber-400"
-                            : "text-muted-foreground"
-                        }`}>
-                          {est.approved_by_client ? "Approved" : est.sent_to_client ? "Sent" : "Draft"}
+                              ? "Sent"
+                              : "Draft"}
                         </p>
                       </div>
                     </div>
@@ -365,4 +409,3 @@ export default function PortalPayments() {
     </PortalLayout>
   );
 }
-

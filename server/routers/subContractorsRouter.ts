@@ -33,7 +33,27 @@ export const subContractorsRouter = router({
         company: z.string().max(200).optional(),
         email: z.string().email().max(320).optional(),
         phone: z.string().max(20).optional(),
-        trade: z.string().max(100).optional(),
+        trade: z
+          .enum([
+            "general",
+            "plumbing",
+            "electrical",
+            "framing",
+            "roofing",
+            "hvac",
+            "concrete",
+            "landscaping",
+            "painting",
+            "flooring",
+            "masonry",
+            "drywall",
+            "insulation",
+            "windows",
+            "cabinetry",
+            "tile",
+            "other",
+          ])
+          .optional(),
         licenseNumber: z.string().max(100).optional(),
         insuranceExpiry: z.string().datetime().optional(),
         notes: z.string().optional(),
@@ -134,25 +154,28 @@ export const subContractorsRouter = router({
       // Also fire sub_notification n8n event to route directly to the sub
       if (ENV.n8nWebhookUrl && (sub?.email || sub?.phone)) {
         try {
-          await fetch(`${ENV.n8nWebhookUrl.replace(/\/$/, "")}/sub-notification`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              event: "sub_notification",
-              payload: {
-                subName: sub?.name,
-                subEmail: sub?.email,
-                subPhone: sub?.phone,
-                projectId: input.projectId,
-                projectName: project?.name,
-                scheduleDetails: input.scheduleDetails,
-                siteAccessCode: input.siteAccessCode,
-                safetyNotes: input.safetyNotes,
-                briefingContent,
-              },
-            }),
-            signal: AbortSignal.timeout(8000),
-          });
+          await fetch(
+            `${ENV.n8nWebhookUrl.replace(/\/$/, "")}/sub-notification`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                event: "sub_notification",
+                payload: {
+                  subName: sub?.name,
+                  subEmail: sub?.email,
+                  subPhone: sub?.phone,
+                  projectId: input.projectId,
+                  projectName: project?.name,
+                  scheduleDetails: input.scheduleDetails,
+                  siteAccessCode: input.siteAccessCode,
+                  safetyNotes: input.safetyNotes,
+                  briefingContent,
+                },
+              }),
+              signal: AbortSignal.timeout(8000),
+            }
+          );
         } catch {
           // Non-fatal — briefing content is still returned to admin
         }

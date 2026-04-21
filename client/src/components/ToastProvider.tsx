@@ -3,7 +3,13 @@
  * Uses React Context to manage toast queue globally
  */
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
 import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 
 export type ToastType = "error" | "success" | "info" | "warning";
@@ -31,21 +37,18 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback(
-    (toast: Omit<Toast, "id">) => {
-      const id = `toast-${Date.now()}-${Math.random()}`;
-      const duration = toast.duration ?? (toast.type === "error" ? 6000 : 4000);
+  const addToast = useCallback((toast: Omit<Toast, "id">) => {
+    const id = `toast-${Date.now()}-${Math.random()}`;
+    const duration = toast.duration ?? (toast.type === "error" ? 6000 : 4000);
 
-      setToasts(prev => [...prev, { ...toast, id, duration }]);
+    setToasts(prev => [...prev, { ...toast, id, duration }]);
 
-      if (duration > 0) {
-        setTimeout(() => removeToast(id), duration);
-      }
+    if (duration > 0) {
+      setTimeout(() => removeToast(id), duration);
+    }
 
-      return id;
-    },
-    []
-  );
+    return id;
+  }, []);
 
   const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));

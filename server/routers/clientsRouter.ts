@@ -1,5 +1,5 @@
 import { db, paginate } from "../db";
-import { adminProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
 const ClientInput = z.object({
@@ -16,7 +16,7 @@ const ClientInput = z.object({
 });
 
 export const clientsRouter = router({
-  list: adminProcedure
+  list: protectedProcedure
     .input(
       z.object({
         page: z.number().int().positive().optional(),

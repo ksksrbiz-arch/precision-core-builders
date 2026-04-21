@@ -36,13 +36,16 @@ export default function FieldReportNew() {
   const chunksRef = useRef<Blob[]>([]);
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
-  const publishMutation = useMutationWithToast(trpc.fieldReports.publish.useMutation(), {
-    success: "Report Published",
-    successMessage: "Field report sent to client portal.",
-    error: "Publish Failed",
-    errorMessage: "Failed to publish report. Please try again.",
-    onSuccess: () => setStep("done"),
-  });
+  const publishMutation = useMutationWithToast(
+    trpc.fieldReports.publish.useMutation(),
+    {
+      success: "Report Published",
+      successMessage: "Field report sent to client portal.",
+      error: "Publish Failed",
+      errorMessage: "Failed to publish report. Please try again.",
+      onSuccess: () => setStep("done"),
+    }
+  );
 
   const startRecording = async () => {
     try {

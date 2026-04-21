@@ -57,7 +57,9 @@ export function SectionTeaser({
         } ${className}`}
       >
         {image && (
-          <div className={`relative overflow-hidden rounded-sm ${imageAspect} bg-muted`}>
+          <div
+            className={`relative overflow-hidden rounded-sm ${imageAspect} bg-muted`}
+          >
             <img
               src={image}
               alt={imageAlt}

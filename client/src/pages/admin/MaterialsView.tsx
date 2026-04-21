@@ -67,17 +67,29 @@ export default function MaterialsView() {
   });
   const utils = trpc.useUtils();
   const appendLedger = trpc.ledger.append.useMutation();
-  const createMaterial = useMutationWithToast(trpc.materials.create.useMutation(), {
-    success: "Material Added",
-    successMessage: "Material added to inventory.",
-    error: "Add Failed",
-    errorMessage: "Failed to add material. Please try again.",
-    onSuccess: () => {
-      refetch();
-      setShowAddForm(false);
-      setNewMaterial({ name: "", category: "", unit: "", vendorName: "", quantityNeeded: "", unitPriceCurrent: "", phaseNeeded: "", notes: "" });
-    },
-  });
+  const createMaterial = useMutationWithToast(
+    trpc.materials.create.useMutation(),
+    {
+      success: "Material Added",
+      successMessage: "Material added to inventory.",
+      error: "Add Failed",
+      errorMessage: "Failed to add material. Please try again.",
+      onSuccess: () => {
+        refetch();
+        setShowAddForm(false);
+        setNewMaterial({
+          name: "",
+          category: "",
+          unit: "",
+          vendorName: "",
+          quantityNeeded: "",
+          unitPriceCurrent: "",
+          phaseNeeded: "",
+          notes: "",
+        });
+      },
+    }
+  );
 
   const generatePO = async () => {
     if (!selectedProject) {

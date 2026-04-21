@@ -66,7 +66,11 @@ export async function verifyAuth(
     : null;
 
   if (!token) {
-    return { ok: false, statusCode: 401, message: "Missing authorization token" };
+    return {
+      ok: false,
+      statusCode: 401,
+      message: "Missing authorization token",
+    };
   }
 
   // Dev bypass — only valid outside production
@@ -79,7 +83,11 @@ export async function verifyAuth(
     const { data, error } = await supabase.auth.getUser(token);
 
     if (error || !data.user) {
-      return { ok: false, statusCode: 401, message: "Invalid or expired token" };
+      return {
+        ok: false,
+        statusCode: 401,
+        message: "Invalid or expired token",
+      };
     }
 
     const u = data.user;

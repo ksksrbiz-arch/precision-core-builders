@@ -61,29 +61,50 @@ export default function PortfolioAdmin() {
     successMessage: "Portfolio project created.",
     error: "Create Failed",
     invalidate: () => utils.portfolio.listAdmin.invalidate(),
-    onSuccess: () => { setShowForm(false); setForm(BLANK_FORM); },
+    onSuccess: () => {
+      setShowForm(false);
+      setForm(BLANK_FORM);
+    },
   });
 
-  const update = useMutationWithToast(trpc.portfolio.update?.useMutation?.() ?? { mutateAsync: async () => ({}) as any, isPending: false }, {
-    success: "Project Updated",
-    successMessage: "Project updated.",
-    error: "Update Failed",
-    invalidate: () => utils.portfolio.listAdmin.invalidate(),
-    onSuccess: () => { setShowForm(false); setEditId(null); },
-  });
+  const update = useMutationWithToast(
+    trpc.portfolio.update?.useMutation?.() ?? {
+      mutateAsync: async () => ({}) as any,
+      isPending: false,
+    },
+    {
+      success: "Project Updated",
+      successMessage: "Project updated.",
+      error: "Update Failed",
+      invalidate: () => utils.portfolio.listAdmin.invalidate(),
+      onSuccess: () => {
+        setShowForm(false);
+        setEditId(null);
+      },
+    }
+  );
 
-  const togglePublished = useMutationWithToast(trpc.portfolio.togglePublished.useMutation(), {
-    success: "Status Updated",
-    error: "Update Failed",
-    invalidate: () => utils.portfolio.listAdmin.invalidate(),
-  });
+  const togglePublished = useMutationWithToast(
+    trpc.portfolio.togglePublished.useMutation(),
+    {
+      success: "Status Updated",
+      error: "Update Failed",
+      invalidate: () => utils.portfolio.listAdmin.invalidate(),
+    }
+  );
 
-  const deleteProject = useMutationWithToast(trpc.portfolio.delete?.useMutation?.() ?? { mutateAsync: async () => ({}) as any, isPending: false }, {
-    success: "Project Deleted",
-    successMessage: "Project deleted.",
-    error: "Delete Failed",
-    invalidate: () => utils.portfolio.listAdmin.invalidate(),
-  });
+  const deleteProject = useMutationWithToast(
+    trpc.portfolio.delete?.useMutation?.() ?? {
+      mutateAsync: async () => ({}) as any,
+      isPending: false,
+    },
+    {
+      success: "Project Deleted",
+      successMessage: "Project deleted.",
+      error: "Delete Failed",
+      invalidate: () => utils.portfolio.listAdmin.invalidate(),
+    }
+  );
 
   const handleEdit = (p: any) => {
     setEditId(p.id);
@@ -99,7 +120,9 @@ export default function PortfolioAdmin() {
       coverImageUrl: p.cover_image_url ?? "",
       galleryImageUrls: (() => {
         try {
-          return (JSON.parse(p.gallery_image_urls ?? "[]") as string[]).join(", ");
+          return (JSON.parse(p.gallery_image_urls ?? "[]") as string[]).join(
+            ", "
+          );
         } catch {
           return "";
         }

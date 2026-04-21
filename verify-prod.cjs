@@ -4,17 +4,21 @@
  * console messages and page errors, waits for React to mount, and
  * reports pass/fail with details.
  */
-const { chromium } = require("/home/claude/.npm-global/lib/node_modules/playwright");
+const {
+  chromium,
+} = require("/home/claude/.npm-global/lib/node_modules/playwright");
 
 const URL = process.argv[2] || "http://localhost:5555/";
-const ROUTES = process.argv.slice(3).length > 0
-  ? process.argv.slice(3)
-  : ["/", "/about", "/services", "/portfolio", "/contact", "/faq"];
+const ROUTES =
+  process.argv.slice(3).length > 0
+    ? process.argv.slice(3)
+    : ["/", "/about", "/services", "/portfolio", "/contact", "/faq"];
 
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "/home/claude/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
+    executablePath:
+      "/home/claude/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
   });
 
@@ -36,7 +40,10 @@ const ROUTES = process.argv.slice(3).length > 0
       }
     });
     page.on("pageerror", err => {
-      pageErrors.push({ msg: err.message, stack: err.stack?.split("\n").slice(0, 3).join(" | ") });
+      pageErrors.push({
+        msg: err.message,
+        stack: err.stack?.split("\n").slice(0, 3).join(" | "),
+      });
     });
 
     const fullUrl = URL.replace(/\/$/, "") + route;
@@ -45,7 +52,10 @@ const ROUTES = process.argv.slice(3).length > 0
 
     try {
       // Load the SPA shell first
-      const resp = await page.goto(URL, { waitUntil: "networkidle", timeout: 15000 });
+      const resp = await page.goto(URL, {
+        waitUntil: "networkidle",
+        timeout: 15000,
+      });
       status = resp?.status() ?? "NO_RESPONSE";
 
       // If we're testing a subroute, client-side navigate to it (simulates Netlify SPA fallback)
@@ -58,13 +68,15 @@ const ROUTES = process.argv.slice(3).length > 0
       }
 
       // Wait up to 3s for React to mount something into #root
-      await page.waitForFunction(
-        () => {
-          const r = document.getElementById("root");
-          return r && r.children.length > 0;
-        },
-        { timeout: 3000 }
-      ).catch(() => {});
+      await page
+        .waitForFunction(
+          () => {
+            const r = document.getElementById("root");
+            return r && r.children.length > 0;
+          },
+          { timeout: 3000 }
+        )
+        .catch(() => {});
 
       rootContent = await page.evaluate(() => {
         const r = document.getElementById("root");
@@ -98,18 +110,28 @@ const ROUTES = process.argv.slice(3).length > 0
 
   // Report
   console.log("\n" + "=".repeat(60));
-  console.log(`RESULTS — ${results.filter(r => r.passed).length}/${results.length} routes OK`);
+  console.log(
+    `RESULTS — ${results.filter(r => r.passed).length}/${results.length} routes OK`
+  );
   console.log("=".repeat(60));
   for (const r of results) {
     const flag = r.passed ? "✓" : "✗";
-    console.log(`\n${flag} ${r.route}  [HTTP ${r.status}]  root=${r.rootContentLen}B`);
+    console.log(
+      `\n${flag} ${r.route}  [HTTP ${r.status}]  root=${r.rootContentLen}B`
+    );
     if (r.consoleErrors.length) {
       console.log("  Console errors:");
       r.consoleErrors.forEach(e => console.log("   •", e.slice(0, 200)));
     }
     if (r.pageErrors.length) {
       console.log("  Page errors:");
-      r.pageErrors.forEach(e => console.log("   •", e.msg?.slice(0, 200), e.stack ? `\n     ${e.stack}` : ""));
+      r.pageErrors.forEach(e =>
+        console.log(
+          "   •",
+          e.msg?.slice(0, 200),
+          e.stack ? `\n     ${e.stack}` : ""
+        )
+      );
     }
   }
   console.log("");

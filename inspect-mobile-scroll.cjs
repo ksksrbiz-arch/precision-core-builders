@@ -1,9 +1,12 @@
-const { chromium } = require("/home/claude/.npm-global/lib/node_modules/playwright");
+const {
+  chromium,
+} = require("/home/claude/.npm-global/lib/node_modules/playwright");
 
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "/home/claude/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
+    executablePath:
+      "/home/claude/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
   });
   const context = await browser.newContext({
@@ -11,7 +14,9 @@ const { chromium } = require("/home/claude/.npm-global/lib/node_modules/playwrig
     deviceScaleFactor: 2,
   });
   const page = await context.newPage();
-  await page.goto(process.argv[2] || "http://localhost:5555/", { waitUntil: "networkidle" });
+  await page.goto(process.argv[2] || "http://localhost:5555/", {
+    waitUntil: "networkidle",
+  });
 
   // Slow-scroll to trigger whileInView animations
   await page.evaluate(async () => {
@@ -32,7 +37,10 @@ const { chromium } = require("/home/claude/.npm-global/lib/node_modules/playwrig
   });
 
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: "/tmp/mobile-home-scrolled.png", fullPage: true });
+  await page.screenshot({
+    path: "/tmp/mobile-home-scrolled.png",
+    fullPage: true,
+  });
   console.log("Screenshot with scroll triggers: /tmp/mobile-home-scrolled.png");
 
   // Still check opacity of every motion element
@@ -51,7 +59,9 @@ const { chromium } = require("/home/claude/.npm-global/lib/node_modules/playwrig
       .slice(0, 20);
   });
   console.log("\nStill-invisible elements (opacity < 1):");
-  opacities.forEach(o => console.log(" ", o.opacity, o.rect, "|", o.tag, "|", o.class));
+  opacities.forEach(o =>
+    console.log(" ", o.opacity, o.rect, "|", o.tag, "|", o.class)
+  );
 
   await browser.close();
 })();

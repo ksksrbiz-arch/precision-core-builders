@@ -26,10 +26,7 @@ function getOrCreateMeta(
   return el;
 }
 
-function getOrCreateLink(
-  selector: string,
-  rel: string
-): HTMLLinkElement {
+function getOrCreateLink(selector: string, rel: string): HTMLLinkElement {
   let el = document.querySelector<HTMLLinkElement>(selector);
   if (!el) {
     el = document.createElement("link");
@@ -76,10 +73,7 @@ export function useSEO({ title, description, canonical }: SEOOptions) {
 
     // Canonical
     if (canonical) {
-      const canonicalEl = getOrCreateLink(
-        'link[rel="canonical"]',
-        "canonical"
-      );
+      const canonicalEl = getOrCreateLink('link[rel="canonical"]', "canonical");
       canonicalEl.href = canonical;
     }
 

@@ -26,7 +26,9 @@ export default function ResendLoginLink() {
 
     // Prevent spam
     if (resendCount >= 3) {
-      setError("Too many attempts. Please wait 30 minutes before trying again.");
+      setError(
+        "Too many attempts. Please wait 30 minutes before trying again."
+      );
       setStep("error");
       return;
     }
@@ -196,7 +198,8 @@ export default function ResendLoginLink() {
               </div>
 
               <p className="text-xs text-muted-foreground/60 mb-6">
-                Link expires in 24 hours. If still having issues, contact support.
+                Link expires in 24 hours. If still having issues, contact
+                support.
               </p>
 
               <button
