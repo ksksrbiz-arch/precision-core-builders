@@ -11,11 +11,13 @@ This document outlines the security measures and mitigations implemented in the 
 **Affected versions:** vite < 8.1.0
 
 **Issues fixed:**
+
 1. **CVE-2024-XXXXX**: `server.fs.deny` bypassed with queries (High)
 2. **CVE-2024-XXXXX**: Arbitrary file read via Vite dev server WebSocket (High)
 3. **CVE-2024-XXXXX**: Path traversal in optimized deps `.map` handling (Moderate)
 
 **Mitigation:**
+
 - Updated Vite from 8.0.5 to 8.1.0+
 - Enhanced `vite.config.ts` with strict file system access controls
 - Added comprehensive `server.fs.deny` patterns including:
@@ -35,6 +37,7 @@ This document outlines the security measures and mitigations implemented in the 
 **Issue:** SQL injection via improperly escaped SQL identifiers (High)
 
 **Mitigation:**
+
 - Updated Drizzle ORM from 0.45.2 to 0.50.0+
 - Current implementation uses Supabase client which provides built-in SQL injection protection
 - No raw SQL queries or `sql` template literals used in codebase
@@ -42,18 +45,22 @@ This document outlines the security measures and mitigations implemented in the 
 ### Third-Party Library Vulnerabilities
 
 **DOMPurify XSS Vulnerabilities (Moderate):**
+
 - Multiple XSS vulnerabilities in DOMPurify
 - Enforced version constraint: `dompurify >= 3.4.0`
 
 **Mermaid XSS (Moderate):**
+
 - XSS in sequence diagram labels
 - Enforced version constraint: `mermaid >= 10.9.4`
 
 **nanoid Predictability (Moderate):**
+
 - Predictable results when given non-integer values
 - Enforced version constraint: `nanoid >= 5.1.7`
 
 **esbuild Development Server (Moderate):**
+
 - Any website could send requests to dev server
 - Enforced version constraint: `esbuild >= 0.25.0`
 
@@ -137,7 +144,7 @@ If you discover a security vulnerability, please email the project owner directl
 ## Security Audit History
 
 | Date       | Auditor | Findings | Status   |
-|------------|---------|----------|----------|
+| ---------- | ------- | -------- | -------- |
 | 2026-04-21 | Claude  | 17 CVEs  | Resolved |
 
 ## Next Steps
