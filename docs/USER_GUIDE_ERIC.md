@@ -1,13 +1,15 @@
 
 # Precision Core Builders: Digital Foreman Platform User Guide
 
+> **Your platform URL:** Use the URL provided during handover. During development and pre-transfer it was `https://precision-core.netlify.app`; after the domain is set up it will be your custom domain (e.g. `https://precisioncorebuilders.com`). Replace any URL in this guide with your actual domain. All paths (e.g. `/admin`, `/estimator`) stay the same.
+
 Welcome, Eric. This is your complete toolset for running Precision Core Builders operations digitally. Everything you need is here — from field reporting to client billing to weather-aware scheduling.
 
 ---
 
 ## Quick Start (First 5 Minutes)
 
-1. **Log in** at https://precision-core.netlify.app/admin
+1. **Log in** at `<your-domain>/admin`
 2. **Dashboard** → Check your KPIs and active projects
 3. **Voice-to-Report** → Record a field memo (your first tool)
 4. **Projects** → View all current jobs
@@ -76,7 +78,7 @@ That's it. Everything else builds from these five actions.
 **How to use it:**
 
 **For yourself (to generate leads):**
-1. Share the link: `precision-core.netlify.app/estimator`
+1. Share the link: `<your-domain>/estimator`
 2. Embed it on your website
 3. Share on social media, Google Local Services, and Nextdoor
 4. Each person who uses it becomes a potential lead
@@ -445,7 +447,7 @@ Go to **Admin → Settings → Data Export** and download your complete project 
 
 ## Your Next Steps
 
-1. **Log in** at https://precision-core.netlify.app/admin
+1. **Log in** at `<your-domain>/admin`
 2. **Create your first project** (or click on an existing one)
 3. **Record a voice-to-report** from your next site visit
 4. **Share the estimator link** with someone asking for a quote

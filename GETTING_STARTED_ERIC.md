@@ -1,9 +1,9 @@
 # Digital Foreman: Ready to Use
 
 **Status:** ✅ LIVE and production-ready
-**URL:** https://precision-core.netlify.app
-**Admin:** https://precision-core.netlify.app/admin
-**Date:** April 6, 2026
+**URL:** See `docs/HANDOVER.md` for your confirmed domain after transfer
+**Admin:** `<your-domain>/admin`
+**Date:** April 6, 2026 (Updated: April 2026 — domain-agnostic for ownership transfer)
 
 ---
 
@@ -32,7 +32,7 @@ When a field report is filed or a task is updated, **all your portal tabs refres
 - Material shortage is flagged → notifications appear in real-time
 
 ### 3. **AI Project Estimator** ✅
-Already live. Public link: https://precision-core.netlify.app/estimator
+Already live. Public link: `<your-domain>/estimator`
 
 **How it works:**
 1. Customer fills a 3-step form
@@ -62,7 +62,7 @@ Read: `/docs/USER_GUIDE_ERIC.md` (also in your admin account under Admin → Hel
 ## How to Get Started Today
 
 ### Step 1: Log In
-Go to: https://precision-core.netlify.app/admin
+Go to: `<your-domain>/admin`
 
 ### Step 2: Create Your First Project
 1. Click **Projects → New Project**
@@ -92,7 +92,7 @@ Go to: https://precision-core.netlify.app/admin
 
 ### Step 5: Share the Estimator
 Copy this link and share it:
-`https://precision-core.netlify.app/estimator`
+`<your-domain>/estimator`
 
 Share via:
 - Email signature
@@ -100,7 +100,7 @@ Share via:
 - Google Local Services
 - Facebook
 - Nextdoor
-- Phone: "Visit my estimator at precision-core.netlify.app/estimator"
+- Phone: "Visit my estimator at `<your-domain>/estimator`"
 
 ---
 
@@ -139,8 +139,8 @@ Share via:
 
 | Item | Value |
 |------|-------|
-| **Live Site** | https://precision-core.netlify.app |
-| **Admin Area** | https://precision-core.netlify.app/admin |
+| **Live Site** | See `docs/HANDOVER.md` for confirmed domain |
+| **Admin Area** | `<your-domain>/admin` |
 | **Your License** | CCB #246527 |
 | **Email** | ericTadlock@precisioncorebuilders.com |
 | **Phone** | 541-852-5144 |
@@ -169,7 +169,7 @@ Share via:
 ### "I can't log in"
 - Clear browser cookies
 - Try incognito/private mode
-- Check you're at: https://precision-core.netlify.app/admin (not precision-core.netlify.app)
+- Confirm you are at `<your-domain>/admin` (include the `/admin` path)
 
 ### "Voice recording didn't work"
 - Check your phone's microphone permissions
