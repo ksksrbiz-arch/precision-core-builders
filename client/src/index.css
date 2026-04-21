@@ -209,6 +209,68 @@
     opacity: 0.3;
   }
 
+  /* Mobile-first display type — clamp scales fluidly across viewports */
+  .display-hero {
+    font-family: var(--font-heading);
+    font-size: clamp(2.5rem, 5vw + 1rem, 4.75rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .display-section {
+    font-family: var(--font-heading);
+    font-size: clamp(1.75rem, 3vw + 0.5rem, 3rem);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .eyebrow {
+    font-family: var(--font-condensed);
+    font-size: 0.6875rem; /* 11px */
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  /* Small gold underline for section headings */
+  .heading-bar {
+    display: block;
+    width: 48px;
+    height: 2px;
+    background: #c8a84b;
+    margin-top: 1rem;
+  }
+  .heading-bar-center {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Hero vignette — improves text contrast without darkening mids */
+  .hero-image-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(12, 10, 8, 0.2) 0%,
+      rgba(12, 10, 8, 0) 30%,
+      rgba(12, 10, 8, 0) 60%,
+      rgba(12, 10, 8, 0.6) 100%
+    );
+  }
+
+  /* Horizontal scroll with fade-right edge hint — for mobile tab rails */
+  .edge-fade-right {
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+
+  /* Hide scrollbars on horizontal rails while keeping scroll functional */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Grain overlay texture — adds tactile depth to photo backgrounds */
   .grain-overlay::after {
     content: "";
@@ -272,13 +334,11 @@
       padding-bottom: 5.5rem !important;
     }
 
-    /* Readable text sizes on small screens */
-    h1 {
-      font-size: 1.5rem !important;
-    }
-    h2 {
-      font-size: 1.25rem !important;
-    }
+    /*
+     * Heading font-size is driven by utility/display classes at the page
+     * level — no blanket !important override (it was crushing hero copy on
+     * mobile). Use .display-hero / .display-section for fluid scaling.
+     */
   }
 
   /* PWA standalone mode adjustments */

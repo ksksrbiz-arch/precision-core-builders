@@ -8,7 +8,11 @@
  *   - Full photo gallery with lightbox
  *   - CTA to contact / next project
  */
-import { SiteNav, SiteFooter, MobileCTABar } from "@/components/layout/SiteShell";
+import {
+  SiteNav,
+  SiteFooter,
+  MobileCTABar,
+} from "@/components/layout/SiteShell";
 import { BeforeAfterSlider } from "@/components/portfolio/BeforeAfterSlider";
 import { PhotoGrid } from "@/components/portfolio/PhotoGrid";
 import { getProject, PROJECTS, photoUrl } from "@/data/projects";
@@ -27,7 +31,7 @@ export default function PortfolioDetail() {
   // Next project for rotation at bottom
   const nextProject = useMemo(() => {
     if (!project) return null;
-    const idx = PROJECTS.findIndex((p) => p.slug === project.slug);
+    const idx = PROJECTS.findIndex(p => p.slug === project.slug);
     return PROJECTS[(idx + 1) % PROJECTS.length];
   }, [project]);
 
@@ -81,10 +85,14 @@ export default function PortfolioDetail() {
       <main className="flex-1">
         {/* HERO */}
         <section className="relative min-h-[65vh] md:min-h-[75vh] flex items-end overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${photoUrl(project.hero)})` }}
+          <img
+            src={photoUrl(project.hero)}
+            alt=""
             aria-hidden="true"
+            loading="eager"
+            decoding="sync"
+            {...({ fetchpriority: "high" } as Record<string, string>)}
+            className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
 
@@ -94,7 +102,7 @@ export default function PortfolioDetail() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="group inline-flex items-center gap-2 text-white/80 hover:text-white mb-6 text-sm"
+              className="group inline-flex items-center gap-2 text-white/80 hover:text-white mb-6 text-sm min-h-[44px]"
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
               <span
@@ -111,7 +119,8 @@ export default function PortfolioDetail() {
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               className="max-w-3xl"
             >
-              <div className="flex items-center gap-3 mb-3">
+              {/* Stack category + Our Home on mobile, inline on sm+ */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2 mb-3">
                 <p
                   className="text-[11px] uppercase tracking-[0.2em] text-white/85"
                   style={{ fontFamily: "var(--font-condensed)" }}
@@ -119,21 +128,22 @@ export default function PortfolioDetail() {
                   {project.category}
                 </p>
                 {project.tag === "Our Home" && (
-                  <span className="bg-[#C8A84B] text-neutral-900 text-[10px] uppercase tracking-[0.2em] font-bold px-2.5 py-1 rounded">
+                  <span className="self-start bg-[#C8A84B] text-neutral-900 text-[10px] uppercase tracking-[0.2em] font-bold px-2.5 py-1 rounded">
                     Our Home
                   </span>
                 )}
               </div>
-              <h1 className="font-heading text-4xl md:text-6xl leading-[1.05]">
-                {project.title}
-              </h1>
+              <h1 className="display-hero font-heading">{project.title}</h1>
+              <span className="heading-bar" aria-hidden />
               {project.location && (
                 <div className="mt-5 flex items-center gap-2 text-white/80">
                   <MapPin className="h-4 w-4" />
-                  <span className="text-sm tracking-wide">{project.location}</span>
+                  <span className="text-sm tracking-wide">
+                    {project.location}
+                  </span>
                 </div>
               )}
-              <p className="mt-6 text-base md:text-lg text-white/85 max-w-2xl leading-relaxed">
+              <p className="mt-5 md:mt-6 text-base md:text-lg text-white/85 max-w-2xl leading-relaxed">
                 {project.summary}
               </p>
             </motion.div>
@@ -142,7 +152,7 @@ export default function PortfolioDetail() {
 
         {/* BEFORE / AFTER SLIDER (if present) */}
         {project.beforeAfter && (
-          <section className="py-14 md:py-20 bg-neutral-50">
+          <section className="py-14 md:py-20 bg-card/30">
             <div className="container mx-auto px-5 md:px-8">
               <div className="max-w-4xl mx-auto">
                 <motion.div
@@ -152,15 +162,14 @@ export default function PortfolioDetail() {
                   transition={{ duration: 0.6 }}
                   className="text-center mb-8 md:mb-12"
                 >
-                  <p
-                    className="text-[11px] uppercase tracking-[0.2em] text-[#8B7355] mb-2"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    Before / After
-                  </p>
-                  <h2 className="font-heading text-3xl md:text-4xl text-neutral-900">
+                  <p className="eyebrow text-[#8B7355] mb-2">Before / After</p>
+                  <h2 className="display-section font-heading text-foreground">
                     The Transformation
                   </h2>
+                  <span
+                    className="heading-bar heading-bar-center"
+                    aria-hidden
+                  />
                 </motion.div>
                 <BeforeAfterSlider
                   before={photoUrl(project.beforeAfter.before)}
@@ -175,49 +184,48 @@ export default function PortfolioDetail() {
         )}
 
         {/* STORY + SCOPE */}
-        <section className="py-14 md:py-20 bg-white">
+        <section className="py-14 md:py-20 bg-background">
           <div className="container mx-auto px-5 md:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 max-w-6xl mx-auto">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="md:col-span-7"
+                className="lg:col-span-7"
               >
-                <p
-                  className="text-[11px] uppercase tracking-[0.2em] text-[#8B7355] mb-2"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  The Project
-                </p>
-                <h2 className="font-heading text-3xl md:text-4xl text-neutral-900 leading-tight">
+                <p className="eyebrow text-[#8B7355] mb-2">The Project</p>
+                <h2 className="display-section font-heading text-foreground leading-tight">
                   Built with intent.
                 </h2>
-                <p className="mt-6 text-neutral-700 text-base md:text-lg leading-[1.75]">
+                <span className="heading-bar" aria-hidden />
+                <p className="mt-6 text-foreground/80 text-base md:text-lg leading-[1.75]">
                   {project.description}
                 </p>
               </motion.div>
+
+              {/* Divider on mobile between description + scope */}
+              <div
+                className="border-t border-border/40 lg:hidden"
+                aria-hidden
+              />
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="md:col-span-5"
+                className="lg:col-span-5"
               >
-                <div className="bg-neutral-50 p-6 md:p-8 rounded-lg border border-neutral-200">
-                  <p
-                    className="text-[11px] uppercase tracking-[0.2em] text-neutral-500 mb-4"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
+                <div className="bg-card/60 p-6 md:p-8 rounded-lg border border-border/40">
+                  <p className="eyebrow text-muted-foreground mb-4">
                     Scope of Work
                   </p>
                   <ul className="space-y-3">
-                    {project.scope.map((item) => (
+                    {project.scope.map(item => (
                       <li key={item} className="flex gap-3">
                         <Check className="h-4 w-4 text-[#C8A84B] shrink-0 mt-1" />
-                        <span className="text-sm text-neutral-700 leading-relaxed">
+                        <span className="text-sm text-foreground/85 leading-relaxed">
                           {item}
                         </span>
                       </li>
@@ -231,7 +239,7 @@ export default function PortfolioDetail() {
 
         {/* GALLERY */}
         {project.photos.length > 0 && (
-          <section className="py-14 md:py-20 bg-neutral-50">
+          <section className="py-14 md:py-20 bg-card/30">
             <div className="container mx-auto px-5 md:px-8">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -240,15 +248,11 @@ export default function PortfolioDetail() {
                 transition={{ duration: 0.6 }}
                 className="text-center mb-8 md:mb-12"
               >
-                <p
-                  className="text-[11px] uppercase tracking-[0.2em] text-[#8B7355] mb-2"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Gallery
-                </p>
-                <h2 className="font-heading text-3xl md:text-4xl text-neutral-900">
+                <p className="eyebrow text-[#8B7355] mb-2">Gallery</p>
+                <h2 className="display-section font-heading text-foreground">
                   From framing to finish
                 </h2>
+                <span className="heading-bar heading-bar-center" aria-hidden />
               </motion.div>
               <div className="max-w-6xl mx-auto">
                 <PhotoGrid photos={project.photos} />
@@ -302,7 +306,8 @@ export default function PortfolioDetail() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.15 }}
-                  className="group text-left block"
+                  className="group text-left block active:scale-[0.98] transition-transform"
+                  aria-label={`Next project: ${nextProject.title}`}
                 >
                   <p
                     className="text-[11px] uppercase tracking-[0.2em] text-white/60 mb-2"
@@ -310,15 +315,16 @@ export default function PortfolioDetail() {
                   >
                     Next Project
                   </p>
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-lg">
+                  <div className="relative overflow-hidden rounded-lg">
                     <img
                       src={photoUrl(nextProject.hero)}
                       alt={nextProject.title}
                       loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                      style={{ aspectRatio: "16 / 10" }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                    <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
                       <h3 className="font-heading text-xl md:text-2xl text-white leading-tight">
                         {nextProject.title}
                       </h3>

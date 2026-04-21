@@ -19,6 +19,8 @@ import {
 } from "@/components/layout/SiteShell";
 import { SectionTeaser } from "@/components/layout/SectionTeaser";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { Reveal } from "@/components/ui/Reveal";
+import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion, useInView } from "framer-motion";
@@ -135,28 +137,29 @@ const FADE_DURATION = 1200;
 
 function HeroSlideshow() {
   const [current, setCurrent] = useState(0);
-  const [prev, setPrev] = useState<number | null>(null);
-  const [loaded, setLoaded] = useState<Set<number>>(new Set([0]));
+
+  // Preload the LCP slide into <head> before the component mounts so
+  // Chrome starts the request during HTML parse instead of after hydration.
+  useEffect(() => {
+    const existing = document.querySelector(
+      'link[rel="preload"][data-hero="1"]'
+    );
+    if (existing) return;
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = HERO_SLIDES[0].url;
+    link.setAttribute("data-hero", "1");
+    link.setAttribute("fetchpriority", "high");
+    document.head.appendChild(link);
+  }, []);
 
   useEffect(() => {
-    const next = (current + 1) % HERO_SLIDES.length;
-    if (!loaded.has(next)) {
-      const img = new Image();
-      img.src = HERO_SLIDES[next].url;
-      img.onload = () =>
-        setLoaded(s => {
-          const n = new Set(s);
-          n.add(next);
-          return n;
-        });
-    }
     const timer = setTimeout(() => {
-      setPrev(current);
       setCurrent(n => (n + 1) % HERO_SLIDES.length);
-      setTimeout(() => setPrev(null), FADE_DURATION);
     }, SLIDE_DURATION);
     return () => clearTimeout(timer);
-  }, [current, loaded]);
+  }, [current]);
 
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden>
@@ -166,57 +169,52 @@ function HeroSlideshow() {
         @keyframes hero-drift-right { from { transform: scale(1.08) translateX(-2%); } to { transform: scale(1.08) translateX(2%); } }
         @keyframes hero-drift-left  { from { transform: scale(1.08) translateX(2%);  } to { transform: scale(1.08) translateX(-2%); } }
         @keyframes hero-zoom-diagonal { from { transform: scale(1.00) translate(1%, 1%); } to { transform: scale(1.13) translate(-1%, -1%); } }
-        .hero-slide-img { animation-timing-function: linear; animation-fill-mode: both; will-change: transform; }
+        .hero-slide-img { animation-timing-function: linear; animation-fill-mode: both; will-change: transform, opacity; }
       `}</style>
 
-      {prev !== null && (
-        <div
-          className="absolute inset-0 transition-opacity"
-          style={{ opacity: 0, transitionDuration: `${FADE_DURATION}ms` }}
-        >
-          <img
-            src={HERO_SLIDES[prev].url}
-            alt=""
-            className="hero-slide-img w-full h-full object-cover"
+      {/*
+       * All 5 slides mount on first paint with opacity:0; only the active one
+       * is opacity:1. Removes the fade-in-from-nothing flash when a slide
+       * would otherwise mount cold on rotation.
+       */}
+      {HERO_SLIDES.map((slide, i) => {
+        const active = i === current;
+        return (
+          <div
+            key={i}
+            className="absolute inset-0 transition-opacity"
             style={{
-              animationName: HERO_SLIDES[prev].animation,
-              animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
+              opacity: active ? 1 : 0,
+              transitionDuration: `${FADE_DURATION}ms`,
+              transitionTimingFunction: "ease-in-out",
+              zIndex: active ? 1 : 0,
             }}
-          />
-        </div>
-      )}
-
-      <div
-        className="absolute inset-0 transition-opacity"
-        style={{
-          opacity: 1,
-          transitionDuration: `${FADE_DURATION}ms`,
-          transitionTimingFunction: "ease-in-out",
-        }}
-      >
-        <img
-          key={current}
-          src={HERO_SLIDES[current].url}
-          alt={HERO_SLIDES[current].alt}
-          className="hero-slide-img w-full h-full object-cover"
-          style={{
-            animationName: HERO_SLIDES[current].animation,
-            animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
-          }}
-          fetchPriority={current === 0 ? "high" : "auto"}
-          loading={current === 0 ? "eager" : "lazy"}
-          decoding={current === 0 ? "sync" : "async"}
-        />
-      </div>
+          >
+            <img
+              src={slide.url}
+              alt={i === 0 ? slide.alt : ""}
+              aria-hidden={i === 0 ? undefined : true}
+              className="hero-slide-img h-full w-full object-cover"
+              style={{
+                animationName: active ? slide.animation : "none",
+                animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
+              }}
+              loading={i === 0 ? "eager" : "lazy"}
+              decoding={i === 0 ? "sync" : "async"}
+              draggable={false}
+              {...({
+                fetchpriority: i === 0 ? "high" : "low",
+              } as Record<string, string>)}
+            />
+          </div>
+        );
+      })}
 
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
-            onClick={() => {
-              setPrev(current);
-              setCurrent(i);
-            }}
+            onClick={() => setCurrent(i)}
             aria-label={`Go to slide ${i + 1}`}
             className={`transition-all duration-500 rounded-full ${
               i === current
@@ -233,7 +231,7 @@ function HeroSlideshow() {
 function Hero() {
   return (
     <section
-      className="relative min-h-[100svh] flex items-center overflow-hidden"
+      className="relative min-h-[70vh] md:min-h-[85vh] lg:min-h-[100svh] flex items-center overflow-hidden"
       aria-labelledby="hero-heading"
     >
       <HeroSlideshow />
@@ -251,9 +249,9 @@ function Hero() {
         initial="hidden"
         animate="visible"
         variants={stagger}
-        className="relative z-[2] max-w-7xl mx-auto px-6 md:px-10 w-full py-32 md:py-40"
+        className="relative z-[2] max-w-7xl mx-auto px-6 md:px-10 w-full py-28 md:py-40"
       >
-        <motion.div variants={fadeIn} className="mb-8">
+        <motion.div variants={fadeIn} className="mb-6 md:mb-8">
           <span
             className="inline-flex items-center gap-2 text-[10px] tracking-[0.35em] uppercase text-primary font-medium"
             style={{ fontFamily: "var(--font-condensed)" }}
@@ -266,8 +264,7 @@ function Hero() {
         <motion.h1
           id="hero-heading"
           variants={fadeUp}
-          className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-semibold text-white leading-[1.02] tracking-tight max-w-4xl mb-6"
-          style={{ fontFamily: "var(--font-heading)" }}
+          className="display-hero font-semibold text-white max-w-4xl mb-5 md:mb-6"
         >
           Precision Construction.
           <br />
@@ -276,7 +273,7 @@ function Hero() {
 
         <motion.p
           variants={fadeUp}
-          className="text-lg md:text-xl text-white/80 max-w-2xl leading-relaxed mb-10"
+          className="text-base sm:text-lg md:text-xl text-white/80 max-w-2xl leading-relaxed mb-8 md:mb-10"
         >
           Master carpenters with 20+ years building homes, remodels, and outdoor
           spaces across Lane County. Every project carries the same standard: on
@@ -285,11 +282,11 @@ function Hero() {
 
         <motion.div
           variants={fadeUp}
-          className="flex flex-col sm:flex-row gap-4 items-start"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start"
         >
           <Link
             href="/estimator"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 font-medium hover:bg-primary/90 transition-all group rounded-sm uppercase text-sm"
+            className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 font-medium hover:bg-primary/90 transition-all group rounded-sm uppercase text-sm min-h-[48px] min-w-[160px] w-full sm:w-auto"
             style={{
               fontFamily: "var(--font-condensed)",
               letterSpacing: "0.1em",
@@ -303,7 +300,7 @@ function Hero() {
           </Link>
           <Link
             href="/portfolio"
-            className="inline-flex items-center gap-2 border border-white/30 text-white px-8 py-4 font-medium hover:bg-white/10 transition-all rounded-sm uppercase text-sm"
+            className="inline-flex items-center justify-center gap-2 border border-white/30 text-white px-8 py-4 font-medium hover:bg-white/10 transition-all rounded-sm uppercase text-sm min-h-[48px] min-w-[160px] w-full sm:w-auto"
             style={{
               fontFamily: "var(--font-condensed)",
               letterSpacing: "0.1em",
@@ -315,14 +312,14 @@ function Hero() {
 
         <motion.div
           variants={fadeUp}
-          className="mt-16 flex items-center gap-6 text-[11px] tracking-[0.2em] uppercase text-white/50"
+          className="mt-12 md:mt-16 flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-white/50"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
           <span className="flex items-center gap-2">
             <Award className="w-4 h-4 text-primary" aria-hidden="true" />
             {SITE.license}
           </span>
-          <span className="w-px h-4 bg-white/20" aria-hidden />
+          <span className="hidden sm:block w-px h-4 bg-white/20" aria-hidden />
           <span>Licensed · Bonded · Insured</span>
         </motion.div>
       </motion.div>
@@ -558,43 +555,37 @@ function PortfolioTeaser() {
   return (
     <section
       id="work"
-      className="py-24 md:py-32 bg-background"
+      className="py-20 md:py-32 bg-background"
       aria-labelledby="work-heading"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.15 }}
-          transition={{ duration: 0.7, ease }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
-        >
+        <Reveal className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10 md:mb-12">
           <div className="max-w-2xl">
-            <div
-              className="text-[10px] tracking-[0.3em] uppercase text-primary mb-4 font-medium"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Recent Work
-            </div>
+            <div className="eyebrow text-primary mb-3 md:mb-4">Recent Work</div>
             <h2
               id="work-heading"
-              className="text-4xl md:text-5xl font-semibold text-foreground leading-tight"
-              style={{ fontFamily: "var(--font-heading)" }}
+              className="display-section font-semibold text-foreground"
             >
               Homes we've built, remodels we've completed.
             </h2>
+            <span className="heading-bar" aria-hidden />
           </div>
           <Link
             href="/portfolio"
-            className="inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all border-b border-primary/40 hover:border-primary pb-0.5 whitespace-nowrap"
+            className="inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all border-b border-primary/40 hover:border-primary pb-0.5 whitespace-nowrap min-h-[44px]"
           >
             View full portfolio
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Link>
-        </motion.div>
+        </Reveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {["/portfolio/signature-outdoor-01.jpg", "/portfolio/house-restoration-02.jpg", "/portfolio/side-yard-shed-03.jpg", "/portfolio/bath-remodel-06.jpg"].map((img, i) => (
+          {[
+            "/portfolio/signature-outdoor-01.jpg",
+            "/portfolio/house-restoration-02.jpg",
+            "/portfolio/side-yard-shed-03.jpg",
+            "/portfolio/bath-remodel-06.jpg",
+          ].map((img, i) => (
             <motion.div
               key={img}
               initial={{ opacity: 0, y: 20 }}
@@ -604,16 +595,17 @@ function PortfolioTeaser() {
             >
               <Link
                 href="/portfolio"
-                className="group block relative aspect-[4/5] overflow-hidden rounded-sm bg-muted"
+                className="group block relative overflow-hidden rounded-sm bg-muted active:scale-[0.98] transition-transform"
               >
-                <img
+                <ResponsiveImage
                   src={img}
                   alt={`Precision Core Builders project ${i + 1}`}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  aspectRatio="4/5"
+                  imgClassName="transition-transform duration-700 group-hover:scale-[1.04]"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="absolute inset-x-4 bottom-4 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                <div className="absolute inset-x-4 bottom-4 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none">
                   <span
                     className="text-[10px] tracking-[0.3em] uppercase text-white/80"
                     style={{ fontFamily: "var(--font-condensed)" }}

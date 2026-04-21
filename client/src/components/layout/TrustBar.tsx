@@ -1,6 +1,9 @@
 /**
  * TrustBar — trust signals used across home, service pages, and portfolio.
  * CCB license, insured, years experience, local badges.
+ *
+ * Mobile: horizontal snap-scroll with fade-right edge hint.
+ * Tablet+: centered flex wrap.
  */
 import { Award, Clock, MapPin, Shield, ThumbsUp } from "lucide-react";
 
@@ -19,17 +22,26 @@ const SIGNALS = [
 export function TrustBar({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`border-y border-border/50 bg-card/50 py-4 overflow-x-auto ${className}`}
+      className={`border-y border-border/50 bg-card/50 py-4 ${className}`}
+      aria-label="Credentials and trust signals"
     >
       <div className="container">
-        <div className="flex items-center justify-between gap-6 min-w-max sm:min-w-0 sm:flex-wrap sm:justify-center lg:justify-between">
+        <div
+          className="
+            flex items-center gap-6 overflow-x-auto scrollbar-none snap-x
+            edge-fade-right
+            md:flex-wrap md:justify-center md:overflow-visible
+            md:[-webkit-mask-image:none] md:[mask-image:none]
+            lg:justify-between
+          "
+        >
           {SIGNALS.map(({ icon: Icon, label, value }) => (
             <div
               key={label}
-              className="flex items-center gap-2.5 flex-shrink-0"
+              className="flex items-center gap-2.5 flex-shrink-0 snap-start"
             >
-              <div className="h-7 w-7 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                <Icon className="h-3.5 w-3.5 text-primary" aria-hidden />
+              <div className="h-8 w-8 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                <Icon className="h-4 w-4 text-primary" aria-hidden />
               </div>
               <div>
                 <div
