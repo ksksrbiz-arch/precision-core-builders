@@ -298,7 +298,10 @@ export default function BillingView() {
                 >
                   <Icon className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden">{label.split(" ")[0]}</span>
+                  {/* Show abbreviated label on mobile: first word only, or full label if no space */}
+                  <span className="sm:hidden">
+                    {label.includes(" ") ? label.split(" ")[0] : label}
+                  </span>
                 </button>
               ))}
             </div>

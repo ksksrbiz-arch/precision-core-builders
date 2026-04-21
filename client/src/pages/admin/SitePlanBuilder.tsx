@@ -750,7 +750,10 @@ export default function SitePlanBuilder() {
 
   return (
     <DashboardLayout>
-      {/* On mobile account for the sticky header (3.5rem) + bottom nav (4rem) + padding */}
+      {/*
+        Mobile height: 100dvh minus sticky header (3.5rem) + bottom nav (4rem) + main padding (2rem) + gap buffer (0.5rem) = 10rem total.
+        Desktop: original 2rem subtraction (for main padding only; no bottom nav or sticky topbar).
+      */}
       <div className="flex flex-col h-[calc(100dvh-10rem)] sm:h-[calc(100vh-2rem)] gap-2 sm:gap-3">
         {/* ── Top toolbar ──────────────────────────────────────────── */}
         {/* Mobile: two rows (name + scrollable buttons) */}
@@ -883,7 +886,8 @@ export default function SitePlanBuilder() {
             <div
               className={
                 isMobile
-                  ? "absolute inset-x-0 bottom-0 z-20 max-h-[65%] bg-card border-t border-border/50 rounded-t-2xl overflow-hidden flex flex-col shadow-2xl"
+                  ? // 65% gives enough room to see stamps + saved plans without covering the whole canvas
+                    "absolute inset-x-0 bottom-0 z-20 max-h-[65%] bg-card border-t border-border/50 rounded-t-2xl overflow-hidden flex flex-col shadow-2xl"
                   : "w-56 shrink-0 bg-card/80 backdrop-blur border border-border/50 rounded-xl overflow-hidden flex flex-col"
               }
             >
