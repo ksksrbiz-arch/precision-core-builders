@@ -4,13 +4,22 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as
+  | string
+  | undefined;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+/**
+ * True when real Supabase credentials are present. Features that depend on
+ * a live Supabase backend (auth, realtime) should check this first and
+ * no-op when false so the app remains usable in dev-bypass mode.
+ */
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (!isSupabaseConfigured) {
   console.warn(
     "[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY not set. " +
-      "Auth will not work until these are added to Netlify environment variables."
+      "Auth and realtime will be disabled until these are added to Netlify environment variables."
   );
 }
 
