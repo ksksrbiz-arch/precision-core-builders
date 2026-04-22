@@ -14,9 +14,13 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -40,6 +44,7 @@ import {
   Package,
   PanelLeft,
   Pencil,
+  Plus,
   Radio,
   Search,
   Settings,
@@ -53,27 +58,57 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
-const NAV = [
-  { icon: LayoutDashboard, label: "Command Center", path: "/admin" },
-  { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+type NavItem = {
+  icon: typeof LayoutDashboard;
+  label: string;
+  path: string;
+  badge?: string;
+};
+
+const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
+  {
+    label: "Operations",
+    items: [
+      { icon: LayoutDashboard, label: "Command Center", path: "/admin" },
+      { icon: ClipboardList, label: "Projects", path: "/admin/projects" },
+      { icon: BookOpen, label: "Field Reports", path: "/admin/field-reports" },
+      { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
+      { icon: Pencil, label: "Site Plans", path: "/admin/site-plans" },
+      { icon: Radio, label: "Activity Log", path: "/admin/activity-log" },
+    ],
+  },
+  {
+    label: "Business",
+    items: [
+      { icon: Users, label: "Clients", path: "/admin/clients" },
+      { icon: BarChart3, label: "Estimates", path: "/admin/estimates" },
+      { icon: Package, label: "Materials", path: "/admin/materials" },
+      { icon: Wrench, label: "Sub-Contractors", path: "/admin/sub-contractors" },
+      { icon: Shield, label: "Ledger", path: "/admin/ledger" },
+      { icon: CreditCard, label: "Billing", path: "/admin/billing" },
+    ],
+  },
+  {
+    label: "Insights & Platform",
+    items: [
+      { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+      { icon: Search, label: "Search", path: "/admin/search", badge: "⌘K" },
+      { icon: Bell, label: "Notifications", path: "/admin/notifications" },
+      { icon: Sparkles, label: "Finish Selections", path: "/admin/finishes" },
+      { icon: Camera, label: "Vision Studio", path: "/admin/vision-studio", badge: "AI" },
+      { icon: Image, label: "Portfolio CMS", path: "/admin/portfolio-cms" },
+      { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
+      { icon: HelpCircle, label: "System Guide", path: "/admin/guides" },
+    ],
+  },
+];
+
+const NAV = NAV_SECTIONS.flatMap(section => section.items);
+
+const QUICK_ACTIONS = [
+  { icon: Plus, label: "New Project", path: "/admin/projects/new" },
+  { icon: BookOpen, label: "New Report", path: "/admin/field-reports/new" },
   { icon: Search, label: "Search", path: "/admin/search" },
-  { icon: ClipboardList, label: "Projects", path: "/admin/projects" },
-  { icon: Users, label: "Clients", path: "/admin/clients" },
-  { icon: BookOpen, label: "Field Reports", path: "/admin/field-reports" },
-  { icon: Pencil, label: "Site Plans", path: "/admin/site-plans" },
-  { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
-  { icon: BarChart3, label: "Estimates", path: "/admin/estimates" },
-  { icon: Package, label: "Materials", path: "/admin/materials" },
-  { icon: Sparkles, label: "Finish Selections", path: "/admin/finishes" },
-  { icon: Wrench, label: "Sub-Contractors", path: "/admin/sub-contractors" },
-  { icon: Shield, label: "Ledger", path: "/admin/ledger" },
-  { icon: CreditCard, label: "Billing", path: "/admin/billing" },
-  { icon: Bell, label: "Notifications", path: "/admin/notifications" },
-  { icon: Image, label: "Portfolio CMS", path: "/admin/portfolio-cms" },
-  { icon: Camera, label: "Vision Studio", path: "/admin/vision-studio" },
-  { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
-  { icon: HelpCircle, label: "System Guide", path: "/admin/guides" },
-  { icon: Radio, label: "Activity Log", path: "/admin/activity-log" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "pcb-sidebar-width";
@@ -87,6 +122,14 @@ function getCurrentNavItem(location: string) {
     item =>
       location === item.path ||
       (item.path !== "/admin" && location.startsWith(item.path))
+  );
+}
+
+function getCurrentNavSection(location: string) {
+  const currentItem = getCurrentNavItem(location);
+  if (!currentItem) return null;
+  return NAV_SECTIONS.find(section =>
+    section.items.some(item => item.path === currentItem.path)
   );
 }
 
@@ -208,6 +251,8 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const currentNav = getCurrentNavItem(location);
+  const currentSection = getCurrentNavSection(location);
   const currentGuide = getGuideByPath(location);
 
   useEffect(() => {
@@ -267,38 +312,66 @@ function DashboardLayoutContent({
                 </span>
               )}
             </div>
+            {!isCollapsed && (
+              <div className="grid grid-cols-3 gap-1.5 px-2 pb-2">
+                {QUICK_ACTIONS.map(action => (
+                  <button
+                    key={action.path}
+                    onClick={() => setLocation(action.path)}
+                    className="h-8 rounded border border-border/50 bg-background/60 hover:border-primary/40 hover:bg-primary/5 transition-colors flex items-center justify-center"
+                    title={action.label}
+                    aria-label={action.label}
+                  >
+                    <action.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            )}
           </SidebarHeader>
 
           <SidebarContent className="gap-0 py-2">
-            <SidebarMenu className="px-2">
-              {NAV.map(item => {
-                const isActive =
-                  getCurrentNavItem(location)?.path === item.path;
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => setLocation(item.path)}
-                      tooltip={item.label}
-                      className="h-9"
-                    >
-                      <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                      />
-                      <span
-                        className={
-                          isActive
-                            ? "text-foreground font-medium"
-                            : "text-muted-foreground"
-                        }
-                      >
-                        {item.label}
-                      </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            {NAV_SECTIONS.map(section => (
+              <SidebarGroup key={section.label} className="px-2 py-1">
+                <SidebarGroupLabel className="px-2 text-[10px] tracking-[0.18em] uppercase">
+                  {section.label}
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {section.items.map(item => {
+                      const isActive = currentNav?.path === item.path;
+                      return (
+                        <SidebarMenuItem key={item.path}>
+                          <SidebarMenuButton
+                            isActive={isActive}
+                            onClick={() => setLocation(item.path)}
+                            tooltip={item.label}
+                            className="h-9 pr-8"
+                          >
+                            <item.icon
+                              className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                            />
+                            <span
+                              className={
+                                isActive
+                                  ? "text-foreground font-medium"
+                                  : "text-muted-foreground"
+                              }
+                            >
+                              {item.label}
+                            </span>
+                          </SidebarMenuButton>
+                          {item.badge && (
+                            <SidebarMenuBadge className="text-[9px] font-semibold text-muted-foreground/90">
+                              {item.badge}
+                            </SidebarMenuBadge>
+                          )}
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ))}
           </SidebarContent>
 
           <SidebarFooter className="p-2 border-t border-border/40">
@@ -323,6 +396,25 @@ function DashboardLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onClick={() => setLocation("/admin/search")}
+                  className="cursor-pointer"
+                >
+                  <Search className="mr-2 h-4 w-4" /> Search (⌘K)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setLocation("/admin/setup")}
+                  className="cursor-pointer"
+                >
+                  <Settings className="mr-2 h-4 w-4" /> Platform Setup
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setLocation("/admin/guides")}
+                  className="cursor-pointer"
+                >
+                  <HelpCircle className="mr-2 h-4 w-4" /> System Guide
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <a href="/" className="cursor-pointer">
                     ← Public Site
@@ -350,6 +442,52 @@ function DashboardLayoutContent({
 
       <SidebarInset>
         <AdminGuidePrompt />
+        {!isMobile && (
+          <div className="flex border-b border-border/40 h-14 items-center px-4 sm:px-6 bg-background/90 backdrop-blur-xl sticky top-0 z-30 gap-3">
+            <SidebarTrigger className="h-9 w-9 rounded flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-sm font-semibold text-foreground truncate leading-tight"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {currentNav?.label ?? "Admin"}
+              </p>
+              <p
+                className="text-[10px] tracking-widest uppercase text-muted-foreground/60 leading-tight"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {currentSection?.label ?? "Operations"}
+              </p>
+            </div>
+            {currentGuide && <GuideHelpButton guideId={currentGuide.id} />}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 hidden lg:inline-flex"
+              onClick={() => setLocation("/admin/projects/new")}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              New Project
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 hidden md:inline-flex"
+              onClick={() => setLocation("/admin/field-reports/new")}
+            >
+              <BookOpen className="mr-1.5 h-3.5 w-3.5" />
+              New Report
+            </Button>
+            <Button
+              size="sm"
+              className="h-9"
+              onClick={() => setLocation("/admin/search")}
+            >
+              <Search className="mr-1.5 h-3.5 w-3.5" />
+              Search
+            </Button>
+          </div>
+        )}
         {isMobile && (
           <div
             className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-3"
@@ -371,6 +509,13 @@ function DashboardLayoutContent({
               </p>
             </div>
             {currentGuide && <GuideHelpButton guideId={currentGuide.id} />}
+            <button
+              onClick={() => setLocation("/admin/search")}
+              className="h-10 w-10 rounded-full border border-border/40 bg-background flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
+              aria-label="Search admin"
+            >
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </button>
             <button
               onClick={() => setLocation("/admin/field-reports/new")}
               className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
