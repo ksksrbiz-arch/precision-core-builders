@@ -25,13 +25,13 @@ export type ProjectCategory =
 export type PhotoRole = "before" | "after" | "progress" | "hero";
 
 export interface ProjectPhoto {
-  file: string; // filename or absolute URL
+  file: string; // filename (relative to /portfolio/) or absolute HTTPS URL
   role: PhotoRole;
   caption?: string;
 }
 
 export interface BeforeAfter {
-  before: string; // filename or absolute URL
+  before: string; // filename (relative to /portfolio/) or absolute HTTPS URL
   after: string;
   caption?: string;
 }
@@ -72,8 +72,7 @@ export const PROJECTS: Project[] = [
       "Accessory structure siding, trim, and finish",
     ],
     featured: true,
-    hero:
-      "https://github.com/user-attachments/assets/f7b02df1-994b-451f-be6a-7efd3aa10a30",
+    hero: "https://github.com/user-attachments/assets/f7b02df1-994b-451f-be6a-7efd3aa10a30",
     photos: [
       {
         file: "https://github.com/user-attachments/assets/f7b02df1-994b-451f-be6a-7efd3aa10a30",
