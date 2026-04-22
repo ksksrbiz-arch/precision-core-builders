@@ -83,7 +83,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
 
   return (
     <div
-      className={`flex flex-col border border-border/60 bg-card overflow-hidden ${compact ? "h-[420px]" : "h-full min-h-[520px]"}`}
+      className={`min-h-0 flex flex-col border border-border/60 bg-card overflow-hidden ${compact ? "h-[320px] sm:h-[420px]" : "h-full min-h-[520px]"}`}
     >
       <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
         <div className="h-6 w-6 border border-primary/40 flex items-center justify-center">
@@ -106,7 +106,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-4 py-3">
+      <ScrollArea className="flex-1 min-h-0 px-4 py-3 overscroll-contain touch-action-pan-y">
         {messages.length === 0 && (
           <div className="py-3">
             <p className="text-xs text-muted-foreground text-center mb-4 font-light">

@@ -1,4 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { AdminGuidePrompt } from "@/components/AdminGuidePrompt";
+import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { getGuideByPath } from "@/pages/admin/guides-data";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -205,6 +208,7 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const currentGuide = getGuideByPath(location);
 
   useEffect(() => {
     if (isCollapsed) setIsResizing(false);
@@ -344,6 +348,7 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset>
+        <AdminGuidePrompt />
         {isMobile && (
           <div
             className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-3"
@@ -364,6 +369,7 @@ function DashboardLayoutContent({
                 Precision Core
               </p>
             </div>
+            {currentGuide && <GuideHelpButton guideId={currentGuide.id} />}
             <button
               onClick={() => setLocation("/admin/field-reports/new")}
               className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
