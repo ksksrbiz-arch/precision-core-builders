@@ -3,6 +3,8 @@
  * Respects prefers-reduced-motion by using opacity-only fallback.
  */
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
+import { useIsMobile } from "@/hooks/useMobile";
 
 export function ScrollProgressBar() {
   const [progress, setProgress] = useState(0);
@@ -57,6 +59,9 @@ export function ScrollProgressBar() {
 export function BackToTop() {
   const [visible, setVisible] = useState(false);
   const rafRef = useRef<number | null>(null);
+  const [location] = useLocation();
+  const isMobile = useIsMobile();
+  const isAdminMobile = isMobile && location.startsWith("/admin");
 
   useEffect(() => {
     const update = () => {
@@ -88,11 +93,18 @@ export function BackToTop() {
     <button
       onClick={scrollTop}
       aria-label="Back to top"
-      className={`fixed bottom-20 right-4 z-40 h-10 w-10 flex items-center justify-center bg-card border border-primary/40 text-primary shadow-lg transition-all duration-300 hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:bottom-8 sm:right-6 ${
+      className={`fixed right-4 z-40 h-10 w-10 flex items-center justify-center bg-card border border-primary/40 text-primary shadow-lg transition-all duration-300 hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:bottom-8 sm:right-6 ${
         visible
           ? "opacity-100 translate-y-0 pointer-events-auto"
           : "opacity-0 translate-y-4 pointer-events-none"
       }`}
+      style={{
+        bottom: isMobile
+          ? `calc(var(--pcb-back-to-top-mobile-offset, ${
+              isAdminMobile ? "5.5rem" : "1rem"
+            }) + env(safe-area-inset-bottom, 0px))`
+          : undefined,
+      }}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

@@ -4,13 +4,39 @@
  */
 import { Download, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import { useIsMobile } from "@/hooks/useMobile";
 
 const DISMISS_KEY = "pcb-pwa-dismiss";
 const DISMISS_DAYS = 14;
+const ADMIN_MOBILE_NAV_OFFSET = "5.5rem";
+const ADMIN_MOBILE_BANNER_BACKTOTOP_OFFSET = "11rem";
+const MOBILE_BANNER_BACKTOTOP_OFFSET = "6.5rem";
+const DEFAULT_MOBILE_BACKTOTOP_OFFSET = "1rem";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+function useBackToTopOffset(active: boolean, isAdminMobile: boolean) {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty(
+      "--pcb-back-to-top-mobile-offset",
+      active
+        ? isAdminMobile
+          ? ADMIN_MOBILE_BANNER_BACKTOTOP_OFFSET
+          : MOBILE_BANNER_BACKTOTOP_OFFSET
+        : isAdminMobile
+          ? ADMIN_MOBILE_NAV_OFFSET
+          : DEFAULT_MOBILE_BACKTOTOP_OFFSET
+    );
+
+    return () => {
+      root.style.removeProperty("--pcb-back-to-top-mobile-offset");
+    };
+  }, [active, isAdminMobile]);
 }
 
 export function PWAInstallPrompt() {
@@ -18,6 +44,11 @@ export function PWAInstallPrompt() {
     useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [location] = useLocation();
+  const isMobile = useIsMobile();
+  const isAdminMobile = isMobile && location.startsWith("/admin");
+
+  useBackToTopOffset(showBanner, isAdminMobile);
 
   useEffect(() => {
     // Check if already installed
@@ -64,7 +95,10 @@ export function PWAInstallPrompt() {
   if (!showBanner || isStandalone) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-[100] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300">
+    <div
+      className="fixed inset-x-0 z-[100] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300"
+      style={{ bottom: isAdminMobile ? ADMIN_MOBILE_NAV_OFFSET : "0px" }}
+    >
       <div className="max-w-lg mx-auto bg-card border border-primary/20 rounded-lg shadow-2xl shadow-black/50 p-4 flex items-center gap-3">
         <div className="h-10 w-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
           <Download className="h-5 w-5 text-primary" />
@@ -101,6 +135,11 @@ export function PWAInstallPrompt() {
  */
 export function IOSInstallHint() {
   const [show, setShow] = useState(false);
+  const [location] = useLocation();
+  const isMobile = useIsMobile();
+  const isAdminMobile = isMobile && location.startsWith("/admin");
+
+  useBackToTopOffset(show, isAdminMobile);
 
   useEffect(() => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -120,7 +159,10 @@ export function IOSInstallHint() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-[100] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300">
+    <div
+      className="fixed inset-x-0 z-[100] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300"
+      style={{ bottom: isAdminMobile ? ADMIN_MOBILE_NAV_OFFSET : "0px" }}
+    >
       <div className="max-w-lg mx-auto bg-card border border-primary/20 rounded-lg shadow-2xl shadow-black/50 p-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">

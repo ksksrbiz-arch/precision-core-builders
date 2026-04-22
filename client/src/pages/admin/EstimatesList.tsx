@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import {
   Calculator,
@@ -22,6 +23,7 @@ export default function EstimatesList() {
   const [, setLocation] = useLocation();
   const [page, setPage] = useState(1);
   const utils = trpc.useUtils();
+  const isMobile = useIsMobile();
 
   const { data, isLoading } = trpc.estimates.list.useQuery({
     page,
@@ -91,6 +93,120 @@ export default function EstimatesList() {
             >
               Run your first estimate
             </button>
+          </div>
+        ) : isMobile ? (
+          <div className="space-y-3">
+            {data?.data.map((est: any) => {
+              const isSent = !!est.sent_to_client;
+              const isApproved = !!est.approved_by_client;
+              const expired =
+                est.expires_at && new Date(est.expires_at) < new Date();
+
+              return (
+                <div
+                  key={est.id}
+                  className="bg-card border border-border/60 p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {est.projects?.name ?? "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {est.clients?.name ?? "Walk-in"}
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground shrink-0">
+                      {fmtDate(est.created_at)}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                    <div>
+                      <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground">
+                        Type
+                      </p>
+                      <p className="mt-1 text-muted-foreground">
+                        {est.project_type ?? "General"}
+                        {est.square_footage
+                          ? ` · ${est.square_footage} sq ft`
+                          : ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground">
+                        Range
+                      </p>
+                      <div className="mt-1 flex items-center gap-1 text-foreground">
+                        <DollarSign className="h-3 w-3 text-primary" />
+                        <span className="font-medium">{fmt(est.estimated_low)}</span>
+                        <span className="text-muted-foreground/50">–</span>
+                        <span className="font-medium">
+                          {fmt(est.estimated_high)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    {isApproved ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-green-400"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <CheckCircle2 className="h-3 w-3" /> Approved
+                      </span>
+                    ) : isSent ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-blue-400"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <Send className="h-3 w-3" /> Sent {fmtDate(est.sent_at)}
+                      </span>
+                    ) : expired ? (
+                      <span
+                        className="text-[10px] font-bold tracking-widest uppercase text-red-400/60"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Expired
+                      </span>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground/50"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <Clock className="h-3 w-3" /> Draft
+                      </span>
+                    )}
+                  </div>
+
+                  {( !isSent || (isSent && !isApproved)) && (
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      {!isSent && (
+                        <button
+                          onClick={() => sendMut.mutate({ id: est.id })}
+                          disabled={sendMut.isPending}
+                          className="w-full rounded border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-primary transition-colors hover:bg-primary/15 disabled:opacity-50"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          Send Estimate
+                        </button>
+                      )}
+                      {isSent && !isApproved && (
+                        <button
+                          onClick={() => approveMut.mutate({ id: est.id })}
+                          disabled={approveMut.isPending}
+                          className="w-full rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-green-400 transition-colors hover:bg-green-400/15 disabled:opacity-50"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          Approve Estimate
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-card border border-border/60 overflow-hidden">
@@ -225,11 +341,11 @@ export default function EstimatesList() {
         )}
 
         {data && data.total > 20 && (
-          <div className="flex items-center justify-between mt-6">
+          <div className="mt-6 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+              className="flex items-center justify-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary disabled:opacity-30"
             >
               <ChevronLeft className="h-3.5 w-3.5" /> Previous
             </button>
@@ -239,7 +355,7 @@ export default function EstimatesList() {
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * 20 >= data.total}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+              className="flex items-center justify-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary disabled:opacity-30"
             >
               Next <ChevronRight className="h-3.5 w-3.5" />
             </button>

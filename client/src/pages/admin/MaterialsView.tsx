@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
+import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -37,6 +38,7 @@ type PurchaseOrder = {
 };
 
 export default function MaterialsView() {
+  const isMobile = useIsMobile();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showShortagesOnly, setShowShortagesOnly] = useState(false);
@@ -220,7 +222,7 @@ export default function MaterialsView() {
         />
 
         {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-1 gap-3 mb-5 sm:grid-cols-3">
           <div className="bg-card border border-border/60 p-4">
             <p
               className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
@@ -270,7 +272,7 @@ export default function MaterialsView() {
                 e.target.value ? parseInt(e.target.value) : null
               )
             }
-            className="bg-input border border-border text-sm text-foreground px-3 py-2 focus:outline-none focus:border-primary/60 min-w-[160px]"
+            className="w-full bg-input border border-border px-3 py-2 text-sm text-foreground focus:border-primary/60 focus:outline-none sm:w-auto sm:min-w-[160px]"
           >
             <option value="">All Projects</option>
             {projects?.data.map(p => (
@@ -281,7 +283,7 @@ export default function MaterialsView() {
           </select>
 
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative min-w-0 flex-1 basis-full sm:basis-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
               value={searchQuery}
@@ -294,7 +296,7 @@ export default function MaterialsView() {
           {/* Shortages toggle */}
           <button
             onClick={() => setShowShortagesOnly(v => !v)}
-            className={`flex items-center gap-2 px-3 py-2 text-[11px] font-bold tracking-widest uppercase border transition-colors ${
+            className={`flex w-full items-center justify-center gap-2 border px-3 py-2 text-[11px] font-bold tracking-widest uppercase transition-colors sm:w-auto ${
               showShortagesOnly
                 ? "bg-red-400/10 border-red-400/40 text-red-400"
                 : "border-border/60 text-muted-foreground hover:border-red-400/40 hover:text-red-400"
@@ -442,59 +444,106 @@ export default function MaterialsView() {
                     </p>
                   </div>
                 </div>
-                <div className="border border-border/40 overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-muted/30 border-b border-border/40">
-                        {[
-                          "Item",
-                          "SKU",
-                          "Qty",
-                          "Unit",
-                          "Unit Price",
-                          "Subtotal",
-                        ].map(h => (
-                          <th
-                            key={h}
-                            className="px-3 py-2 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
-                            style={{ fontFamily: "var(--font-condensed)" }}
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {po.items.map((item, i) => (
-                        <tr
-                          key={i}
-                          className="border-b border-border/20 last:border-0"
-                        >
-                          <td className="px-3 py-2 text-foreground font-medium">
-                            {item.name}
-                          </td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {item.sku ?? "—"}
-                          </td>
-                          <td className="px-3 py-2 text-foreground">
-                            {item.quantity}
-                          </td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {item.unit ?? "ea"}
-                          </td>
-                          <td className="px-3 py-2 text-foreground">
-                            {fmtCurrency(item.unitPrice)}
-                          </td>
-                          <td className="px-3 py-2 text-foreground font-semibold">
-                            {item.unitPrice
-                              ? fmtCurrency(item.quantity * item.unitPrice)
-                              : "—"}
-                          </td>
+                {isMobile ? (
+                  <div className="space-y-2">
+                    {po.items.map((item, i) => (
+                      <div
+                        key={i}
+                        className="rounded border border-border/40 bg-background/40 p-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              SKU: {item.sku ?? "—"}
+                            </p>
+                          </div>
+                          <p className="text-sm font-semibold text-foreground">
+                            {fmtCurrency(
+                              item.unitPrice
+                                ? item.quantity * item.unitPrice
+                                : null
+                            )}
+                          </p>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Quantity
+                            </p>
+                            <p className="mt-1 text-foreground">
+                              {item.quantity} {item.unit ?? "ea"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Unit Price
+                            </p>
+                            <p className="mt-1 text-foreground">
+                              {fmtCurrency(item.unitPrice)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-border/40 overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-muted/30 border-b border-border/40">
+                          {[
+                            "Item",
+                            "SKU",
+                            "Qty",
+                            "Unit",
+                            "Unit Price",
+                            "Subtotal",
+                          ].map(h => (
+                            <th
+                              key={h}
+                              className="px-3 py-2 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              {h}
+                            </th>
+                          ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {po.items.map((item, i) => (
+                          <tr
+                            key={i}
+                            className="border-b border-border/20 last:border-0"
+                          >
+                            <td className="px-3 py-2 text-foreground font-medium">
+                              {item.name}
+                            </td>
+                            <td className="px-3 py-2 text-muted-foreground">
+                              {item.sku ?? "—"}
+                            </td>
+                            <td className="px-3 py-2 text-foreground">
+                              {item.quantity}
+                            </td>
+                            <td className="px-3 py-2 text-muted-foreground">
+                              {item.unit ?? "ea"}
+                            </td>
+                            <td className="px-3 py-2 text-foreground">
+                              {fmtCurrency(item.unitPrice)}
+                            </td>
+                            <td className="px-3 py-2 text-foreground font-semibold">
+                              {item.unitPrice
+                                ? fmtCurrency(item.quantity * item.unitPrice)
+                                : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 <div className="flex justify-end mt-3">
                   <button
                     onClick={() => {
@@ -548,117 +597,237 @@ export default function MaterialsView() {
 
         {!isLoading && filtered.length > 0 && (
           <div className="border border-border/60 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/30 border-b border-border/40">
-                  {[
-                    "Material",
-                    "Project",
-                    "Vendor",
-                    "Qty",
-                    "Status",
-                    "Unit Price",
-                  ].map(h => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
-                      style={{ fontFamily: "var(--font-condensed)" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+            {isMobile ? (
+              <div className="space-y-3 p-3">
                 {filtered.map(m => {
                   const shortage = m.is_shortage;
                   const needed = m.quantity_needed ?? 0;
                   const received = m.quantity_received ?? 0;
-                  const ordered = m.quantity_ordered ?? 0;
                   const pct =
                     needed > 0 ? Math.round((received / needed) * 100) : 100;
 
                   return (
-                    <tr
+                    <div
                       key={m.id}
-                      className={`border-b border-border/20 last:border-0 hover:bg-card/50 transition-colors ${
-                        shortage ? "bg-red-400/5" : ""
+                      className={`rounded border p-4 ${
+                        shortage
+                          ? "border-red-400/30 bg-red-400/5"
+                          : "border-border/40 bg-background/30"
                       }`}
                     >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {shortage ? (
-                            <PackageX className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                          ) : (
-                            <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          )}
-                          <div>
-                            <p className="font-medium text-foreground">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            {shortage ? (
+                              <PackageX className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                            ) : (
+                              <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            )}
+                            <p className="text-sm font-medium text-foreground">
                               {m.name}
                             </p>
-                            {m.category && (
-                              <p className="text-[10px] text-muted-foreground">
-                                {m.category}
+                          </div>
+                          {m.category && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {m.category}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-semibold text-foreground">
+                            {fmtCurrency(m.unit_price_current)}
+                          </p>
+                          {m.unit_price_budgeted &&
+                            m.unit_price_current &&
+                            m.unit_price_current > m.unit_price_budgeted && (
+                              <p className="mt-1 text-[9px] text-red-400">
+                                ↑ over budget
                               </p>
                             )}
-                          </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {(m as any).projects?.name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {m.vendor_name ?? "—"}
-                        {m.vendor_sku && (
-                          <p className="text-[10px] text-muted-foreground/60">
-                            SKU: {m.vendor_sku}
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Project
                           </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-xs text-foreground">
-                          {received}/{needed} {m.unit ?? ""}
-                        </p>
-                        <div className="h-1 bg-input rounded-full mt-1 w-20">
+                          <p className="mt-1 text-muted-foreground">
+                            {(m as any).projects?.name ?? "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Vendor
+                          </p>
+                          <p className="mt-1 text-muted-foreground">
+                            {m.vendor_name ?? "—"}
+                          </p>
+                          {m.vendor_sku && (
+                            <p className="text-[10px] text-muted-foreground/60">
+                              SKU: {m.vendor_sku}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <div className="mb-1 flex items-center justify-between text-xs">
+                          <span className="text-foreground">
+                            {received}/{needed} {m.unit ?? ""}
+                          </span>
+                          {shortage ? (
+                            <span
+                              className="rounded border border-red-400/30 bg-red-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-red-400"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              Shortage
+                            </span>
+                          ) : pct >= 100 ? (
+                            <span className="flex items-center gap-1 text-[10px] text-green-400">
+                              <CheckCircle2 className="h-3 w-3" /> On Hand
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">
+                              {pct}% received
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-1.5 rounded-full bg-input">
                           <div
-                            className={`h-full rounded-full transition-all ${shortage ? "bg-red-400" : pct >= 100 ? "bg-green-400" : "bg-primary"}`}
+                            className={`h-full rounded-full transition-all ${
+                              shortage
+                                ? "bg-red-400"
+                                : pct >= 100
+                                  ? "bg-green-400"
+                                  : "bg-primary"
+                            }`}
                             style={{ width: `${Math.min(100, pct)}%` }}
                           />
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {shortage ? (
-                          <span
-                            className="text-[9px] px-2 py-1 bg-red-400/10 border border-red-400/30 text-red-400 font-bold tracking-wider uppercase"
-                            style={{ fontFamily: "var(--font-condensed)" }}
-                          >
-                            Shortage
-                          </span>
-                        ) : pct >= 100 ? (
-                          <span className="flex items-center gap-1 text-[9px] text-green-400">
-                            <CheckCircle2 className="h-3 w-3" /> On Hand
-                          </span>
-                        ) : (
-                          <span className="text-[9px] text-muted-foreground">
-                            {pct}% received
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-foreground">
-                        {fmtCurrency(m.unit_price_current)}
-                        {m.unit_price_budgeted &&
-                          m.unit_price_current &&
-                          m.unit_price_current > m.unit_price_budgeted && (
-                            <p className="text-[9px] text-red-400">
-                              ↑ over budget
-                            </p>
-                          )}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/30 border-b border-border/40">
+                    {[
+                      "Material",
+                      "Project",
+                      "Vendor",
+                      "Qty",
+                      "Status",
+                      "Unit Price",
+                    ].map(h => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(m => {
+                    const shortage = m.is_shortage;
+                    const needed = m.quantity_needed ?? 0;
+                    const received = m.quantity_received ?? 0;
+                    const pct =
+                      needed > 0 ? Math.round((received / needed) * 100) : 100;
+
+                    return (
+                      <tr
+                        key={m.id}
+                        className={`border-b border-border/20 last:border-0 hover:bg-card/50 transition-colors ${
+                          shortage ? "bg-red-400/5" : ""
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {shortage ? (
+                              <PackageX className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                            ) : (
+                              <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            )}
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {m.name}
+                              </p>
+                              {m.category && (
+                                <p className="text-[10px] text-muted-foreground">
+                                  {m.category}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {(m as any).projects?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {m.vendor_name ?? "—"}
+                          {m.vendor_sku && (
+                            <p className="text-[10px] text-muted-foreground/60">
+                              SKU: {m.vendor_sku}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-xs text-foreground">
+                            {received}/{needed} {m.unit ?? ""}
+                          </p>
+                          <div className="mt-1 h-1 w-20 rounded-full bg-input">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                shortage
+                                  ? "bg-red-400"
+                                  : pct >= 100
+                                    ? "bg-green-400"
+                                    : "bg-primary"
+                              }`}
+                              style={{ width: `${Math.min(100, pct)}%` }}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {shortage ? (
+                            <span
+                              className="text-[9px] px-2 py-1 bg-red-400/10 border border-red-400/30 text-red-400 font-bold tracking-wider uppercase"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              Shortage
+                            </span>
+                          ) : pct >= 100 ? (
+                            <span className="flex items-center gap-1 text-[9px] text-green-400">
+                              <CheckCircle2 className="h-3 w-3" /> On Hand
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-muted-foreground">
+                              {pct}% received
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-foreground">
+                          {fmtCurrency(m.unit_price_current)}
+                          {m.unit_price_budgeted &&
+                            m.unit_price_current &&
+                            m.unit_price_current > m.unit_price_budgeted && (
+                              <p className="text-[9px] text-red-400">
+                                ↑ over budget
+                              </p>
+                            )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>
