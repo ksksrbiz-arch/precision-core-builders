@@ -115,10 +115,15 @@ export const handler: Handler = async event => {
       transcriptionText = input.transcript.trim();
     } else if (input.audio) {
       // Server-side transcription via OpenAI Whisper
-      // input.audio is a base64 string; convert to ArrayBuffer safely
+      // input.audio is a base64 string; convert to a properly-bounded ArrayBuffer
       const audioBuffer = Buffer.from(input.audio, "base64");
+      // Safely slice to avoid exposing the full shared Buffer pool
+      const safeArrayBuffer = audioBuffer.buffer.slice(
+        audioBuffer.byteOffset,
+        audioBuffer.byteOffset + audioBuffer.byteLength
+      );
       const mimeType = input.mimeType ?? "audio/webm";
-      const result = await transcribeAudio(audioBuffer.buffer, mimeType);
+      const result = await transcribeAudio(safeArrayBuffer, mimeType);
       transcriptionText = result.text;
     } else {
       return {

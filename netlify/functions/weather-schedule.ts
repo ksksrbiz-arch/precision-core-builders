@@ -104,7 +104,7 @@ export const handler: Handler = async event => {
         };
         const d = omData.daily;
         forecast = d.time.map((date, i) => {
-          const rainMm = (d.precipitation_sum[i] ?? 0) * 25.4; // inches → mm
+      const rainMm = (d.precipitation_sum[i] ?? 0) * 25.4; // Open-Meteo inches → mm (consistent with OpenWeatherMap path)
           const rainProbability = d.precipitation_probability_max[i] ?? 0;
           // WMO code ≥ 51 = drizzle/rain/snow/thunderstorm
           const wmoCode = d.weathercode[i] ?? 0;

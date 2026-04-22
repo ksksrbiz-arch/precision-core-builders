@@ -202,11 +202,15 @@ export default function FieldReportNew() {
       setStep("processing");
       setError("");
       try {
-        // Convert blob to base64 safely
+        // Convert blob to base64 safely (chunk-based to avoid stack overflow)
         const arrayBuf = await audioBlob.arrayBuffer();
-        const base64Audio = btoa(
-          String.fromCharCode(...new Uint8Array(arrayBuf))
-        );
+        const uint8 = new Uint8Array(arrayBuf);
+        let binary = "";
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+          binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+        }
+        const base64Audio = btoa(binary);
         const res = await fetch(`/api/voice-to-report`, {
           method: "POST",
           headers: {

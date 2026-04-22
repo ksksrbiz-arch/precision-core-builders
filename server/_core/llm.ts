@@ -116,7 +116,7 @@ async function invokeGemini(
     if (msg.role === "user") {
       const text =
         !systemInjected && system ? `${system}\n\n${msg.content}` : msg.content;
-      systemInjected = true;
+      if (!systemInjected) systemInjected = true;
       contents.push({ role: "user", parts: [{ text }] });
     } else if (msg.role === "assistant") {
       contents.push({ role: "model", parts: [{ text: msg.content }] });
@@ -125,7 +125,8 @@ async function invokeGemini(
 
   // Gemini requires alternating user/model turns; ensure starts with user
   if (contents.length === 0 || contents[0].role !== "user") {
-    contents.unshift({ role: "user", parts: [{ text: system || "Hello" }] });
+    if (!system) throw new Error("invokeLLM: no messages and no system prompt");
+    contents.unshift({ role: "user", parts: [{ text: system }] });
   }
 
   const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${ENV.googleAiApiKey}`;
