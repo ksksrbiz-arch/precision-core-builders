@@ -2,7 +2,7 @@
  * MobileBottomNav — Persistent bottom navigation for mobile admin.
  * 5 most-used actions, always accessible with thumb reach.
  */
-import { ClipboardList, HardHat, Mic, Pencil, Package } from "lucide-react";
+import { Calendar, ClipboardList, HardHat, Mic, Users } from "lucide-react";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 
@@ -15,8 +15,8 @@ const MOBILE_NAV = [
     path: "/admin/field-reports/new",
     accent: true,
   },
-  { icon: Pencil, label: "Plans", path: "/admin/site-plans" },
-  { icon: Package, label: "Materials", path: "/admin/materials" },
+  { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
+  { icon: Users, label: "Clients", path: "/admin/clients" },
 ];
 
 export function MobileBottomNav() {
@@ -62,20 +62,20 @@ export function MobileBottomNav() {
             <button
               key={item.path}
               onClick={() => setLocation(item.path)}
-              className={`flex flex-col items-center justify-center gap-1 min-w-[56px] py-1 active:scale-95 transition-transform ${
+              className={`relative flex flex-col items-center justify-center gap-1 min-w-[56px] py-1 active:scale-95 transition-transform ${
                 isActive ? "text-primary" : "text-muted-foreground"
               }`}
               aria-label={item.label}
             >
+              {isActive && (
+                <div className="absolute top-0 inset-x-3 h-0.5 bg-primary rounded-full" />
+              )}
               <Icon className={`h-5 w-5 ${isActive ? "text-primary" : ""}`} />
               <span
                 className={`text-[10px] ${isActive ? "font-semibold" : "font-medium"}`}
               >
                 {item.label}
               </span>
-              {isActive && (
-                <div className="absolute top-0 w-8 h-0.5 bg-primary rounded-full" />
-              )}
             </button>
           );
         })}
