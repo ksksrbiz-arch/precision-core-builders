@@ -272,7 +272,8 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0 py-2">
             <SidebarMenu className="px-2">
               {NAV.map(item => {
-                const isActive = getCurrentNavItem(location)?.path === item.path;
+                const isActive =
+                  getCurrentNavItem(location)?.path === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton

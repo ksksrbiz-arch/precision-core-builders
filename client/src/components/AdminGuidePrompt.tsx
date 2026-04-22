@@ -35,7 +35,11 @@ export function AdminGuidePrompt() {
   const guide = useMemo(() => getGuideByPath(location), [location]);
 
   useEffect(() => {
-    if (!guide || !location.startsWith("/admin") || location === "/admin/guides") {
+    if (
+      !guide ||
+      !location.startsWith("/admin") ||
+      location === "/admin/guides"
+    ) {
       setOpen(false);
       setSilencePrompt(false);
       return;
@@ -80,7 +84,9 @@ export function AdminGuidePrompt() {
                 onCheckedChange={checked => setSilencePrompt(checked === true)}
                 className="mt-0.5"
               />
-              <span>Don&apos;t auto-open this guide again for {guide.title}.</span>
+              <span>
+                Don&apos;t auto-open this guide again for {guide.title}.
+              </span>
             </label>
 
             <div className="flex flex-col gap-2 sm:flex-row">

@@ -2,7 +2,10 @@
  * GuideHelpButton — Small help icon that shows a guide topic inline.
  * Drop this into any admin page header to give contextual help.
  */
-import { GuideSheetContent, GuideSheetFooterButton } from "@/components/GuideSheetContent";
+import {
+  GuideSheetContent,
+  GuideSheetFooterButton,
+} from "@/components/GuideSheetContent";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import {

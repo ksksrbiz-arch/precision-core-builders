@@ -954,11 +954,31 @@ export const GUIDES: Guide[] = [
       {
         heading: "Sending a Notification",
         steps: [
-          { action: "Choose a delivery channel", detail: "Email for detail, SMS for urgency, in-app for portal-only updates." },
-          { action: "Pick the recipient scope", detail: "Send to one client, everyone on a project, or paste a direct client user ID when needed." },
-          { action: "Select the related project", detail: "Tie the message to a project whenever possible so it stays in the audit trail." },
-          { action: "Write a clear subject and message", detail: "Lead with the action the client needs to take or the update they need to know." },
-          { action: "Send or load a quick template", detail: "Templates help with recurring payment reminders and progress updates." },
+          {
+            action: "Choose a delivery channel",
+            detail:
+              "Email for detail, SMS for urgency, in-app for portal-only updates.",
+          },
+          {
+            action: "Pick the recipient scope",
+            detail:
+              "Send to one client, everyone on a project, or paste a direct client user ID when needed.",
+          },
+          {
+            action: "Select the related project",
+            detail:
+              "Tie the message to a project whenever possible so it stays in the audit trail.",
+          },
+          {
+            action: "Write a clear subject and message",
+            detail:
+              "Lead with the action the client needs to take or the update they need to know.",
+          },
+          {
+            action: "Send or load a quick template",
+            detail:
+              "Templates help with recurring payment reminders and progress updates.",
+          },
         ],
       },
       {
@@ -993,20 +1013,44 @@ export const GUIDES: Guide[] = [
         heading: "Adding a Portfolio Project",
         steps: [
           { action: 'Click "New Project Entry"' },
-          { action: "Fill in the title, category, location, and completion year" },
-          { action: "Add a short teaser description", detail: "This is what sells the click from the portfolio grid." },
-          { action: "Paste a cover image URL and gallery image URLs", detail: "Use polished finished-work images, not jobsite snapshots." },
-          { action: "Add the long-form story, testimonial, and square footage if you have it" },
-          { action: "Save draft first, then publish when the page reads clean" },
+          {
+            action:
+              "Fill in the title, category, location, and completion year",
+          },
+          {
+            action: "Add a short teaser description",
+            detail: "This is what sells the click from the portfolio grid.",
+          },
+          {
+            action: "Paste a cover image URL and gallery image URLs",
+            detail: "Use polished finished-work images, not jobsite snapshots.",
+          },
+          {
+            action:
+              "Add the long-form story, testimonial, and square footage if you have it",
+          },
+          {
+            action: "Save draft first, then publish when the page reads clean",
+          },
         ],
       },
       {
         heading: "Publishing Workflow",
         steps: [
           { action: "Review the preview card for layout and copy quality" },
-          { action: "Toggle Published only when photos and copy are client-safe" },
-          { action: "Use Edit to refresh copy, swap photos, or update categories later" },
-          { action: "Use Delete carefully", detail: "Deletion removes the entry from the admin list and public showcase." },
+          {
+            action:
+              "Toggle Published only when photos and copy are client-safe",
+          },
+          {
+            action:
+              "Use Edit to refresh copy, swap photos, or update categories later",
+          },
+          {
+            action: "Use Delete carefully",
+            detail:
+              "Deletion removes the entry from the admin list and public showcase.",
+          },
         ],
       },
       {
@@ -1035,7 +1079,11 @@ export const GUIDES: Guide[] = [
         heading: "Connecting Services",
         steps: [
           { action: "Work down the service cards from top to bottom" },
-          { action: "Paste each required credential exactly once", detail: "Wrong whitespace or partial keys will fail the live check." },
+          {
+            action: "Paste each required credential exactly once",
+            detail:
+              "Wrong whitespace or partial keys will fail the live check.",
+          },
           { action: "Run the test action for each service after saving" },
           { action: "Do not move on until the card status turns healthy" },
         ],
@@ -1044,8 +1092,16 @@ export const GUIDES: Guide[] = [
         heading: "Health Checks",
         steps: [
           { action: "Use refresh to re-run platform health" },
-          { action: "Read the status detail under each service", detail: "It tells you whether the failure is configuration, auth, or upstream availability." },
-          { action: "Use the admin token tools only when requested", detail: "These are sensitive operational actions, not daily workflow buttons." },
+          {
+            action: "Read the status detail under each service",
+            detail:
+              "It tells you whether the failure is configuration, auth, or upstream availability.",
+          },
+          {
+            action: "Use the admin token tools only when requested",
+            detail:
+              "These are sensitive operational actions, not daily workflow buttons.",
+          },
         ],
       },
       {
@@ -1070,10 +1126,24 @@ export const GUIDES: Guide[] = [
       {
         heading: "Running an Analysis",
         steps: [
-          { action: "Choose the analysis mode", detail: "Use the mode that matches the question you need answered." },
-          { action: "Upload a clear photo", detail: "Straight, well-lit, single-subject images get the best output." },
-          { action: "Add optional context before submitting", detail: "Room name, phase, or what you want checked helps the AI stay focused." },
-          { action: "Review the returned findings and copy anything useful into your report or project notes" },
+          {
+            action: "Choose the analysis mode",
+            detail: "Use the mode that matches the question you need answered.",
+          },
+          {
+            action: "Upload a clear photo",
+            detail:
+              "Straight, well-lit, single-subject images get the best output.",
+          },
+          {
+            action: "Add optional context before submitting",
+            detail:
+              "Room name, phase, or what you want checked helps the AI stay focused.",
+          },
+          {
+            action:
+              "Review the returned findings and copy anything useful into your report or project notes",
+          },
         ],
       },
       {
@@ -1095,7 +1165,8 @@ export const GUIDES: Guide[] = [
     id: "search",
     title: "Operational Search",
     icon: Search,
-    tagline: "Ask one question and search across projects, clients, reports, and more.",
+    tagline:
+      "Ask one question and search across projects, clients, reports, and more.",
     path: "/admin/search",
     paths: ["/admin/search"],
     sections: [
@@ -1106,9 +1177,20 @@ export const GUIDES: Guide[] = [
       {
         heading: "How To Search Well",
         steps: [
-          { action: "Ask in natural language", detail: 'Examples: "Which jobs are waiting on materials?" or "Show me unpaid invoices this month."' },
-          { action: "Use job names, client names, trade names, or problem keywords" },
-          { action: "Read the type tags on each result", detail: "They tell you whether the hit came from a project, report, material, or schedule item." },
+          {
+            action: "Ask in natural language",
+            detail:
+              'Examples: "Which jobs are waiting on materials?" or "Show me unpaid invoices this month."',
+          },
+          {
+            action:
+              "Use job names, client names, trade names, or problem keywords",
+          },
+          {
+            action: "Read the type tags on each result",
+            detail:
+              "They tell you whether the hit came from a project, report, material, or schedule item.",
+          },
           { action: "Click through to confirm context before acting" },
         ],
       },
@@ -1131,7 +1213,8 @@ export const GUIDES: Guide[] = [
     id: "finish-selections",
     title: "Finish Selections",
     icon: Layers,
-    tagline: "Track client finish choices with budget impact and approval history.",
+    tagline:
+      "Track client finish choices with budget impact and approval history.",
     path: "/admin/finishes",
     paths: ["/admin/finishes"],
     sections: [
@@ -1144,17 +1227,34 @@ export const GUIDES: Guide[] = [
         steps: [
           { action: "Open the project or client selection set" },
           { action: "Review the current allowance and option list" },
-          { action: "Add or update the selected item", detail: "Cabinet style, tile, flooring, fixtures, hardware, paint, and more." },
-          { action: "Confirm the cost delta before saving", detail: "Positive or negative changes should be visible before the client approves." },
-          { action: "Publish the approved choice to the client portal when it is ready for review" },
+          {
+            action: "Add or update the selected item",
+            detail:
+              "Cabinet style, tile, flooring, fixtures, hardware, paint, and more.",
+          },
+          {
+            action: "Confirm the cost delta before saving",
+            detail:
+              "Positive or negative changes should be visible before the client approves.",
+          },
+          {
+            action:
+              "Publish the approved choice to the client portal when it is ready for review",
+          },
         ],
       },
       {
         heading: "Why It Matters",
         steps: [
           { action: "Approved choices sync to the ledger" },
-          { action: "Budget deltas can inform billing or change-order conversations" },
-          { action: "Portal visibility reduces last-minute phone calls and confusion" },
+          {
+            action:
+              "Budget deltas can inform billing or change-order conversations",
+          },
+          {
+            action:
+              "Portal visibility reduces last-minute phone calls and confusion",
+          },
         ],
       },
       {
@@ -1168,7 +1268,8 @@ export const GUIDES: Guide[] = [
     id: "analytics",
     title: "Analytics",
     icon: BarChart3,
-    tagline: "Track pipeline, profitability, and production trends across the whole business.",
+    tagline:
+      "Track pipeline, profitability, and production trends across the whole business.",
     path: "/admin/analytics",
     paths: ["/admin/analytics"],
     sections: [
@@ -1179,10 +1280,26 @@ export const GUIDES: Guide[] = [
       {
         heading: "What To Review Weekly",
         steps: [
-          { action: "Revenue and budget variance charts", detail: "Look for jobs drifting away from estimate before they become painful." },
-          { action: "Lead pipeline status", detail: "Know how many leads are stuck, contracted, active, or complete." },
-          { action: "Report activity trends", detail: "Low reporting volume usually means field documentation is slipping." },
-          { action: "Project profitability comparisons", detail: "Use this to spot which job types are worth chasing more aggressively." },
+          {
+            action: "Revenue and budget variance charts",
+            detail:
+              "Look for jobs drifting away from estimate before they become painful.",
+          },
+          {
+            action: "Lead pipeline status",
+            detail:
+              "Know how many leads are stuck, contracted, active, or complete.",
+          },
+          {
+            action: "Report activity trends",
+            detail:
+              "Low reporting volume usually means field documentation is slipping.",
+          },
+          {
+            action: "Project profitability comparisons",
+            detail:
+              "Use this to spot which job types are worth chasing more aggressively.",
+          },
         ],
       },
       {
@@ -1204,7 +1321,8 @@ export const GUIDES: Guide[] = [
     id: "activity-log",
     title: "Activity Log",
     icon: FileText,
-    tagline: "Real-time audit visibility for operational actions across the platform.",
+    tagline:
+      "Real-time audit visibility for operational actions across the platform.",
     path: "/admin/activity-log",
     paths: ["/admin/activity-log"],
     sections: [
@@ -1215,10 +1333,23 @@ export const GUIDES: Guide[] = [
       {
         heading: "Best Uses",
         steps: [
-          { action: "Filter by action type", detail: "Narrow to notifications, project changes, reports, or system actions." },
-          { action: "Search by free text", detail: "Use a client name, project name, or event keyword." },
-          { action: "Use the date range when investigating a specific incident" },
-          { action: "Watch the live feed after triggering a workflow", detail: "If something failed, the signal usually shows up here first." },
+          {
+            action: "Filter by action type",
+            detail:
+              "Narrow to notifications, project changes, reports, or system actions.",
+          },
+          {
+            action: "Search by free text",
+            detail: "Use a client name, project name, or event keyword.",
+          },
+          {
+            action: "Use the date range when investigating a specific incident",
+          },
+          {
+            action: "Watch the live feed after triggering a workflow",
+            detail:
+              "If something failed, the signal usually shows up here first.",
+          },
         ],
       },
       {

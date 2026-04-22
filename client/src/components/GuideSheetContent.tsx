@@ -117,7 +117,11 @@ export function GuideSheetContent({
       className="w-[380px] sm:w-[420px] overflow-y-auto"
     >
       <SheetHeader className="pb-4 border-b border-border/40">
-        <GuideIdentity icon={Icon} title={guide.title} tagline={guide.tagline} />
+        <GuideIdentity
+          icon={Icon}
+          title={guide.title}
+          tagline={guide.tagline}
+        />
       </SheetHeader>
 
       <div className="py-4">
@@ -126,7 +130,11 @@ export function GuideSheetContent({
           defaultValue={guide.sections.map((_, i) => `sh-${i}`)}
         >
           {guide.sections.map((section, i) => (
-            <AccordionItem key={i} value={`sh-${i}`} className="border-border/25">
+            <AccordionItem
+              key={i}
+              value={`sh-${i}`}
+              className="border-border/25"
+            >
               <AccordionTrigger className="text-xs font-semibold py-2.5 hover:text-primary">
                 {section.heading}
               </AccordionTrigger>
@@ -152,7 +160,12 @@ export function GuideSheetFooterButton({
   ...props
 }: React.ComponentProps<typeof Button>) {
   return (
-    <Button variant="outline" size="sm" className="w-full text-xs gap-1.5" {...props}>
+    <Button
+      variant="outline"
+      size="sm"
+      className="w-full text-xs gap-1.5"
+      {...props}
+    >
       {children}
     </Button>
   );
