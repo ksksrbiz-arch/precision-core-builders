@@ -125,7 +125,7 @@ export const handler: Handler = async event => {
 
     if (!ENV.anthropicApiKey && !ENV.googleAiApiKey) {
       return {
-        statusCode: 503,
+        statusCode: 500,
         headers,
         body: JSON.stringify({
           error:

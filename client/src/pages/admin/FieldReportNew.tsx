@@ -36,6 +36,16 @@ const SpeechRecognitionAPI =
     ? window.SpeechRecognition ?? window.webkitSpeechRecognition
     : null;
 
+const SPEECH_ERROR_MESSAGES: Record<string, string> = {
+  "not-allowed":
+    "Microphone access denied. Please allow microphone permission and try again.",
+  "no-speech": "No speech detected. Please try speaking again.",
+  network:
+    "Network error during speech recognition. Please check your connection.",
+  "audio-capture":
+    "No microphone found. Please connect a microphone and try again.",
+};
+
 export default function FieldReportNew() {
   const [, setLocation] = useLocation();
   const { accessToken } = useAuth();
@@ -98,16 +108,8 @@ export default function FieldReportNew() {
 
         sr.onerror = e => {
           if (e.error !== "aborted") {
-            const errorMessages: Record<string, string> = {
-              "not-allowed":
-                "Microphone access denied. Please allow microphone permission and try again.",
-              "no-speech": "No speech detected. Please try speaking again.",
-              network: "Network error during speech recognition. Please check your connection.",
-              "audio-capture":
-                "No microphone found. Please connect a microphone and try again.",
-            };
             setError(
-              errorMessages[e.error] ??
+              SPEECH_ERROR_MESSAGES[e.error] ??
                 "Speech recognition failed. Please try again or use a different browser."
             );
           }

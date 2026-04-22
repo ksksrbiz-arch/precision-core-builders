@@ -13,6 +13,16 @@ type Message = {
   content: string;
 };
 
+function getChatErrorMessage(status: number, fallback?: string): string {
+  if (status === 429) {
+    return "⚠️ You're sending messages too quickly. Please wait a moment and try again.";
+  }
+  if (status === 503) {
+    return "⚠️ AI service is not available right now. Please check back shortly.";
+  }
+  return fallback ?? "⚠️ AI temporarily unavailable. Please try again.";
+}
+
 const QUICK_PROMPTS = [
   "What tasks are weather-sensitive?",
   "Draft a client update email",
@@ -58,16 +68,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
       const data = await res.json();
       let errorContent: string | undefined;
       if (!res.ok) {
-        if (res.status === 429) {
-          errorContent =
-            "⚠️ You're sending messages too quickly. Please wait a moment and try again.";
-        } else if (res.status === 503) {
-          errorContent =
-            "⚠️ AI service is not available right now. Please check back shortly.";
-        } else {
-          errorContent =
-            data.error ?? "⚠️ AI temporarily unavailable. Please try again.";
-        }
+        errorContent = getChatErrorMessage(res.status, data.error);
       }
       setMessages(prev =>
         prev.map(m =>

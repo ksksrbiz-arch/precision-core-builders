@@ -67,7 +67,7 @@ export const handler: Handler = async event => {
         statusCode: 400,
         headers,
         body: JSON.stringify({
-          error: "At minimum, provide a lead name or project type.",
+          error: "Please provide at least a lead name or project type.",
         }),
       };
     }
