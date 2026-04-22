@@ -829,7 +829,11 @@ export default function SitePlanBuilder() {
             {/* Export dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 shrink-0"
+                >
                   <Download className="h-4 w-4" />
                   <span className="hidden md:inline">Export</span>
                   <ChevronDown className="h-3 w-3" />
@@ -870,7 +874,11 @@ export default function SitePlanBuilder() {
             {/* Share — hide on very small screens to avoid overflow */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="hidden sm:flex shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden sm:flex shrink-0"
+                >
                   <Share2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -1112,7 +1120,9 @@ export default function SitePlanBuilder() {
                 ? `${excalidrawAPI.getSceneElements?.()?.length || 0} elements`
                 : "—"}
             </span>
-            <span className="text-amber-500/80 hidden sm:inline">Precision Core Builders</span>
+            <span className="text-amber-500/80 hidden sm:inline">
+              Precision Core Builders
+            </span>
           </div>
         </div>
       </div>

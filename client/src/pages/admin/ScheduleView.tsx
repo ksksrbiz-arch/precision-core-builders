@@ -104,7 +104,9 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
         <div className="grid grid-cols-7 gap-2 min-w-[420px] px-1">
           {days.map(day => {
             const date = new Date(day.date + "T12:00:00");
-            const label = date.toLocaleDateString("en-US", { weekday: "short" });
+            const label = date.toLocaleDateString("en-US", {
+              weekday: "short",
+            });
             const md = date.toLocaleDateString("en-US", {
               month: "numeric",
               day: "numeric",
