@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useState, useCallback, useRef } from "react";
 import {
   Camera,
@@ -86,6 +87,7 @@ const MODES: {
 ];
 
 export default function VisionStudioAdmin() {
+  const { accessToken } = useAuth();
   const [image, setImage] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mode, setMode] = useState<AnalysisMode>("general");
@@ -142,7 +144,12 @@ export default function VisionStudioAdmin() {
 
       const resp = await fetch("/.netlify/functions/vision-studio", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken
+            ? { Authorization: `Bearer ${accessToken}` }
+            : {}),
+        },
         body: JSON.stringify(payload),
       });
       const data = await resp.json();

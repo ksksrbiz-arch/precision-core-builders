@@ -18,6 +18,23 @@ type WeatherDay = {
   willRain: boolean;
 };
 
+/**
+ * Convert WMO Weather Interpretation Code to human-readable description.
+ * Reference: https://open-meteo.com/en/docs#weathervariables
+ */
+function wmoCodeToDescription(code: number): string {
+  if (code === 0) return "clear sky";
+  if (code <= 2) return "partly cloudy";
+  if (code === 3) return "overcast";
+  if (code <= 49) return "foggy";
+  if (code <= 59) return "drizzle";
+  if (code <= 69) return "rain";
+  if (code <= 79) return "snow";
+  if (code <= 84) return "rain showers";
+  if (code <= 94) return "snow showers";
+  return "thunderstorm";
+}
+
 export const handler: Handler = async event => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -30,6 +47,7 @@ export const handler: Handler = async event => {
     const apiKey = process.env.OPENWEATHERMAP_API_KEY;
 
     // Fetch 7-day forecast for Eugene OR
+    // Priority: OpenWeatherMap (if key set) → Open-Meteo (free, no key needed)
     let forecast: WeatherDay[] = [];
     if (apiKey) {
       const res = await fetch(
@@ -64,20 +82,59 @@ export const handler: Handler = async event => {
       }
       forecast = Array.from(byDay.values()).slice(0, 7);
     } else {
-      // Mock forecast when no API key
-      forecast = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        return {
-          date: d.toISOString().split("T")[0],
-          description: i % 3 === 0 ? "rain" : "partly cloudy",
-          tempHigh: 58,
-          tempLow: 42,
-          rainProbability: i % 3 === 0 ? 80 : 20,
-          rainMm: i % 3 === 0 ? 12 : 0,
-          willRain: i % 3 === 0,
+      // Open-Meteo: completely free, no API key required.
+      // Docs: https://open-meteo.com/en/docs
+      const omRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast` +
+          `?latitude=${EUGENE_OR.lat}&longitude=${EUGENE_OR.lng}` +
+          `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weathercode` +
+          `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch` +
+          `&timezone=America%2FLos_Angeles&forecast_days=7`
+      );
+      if (omRes.ok) {
+        const omData = (await omRes.json()) as {
+          daily: {
+            time: string[];
+            temperature_2m_max: number[];
+            temperature_2m_min: number[];
+            precipitation_sum: number[];
+            precipitation_probability_max: number[];
+            weathercode: number[];
+          };
         };
-      });
+        const d = omData.daily;
+        forecast = d.time.map((date, i) => {
+      const rainMm = (d.precipitation_sum[i] ?? 0) * 25.4; // Open-Meteo inches → mm (consistent with OpenWeatherMap path)
+          const rainProbability = d.precipitation_probability_max[i] ?? 0;
+          // WMO code ≥ 51 = drizzle/rain/snow/thunderstorm
+          const wmoCode = d.weathercode[i] ?? 0;
+          const description = wmoCodeToDescription(wmoCode);
+          return {
+            date,
+            description,
+            tempHigh: Math.round(d.temperature_2m_max[i] ?? 55),
+            tempLow: Math.round(d.temperature_2m_min[i] ?? 40),
+            rainProbability: Math.round(rainProbability),
+            rainMm: Math.round(rainMm * 10) / 10,
+            willRain: rainProbability > 50 || wmoCode >= 51,
+          };
+        });
+      } else {
+        // Last resort: static mock (should rarely hit this)
+        forecast = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() + i);
+          return {
+            date: d.toISOString().split("T")[0],
+            description: i % 3 === 0 ? "rain" : "partly cloudy",
+            tempHigh: 58,
+            tempLow: 42,
+            rainProbability: i % 3 === 0 ? 80 : 20,
+            rainMm: i % 3 === 0 ? 12 : 0,
+            willRain: i % 3 === 0,
+          };
+        });
+      }
     }
 
     // Get weather-sensitive schedule items for this project
