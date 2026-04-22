@@ -78,6 +78,15 @@ const DEFAULT_WIDTH = 240;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 360;
 
+// Returns the NAV item that best matches the given location.
+function getCurrentNavItem(location: string) {
+  return NAV.find(
+    item =>
+      location === item.path ||
+      (item.path !== "/admin" && location.startsWith(item.path))
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -259,9 +268,7 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0 py-2">
             <SidebarMenu className="px-2">
               {NAV.map(item => {
-                const isActive =
-                  location === item.path ||
-                  (item.path !== "/admin" && location.startsWith(item.path));
+                const isActive = getCurrentNavItem(location)?.path === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
@@ -343,12 +350,20 @@ function DashboardLayoutContent({
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
           >
             <SidebarTrigger className="h-10 w-10 rounded flex-shrink-0" />
-            <span
-              className="text-xs font-bold tracking-widest uppercase text-muted-foreground truncate flex-1"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Precision Core
-            </span>
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-sm font-semibold text-foreground truncate leading-tight"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {getCurrentNavItem(location)?.label ?? "Admin"}
+              </p>
+              <p
+                className="text-[10px] tracking-widest uppercase text-muted-foreground/60 leading-tight"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Precision Core
+              </p>
+            </div>
             <button
               onClick={() => setLocation("/admin/field-reports/new")}
               className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"

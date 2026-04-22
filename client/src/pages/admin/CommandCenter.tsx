@@ -17,6 +17,8 @@ import {
   DollarSign,
   Loader2,
   Plus,
+  Settings,
+  Sparkles,
   TrendingUp,
   Users,
   Zap,
@@ -403,6 +405,80 @@ export default function CommandCenter() {
             </button>
           </div>
         </div>
+
+        {/* Getting Started — shown only when platform has no projects yet */}
+        {stats?.total === 0 && (
+          <div className="border border-primary/30 bg-primary/5 p-5 mb-6">
+            <div className="flex items-start gap-3 mb-4">
+              <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <h2
+                  className="text-sm font-semibold text-foreground mb-1"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Welcome to Precision Core Builders
+                </h2>
+                <p className="text-xs text-muted-foreground font-light leading-relaxed">
+                  Your platform is live. Complete these steps to go fully
+                  operational.
+                </p>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <button
+                onClick={() => setLocation("/onboarding")}
+                className="flex items-start gap-3 p-3 border border-primary/30 bg-primary/10 hover:bg-primary/20 transition-colors text-left"
+              >
+                <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p
+                    className="text-[11px] font-bold tracking-wider uppercase text-primary"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Run Setup Wizard
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                    Connect Supabase, AI, weather &amp; payments step-by-step
+                  </p>
+                </div>
+              </button>
+              <button
+                onClick={() => setLocation("/admin/setup")}
+                className="flex items-start gap-3 p-3 border border-border/60 hover:border-primary/30 hover:bg-primary/5 transition-colors text-left"
+              >
+                <Settings className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p
+                    className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Platform Health
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                    View &amp; test all service integrations
+                  </p>
+                </div>
+              </button>
+              <button
+                onClick={() => setLocation("/admin/projects/new")}
+                className="flex items-start gap-3 p-3 border border-border/60 hover:border-primary/30 hover:bg-primary/5 transition-colors text-left"
+              >
+                <ClipboardList className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p
+                    className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Add First Project
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                    Create a project to start tracking work
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
