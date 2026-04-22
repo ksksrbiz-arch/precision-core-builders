@@ -75,8 +75,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
           m.id === assistantId
             ? {
                 ...m,
-                content:
-                  errorContent ?? data.text ?? "No response received.",
+                content: errorContent ?? data.text ?? "No response received.",
               }
             : m
         )

@@ -146,9 +146,7 @@ export default function VisionStudioAdmin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken
-            ? { Authorization: `Bearer ${accessToken}` }
-            : {}),
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify(payload),
       });

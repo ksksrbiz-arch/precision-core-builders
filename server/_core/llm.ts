@@ -46,8 +46,12 @@ async function invokeAnthropic(
   params: LLMInvokeParams & { system: string; conversationMsgs: LLMMessage[] }
 ): Promise<LLMResult> {
   const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
-  const { system, conversationMsgs, maxTokens = 4096, temperature = 0.3 } =
-    params;
+  const {
+    system,
+    conversationMsgs,
+    maxTokens = 4096,
+    temperature = 0.3,
+  } = params;
 
   const sdkMessages: Anthropic.MessageParam[] = conversationMsgs.map(m => ({
     role: m.role as "user" | "assistant",

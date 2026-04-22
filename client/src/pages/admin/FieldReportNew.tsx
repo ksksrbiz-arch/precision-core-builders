@@ -28,9 +28,10 @@ type SpeechRecognitionAlternativeLike = {
   transcript: string;
 };
 
-type SpeechRecognitionResultLike = ArrayLike<SpeechRecognitionAlternativeLike> & {
-  isFinal: boolean;
-};
+type SpeechRecognitionResultLike =
+  ArrayLike<SpeechRecognitionAlternativeLike> & {
+    isFinal: boolean;
+  };
 
 type SpeechRecognitionEventLike = Event & {
   results: ArrayLike<SpeechRecognitionResultLike>;
@@ -59,9 +60,12 @@ declare global {
   }
 }
 
-const SpeechRecognitionAPI: (new () => BrowserSpeechRecognition) | null =
+const SpeechRecognitionAPI:
+  | (new () => BrowserSpeechRecognition)
+  | null
+  | undefined =
   typeof window !== "undefined"
-    ? window.SpeechRecognition ?? window.webkitSpeechRecognition
+    ? (window.SpeechRecognition ?? window.webkitSpeechRecognition)
     : null;
 
 const SPEECH_ERROR_MESSAGES: Record<string, string> = {
@@ -223,9 +227,7 @@ export default function FieldReportNew() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(accessToken
-              ? { Authorization: `Bearer ${accessToken}` }
-              : {}),
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({ projectId, transcript }),
         });
@@ -275,9 +277,7 @@ export default function FieldReportNew() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(accessToken
-              ? { Authorization: `Bearer ${accessToken}` }
-              : {}),
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             projectId,

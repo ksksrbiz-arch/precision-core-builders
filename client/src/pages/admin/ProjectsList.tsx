@@ -180,8 +180,8 @@ export default function ProjectsList() {
                   ← Prev
                 </button>
                 <span className="text-xs text-muted-foreground">
-                  {(page - 1) * 20 + 1}–
-                  {Math.min(page * 20, data?.total ?? 0)} of {data?.total}
+                  {(page - 1) * 20 + 1}–{Math.min(page * 20, data?.total ?? 0)}{" "}
+                  of {data?.total}
                 </span>
                 <button
                   disabled={page * 20 >= (data?.total ?? 0)}
@@ -275,8 +275,8 @@ export default function ProjectsList() {
             {(data?.total ?? 0) > 20 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
                 <p className="text-xs text-muted-foreground">
-                  {(page - 1) * 20 + 1}–
-                  {Math.min(page * 20, data?.total ?? 0)} of {data?.total}
+                  {(page - 1) * 20 + 1}–{Math.min(page * 20, data?.total ?? 0)}{" "}
+                  of {data?.total}
                 </p>
                 <div className="flex gap-2">
                   <button

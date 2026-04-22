@@ -3,13 +3,7 @@
  * Prioritizes high-frequency field workflows: home, projects, new report,
  * schedule, and search.
  */
-import {
-  Calendar,
-  ClipboardList,
-  HardHat,
-  Mic,
-  Search,
-} from "lucide-react";
+import { Calendar, ClipboardList, HardHat, Mic, Search } from "lucide-react";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 

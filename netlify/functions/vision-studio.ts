@@ -265,8 +265,7 @@ export const handler: Handler = async event => {
   } catch (err: unknown) {
     console.error("[vision-studio] Error:", err);
     const isConfigError =
-      err instanceof Error &&
-      err.message.includes("No LLM API key configured");
+      err instanceof Error && err.message.includes("No LLM API key configured");
     const message = isConfigError
       ? "Vision AI is not configured. Please contact the site administrator."
       : err instanceof Error

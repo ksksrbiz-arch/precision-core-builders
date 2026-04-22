@@ -139,7 +139,9 @@ export default function EstimatesList() {
                       </p>
                       <div className="mt-1 flex items-center gap-1 text-foreground">
                         <DollarSign className="h-3 w-3 text-primary" />
-                        <span className="font-medium">{fmt(est.estimated_low)}</span>
+                        <span className="font-medium">
+                          {fmt(est.estimated_low)}
+                        </span>
                         <span className="text-muted-foreground/50">–</span>
                         <span className="font-medium">
                           {fmt(est.estimated_high)}
@@ -180,7 +182,7 @@ export default function EstimatesList() {
                     )}
                   </div>
 
-                  {( !isSent || (isSent && !isApproved)) && (
+                  {(!isSent || (isSent && !isApproved)) && (
                     <div className="flex flex-col gap-2 sm:flex-row">
                       {!isSent && (
                         <button
