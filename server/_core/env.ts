@@ -11,6 +11,9 @@ export const ENV = {
   // AI / LLM
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
+  // Google Gemini — free tier via Google AI Studio (no credit card required)
+  // Get a free key at: https://aistudio.google.com/app/apikey
+  googleAiApiKey: process.env.GOOGLE_AI_API_KEY ?? "",
 
   // External APIs
   openWeatherApiKey: process.env.OPENWEATHERMAP_API_KEY ?? "",

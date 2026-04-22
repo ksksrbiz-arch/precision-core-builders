@@ -1,5 +1,8 @@
 /**
  * New Field Report — voice recording UI + AI report generation.
+ * Transcription priority:
+ *   1. Web Speech API (browser-native, free) — used when available
+ *   2. OpenAI Whisper (server-side, requires OPENAI_API_KEY) — fallback
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
@@ -20,6 +23,19 @@ import { useLocation } from "wouter";
 
 type Step = "select" | "record" | "processing" | "review" | "done";
 
+// Web Speech API type declarations
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
+const SpeechRecognitionAPI =
+  typeof window !== "undefined"
+    ? window.SpeechRecognition ?? window.webkitSpeechRecognition
+    : null;
+
 export default function FieldReportNew() {
   const [, setLocation] = useLocation();
   const { accessToken } = useAuth();
@@ -27,6 +43,11 @@ export default function FieldReportNew() {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  // Web Speech API state
+  const [liveTranscript, setLiveTranscript] = useState("");
+  const [finalTranscript, setFinalTranscript] = useState("");
+  const speechRef = useRef<SpeechRecognition | null>(null);
+  const usingWebSpeech = SpeechRecognitionAPI !== null;
   const [recordingTime, setRecordingTime] = useState(0);
   const [report, setReport] = useState<any>(null);
   const [editedSummary, setEditedSummary] = useState("");
@@ -48,30 +69,91 @@ export default function FieldReportNew() {
   );
 
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      mediaRef.current = mr;
-      chunksRef.current = [];
-      mr.ondataavailable = e => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-      mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        setAudioBlob(blob);
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mr.start(1000);
-      setRecording(true);
-      setRecordingTime(0);
-      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-    } catch (err) {
-      setError("Could not access microphone. Please check permissions.");
+    setError("");
+    setLiveTranscript("");
+    setFinalTranscript("");
+    setRecordingTime(0);
+
+    if (usingWebSpeech) {
+      // ── Web Speech API path (free, browser-native) ──────────────────────────
+      try {
+        const sr = new SpeechRecognitionAPI!();
+        sr.continuous = true;
+        sr.interimResults = true;
+        sr.lang = "en-US";
+
+        sr.onresult = e => {
+          let interim = "";
+          let final = "";
+          for (let i = 0; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              final += e.results[i][0].transcript + " ";
+            } else {
+              interim += e.results[i][0].transcript;
+            }
+          }
+          setFinalTranscript(final);
+          setLiveTranscript(interim);
+        };
+
+        sr.onerror = e => {
+          if (e.error !== "aborted") {
+            setError(`Speech recognition error: ${e.error}`);
+          }
+        };
+
+        sr.onend = () => {
+          setRecording(false);
+          if (timerRef.current) clearInterval(timerRef.current);
+        };
+
+        sr.start();
+        speechRef.current = sr;
+        setRecording(true);
+        timerRef.current = setInterval(
+          () => setRecordingTime(t => t + 1),
+          1000
+        );
+      } catch (err) {
+        setError(
+          "Could not start speech recognition. Please check microphone permissions."
+        );
+      }
+    } else {
+      // ── MediaRecorder fallback (audio blob → Whisper server-side) ───────────
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
+        mediaRef.current = mr;
+        chunksRef.current = [];
+        mr.ondataavailable = e => {
+          if (e.data.size > 0) chunksRef.current.push(e.data);
+        };
+        mr.onstop = () => {
+          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+          setAudioBlob(blob);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mr.start(1000);
+        setRecording(true);
+        timerRef.current = setInterval(
+          () => setRecordingTime(t => t + 1),
+          1000
+        );
+      } catch (err) {
+        setError("Could not access microphone. Please check permissions.");
+      }
     }
   };
 
   const stopRecording = () => {
-    mediaRef.current?.stop();
+    if (usingWebSpeech) {
+      speechRef.current?.stop();
+    } else {
+      mediaRef.current?.stop();
+    }
     setRecording(false);
     if (timerRef.current) clearInterval(timerRef.current);
   };
@@ -84,25 +166,70 @@ export default function FieldReportNew() {
   );
 
   const processAudio = async () => {
-    if (!audioBlob || !projectId) return;
-    setStep("processing");
-    setError("");
-    try {
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "field-memo.webm");
-      const res = await fetch(`/api/voice-to-report?projectId=${projectId}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Processing failed");
-      setReport(data.report);
-      setEditedSummary(data.report.summary ?? "");
-      setStep("review");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Processing failed");
-      setStep("record");
+    if (usingWebSpeech) {
+      // Web Speech path — transcript already captured, send text directly
+      const transcript = (finalTranscript + liveTranscript).trim();
+      if (!transcript) {
+        setError("No speech detected. Please try recording again.");
+        return;
+      }
+      if (!projectId) return;
+      setStep("processing");
+      setError("");
+      try {
+        const res = await fetch(`/api/voice-to-report`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken
+              ? { Authorization: `Bearer ${accessToken}` }
+              : {}),
+          },
+          body: JSON.stringify({ projectId, transcript }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Processing failed");
+        setReport(data.report);
+        setEditedSummary(data.report.summary ?? "");
+        setStep("review");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Processing failed");
+        setStep("record");
+      }
+    } else {
+      // Whisper path — encode audio blob as base64 and send as JSON
+      if (!audioBlob || !projectId) return;
+      setStep("processing");
+      setError("");
+      try {
+        // Convert blob to base64 safely
+        const arrayBuf = await audioBlob.arrayBuffer();
+        const base64Audio = btoa(
+          String.fromCharCode(...new Uint8Array(arrayBuf))
+        );
+        const res = await fetch(`/api/voice-to-report`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken
+              ? { Authorization: `Bearer ${accessToken}` }
+              : {}),
+          },
+          body: JSON.stringify({
+            projectId,
+            audio: base64Audio,
+            mimeType: "audio/webm",
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Processing failed");
+        setReport(data.report);
+        setEditedSummary(data.report.summary ?? "");
+        setStep("review");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Processing failed");
+        setStep("record");
+      }
     }
   };
 
@@ -198,12 +325,17 @@ export default function FieldReportNew() {
 
         {step === "record" && (
           <div className="bg-card border border-border/60 p-8 text-center">
-            <p className="text-xs text-muted-foreground mb-8 font-light">
+            <p className="text-xs text-muted-foreground mb-6 font-light">
               Project:{" "}
               <strong className="text-foreground">
                 {projects?.data.find(p => p.id === projectId)?.name}
               </strong>
             </p>
+            {usingWebSpeech && (
+              <p className="text-[10px] bg-green-500/10 text-green-600 border border-green-500/20 rounded px-2 py-1 inline-block mb-4">
+                🎙️ Using browser speech recognition — no API key required
+              </p>
+            )}
             {/* Recording indicator */}
             <div
               className={`h-28 w-28 rounded-full border-4 flex items-center justify-center mx-auto mb-6 transition-all ${
@@ -223,14 +355,31 @@ export default function FieldReportNew() {
                 {fmt(recordingTime)}
               </p>
             )}
+
+            {/* Live transcript preview (Web Speech only) */}
+            {usingWebSpeech && (finalTranscript || liveTranscript) && (
+              <div className="text-left bg-muted/30 border border-border/40 rounded p-3 mb-4 max-h-32 overflow-y-auto">
+                <p className="text-xs text-foreground leading-relaxed">
+                  {finalTranscript}
+                  {liveTranscript && (
+                    <span className="text-muted-foreground italic">
+                      {liveTranscript}
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+
             <p className="text-sm text-muted-foreground mb-8 font-light">
               {recording
                 ? "Recording… speak clearly about today's progress, materials, and any issues."
-                : "Press record when ready to report on today's site work."}
+                : usingWebSpeech && finalTranscript
+                  ? "Recording complete. Review transcript above, then process."
+                  : "Press record when ready to report on today's site work."}
             </p>
             {error && <p className="text-sm text-destructive mb-4">{error}</p>}
             <div className="flex gap-3 justify-center">
-              {!recording && !audioBlob && (
+              {!recording && !audioBlob && !finalTranscript && (
                 <button
                   onClick={startRecording}
                   className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white text-[11px] font-bold tracking-widest uppercase hover:bg-red-600 transition-colors"
@@ -248,7 +397,31 @@ export default function FieldReportNew() {
                   <Square className="h-4 w-4" /> Stop
                 </button>
               )}
-              {audioBlob && !recording && (
+              {/* Web Speech path: show re-record + process after recording stops */}
+              {usingWebSpeech && !recording && finalTranscript && (
+                <>
+                  <button
+                    onClick={() => {
+                      setFinalTranscript("");
+                      setLiveTranscript("");
+                      setRecordingTime(0);
+                    }}
+                    className="px-5 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <MicOff className="h-4 w-4 inline mr-1" /> Re-record
+                  </button>
+                  <button
+                    onClick={processAudio}
+                    className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Send className="h-4 w-4" /> Process Report
+                  </button>
+                </>
+              )}
+              {/* MediaRecorder path: show re-record + process after audio captured */}
+              {!usingWebSpeech && audioBlob && !recording && (
                 <>
                   <button
                     onClick={() => {
@@ -276,7 +449,11 @@ export default function FieldReportNew() {
         {step === "processing" && (
           <div className="bg-card border border-border/60 p-12 text-center">
             <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
-            <p className="text-sm font-medium mb-1">Transcribing your memo…</p>
+            <p className="text-sm font-medium mb-1">
+              {usingWebSpeech
+                ? "Generating field report…"
+                : "Transcribing your memo…"}
+            </p>
             <p className="text-xs text-muted-foreground font-light">
               Generating structured field report with AI
             </p>

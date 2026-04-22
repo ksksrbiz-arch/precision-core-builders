@@ -1,7 +1,12 @@
 /**
  * Voice-to-Report Netlify Function
- * Accepts audio (multipart), transcribes with Whisper, generates structured
- * field report via Gemini, saves to field_reports table.
+ *
+ * Accepts two input modes:
+ *  1. JSON body: { projectId, transcript } — pre-transcribed text (from Web Speech API)
+ *  2. JSON body: { projectId, audio, mimeType } — base64-encoded audio, transcribed
+ *     server-side via OpenAI Whisper (requires OPENAI_API_KEY)
+ *
+ * Generates a structured field report via Claude/Gemini and saves to field_reports table.
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
@@ -75,20 +80,25 @@ export const handler: Handler = async event => {
       };
     }
 
-    // Parse multipart body
-    const body = event.body;
-    if (!body)
+    if (!event.body) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ error: "No body" }),
       };
+    }
 
-    const isBase64 = event.isBase64Encoded;
-    const rawBody = isBase64 ? Buffer.from(body, "base64") : Buffer.from(body);
+    // Parse JSON body — all input modes use JSON
+    const input = JSON.parse(event.body) as {
+      projectId?: number;
+      transcript?: string;
+      audio?: string; // base64-encoded audio data
+      mimeType?: string;
+    };
 
-    // Extract projectId from query params
-    const projectId = parseInt(event.queryStringParameters?.projectId ?? "0");
+    const projectId =
+      input.projectId ??
+      parseInt(event.queryStringParameters?.projectId ?? "0");
     if (!projectId) {
       return {
         statusCode: 400,
@@ -97,44 +107,36 @@ export const handler: Handler = async event => {
       };
     }
 
-    // Get content type for multipart boundary
-    const contentType = event.headers["content-type"] ?? "audio/webm";
-    const isMultipart = contentType.includes("multipart");
+    // ── 1. Get transcription text ─────────────────────────────────────────────
+    let transcriptionText: string;
 
-    let audioBuffer: ArrayBuffer;
-    let mimeType = "audio/webm";
-
-    if (isMultipart) {
-      // Extract audio from multipart — find binary part
-      const boundary = contentType.split("boundary=")[1];
-      if (!boundary) throw new Error("No multipart boundary");
-      const parts = rawBody.toString().split(`--${boundary}`);
-      const audioPart = parts.find(p => p.includes("audio"));
-      if (!audioPart) throw new Error("No audio part in multipart");
-      const bodyStart = audioPart.indexOf("\r\n\r\n") + 4;
-      const bodyEnd = audioPart.lastIndexOf("\r\n");
-      audioBuffer = Buffer.from(
-        audioPart.slice(bodyStart, bodyEnd),
-        "binary"
-      ).buffer;
-      const mimeMatch = audioPart.match(/Content-Type: ([^\r\n]+)/);
-      if (mimeMatch) mimeType = mimeMatch[1].trim();
+    if (input.transcript && input.transcript.trim().length > 0) {
+      // Fast path: client already transcribed via Web Speech API (free)
+      transcriptionText = input.transcript.trim();
+    } else if (input.audio) {
+      // Server-side transcription via OpenAI Whisper
+      // input.audio is a base64 string; convert to ArrayBuffer safely
+      const audioBuffer = Buffer.from(input.audio, "base64");
+      const mimeType = input.mimeType ?? "audio/webm";
+      const result = await transcribeAudio(audioBuffer.buffer, mimeType);
+      transcriptionText = result.text;
     } else {
-      // Raw audio body
-      audioBuffer = rawBody.buffer;
-      mimeType = contentType;
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          error: "Either 'transcript' (text) or 'audio' (base64) is required",
+        }),
+      };
     }
 
-    // 1. Transcribe with Whisper
-    const transcription = await transcribeAudio(audioBuffer, mimeType);
-
-    // 2. Generate structured report with Gemini
+    // ── 2. Generate structured report with Claude/Gemini ──────────────────────
     const llmResult = await invokeLLM({
       messages: [
         { role: "system", content: FIELD_REPORT_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Field memo transcription:\n\n${transcription.text}`,
+          content: `Field memo transcription:\n\n${transcriptionText}`,
         },
       ],
       jsonMode: true,
@@ -154,7 +156,7 @@ export const handler: Handler = async event => {
       reportData = JSON.parse(llmResult.text);
     } catch {
       reportData = {
-        summary: transcription.text.slice(0, 500),
+        summary: transcriptionText.slice(0, 500),
         tasksCompleted: [],
         materialsUsed: [],
         issuesFlagged: [],
@@ -162,14 +164,14 @@ export const handler: Handler = async event => {
       };
     }
 
-    // 3. Save to field_reports table
+    // ── 3. Save to field_reports table ────────────────────────────────────────
     const { data: report, error: dbError } = await db
       .from("field_reports")
       .insert({
         project_id: projectId,
         author_id: authResult.user.id,
         report_date: new Date().toISOString(),
-        transcription: transcription.text,
+        transcription: transcriptionText,
         summary: reportData.summary,
         tasks_completed: JSON.stringify(reportData.tasksCompleted),
         materials_used: JSON.stringify(reportData.materialsUsed),
