@@ -25,13 +25,13 @@ export type ProjectCategory =
 export type PhotoRole = "before" | "after" | "progress" | "hero";
 
 export interface ProjectPhoto {
-  file: string; // e.g. "hottub-deck-01.jpg" — resolves to /portfolio/<file>
+  file: string; // filename or absolute URL
   role: PhotoRole;
   caption?: string;
 }
 
 export interface BeforeAfter {
-  before: string; // filename only, from /portfolio/
+  before: string; // filename or absolute URL
   after: string;
   caption?: string;
 }
@@ -72,57 +72,28 @@ export const PROJECTS: Project[] = [
       "Accessory structure siding, trim, and finish",
     ],
     featured: true,
-    hero: "signature-outdoor-01.jpg",
-    beforeAfter: {
-      before: "pergola-deck-01.jpg",
-      after: "signature-outdoor-01.jpg",
-      caption: "From bare frame to outdoor living room",
-    },
+    hero:
+      "https://github.com/user-attachments/assets/f7b02df1-994b-451f-be6a-7efd3aa10a30",
     photos: [
       {
-        file: "signature-outdoor-01.jpg",
-        role: "hero",
-        caption: "Finished outdoor living room",
-      },
-      {
-        file: "signature-deck-01.jpg",
-        role: "hero",
-        caption: "Raw cedar pergola stage",
-      },
-      {
-        file: "pergola-deck-01.jpg",
-        role: "progress",
-        caption: "Pergola framing install",
-      },
-      {
-        file: "pergola-deck-02.jpg",
-        role: "progress",
-        caption: "Deck progress",
-      },
-      {
-        file: "pergola-deck-03.jpg",
+        file: "https://github.com/user-attachments/assets/f7b02df1-994b-451f-be6a-7efd3aa10a30",
         role: "after",
-        caption: "Composite step detail",
+        caption: "Tadlock Residence — after photo 1",
       },
       {
-        file: "cedar-fence-01.jpg",
-        role: "progress",
-        caption: "Cedar privacy fence going up",
+        file: "https://github.com/user-attachments/assets/b6a46033-3bd9-412a-985d-566a3ab80b81",
+        role: "after",
+        caption: "Tadlock Residence — after photo 2",
       },
       {
-        file: "cedar-fence-02.jpg",
-        role: "progress",
-        caption: "Fence panel assembly",
+        file: "https://github.com/user-attachments/assets/f94cc967-76d7-46e3-aaf2-c0a13dabd8cd",
+        role: "after",
+        caption: "Tadlock Residence — after photo 3",
       },
       {
-        file: "front-fence-01.jpg",
-        role: "hero",
-        caption: "Front hog-wire fence",
-      },
-      {
-        file: "front-fence-02.jpg",
-        role: "hero",
-        caption: "Matched-stain front and rear fencing",
+        role: "after",
+        file: "https://github.com/user-attachments/assets/8547275d-27d3-438e-92bf-ff5ec3e685e5",
+        caption: "Tadlock Residence — after photo 4",
       },
     ],
   },
@@ -418,8 +389,9 @@ export const CATEGORIES: ProjectCategory[] = [
   "Fencing & Structures",
 ];
 
-/** Helper: resolve a photo filename to its public URL */
-export const photoUrl = (file: string) => `/portfolio/${file}`;
+/** Helper: resolve a photo filename or absolute URL */
+export const photoUrl = (file: string) =>
+  /^https?:\/\//i.test(file) ? file : `/portfolio/${file}`;
 
 /** Find a project by slug */
 export const getProject = (slug: string) => PROJECTS.find(p => p.slug === slug);
