@@ -55,12 +55,28 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      let errorContent: string | undefined;
+      if (!res.ok) {
+        if (res.status === 429) {
+          errorContent =
+            "⚠️ You're sending messages too quickly. Please wait a moment and try again.";
+        } else if (res.status === 503) {
+          errorContent =
+            "⚠️ AI service is not available right now. Please check back shortly.";
+        } else {
+          errorContent =
+            data.error ?? "⚠️ AI temporarily unavailable. Please try again.";
+        }
+      }
       setMessages(prev =>
         prev.map(m =>
           m.id === assistantId
-            ? { ...m, content: data.text ?? "No response." }
+            ? {
+                ...m,
+                content:
+                  errorContent ?? data.text ?? "No response received.",
+              }
             : m
         )
       );
@@ -71,7 +87,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
             ? {
                 ...m,
                 content:
-                  "⚠️ AI unavailable. Check ANTHROPIC_API_KEY in Netlify env.",
+                  "⚠️ Connection error. Please check your internet and try again.",
               }
             : m
         )

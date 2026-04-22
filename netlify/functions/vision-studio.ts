@@ -10,7 +10,8 @@ import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import { verifyAuth } from "./_utils/authGuard";
 
 /**
- * Vision Studio — Claude Vision API endpoint.
+ * Vision Studio — AI photo analysis endpoint.
+ * Primary: Claude Vision (Anthropic). Fallback: Gemini Vision (Google AI).
  * Accepts base64-encoded images and returns AI analysis
  * for construction site photos, material inspection, progress tracking, etc.
  */
@@ -122,53 +123,126 @@ export const handler: Handler = async event => {
       };
     }
 
-    if (!ENV.anthropicApiKey) {
+    if (!ENV.anthropicApiKey && !ENV.googleAiApiKey) {
       return {
-        statusCode: 500,
+        statusCode: 503,
         headers,
-        body: JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured." }),
+        body: JSON.stringify({
+          error:
+            "Vision AI is not configured. Please contact the site administrator.",
+        }),
       };
     }
-
-    const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
 
     const userPrompt =
       customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      temperature: 0.2,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType as
-                  | "image/jpeg"
-                  | "image/png"
-                  | "image/gif"
-                  | "image/webp",
-                data: image,
+    // ── Claude Vision (primary) ───────────────────────────────────────────────
+    if (ENV.anthropicApiKey) {
+      const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
+
+      const response = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        temperature: 0.2,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: mediaType as
+                    | "image/jpeg"
+                    | "image/png"
+                    | "image/gif"
+                    | "image/webp",
+                  data: image,
+                },
               },
-            },
-            {
-              type: "text",
-              text: userPrompt,
-            },
-          ],
-        },
-      ],
+              { type: "text", text: userPrompt },
+            ],
+          },
+        ],
+      });
+
+      const analysisText = response.content
+        .filter(block => block.type === "text")
+        .map(block => (block as Anthropic.TextBlock).text)
+        .join("");
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          analysis: analysisText,
+          mode,
+          model: response.model,
+          usage: {
+            promptTokens: response.usage.input_tokens,
+            completionTokens: response.usage.output_tokens,
+            totalTokens:
+              response.usage.input_tokens + response.usage.output_tokens,
+          },
+          timestamp: new Date().toISOString(),
+        }),
+      };
+    }
+
+    // ── Gemini Vision (fallback) ──────────────────────────────────────────────
+    const geminiModel = "gemini-2.0-flash";
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${ENV.googleAiApiKey}`;
+
+    const geminiRes = await fetch(geminiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `${SYSTEM_PROMPT}\n\n${userPrompt}`,
+              },
+              {
+                inline_data: {
+                  mime_type: mediaType,
+                  data: image,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.2 },
+      }),
     });
 
-    const analysisText = response.content
-      .filter(block => block.type === "text")
-      .map(block => (block as Anthropic.TextBlock).text)
-      .join("");
+    type GeminiVisionResponse = {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+      usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        totalTokenCount?: number;
+      };
+      error?: { message?: string };
+    };
+
+    const geminiData = (await geminiRes.json()) as GeminiVisionResponse;
+
+    if (!geminiRes.ok || geminiData.error) {
+      throw new Error(
+        `Vision analysis failed: ${geminiData.error?.message ?? geminiRes.statusText}`
+      );
+    }
+
+    const analysisText =
+      geminiData.candidates
+        ?.flatMap(c => c.content?.parts ?? [])
+        .map(p => p.text ?? "")
+        .join("") ?? "";
 
     return {
       statusCode: 200,
@@ -176,20 +250,28 @@ export const handler: Handler = async event => {
       body: JSON.stringify({
         analysis: analysisText,
         mode,
-        model: response.model,
-        usage: {
-          promptTokens: response.usage.input_tokens,
-          completionTokens: response.usage.output_tokens,
-          totalTokens:
-            response.usage.input_tokens + response.usage.output_tokens,
-        },
+        model: geminiModel,
+        usage: geminiData.usageMetadata
+          ? {
+              promptTokens: geminiData.usageMetadata.promptTokenCount ?? 0,
+              completionTokens:
+                geminiData.usageMetadata.candidatesTokenCount ?? 0,
+              totalTokens: geminiData.usageMetadata.totalTokenCount ?? 0,
+            }
+          : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         timestamp: new Date().toISOString(),
       }),
     };
   } catch (err: unknown) {
     console.error("[vision-studio] Error:", err);
-    const message =
-      err instanceof Error ? err.message : "Vision analysis failed";
+    const isConfigError =
+      err instanceof Error &&
+      err.message.includes("No LLM API key configured");
+    const message = isConfigError
+      ? "Vision AI is not configured. Please contact the site administrator."
+      : err instanceof Error
+        ? err.message
+        : "Vision analysis failed. Please try again.";
     return {
       statusCode: 500,
       headers,
