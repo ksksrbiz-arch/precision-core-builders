@@ -224,9 +224,9 @@ export default function ProjectDetail() {
           <ArrowLeft className="h-3.5 w-3.5" /> All Projects
         </button>
 
-        <div className="flex items-start justify-between mb-6 gap-4">
+        <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
           <div>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
               <h1
                 className="text-2xl font-semibold"
                 style={{ fontFamily: "var(--font-heading)" }}
@@ -235,7 +235,7 @@ export default function ProjectDetail() {
               </h1>
               <StatusBadge status={project.status} />
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               {project.city && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
@@ -301,12 +301,12 @@ export default function ProjectDetail() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 border-b border-border/40 mb-5 overflow-x-auto">
+        <div className="flex gap-0 border-b border-border/40 mb-5 overflow-x-auto scrollbar-none">
           {TABS.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2.5 text-[11px] font-bold tracking-widest uppercase transition-colors whitespace-nowrap ${
+              className={`px-3 sm:px-5 py-2.5 text-[10px] sm:text-[11px] font-bold tracking-widest uppercase transition-colors whitespace-nowrap ${
                 activeTab === tab
                   ? "text-primary border-b-2 border-primary"
                   : "text-muted-foreground hover:text-foreground"

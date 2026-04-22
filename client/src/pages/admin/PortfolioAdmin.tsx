@@ -191,7 +191,7 @@ export default function PortfolioAdmin() {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-6">
           <div>
             <h1
               className="text-2xl font-semibold"
