@@ -83,7 +83,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
 
   return (
     <div
-      className={`min-h-0 flex flex-col border border-border/60 bg-card overflow-hidden ${compact ? "h-[320px] sm:h-[420px]" : "h-full min-h-[520px]"}`}
+      className={`flex flex-col border border-border/60 bg-card overflow-hidden ${compact ? "min-h-0 h-[320px] sm:h-[420px]" : "h-full min-h-[520px]"}`}
     >
       <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
         <div className="h-6 w-6 border border-primary/40 flex items-center justify-center">

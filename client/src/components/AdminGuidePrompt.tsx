@@ -84,9 +84,7 @@ export function AdminGuidePrompt() {
                 onCheckedChange={checked => setSilencePrompt(checked === true)}
                 className="mt-0.5"
               />
-              <span>
-                Don&apos;t auto-open this guide again for {guide.title}.
-              </span>
+              <span>Don’t auto-open this guide again for {guide.title}.</span>
             </label>
 
             <div className="flex flex-col gap-2 sm:flex-row">

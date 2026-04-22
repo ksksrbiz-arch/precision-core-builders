@@ -49,6 +49,8 @@ export type Guide = {
   icon: LucideIcon;
   tagline: string;
   path: string; // admin route this guide covers
+  // Additional route patterns that should resolve to this same guide.
+  // Use this for dynamic detail routes or multiple admin screens that share one workflow.
   paths?: string[];
   sections: GuideSection[];
 };
@@ -1375,6 +1377,11 @@ export function getGuideById(id: string): Guide | undefined {
   return GUIDES.find(g => g.id === id);
 }
 
+/**
+ * Matches an admin guide route pattern such as "/admin/projects/:id"
+ * against the current location. Any segment starting with ":" is treated
+ * as a wildcard so dynamic detail routes resolve to the correct guide.
+ */
 function matchesGuidePath(pattern: string, path: string) {
   const normalizedPattern = pattern.split("?")[0];
   const normalizedPath = path.split("?")[0];
