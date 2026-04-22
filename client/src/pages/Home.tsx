@@ -165,7 +165,10 @@ function HeroSlideshow() {
   }, [current]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden touch-action-pan-y" aria-hidden>
+    <div
+      className="absolute inset-0 overflow-hidden touch-action-pan-y"
+      aria-hidden
+    >
       {/*
        * Keyframe animations are defined in index.css (not an inline <style>)
        * so the browser only parses them once, not on every re-render.
