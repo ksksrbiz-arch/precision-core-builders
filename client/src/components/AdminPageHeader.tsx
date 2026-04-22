@@ -17,7 +17,7 @@ export function AdminPageHeader({
   actions,
 }: AdminPageHeaderProps) {
   return (
-    <div className="border border-border/60 bg-gradient-to-b from-card to-card/70 p-4 sm:p-5 mb-6">
+    <header className="border border-border/60 bg-gradient-to-b from-card to-card/70 p-4 sm:p-5 mb-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p
@@ -43,6 +43,6 @@ export function AdminPageHeader({
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
-    </div>
+    </header>
   );
 }
