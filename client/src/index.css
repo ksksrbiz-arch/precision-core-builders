@@ -284,15 +284,23 @@
 
 /* ── Mobile & PWA Enhancements ─────────────────────────────────────────── */
 @layer base {
-  /* Safe area insets for notched devices */
-  html {
-    padding: env(safe-area-inset-top) env(safe-area-inset-right)
-      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /*
+   * Safe-area insets: applied to body (not html) so the layout box model
+   * is not distorted. Using padding-* avoids CLS that comes from modifying
+   * the html element's padding after first paint.
+   */
+  body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
   }
 
-  /* Prevent rubber-band overscroll in PWA standalone */
+  /* Prevent horizontal overflow at root so fixed elements don't cause scrollbar */
   html,
   body {
+    overflow-x: hidden;
+    /* Prevent rubber-band overscroll in PWA standalone */
     overscroll-behavior: none;
   }
 
@@ -304,10 +312,12 @@
     user-select: none;
   }
 
-  /* Smoother touch scrolling everywhere */
-  * {
-    -webkit-overflow-scrolling: touch;
-  }
+  /*
+   * DO NOT apply -webkit-overflow-scrolling: touch globally — it was
+   * deprecated in iOS 13 and causes scroll jitter / momentum-scroll glitches
+   * on modern devices. Apply touch-action: pan-y on specific scrollable
+   * containers as needed instead.
+   */
 
   /* Remove tap highlight on mobile */
   * {
@@ -323,10 +333,11 @@
       min-width: 44px;
     }
 
-    /* Tighter padding on mobile */
-    main {
-      padding-left: 1rem !important;
-      padding-right: 1rem !important;
+    /* Minimum font-size 16px on inputs prevents iOS auto-zoom */
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1em);
     }
 
     /* Bottom padding for mobile nav bar */
@@ -357,6 +368,54 @@
   }
 }
 
+/* ── Hero slideshow keyframe animations (defined globally to avoid           ─
+   re-injecting them on every re-render of the slideshow component).        ─ */
+@keyframes hero-zoom-in {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.12) translate(0, 0);
+  }
+}
+@keyframes hero-zoom-out {
+  from {
+    transform: scale(1.14) translate(0, 0);
+  }
+  to {
+    transform: scale(1) translate(0, 0);
+  }
+}
+@keyframes hero-drift-right {
+  from {
+    transform: scale(1.08) translateX(-2%);
+  }
+  to {
+    transform: scale(1.08) translateX(2%);
+  }
+}
+@keyframes hero-drift-left {
+  from {
+    transform: scale(1.08) translateX(2%);
+  }
+  to {
+    transform: scale(1.08) translateX(-2%);
+  }
+}
+@keyframes hero-zoom-diagonal {
+  from {
+    transform: scale(1) translate(1%, 1%);
+  }
+  to {
+    transform: scale(1.13) translate(-1%, -1%);
+  }
+}
+
+.hero-slide-img {
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
 /* ── Smooth native-feeling transitions ─────────────────────────────────── */
 @layer utilities {
   .touch-action-pan-y {
@@ -370,11 +429,26 @@
     transform: scale(0.97);
     transition: transform 0.1s;
   }
+
+  /* Promote below-fold sections to their own paint layer for faster rendering */
+  .cv-auto {
+    content-visibility: auto;
+    /*
+     * 600px is a conservative estimate of a typical section height. The browser
+     * uses this to reserve layout space while the section is off-screen, which
+     * prevents layout shift when scrolling past the fold.
+     */
+    contain-intrinsic-size: auto 600px;
+  }
 }
 
-/* ── Global smooth scroll ────────────────────────────────────────────────── */
+/*
+ * ── Global smooth scroll ─────────────────────────────────────────────────
+ * Only enable after page load (.js-ready class added via JS) so first-paint
+ * anchor hash scrolls don't trigger a janky animated scroll.
+ */
 @layer base {
-  html {
+  html.js-ready {
     scroll-behavior: smooth;
   }
 }

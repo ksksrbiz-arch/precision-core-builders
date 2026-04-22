@@ -100,49 +100,53 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
           </span>
         )}
       </div>
-      <div className="grid grid-cols-7 gap-2">
-        {days.map(day => {
-          const date = new Date(day.date + "T12:00:00");
-          const label = date.toLocaleDateString("en-US", { weekday: "short" });
-          const md = date.toLocaleDateString("en-US", {
-            month: "numeric",
-            day: "numeric",
-          });
-          return (
-            <div
-              key={day.date}
-              className={`flex flex-col items-center p-2 border text-center ${
-                day.willRain
-                  ? "border-orange-400/40 bg-orange-400/5"
-                  : "border-border/40 bg-background/40"
-              }`}
-            >
-              <p
-                className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground mb-1"
-                style={{ fontFamily: "var(--font-condensed)" }}
+      <div className="overflow-x-auto -mx-1">
+        <div className="grid grid-cols-7 gap-2 min-w-[420px] px-1">
+          {days.map(day => {
+            const date = new Date(day.date + "T12:00:00");
+            const label = date.toLocaleDateString("en-US", {
+              weekday: "short",
+            });
+            const md = date.toLocaleDateString("en-US", {
+              month: "numeric",
+              day: "numeric",
+            });
+            return (
+              <div
+                key={day.date}
+                className={`flex flex-col items-center p-2 border text-center ${
+                  day.willRain
+                    ? "border-orange-400/40 bg-orange-400/5"
+                    : "border-border/40 bg-background/40"
+                }`}
               >
-                {label}
-              </p>
-              <p className="text-[9px] text-muted-foreground/60 mb-2">{md}</p>
-              {day.willRain ? (
-                <CloudRain className="h-5 w-5 text-orange-400 mb-1" />
-              ) : (
-                <Sun className="h-5 w-5 text-primary/70 mb-1" />
-              )}
-              <p className="text-xs font-semibold text-foreground">
-                {Math.round(day.tempHigh)}°
-              </p>
-              <p className="text-[9px] text-muted-foreground">
-                {Math.round(day.tempLow)}°
-              </p>
-              {day.rainProbability > 0 && (
-                <p className="text-[9px] text-orange-400 mt-1 font-semibold">
-                  {Math.round(day.rainProbability)}%
+                <p
+                  className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground mb-1"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {label}
                 </p>
-              )}
-            </div>
-          );
-        })}
+                <p className="text-[9px] text-muted-foreground/60 mb-2">{md}</p>
+                {day.willRain ? (
+                  <CloudRain className="h-5 w-5 text-orange-400 mb-1" />
+                ) : (
+                  <Sun className="h-5 w-5 text-primary/70 mb-1" />
+                )}
+                <p className="text-xs font-semibold text-foreground">
+                  {Math.round(day.tempHigh)}°
+                </p>
+                <p className="text-[9px] text-muted-foreground">
+                  {Math.round(day.tempLow)}°
+                </p>
+                {day.rainProbability > 0 && (
+                  <p className="text-[9px] text-orange-400 mt-1 font-semibold">
+                    {Math.round(day.rainProbability)}%
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -273,7 +277,7 @@ export default function ScheduleView() {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-6">
           <div>
             <h1
               className="text-2xl font-semibold"
@@ -285,7 +289,7 @@ export default function ScheduleView() {
               Smart scheduling with Eugene OR weather integration
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {selectedProject && (
               <button
                 onClick={() => setShowAddTask(v => !v)}

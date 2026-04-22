@@ -83,17 +83,25 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <SiteNav />
       <MobileCTABar />
       <main>
         <Hero />
         <StatsBar />
-        <AboutTeaser />
-        <ServicesTeaser />
+        <div className="cv-auto">
+          <AboutTeaser />
+        </div>
+        <div className="cv-auto">
+          <ServicesTeaser />
+        </div>
         <MidpageCTA />
-        <PortfolioTeaser />
-        <TestimonialTeaser />
+        <div className="cv-auto">
+          <PortfolioTeaser />
+        </div>
+        <div className="cv-auto">
+          <TestimonialTeaser />
+        </div>
         <ClosingCTA />
       </main>
       <SiteFooter />
@@ -138,19 +146,14 @@ const FADE_DURATION = 1200;
 function HeroSlideshow() {
   const [current, setCurrent] = useState(0);
 
-  // Preload the LCP slide into <head> before the component mounts so
-  // Chrome starts the request during HTML parse instead of after hydration.
+  // The <link rel="preload"> for slide 0 is already in index.html.
+  // This hook handles subsequent slides so they start loading on mount.
   useEffect(() => {
-    const existing = document.querySelector(
-      'link[rel="preload"][data-hero="1"]'
-    );
-    if (existing) return;
+    // Preload slide[1] immediately so it is ready when the first rotation happens
     const link = document.createElement("link");
     link.rel = "preload";
     link.as = "image";
-    link.href = HERO_SLIDES[0].url;
-    link.setAttribute("data-hero", "1");
-    link.setAttribute("fetchpriority", "high");
+    link.href = HERO_SLIDES[1].url;
     document.head.appendChild(link);
   }, []);
 
@@ -162,20 +165,16 @@ function HeroSlideshow() {
   }, [current]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden>
-      <style>{`
-        @keyframes hero-zoom-in   { from { transform: scale(1.00) translate(0, 0); } to { transform: scale(1.12) translate(0, 0); } }
-        @keyframes hero-zoom-out  { from { transform: scale(1.14) translate(0, 0); } to { transform: scale(1.00) translate(0, 0); } }
-        @keyframes hero-drift-right { from { transform: scale(1.08) translateX(-2%); } to { transform: scale(1.08) translateX(2%); } }
-        @keyframes hero-drift-left  { from { transform: scale(1.08) translateX(2%);  } to { transform: scale(1.08) translateX(-2%); } }
-        @keyframes hero-zoom-diagonal { from { transform: scale(1.00) translate(1%, 1%); } to { transform: scale(1.13) translate(-1%, -1%); } }
-        .hero-slide-img { animation-timing-function: linear; animation-fill-mode: both; will-change: transform, opacity; }
-      `}</style>
-
+    <div
+      className="absolute inset-0 overflow-hidden touch-action-pan-y"
+      aria-hidden
+    >
       {/*
-       * All 5 slides mount on first paint with opacity:0; only the active one
-       * is opacity:1. Removes the fade-in-from-nothing flash when a slide
-       * would otherwise mount cold on rotation.
+       * Keyframe animations are defined in index.css (not an inline <style>)
+       * so the browser only parses them once, not on every re-render.
+       *
+       * will-change is applied ONLY to the active slide to avoid promoting
+       * all 5 full-resolution images to GPU compositing layers simultaneously.
        */}
       {HERO_SLIDES.map((slide, i) => {
         const active = i === current;
@@ -198,6 +197,7 @@ function HeroSlideshow() {
               style={{
                 animationName: active ? slide.animation : "none",
                 animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
+                willChange: active ? "transform, opacity" : undefined,
               }}
               loading={i === 0 ? "eager" : "lazy"}
               decoding={i === 0 ? "sync" : "async"}

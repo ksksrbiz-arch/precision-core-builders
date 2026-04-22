@@ -29,6 +29,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 // ─── Admin Token Hook ────────────────────────────────────────────────────────
 
@@ -850,14 +851,6 @@ type MCPAction = {
 
 const MCP_ACTIONS: MCPAction[] = [
   {
-    id: "seed-demo-data",
-    name: "Seed Demo Data",
-    description:
-      "Create sample client, project, field report, and materials for testing",
-    icon: Database,
-    category: "data",
-  },
-  {
     id: "clear-demo-data",
     name: "Clear Demo Data",
     description: "Remove all demo projects and related records",
@@ -1123,6 +1116,7 @@ function MCPToolsPanel({
 export default function SetupWizard() {
   const { token, setToken, clear, isSet } = useAdminToken();
   const { addToast } = useToast();
+  const [, setLocation] = useLocation();
   const [tokenInput, setTokenInput] = useState("");
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -1146,18 +1140,52 @@ export default function SetupWizard() {
   if (!isSet) {
     return (
       <DashboardLayout>
-        <div className="max-w-md mx-auto mt-12">
+        <div className="max-w-md mx-auto mt-8">
+          {/* First-time setup shortcut */}
+          <div className="border border-primary/30 bg-primary/5 p-4 mb-4 flex items-start gap-3">
+            <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground mb-0.5">
+                First time setting up?
+              </p>
+              <p className="text-xs text-muted-foreground font-light mb-3">
+                The Setup Wizard walks you through every integration step by
+                step — no tokens needed to start.
+              </p>
+              <button
+                onClick={() => setLocation("/onboarding")}
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Open Setup Wizard
+              </button>
+            </div>
+          </div>
+
           <div className="bg-card border border-border/60 p-8 text-center">
             <Key className="h-10 w-10 text-primary/40 mx-auto mb-4" />
             <h1
               className="text-xl font-semibold mb-2"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Setup Authentication
+              Platform Health Access
             </h1>
-            <p className="text-sm text-muted-foreground font-light mb-6">
-              Enter your admin token to access platform configuration. This was
-              set in your Netlify environment variables as{" "}
+            <p className="text-sm text-muted-foreground font-light mb-2">
+              Enter your admin token to view live service health and run
+              diagnostic tests.
+            </p>
+            <p className="text-xs text-muted-foreground/70 font-light mb-6">
+              Find your token in{" "}
+              <a
+                href={`https://app.netlify.com/sites/${import.meta.env.VITE_NETLIFY_SITE_NAME ?? "your-site"}/configuration/env`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline-offset-2 hover:underline inline-flex items-center gap-1"
+              >
+                Netlify → Site configuration → Environment variables
+                <ExternalLink className="h-3 w-3" />
+              </a>{" "}
+              under{" "}
               <code className="text-xs bg-input px-1 py-0.5 border border-border">
                 SETUP_ADMIN_TOKEN
               </code>
@@ -1198,7 +1226,7 @@ export default function SetupWizard() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1
               className="text-2xl font-semibold mb-1"
@@ -1215,6 +1243,27 @@ export default function SetupWizard() {
             className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
           >
             Sign out
+          </button>
+        </div>
+
+        {/* Onboarding shortcut */}
+        <div className="border border-primary/20 bg-primary/5 p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground">
+                Need a guided walkthrough?
+              </span>{" "}
+              The Setup Wizard steps through every service in plain English with
+              no tokens required.
+            </p>
+          </div>
+          <button
+            onClick={() => setLocation("/onboarding")}
+            className="flex items-center gap-2 px-4 py-2 border border-primary/40 text-[10px] font-bold tracking-widest uppercase text-primary hover:bg-primary/10 transition-colors shrink-0"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            <Sparkles className="h-3 w-3" /> Open Wizard
           </button>
         </div>
 

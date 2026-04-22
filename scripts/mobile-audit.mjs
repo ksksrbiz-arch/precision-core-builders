@@ -6,12 +6,13 @@
  * Prereqs: `pnpm build` has run, a local static server is hosting dist/public
  *          at the URL passed as argv[2] (default http://localhost:8765).
  */
-import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
+import { chromium } from "playwright";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const BASE = process.argv[2] || "http://localhost:8765";
 const OUT_DIR = resolve(process.cwd(), "audit");
+const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 
 const VIEWPORTS = [
   { name: "375x667", width: 375, height: 667 },
@@ -39,7 +40,7 @@ const routeSlug = r =>
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+    ...(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {}),
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
   });
 

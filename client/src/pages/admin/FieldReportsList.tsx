@@ -57,7 +57,7 @@ export default function FieldReportsList() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-y-3 mb-6">
           <div className="flex items-center gap-2">
             <h1
               className="text-2xl font-semibold"
@@ -84,7 +84,7 @@ export default function FieldReportsList() {
               setProjectId(e.target.value ? Number(e.target.value) : undefined);
               setPage(1);
             }}
-            className="bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60 min-w-[220px]"
+            className="bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60 w-full sm:w-auto sm:min-w-[220px]"
           >
             <option value="">All Projects</option>
             {projects?.data.map(p => (
