@@ -49,6 +49,9 @@ export type Guide = {
   icon: LucideIcon;
   tagline: string;
   path: string; // admin route this guide covers
+  // Additional route patterns that should resolve to this same guide.
+  // Use this for dynamic detail routes or multiple admin screens that share one workflow.
+  paths?: string[];
   sections: GuideSection[];
 };
 
@@ -64,6 +67,7 @@ export const GUIDES: Guide[] = [
     icon: HardHat,
     tagline: "Your daily briefing. Everything at a glance.",
     path: "/admin",
+    paths: ["/admin"],
     sections: [
       {
         heading: "What This Is",
@@ -130,6 +134,7 @@ export const GUIDES: Guide[] = [
     icon: ClipboardList,
     tagline: "Every job you're running. Create, track, close.",
     path: "/admin/projects",
+    paths: ["/admin/projects", "/admin/projects/new", "/admin/projects/:id"],
     sections: [
       {
         heading: "Project List",
@@ -235,6 +240,7 @@ export const GUIDES: Guide[] = [
     tagline:
       "Your client roster. Contact info, project history, portal access.",
     path: "/admin/clients",
+    paths: ["/admin/clients", "/admin/clients/:id"],
     sections: [
       {
         heading: "What This Is",
@@ -306,6 +312,11 @@ export const GUIDES: Guide[] = [
     icon: BookOpen,
     tagline: "Voice-to-report. Talk into your phone, get a structured report.",
     path: "/admin/field-reports",
+    paths: [
+      "/admin/field-reports",
+      "/admin/field-reports/new",
+      "/admin/field-reports/:id",
+    ],
     sections: [
       {
         heading: "How It Works",
@@ -399,6 +410,7 @@ export const GUIDES: Guide[] = [
     tagline:
       "Hand-drawn site specs. Sketch it like you would on a napkin, but digital.",
     path: "/admin/site-plans",
+    paths: ["/admin/site-plans"],
     sections: [
       {
         heading: "What This Is",
@@ -509,6 +521,7 @@ export const GUIDES: Guide[] = [
     tagline:
       "Weather-smart scheduling. Rain moves roofing; sun moves painting.",
     path: "/admin/schedule",
+    paths: ["/admin/schedule"],
     sections: [
       {
         heading: "How It Works",
@@ -592,6 +605,7 @@ export const GUIDES: Guide[] = [
     icon: BarChart3,
     tagline: "AI-assisted project estimates. Fast, accurate, defensible.",
     path: "/admin/estimates",
+    paths: ["/admin/estimates"],
     sections: [
       {
         heading: "What This Is",
@@ -680,6 +694,7 @@ export const GUIDES: Guide[] = [
     icon: Package,
     tagline: "Track inventory, auto-generate POs, monitor pricing.",
     path: "/admin/materials",
+    paths: ["/admin/materials"],
     sections: [
       {
         heading: "What This Is",
@@ -749,6 +764,7 @@ export const GUIDES: Guide[] = [
     icon: Wrench,
     tagline: "Your subs roster. Rate cards, availability, performance.",
     path: "/admin/sub-contractors",
+    paths: ["/admin/sub-contractors"],
     sections: [
       {
         heading: "What This Is",
@@ -822,6 +838,7 @@ export const GUIDES: Guide[] = [
     icon: Shield,
     tagline: "Immutable record of every dollar and decision. Your CYA file.",
     path: "/admin/ledger",
+    paths: ["/admin/ledger"],
     sections: [
       {
         heading: "What This Is",
@@ -872,6 +889,7 @@ export const GUIDES: Guide[] = [
     tagline:
       "Milestone invoicing. One-click client approvals. Get paid faster.",
     path: "/admin/billing",
+    paths: ["/admin/billing"],
     sections: [
       {
         heading: "How Invoicing Works",
@@ -923,6 +941,434 @@ export const GUIDES: Guide[] = [
       },
     ],
   },
+  {
+    id: "notifications",
+    title: "Notifications",
+    icon: Bell,
+    tagline: "Client updates, reminders, and one-off messages from one place.",
+    path: "/admin/notifications",
+    paths: ["/admin/notifications"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "Your outbound message center. Use it to send project updates, payment reminders, weather notices, and custom client messages by email, SMS, or in-app delivery.",
+      },
+      {
+        heading: "Sending a Notification",
+        steps: [
+          {
+            action: "Choose a delivery channel",
+            detail:
+              "Email for detail, SMS for urgency, in-app for portal-only updates.",
+          },
+          {
+            action: "Pick the recipient scope",
+            detail:
+              "Send to one client, everyone on a project, or paste a direct client user ID when needed.",
+          },
+          {
+            action: "Select the related project",
+            detail:
+              "Tie the message to a project whenever possible so it stays in the audit trail.",
+          },
+          {
+            action: "Write a clear subject and message",
+            detail:
+              "Lead with the action the client needs to take or the update they need to know.",
+          },
+          {
+            action: "Send or load a quick template",
+            detail:
+              "Templates help with recurring payment reminders and progress updates.",
+          },
+        ],
+      },
+      {
+        heading: "Best Uses",
+        tips: [
+          "Send schedule changes the minute weather or inspections force a move.",
+          "Use SMS only when timing matters. Too many texts trains clients to ignore them.",
+          "Keep billing reminders tied to the project so the ledger story stays clean.",
+          "When a client says they were not told, this page is where you verify what actually went out.",
+        ],
+      },
+      {
+        heading: "Before You Hit Send",
+        warning:
+          "Double-check the selected channel and recipient. SMS mistakes feel immediate and cannot be unsent.",
+      },
+    ],
+  },
+  {
+    id: "portfolio-cms",
+    title: "Portfolio CMS",
+    icon: Layers,
+    tagline: "Manage the public showcase without touching code.",
+    path: "/admin/portfolio-cms",
+    paths: ["/admin/portfolio-cms"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "This page controls the public portfolio. Every card, detail page, testimonial, and publish state for finished work is managed here.",
+      },
+      {
+        heading: "Adding a Portfolio Project",
+        steps: [
+          { action: 'Click "New Project Entry"' },
+          {
+            action:
+              "Fill in the title, category, location, and completion year",
+          },
+          {
+            action: "Add a short teaser description",
+            detail: "This is what sells the click from the portfolio grid.",
+          },
+          {
+            action: "Paste a cover image URL and gallery image URLs",
+            detail: "Use polished finished-work images, not jobsite snapshots.",
+          },
+          {
+            action:
+              "Add the long-form story, testimonial, and square footage if you have it",
+          },
+          {
+            action: "Save draft first, then publish when the page reads clean",
+          },
+        ],
+      },
+      {
+        heading: "Publishing Workflow",
+        steps: [
+          { action: "Review the preview card for layout and copy quality" },
+          {
+            action:
+              "Toggle Published only when photos and copy are client-safe",
+          },
+          {
+            action:
+              "Use Edit to refresh copy, swap photos, or update categories later",
+          },
+          {
+            action: "Use Delete carefully",
+            detail:
+              "Deletion removes the entry from the admin list and public showcase.",
+          },
+        ],
+      },
+      {
+        heading: "Pro Tips",
+        tips: [
+          "Lead with the strongest before/after image in the cover slot.",
+          "One clean sentence on outcome beats a paragraph of contractor jargon.",
+          "Standardize location names so the portfolio feels curated instead of random.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "platform-setup",
+    title: "Platform Setup",
+    icon: Cloud,
+    tagline: "Configure keys, services, health checks, and launch readiness.",
+    path: "/admin/setup",
+    paths: ["/admin/setup"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "This is your control room for infrastructure. API keys, service health, token checks, and MCP actions all live here. If integrations break, start here first.",
+      },
+      {
+        heading: "Connecting Services",
+        steps: [
+          { action: "Work down the service cards from top to bottom" },
+          {
+            action: "Paste each required credential exactly once",
+            detail:
+              "Wrong whitespace or partial keys will fail the live check.",
+          },
+          { action: "Run the test action for each service after saving" },
+          { action: "Do not move on until the card status turns healthy" },
+        ],
+      },
+      {
+        heading: "Health Checks",
+        steps: [
+          { action: "Use refresh to re-run platform health" },
+          {
+            action: "Read the status detail under each service",
+            detail:
+              "It tells you whether the failure is configuration, auth, or upstream availability.",
+          },
+          {
+            action: "Use the admin token tools only when requested",
+            detail:
+              "These are sensitive operational actions, not daily workflow buttons.",
+          },
+        ],
+      },
+      {
+        heading: "Critical Rule",
+        warning:
+          "Never paste production secrets into notes, screenshots, or client-facing fields. This page should be the only place credentials are handled.",
+      },
+    ],
+  },
+  {
+    id: "vision-studio",
+    title: "Vision Studio",
+    icon: Camera,
+    tagline: "Upload job photos and let AI extract field insight fast.",
+    path: "/admin/vision-studio",
+    paths: ["/admin/vision-studio"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "Vision Studio analyzes site photos. Use it to spot progress, safety concerns, finish issues, or design ideas without manually writing up every image.",
+      },
+      {
+        heading: "Running an Analysis",
+        steps: [
+          {
+            action: "Choose the analysis mode",
+            detail: "Use the mode that matches the question you need answered.",
+          },
+          {
+            action: "Upload a clear photo",
+            detail:
+              "Straight, well-lit, single-subject images get the best output.",
+          },
+          {
+            action: "Add optional context before submitting",
+            detail:
+              "Room name, phase, or what you want checked helps the AI stay focused.",
+          },
+          {
+            action:
+              "Review the returned findings and copy anything useful into your report or project notes",
+          },
+        ],
+      },
+      {
+        heading: "Best Uses",
+        tips: [
+          "Use progress mode for install verification before invoicing a milestone.",
+          "Use issue detection when clients or subs dispute what the site looked like.",
+          "Use inspiration/design mode only with clean reference images, not cluttered jobsite shots.",
+        ],
+      },
+      {
+        heading: "Watch-Out",
+        warning:
+          "The AI is an assistant, not an inspector. Do not use it as the final call for structural, code, or safety compliance.",
+      },
+    ],
+  },
+  {
+    id: "search",
+    title: "Operational Search",
+    icon: Search,
+    tagline:
+      "Ask one question and search across projects, clients, reports, and more.",
+    path: "/admin/search",
+    paths: ["/admin/search"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "This page is your cross-platform search bar. Type plain English and it searches projects, clients, field reports, materials, schedule items, and linked records in one pass.",
+      },
+      {
+        heading: "How To Search Well",
+        steps: [
+          {
+            action: "Ask in natural language",
+            detail:
+              'Examples: "Which jobs are waiting on materials?" or "Show me unpaid invoices this month."',
+          },
+          {
+            action:
+              "Use job names, client names, trade names, or problem keywords",
+          },
+          {
+            action: "Read the type tags on each result",
+            detail:
+              "They tell you whether the hit came from a project, report, material, or schedule item.",
+          },
+          { action: "Click through to confirm context before acting" },
+        ],
+      },
+      {
+        heading: "Good Search Habits",
+        tips: [
+          "If results are broad, add the project or client name.",
+          "Search before texting a client back. The answer is often already in the system.",
+          "Use it during meetings to pull up a record instead of hunting page by page.",
+        ],
+      },
+      {
+        heading: "Watch-Out",
+        warning:
+          "Search helps you find records fast, but it does not replace checking the source detail before you promise numbers, dates, or approvals.",
+      },
+    ],
+  },
+  {
+    id: "finish-selections",
+    title: "Finish Selections",
+    icon: Layers,
+    tagline:
+      "Track client finish choices with budget impact and approval history.",
+    path: "/admin/finishes",
+    paths: ["/admin/finishes"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "This page manages finish packages and one-off product selections. It is where client-facing design decisions become cost-tracked project choices.",
+      },
+      {
+        heading: "Managing a Selection",
+        steps: [
+          { action: "Open the project or client selection set" },
+          { action: "Review the current allowance and option list" },
+          {
+            action: "Add or update the selected item",
+            detail:
+              "Cabinet style, tile, flooring, fixtures, hardware, paint, and more.",
+          },
+          {
+            action: "Confirm the cost delta before saving",
+            detail:
+              "Positive or negative changes should be visible before the client approves.",
+          },
+          {
+            action:
+              "Publish the approved choice to the client portal when it is ready for review",
+          },
+        ],
+      },
+      {
+        heading: "Why It Matters",
+        steps: [
+          { action: "Approved choices sync to the ledger" },
+          {
+            action:
+              "Budget deltas can inform billing or change-order conversations",
+          },
+          {
+            action:
+              "Portal visibility reduces last-minute phone calls and confusion",
+          },
+        ],
+      },
+      {
+        heading: "Critical Rule",
+        warning:
+          "Do not mark a finish as approved until price, availability, and lead time are confirmed. Pretty choices can still wreck schedule and budget.",
+      },
+    ],
+  },
+  {
+    id: "analytics",
+    title: "Analytics",
+    icon: BarChart3,
+    tagline:
+      "Track pipeline, profitability, and production trends across the whole business.",
+    path: "/admin/analytics",
+    paths: ["/admin/analytics"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "Analytics rolls up performance across all projects. Use it to see lead mix, profit trends, report volume, and where time or money is slipping.",
+      },
+      {
+        heading: "What To Review Weekly",
+        steps: [
+          {
+            action: "Revenue and budget variance charts",
+            detail:
+              "Look for jobs drifting away from estimate before they become painful.",
+          },
+          {
+            action: "Lead pipeline status",
+            detail:
+              "Know how many leads are stuck, contracted, active, or complete.",
+          },
+          {
+            action: "Report activity trends",
+            detail:
+              "Low reporting volume usually means field documentation is slipping.",
+          },
+          {
+            action: "Project profitability comparisons",
+            detail:
+              "Use this to spot which job types are worth chasing more aggressively.",
+          },
+        ],
+      },
+      {
+        heading: "How To Use The Data",
+        tips: [
+          "Use analytics to adjust estimating, not just admire charts.",
+          "If one project type keeps underperforming, tighten scope language or raise markup.",
+          "Compare report cadence with project health. Documentation problems usually show up early.",
+        ],
+      },
+      {
+        heading: "Critical Rule",
+        warning:
+          "Analytics is directional. Always click through to the underlying project or ledger record before making a major financial decision.",
+      },
+    ],
+  },
+  {
+    id: "activity-log",
+    title: "Activity Log",
+    icon: FileText,
+    tagline:
+      "Real-time audit visibility for operational actions across the platform.",
+    path: "/admin/activity-log",
+    paths: ["/admin/activity-log"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "The Activity Log streams operational events as they happen. It is the fastest way to confirm whether the platform actually did what you expected.",
+      },
+      {
+        heading: "Best Uses",
+        steps: [
+          {
+            action: "Filter by action type",
+            detail:
+              "Narrow to notifications, project changes, reports, or system actions.",
+          },
+          {
+            action: "Search by free text",
+            detail: "Use a client name, project name, or event keyword.",
+          },
+          {
+            action: "Use the date range when investigating a specific incident",
+          },
+          {
+            action: "Watch the live feed after triggering a workflow",
+            detail:
+              "If something failed, the signal usually shows up here first.",
+          },
+        ],
+      },
+      {
+        heading: "When To Check It",
+        tips: [
+          "After sending notifications or running automations.",
+          "When a client claims a status, report, or invoice never updated.",
+          "During debugging before you assume the database is wrong.",
+        ],
+      },
+      {
+        heading: "Critical Rule",
+        warning:
+          "The log tells you what happened, not always why. Use it to locate the event, then open the related record for the full story.",
+      },
+    ],
+  },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -931,6 +1377,28 @@ export function getGuideById(id: string): Guide | undefined {
   return GUIDES.find(g => g.id === id);
 }
 
+/**
+ * Matches an admin guide route pattern such as "/admin/projects/:id"
+ * against the current location. Any segment starting with ":" is treated
+ * as a wildcard so dynamic detail routes resolve to the correct guide.
+ */
+function matchesGuidePath(pattern: string, path: string) {
+  const normalizedPattern = pattern.split("?")[0];
+  const normalizedPath = path.split("?")[0];
+  const patternSegments = normalizedPattern.split("/").filter(Boolean);
+  const pathSegments = normalizedPath.split("/").filter(Boolean);
+
+  if (patternSegments.length !== pathSegments.length) return false;
+
+  return patternSegments.every((segment, index) => {
+    return segment.startsWith(":") || segment === pathSegments[index];
+  });
+}
+
 export function getGuideByPath(path: string): Guide | undefined {
-  return GUIDES.find(g => g.path === path);
+  return GUIDES.find(guide =>
+    [guide.path, ...(guide.paths ?? [])].some(pattern =>
+      matchesGuidePath(pattern, path)
+    )
+  );
 }
