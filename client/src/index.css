@@ -371,24 +371,44 @@
 /* ── Hero slideshow keyframe animations (defined globally to avoid           ─
    re-injecting them on every re-render of the slideshow component).        ─ */
 @keyframes hero-zoom-in {
-  from { transform: scale(1.00) translate(0, 0); }
-  to   { transform: scale(1.12) translate(0, 0); }
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.12) translate(0, 0);
+  }
 }
 @keyframes hero-zoom-out {
-  from { transform: scale(1.14) translate(0, 0); }
-  to   { transform: scale(1.00) translate(0, 0); }
+  from {
+    transform: scale(1.14) translate(0, 0);
+  }
+  to {
+    transform: scale(1) translate(0, 0);
+  }
 }
 @keyframes hero-drift-right {
-  from { transform: scale(1.08) translateX(-2%); }
-  to   { transform: scale(1.08) translateX(2%); }
+  from {
+    transform: scale(1.08) translateX(-2%);
+  }
+  to {
+    transform: scale(1.08) translateX(2%);
+  }
 }
 @keyframes hero-drift-left {
-  from { transform: scale(1.08) translateX(2%); }
-  to   { transform: scale(1.08) translateX(-2%); }
+  from {
+    transform: scale(1.08) translateX(2%);
+  }
+  to {
+    transform: scale(1.08) translateX(-2%);
+  }
 }
 @keyframes hero-zoom-diagonal {
-  from { transform: scale(1.00) translate(1%, 1%); }
-  to   { transform: scale(1.13) translate(-1%, -1%); }
+  from {
+    transform: scale(1) translate(1%, 1%);
+  }
+  to {
+    transform: scale(1.13) translate(-1%, -1%);
+  }
 }
 
 .hero-slide-img {
