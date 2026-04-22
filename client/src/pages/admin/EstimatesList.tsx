@@ -2,7 +2,7 @@
  * Estimates — all cost estimates with send/approve workflow.
  */
 import DashboardLayout from "@/components/DashboardLayout";
-import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
@@ -60,24 +60,20 @@ export default function EstimatesList() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-y-3 mb-6">
-          <div className="flex items-center gap-2">
-            <h1
-              className="text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
+        <AdminPageHeader
+          title="Estimates"
+          guideId="estimates"
+          description="Manage pricing proposals, send approvals, and monitor estimate lifecycle."
+          actions={
+            <button
+              onClick={() => setLocation("/estimator")}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Estimates
-            </h1>
-            <GuideHelpButton guideId="estimates" />
-          </div>
-          <button
-            onClick={() => setLocation("/estimator")}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            <Calculator className="h-3.5 w-3.5" /> New Estimate
-          </button>
-        </div>
+              <Calculator className="h-3.5 w-3.5" /> New Estimate
+            </button>
+          }
+        />
 
         {isLoading ? (
           <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">

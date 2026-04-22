@@ -1,5 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { trpc } from "@/lib/trpc";
 import { Plus, Search, MapPin, DollarSign } from "lucide-react";
 import { useState } from "react";
@@ -25,24 +25,20 @@ export default function ProjectsList() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-y-3 mb-6">
-          <div className="flex items-center gap-2">
-            <h1
-              className="text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
+        <AdminPageHeader
+          title="Projects"
+          guideId="projects"
+          description="Track active jobs, budgets, progress, and status from one command surface."
+          actions={
+            <button
+              onClick={() => setLocation("/admin/projects/new")}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Projects
-            </h1>
-            <GuideHelpButton guideId="projects" />
-          </div>
-          <button
-            onClick={() => setLocation("/admin/projects/new")}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            <Plus className="h-3.5 w-3.5" /> New Project
-          </button>
-        </div>
+              <Plus className="h-3.5 w-3.5" /> New Project
+            </button>
+          }
+        />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
