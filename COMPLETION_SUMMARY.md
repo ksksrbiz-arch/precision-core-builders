@@ -121,18 +121,20 @@
 
 ## Environment Variables (Ready for Netlify)
 
-All API keys provided in project files. Add to **Netlify → Site Settings → Build & Deploy → Environment**:
+Add all API keys to **Netlify → Site Settings → Environment variables**. See `.env.example` for the full list of required variables. All keys must be stored in a secure password manager — never committed to the repository.
+
+> ⚠️ **Security notice:** Any keys previously visible in this file have been redacted and **must be rotated immediately** at their respective provider dashboards before use. See `docs/HANDOVER.md` for rotation instructions.
 
 ```
-✅ OPENAI_API_KEY=sk-svcacct-pltotIUAAzeVd-...
-✅ OPENWEATHERMAP_API_KEY=508c97eabd85590db5f372f6bdc8c828
-✅ ANTHROPIC_API_KEY=sk-ant-admin01-G3rJpjt2PU5qxSf1n...
-⏳ SUPABASE_URL=[pending setup]
-⏳ SUPABASE_ANON_KEY=[pending setup]
-⏳ SUPABASE_SERVICE_ROLE_KEY=[pending setup]
-⏳ DATABASE_URL=[pending setup]
-⏳ STRIPE_SECRET_KEY=[pending setup]
-⏳ N8N_WEBHOOK_URL=[pending setup]
+⚠️  OPENAI_API_KEY=[ROTATED — generate new key at platform.openai.com]
+⚠️  OPENWEATHERMAP_API_KEY=[ROTATED — generate new key at openweathermap.org]
+⚠️  ANTHROPIC_API_KEY=[ROTATED — generate new key at console.anthropic.com]
+⏳  SUPABASE_URL=[set after Supabase project transfer]
+⏳  SUPABASE_ANON_KEY=[set after Supabase project transfer]
+⏳  SUPABASE_SERVICE_ROLE_KEY=[set after Supabase project transfer]
+⏳  DATABASE_URL=[set after Supabase project transfer]
+⏳  STRIPE_SECRET_KEY=[set when Stripe account is created]
+⏳  N8N_WEBHOOK_URL=[set when n8n instance is configured]
 ```
 
 ---

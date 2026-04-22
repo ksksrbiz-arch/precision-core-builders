@@ -76,6 +76,7 @@ export function BeforeAfterSlider({
     const el = containerRef.current;
     if (!el) return;
 
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
     const io = new IntersectionObserver(
       entries => {
         const entry = entries[0];
@@ -93,15 +94,18 @@ export function BeforeAfterSlider({
           [50, 2000],
         ];
         steps.forEach(([value, at]) => {
-          setTimeout(() => setPct(value), at);
+          timeouts.push(setTimeout(() => setPct(value), at));
         });
         setHinting(true);
-        setTimeout(() => setHinting(false), 2200);
+        timeouts.push(setTimeout(() => setHinting(false), 2200));
       },
       { threshold: 0.35 }
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      timeouts.forEach(clearTimeout);
+    };
   }, []);
 
   const onKeyDown = (e: React.KeyboardEvent) => {

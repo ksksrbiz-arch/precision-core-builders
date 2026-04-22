@@ -8,7 +8,7 @@ This document outlines the security measures and mitigations implemented in the 
 
 ### Vite Development Server Vulnerabilities
 
-**Affected versions:** vite < 8.1.0
+**Affected versions:** vite < 8.0.9
 
 **Issues fixed:**
 
@@ -18,7 +18,7 @@ This document outlines the security measures and mitigations implemented in the 
 
 **Mitigation:**
 
-- Updated Vite from 8.0.5 to 8.1.0+
+- Updated Vite from 8.0.3 to 8.0.9+
 - Enhanced `vite.config.ts` with strict file system access controls
 - Added comprehensive `server.fs.deny` patterns including:
   - All hidden files (`**/.*`)
@@ -32,13 +32,13 @@ This document outlines the security measures and mitigations implemented in the 
 
 ### Drizzle ORM SQL Injection
 
-**Affected versions:** drizzle-orm < 0.50.0
+**Affected versions:** drizzle-orm < 0.45.2
 
 **Issue:** SQL injection via improperly escaped SQL identifiers (High)
 
 **Mitigation:**
 
-- Updated Drizzle ORM from 0.45.2 to 0.50.0+
+- Updated Drizzle ORM from 0.44.6 to 0.45.2+
 - Current implementation uses Supabase client which provides built-in SQL injection protection
 - No raw SQL queries or `sql` template literals used in codebase
 
@@ -85,8 +85,8 @@ All security-critical dependencies are enforced via `pnpm.overrides` in `package
       "tar": ">=7.5.11",
       "esbuild": ">=0.25.0",
       "mermaid": ">=10.9.4",
-      "vite": ">=8.1.0",
-      "drizzle-orm": ">=0.50.0"
+      "vite": ">=8.0.9",
+      "drizzle-orm": ">=0.45.2"
     }
   }
 }

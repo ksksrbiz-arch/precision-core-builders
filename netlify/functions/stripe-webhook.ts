@@ -1,7 +1,9 @@
 /**
  * stripe-webhook — Receives Stripe webhook events and records payment
  * completions in Supabase. Configure this endpoint in Stripe Dashboard:
- * https://precision-core.netlify.app/.netlify/functions/stripe-webhook
+ *   <your-site-url>/.netlify/functions/stripe-webhook
+ * where <your-site-url> is the value of VITE_SITE_URL (e.g.
+ * https://precisioncorebuilders.com or https://precision-core.netlify.app).
  *
  * Events handled:
  * - invoice.paid → record payment in billing_events
