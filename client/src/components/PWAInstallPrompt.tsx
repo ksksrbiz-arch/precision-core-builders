@@ -19,18 +19,26 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+function getBackToTopOffset(active: boolean, isAdminMobile: boolean) {
+  if (active) {
+    return isAdminMobile
+      ? ADMIN_MOBILE_BANNER_BACKTOTOP_OFFSET
+      : MOBILE_BANNER_BACKTOTOP_OFFSET;
+  }
+
+  if (isAdminMobile) {
+    return ADMIN_MOBILE_NAV_OFFSET;
+  }
+
+  return DEFAULT_MOBILE_BACKTOTOP_OFFSET;
+}
+
 function useBackToTopOffset(active: boolean, isAdminMobile: boolean) {
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty(
       "--pcb-back-to-top-mobile-offset",
-      active
-        ? isAdminMobile
-          ? ADMIN_MOBILE_BANNER_BACKTOTOP_OFFSET
-          : MOBILE_BANNER_BACKTOTOP_OFFSET
-        : isAdminMobile
-          ? ADMIN_MOBILE_NAV_OFFSET
-          : DEFAULT_MOBILE_BACKTOTOP_OFFSET
+      getBackToTopOffset(active, isAdminMobile)
     );
 
     return () => {

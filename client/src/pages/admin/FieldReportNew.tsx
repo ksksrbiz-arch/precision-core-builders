@@ -268,9 +268,12 @@ export default function FieldReportNew() {
         let binary = "";
         const chunkSize = 8192;
         for (let i = 0; i < uint8.length; i += chunkSize) {
-          binary += String.fromCharCode(
-            ...Array.from(uint8.subarray(i, i + chunkSize))
-          );
+          const chunk = uint8.subarray(i, i + chunkSize);
+          let segment = "";
+          for (let j = 0; j < chunk.length; j++) {
+            segment += String.fromCharCode(chunk[j]);
+          }
+          binary += segment;
         }
         const base64Audio = btoa(binary);
         const res = await fetch(`/api/voice-to-report`, {
