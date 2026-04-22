@@ -83,10 +83,17 @@ export const handler: Handler = async event => {
     };
   } catch (err) {
     console.error("[ai-chat]", err);
+    const isConfigError =
+      err instanceof Error &&
+      err.message.includes("No LLM API key configured");
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: String(err) }),
+      body: JSON.stringify({
+        error: isConfigError
+          ? "AI service is not configured. Please contact the site administrator."
+          : "AI service temporarily unavailable. Please try again in a moment.",
+      }),
     };
   }
 };

@@ -36,7 +36,7 @@ export type LLMResult = {
 };
 
 const ANTHROPIC_MODEL = "claude-sonnet-4-6";
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_API_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
 

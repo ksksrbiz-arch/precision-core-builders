@@ -3,7 +3,7 @@
  * Eric's daily field memos in one view.
  */
 import DashboardLayout from "@/components/DashboardLayout";
-import { GuideHelpButton } from "@/components/GuideHelpButton";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { trpc } from "@/lib/trpc";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
@@ -57,24 +57,20 @@ export default function FieldReportsList() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-y-3 mb-6">
-          <div className="flex items-center gap-2">
-            <h1
-              className="text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
+        <AdminPageHeader
+          title="Field Reports"
+          guideId="field-reports"
+          description="Review voice-to-report logs, crew notes, and published daily updates."
+          actions={
+            <button
+              onClick={() => setLocation("/admin/field-reports/new")}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Field Reports
-            </h1>
-            <GuideHelpButton guideId="field-reports" />
-          </div>
-          <button
-            onClick={() => setLocation("/admin/field-reports/new")}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            <Plus className="h-3.5 w-3.5" /> New Report
-          </button>
-        </div>
+              <Plus className="h-3.5 w-3.5" /> New Report
+            </button>
+          }
+        />
 
         {/* Project filter */}
         <div className="mb-5">

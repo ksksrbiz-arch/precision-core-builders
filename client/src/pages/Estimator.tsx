@@ -96,7 +96,16 @@ export default function Estimator() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Estimate failed");
+      if (!res.ok) {
+        if (res.status === 429) {
+          throw new Error(
+            "Too many requests. Please wait a minute and try again."
+          );
+        }
+        throw new Error(
+          "Unable to generate estimate right now. Please try again shortly."
+        );
+      }
       setResult(data);
       setStep(4);
     } catch (err) {

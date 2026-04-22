@@ -196,11 +196,18 @@ export const handler: Handler = async event => {
     };
   } catch (err) {
     console.error("[voice-to-report]", err);
+    const isConfigError =
+      err instanceof Error &&
+      err.message.includes("No LLM API key configured");
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: err instanceof Error ? err.message : "Internal error",
+        error: isConfigError
+          ? "AI service is not configured. Please contact the site administrator."
+          : err instanceof Error
+            ? err.message
+            : "Report generation failed. Please try again.",
       }),
     };
   }

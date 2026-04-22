@@ -36,6 +36,16 @@ const SpeechRecognitionAPI =
     ? window.SpeechRecognition ?? window.webkitSpeechRecognition
     : null;
 
+const SPEECH_ERROR_MESSAGES: Record<string, string> = {
+  "not-allowed":
+    "Microphone access denied. Please allow microphone permission and try again.",
+  "no-speech": "No speech detected. Please try speaking again.",
+  network:
+    "Network error during speech recognition. Please check your connection.",
+  "audio-capture":
+    "No microphone found. Please connect a microphone and try again.",
+};
+
 export default function FieldReportNew() {
   const [, setLocation] = useLocation();
   const { accessToken } = useAuth();
@@ -98,7 +108,10 @@ export default function FieldReportNew() {
 
         sr.onerror = e => {
           if (e.error !== "aborted") {
-            setError(`Speech recognition error: ${e.error}`);
+            setError(
+              SPEECH_ERROR_MESSAGES[e.error] ??
+                "Speech recognition failed. Please try again or use a different browser."
+            );
           }
         };
 
@@ -188,12 +201,28 @@ export default function FieldReportNew() {
           body: JSON.stringify({ projectId, transcript }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Processing failed");
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            throw new Error(
+              "Authentication required. Please sign in again and retry."
+            );
+          }
+          if (res.status === 429) {
+            throw new Error(
+              "Voice report limit reached. Please wait before submitting again."
+            );
+          }
+          throw new Error(
+            data.error ?? "Report generation failed. Please try again."
+          );
+        }
         setReport(data.report);
         setEditedSummary(data.report.summary ?? "");
         setStep("review");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Processing failed");
+        setError(
+          err instanceof Error ? err.message : "Report generation failed."
+        );
         setStep("record");
       }
     } else {
@@ -226,12 +255,28 @@ export default function FieldReportNew() {
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Processing failed");
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            throw new Error(
+              "Authentication required. Please sign in again and retry."
+            );
+          }
+          if (res.status === 429) {
+            throw new Error(
+              "Voice report limit reached. Please wait before submitting again."
+            );
+          }
+          throw new Error(
+            data.error ?? "Report generation failed. Please try again."
+          );
+        }
         setReport(data.report);
         setEditedSummary(data.report.summary ?? "");
         setStep("review");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Processing failed");
+        setError(
+          err instanceof Error ? err.message : "Report generation failed."
+        );
         setStep("record");
       }
     }
