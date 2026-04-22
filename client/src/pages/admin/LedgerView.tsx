@@ -94,7 +94,7 @@ export default function LedgerView() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-y-3 mb-6">
           <div className="flex items-center gap-2">
             <h1
               className="text-2xl font-semibold"
@@ -127,7 +127,7 @@ export default function LedgerView() {
             setProjectId(e.target.value ? Number(e.target.value) : undefined);
             setPage(1);
           }}
-          className="bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60 min-w-[260px] mb-6"
+          className="bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60 w-full sm:w-auto sm:min-w-[260px] mb-6"
         >
           <option value="">Select a project…</option>
           {projects?.data.map(p => (

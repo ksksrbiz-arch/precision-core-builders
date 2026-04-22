@@ -164,7 +164,7 @@ export default function FinishSelectionsAdmin() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-6">
           <div>
             <p
               className="text-[11px] font-semibold tracking-[0.28em] uppercase text-primary mb-1"

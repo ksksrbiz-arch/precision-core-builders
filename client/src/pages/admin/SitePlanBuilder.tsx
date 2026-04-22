@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { useToast } from "@/components/ToastProvider";
+import { useIsMobile } from "@/hooks/useMobile";
 import {
   ChevronDown,
   Download,
@@ -30,7 +31,7 @@ import {
   Share2,
   Stamp,
   Trash2,
-  Upload,
+  X,
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -524,6 +525,7 @@ export default function SitePlanBuilder() {
   const [saving, setSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
+  const isMobile = useIsMobile();
 
   const { data: savedPlans } = trpc.sitePlans.list.useQuery({});
   const createPlan = trpc.sitePlans.create.useMutation();
@@ -748,21 +750,28 @@ export default function SitePlanBuilder() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-2rem)] gap-3">
+      {/*
+        Mobile height: 100dvh minus sticky header (3.5rem) + bottom nav (4rem) + main padding (2rem) + gap buffer (0.5rem) = 10rem total.
+        Desktop: original 2rem subtraction (for main padding only; no bottom nav or sticky topbar).
+      */}
+      <div className="flex flex-col h-[calc(100dvh-10rem)] sm:h-[calc(100vh-2rem)] gap-2 sm:gap-3">
         {/* ── Top toolbar ──────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-1">
-          <div className="flex items-center gap-2 mr-auto">
-            <div className="flex items-center gap-2 bg-card/80 backdrop-blur border border-border/50 rounded-lg px-3 py-1.5">
-              <Pencil className="h-4 w-4 text-amber-500" />
+        {/* Mobile: two rows (name + scrollable buttons) */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-1">
+          {/* Row 1: Plan name */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2 bg-card/80 backdrop-blur border border-border/50 rounded-lg px-3 py-1.5 flex-1 min-w-0">
+              <Pencil className="h-4 w-4 text-amber-500 shrink-0" />
               <Input
                 value={planName}
                 onChange={e => setPlanName(e.target.value)}
-                className="border-0 bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 w-[200px] md:w-[280px]"
+                className="border-0 bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 w-full sm:w-[200px] md:w-[280px]"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          {/* Action buttons — scrollable row on mobile, inline on desktop */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0 shrink-0">
             {/* Stamp Library Toggle */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -770,7 +779,7 @@ export default function SitePlanBuilder() {
                   variant={showStampPanel ? "default" : "outline"}
                   size="sm"
                   onClick={() => setShowStampPanel(!showStampPanel)}
-                  className="gap-1.5"
+                  className="gap-1.5 shrink-0"
                 >
                   <Stamp className="h-4 w-4" />
                   <span className="hidden md:inline">Stamps</span>
@@ -785,6 +794,7 @@ export default function SitePlanBuilder() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="shrink-0"
                   onClick={() => {
                     if (excalidrawAPI) {
                       const current = excalidrawAPI.getAppState();
@@ -800,7 +810,7 @@ export default function SitePlanBuilder() {
               <TooltipContent>Toggle grid</TooltipContent>
             </Tooltip>
 
-            <div className="w-px h-6 bg-border/50 mx-1" />
+            <div className="w-px h-6 bg-border/50 mx-1 shrink-0" />
 
             {/* Save */}
             <Button
@@ -808,7 +818,7 @@ export default function SitePlanBuilder() {
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="gap-1.5"
+              className="gap-1.5 shrink-0"
             >
               <Save className="h-4 w-4" />
               <span className="hidden md:inline">
@@ -819,7 +829,7 @@ export default function SitePlanBuilder() {
             {/* Export dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
                   <Download className="h-4 w-4" />
                   <span className="hidden md:inline">Export</span>
                   <ChevronDown className="h-3 w-3" />
@@ -857,10 +867,10 @@ export default function SitePlanBuilder() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Share */}
+            {/* Share — hide on very small screens to avoid overflow */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="hidden sm:flex shrink-0">
                   <Share2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -870,15 +880,31 @@ export default function SitePlanBuilder() {
         </div>
 
         {/* ── Main content ─────────────────────────────────────────── */}
-        <div className="flex gap-3 flex-1 min-h-0">
-          {/* Stamp Library Side Panel */}
+        <div className="flex gap-3 flex-1 min-h-0 relative">
+          {/* Stamp Library Panel — sidebar on desktop, bottom sheet overlay on mobile */}
           {showStampPanel && (
-            <div className="w-56 shrink-0 bg-card/80 backdrop-blur border border-border/50 rounded-xl overflow-hidden flex flex-col">
-              <div className="p-3 border-b border-border/50">
+            <div
+              className={
+                isMobile
+                  ? // 65% gives enough room to see stamps + saved plans without covering the whole canvas
+                    "absolute inset-x-0 bottom-0 z-20 max-h-[65%] bg-card border-t border-border/50 rounded-t-2xl overflow-hidden flex flex-col shadow-2xl"
+                  : "w-56 shrink-0 bg-card/80 backdrop-blur border border-border/50 rounded-xl overflow-hidden flex flex-col"
+              }
+            >
+              <div className="p-3 border-b border-border/50 flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <HardHat className="h-3.5 w-3.5 text-amber-500" />
                   Construction Library
                 </h3>
+                {isMobile && (
+                  <button
+                    onClick={() => setShowStampPanel(false)}
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Close panel"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {CONSTRUCTION_STAMPS.map(cat => (
@@ -908,8 +934,11 @@ export default function SitePlanBuilder() {
                         {cat.items.map(stamp => (
                           <button
                             key={stamp.label}
-                            onClick={() => addStampToCanvas(stamp)}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs hover:bg-muted/80 transition-colors text-foreground/70 hover:text-foreground"
+                            onClick={() => {
+                              addStampToCanvas(stamp);
+                              if (isMobile) setShowStampPanel(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs hover:bg-muted/80 transition-colors text-foreground/70 hover:text-foreground active:bg-muted"
                           >
                             <span className="text-base">{stamp.emoji}</span>
                             <span>{stamp.label}</span>
@@ -943,7 +972,10 @@ export default function SitePlanBuilder() {
                     >
                       <button
                         className="flex-1 text-left px-2 py-1.5 min-w-0"
-                        onClick={() => handleLoadPlan(plan.id, plan.name)}
+                        onClick={() => {
+                          handleLoadPlan(plan.id, plan.name);
+                          if (isMobile) setShowStampPanel(false);
+                        }}
                       >
                         <p
                           className={`text-xs font-medium truncate ${activePlanId === plan.id ? "text-primary" : ""}`}
@@ -956,7 +988,7 @@ export default function SitePlanBuilder() {
                       </button>
                       <button
                         onClick={() => handleDeletePlan(plan.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all mr-1 flex-shrink-0"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-destructive transition-all mr-1 flex-shrink-0"
                         title="Delete plan"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -971,6 +1003,7 @@ export default function SitePlanBuilder() {
                       if (excalidrawAPI) {
                         excalidrawAPI.updateScene({ elements: [] });
                       }
+                      if (isMobile) setShowStampPanel(false);
                     }}
                     className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors mt-1 border border-dashed border-border/50"
                   >
@@ -1064,21 +1097,22 @@ export default function SitePlanBuilder() {
 
         {/* ── Bottom status bar ─────────────────────────────────────── */}
         <div className="flex items-center justify-between px-3 py-1.5 bg-card/60 backdrop-blur border border-border/30 rounded-lg text-[11px] text-muted-foreground">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="flex items-center gap-1">
-              <Ruler className="h-3 w-3" /> Grid: 20px
+              <Ruler className="h-3 w-3" />
+              <span className="hidden sm:inline">Grid: 20px</span>
             </span>
-            <span className="flex items-center gap-1">
+            <span className="hidden sm:flex items-center gap-1">
               <Zap className="h-3 w-3 text-amber-500" /> Hand-drawn mode
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span>
               {excalidrawAPI
                 ? `${excalidrawAPI.getSceneElements?.()?.length || 0} elements`
                 : "—"}
             </span>
-            <span className="text-amber-500/80">Precision Core Builders</span>
+            <span className="text-amber-500/80 hidden sm:inline">Precision Core Builders</span>
           </div>
         </div>
       </div>
