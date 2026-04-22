@@ -1,7 +1,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { trpc } from "@/lib/trpc";
-import { Plus, Search, MapPin, DollarSign } from "lucide-react";
+import { useIsMobile } from "@/hooks/useMobile";
+import { Plus, Search, MapPin, DollarSign, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { StatusBadge } from "./CommandCenter";
@@ -11,6 +12,7 @@ export default function ProjectsList() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
+  const isMobile = useIsMobile();
 
   const { data, isLoading } = trpc.projects.list.useQuery({
     page,
@@ -74,131 +76,228 @@ export default function ProjectsList() {
           </select>
         </div>
 
-        {/* Table */}
-        <div className="bg-card border border-border/60 overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">
-              Loading…
-            </div>
-          ) : data?.data.length === 0 ? (
-            <div className="p-12 text-center">
-              <p className="text-muted-foreground text-sm mb-4">
-                No projects found
-              </p>
+        {isLoading ? (
+          <div className="bg-card border border-border/60 p-8 text-center text-muted-foreground text-sm">
+            Loading…
+          </div>
+        ) : data?.data.length === 0 ? (
+          <div className="bg-card border border-border/60 p-12 text-center">
+            <p className="text-muted-foreground text-sm mb-4">
+              No projects found
+            </p>
+            <button
+              onClick={() => setLocation("/admin/projects/new")}
+              className="text-primary text-sm underline"
+            >
+              Create your first project
+            </button>
+          </div>
+        ) : isMobile ? (
+          /* ── Mobile: tappable project cards ──────────────────────────────── */
+          <div className="space-y-3">
+            {data?.data.map(p => (
               <button
-                onClick={() => setLocation("/admin/projects/new")}
-                className="text-primary text-sm underline"
+                key={p.id}
+                onClick={() => setLocation(`/admin/projects/${p.id}`)}
+                className="w-full text-left bg-card border border-border/60 p-4 active:bg-primary/5 transition-colors"
               >
-                Create your first project
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/40">
-                      {[
-                        "Project",
-                        "Client",
-                        "Status",
-                        "Budget",
-                        "Progress",
-                        "",
-                      ].map(h => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left text-[10px] font-bold tracking-[0.15em] uppercase text-muted-foreground/60"
-                          style={{ fontFamily: "var(--font-condensed)" }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data?.data.map(p => (
-                      <tr
-                        key={p.id}
-                        onClick={() => setLocation(`/admin/projects/${p.id}`)}
-                        className="border-b border-border/30 hover:bg-primary/5 cursor-pointer transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-foreground">
-                            {p.name}
-                          </p>
-                          {p.city && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3" />
-                              {p.city}, {p.state}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {(p as any).clients?.name ?? "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusBadge status={p.status} />
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            {fmt(p.estimated_budget)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 h-1.5 bg-input rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-primary rounded-full"
-                                style={{
-                                  width: `${p.completion_percent ?? 0}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {p.completion_percent ?? 0}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="text-xs text-primary hover:underline">
-                            View →
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {/* Pagination */}
-              {(data?.total ?? 0) > 20 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
-                  <p className="text-xs text-muted-foreground">
-                    {(page - 1) * 20 + 1}–
-                    {Math.min(page * 20, data?.total ?? 0)} of {data?.total}
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      disabled={page === 1}
-                      onClick={() => setPage(p => p - 1)}
-                      className="text-xs px-3 py-1.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
-                    >
-                      ← Prev
-                    </button>
-                    <button
-                      disabled={page * 20 >= (data?.total ?? 0)}
-                      onClick={() => setPage(p => p + 1)}
-                      className="text-xs px-3 py-1.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
-                    >
-                      Next →
-                    </button>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {p.name}
+                    </p>
+                    {p.city && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {p.city}, {p.state}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <StatusBadge status={p.status} />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
                   </div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span
+                        className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Progress
+                      </span>
+                      <span className="text-xs font-semibold text-foreground">
+                        {p.completion_percent ?? 0}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-input rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${p.completion_percent ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
+                  {p.estimated_budget && (
+                    <div className="text-right shrink-0">
+                      <p
+                        className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Budget
+                      </p>
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-0.5">
+                        <DollarSign className="h-3 w-3" />
+                        {Number(p.estimated_budget).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {(p as any).clients?.name && (
+                    <div className="text-right shrink-0">
+                      <p
+                        className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Client
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[80px]">
+                        {(p as any).clients.name}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+            {/* Pagination */}
+            {(data?.total ?? 0) > 20 && (
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                  className="text-xs px-4 py-2.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors active:scale-95"
+                >
+                  ← Prev
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  {(page - 1) * 20 + 1}–
+                  {Math.min(page * 20, data?.total ?? 0)} of {data?.total}
+                </span>
+                <button
+                  disabled={page * 20 >= (data?.total ?? 0)}
+                  onClick={() => setPage(p => p + 1)}
+                  className="text-xs px-4 py-2.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors active:scale-95"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── Desktop: standard table ──────────────────────────────────────── */
+          <div className="bg-card border border-border/60 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/40">
+                    {[
+                      "Project",
+                      "Client",
+                      "Status",
+                      "Budget",
+                      "Progress",
+                      "",
+                    ].map(h => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-[10px] font-bold tracking-[0.15em] uppercase text-muted-foreground/60"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data?.data.map(p => (
+                    <tr
+                      key={p.id}
+                      onClick={() => setLocation(`/admin/projects/${p.id}`)}
+                      className="border-b border-border/30 hover:bg-primary/5 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-foreground">{p.name}</p>
+                        {p.city && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <MapPin className="h-3 w-3" />
+                            {p.city}, {p.state}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {(p as any).clients?.name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={p.status} />
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          {fmt(p.estimated_budget)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-1.5 bg-input rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full"
+                              style={{
+                                width: `${p.completion_percent ?? 0}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {p.completion_percent ?? 0}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-xs text-primary hover:underline">
+                          View →
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination */}
+            {(data?.total ?? 0) > 20 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
+                <p className="text-xs text-muted-foreground">
+                  {(page - 1) * 20 + 1}–
+                  {Math.min(page * 20, data?.total ?? 0)} of {data?.total}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage(p => p - 1)}
+                    className="text-xs px-3 py-1.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    disabled={page * 20 >= (data?.total ?? 0)}
+                    onClick={() => setPage(p => p + 1)}
+                    className="text-xs px-3 py-1.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

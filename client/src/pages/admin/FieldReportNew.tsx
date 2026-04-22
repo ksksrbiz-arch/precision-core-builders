@@ -9,6 +9,7 @@ import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useIsMobile } from "@/hooks/useMobile";
 import {
   Mic,
   MicOff,
@@ -49,6 +50,7 @@ const SPEECH_ERROR_MESSAGES: Record<string, string> = {
 export default function FieldReportNew() {
   const [, setLocation] = useLocation();
   const { accessToken } = useAuth();
+  const isMobile = useIsMobile();
   const [step, setStep] = useState<Step>("select");
   const [projectId, setProjectId] = useState<number | null>(null);
   const [recording, setRecording] = useState(false);
@@ -385,22 +387,30 @@ export default function FieldReportNew() {
                 🎙️ Using browser speech recognition — no API key required
               </p>
             )}
-            {/* Recording indicator */}
+            {/* Recording indicator — larger on mobile for glove-friendly tap */}
             <div
-              className={`h-28 w-28 rounded-full border-4 flex items-center justify-center mx-auto mb-6 transition-all ${
+              className={`rounded-full border-4 flex items-center justify-center mx-auto mb-6 transition-all ${
+                isMobile ? "h-44 w-44" : "h-28 w-28"
+              } ${
                 recording
                   ? "border-red-500 bg-red-500/10 animate-pulse"
                   : "border-border/60 bg-card"
               }`}
             >
               {recording ? (
-                <Mic className="h-10 w-10 text-red-400" />
+                <Mic
+                  className={`text-red-400 ${isMobile ? "h-16 w-16" : "h-10 w-10"}`}
+                />
               ) : (
-                <Mic className="h-10 w-10 text-muted-foreground" />
+                <Mic
+                  className={`text-muted-foreground ${isMobile ? "h-16 w-16" : "h-10 w-10"}`}
+                />
               )}
             </div>
             {recording && (
-              <p className="text-3xl font-mono text-foreground mb-2">
+              <p
+                className={`font-mono text-foreground mb-2 ${isMobile ? "text-4xl" : "text-3xl"}`}
+              >
                 {fmt(recordingTime)}
               </p>
             )}
@@ -427,23 +437,28 @@ export default function FieldReportNew() {
                   : "Press record when ready to report on today's site work."}
             </p>
             {error && <p className="text-sm text-destructive mb-4">{error}</p>}
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
               {!recording && !audioBlob && !finalTranscript && (
                 <button
                   onClick={startRecording}
-                  className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white text-[11px] font-bold tracking-widest uppercase hover:bg-red-600 transition-colors"
+                  className={`flex items-center gap-2 px-6 bg-red-500 text-white text-[11px] font-bold tracking-widest uppercase hover:bg-red-600 transition-colors active:scale-95 ${
+                    isMobile ? "py-4 w-full justify-center" : "py-3"
+                  }`}
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  <Mic className="h-4 w-4" /> Start Recording
+                  <Mic className={isMobile ? "h-5 w-5" : "h-4 w-4"} /> Start
+                  Recording
                 </button>
               )}
               {recording && (
                 <button
                   onClick={stopRecording}
-                  className="flex items-center gap-2 px-6 py-3 bg-foreground text-background text-[11px] font-bold tracking-widest uppercase hover:opacity-90 transition-opacity"
+                  className={`flex items-center gap-2 px-6 bg-foreground text-background text-[11px] font-bold tracking-widest uppercase hover:opacity-90 transition-opacity active:scale-95 ${
+                    isMobile ? "py-4 w-full justify-center" : "py-3"
+                  }`}
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  <Square className="h-4 w-4" /> Stop
+                  <Square className={isMobile ? "h-5 w-5" : "h-4 w-4"} /> Stop
                 </button>
               )}
               {/* Web Speech path: show re-record + process after recording stops */}
@@ -455,14 +470,18 @@ export default function FieldReportNew() {
                       setLiveTranscript("");
                       setRecordingTime(0);
                     }}
-                    className="px-5 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                    className={`px-5 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors active:scale-95 ${
+                      isMobile ? "py-4 flex-1" : "py-3"
+                    }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     <MicOff className="h-4 w-4 inline mr-1" /> Re-record
                   </button>
                   <button
                     onClick={processAudio}
-                    className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                    className={`flex items-center gap-2 px-6 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors active:scale-95 ${
+                      isMobile ? "py-4 flex-1 justify-center" : "py-3"
+                    }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     <Send className="h-4 w-4" /> Process Report
@@ -477,14 +496,18 @@ export default function FieldReportNew() {
                       setAudioBlob(null);
                       setRecordingTime(0);
                     }}
-                    className="px-5 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                    className={`px-5 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors active:scale-95 ${
+                      isMobile ? "py-4 flex-1" : "py-3"
+                    }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     <MicOff className="h-4 w-4 inline mr-1" /> Re-record
                   </button>
                   <button
                     onClick={processAudio}
-                    className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                    className={`flex items-center gap-2 px-6 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors active:scale-95 ${
+                      isMobile ? "py-4 flex-1 justify-center" : "py-3"
+                    }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     <Send className="h-4 w-4" /> Process Report

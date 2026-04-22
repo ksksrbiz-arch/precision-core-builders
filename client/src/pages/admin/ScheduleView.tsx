@@ -7,6 +7,7 @@ import { GanttChart } from "@/components/GanttChart";
 import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
+import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -155,6 +156,7 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
 export default function ScheduleView() {
   const [, setLocation] = useLocation();
   const { addToast } = useToast();
+  const isMobile = useIsMobile();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -599,7 +601,7 @@ export default function ScheduleView() {
             return (
               <div
                 key={item.id}
-                className={`bg-card border p-4 flex items-center gap-4 transition-colors ${
+                className={`bg-card border p-4 transition-colors ${
                   isDeferred
                     ? "border-orange-400/40 bg-orange-400/5"
                     : item.status === "complete"
@@ -607,84 +609,100 @@ export default function ScheduleView() {
                       : "border-border/60 hover:border-border/80"
                 }`}
               >
-                {/* Status toggle */}
-                <button
-                  onClick={() => {
-                    const nextStatus = cycleStatus(item.status);
-                    lastStatusRef.current = nextStatus;
-                    updateStatus.mutate({
-                      id: item.id,
-                      status: nextStatus,
-                    });
-                  }}
-                  className={`shrink-0 transition-colors hover:scale-110 ${cfg.color}`}
-                  title={`Status: ${cfg.label} — click to advance`}
-                >
-                  <StatusIcon className="h-4.5 w-4.5" />
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* Status toggle — large touch target on mobile */}
+                  <button
+                    onClick={() => {
+                      const nextStatus = cycleStatus(item.status);
+                      lastStatusRef.current = nextStatus;
+                      updateStatus.mutate({
+                        id: item.id,
+                        status: nextStatus,
+                      });
+                    }}
+                    className={`shrink-0 transition-all active:scale-95 ${cfg.color} ${
+                      isMobile
+                        ? "h-11 w-11 flex items-center justify-center rounded-full border border-current/20 bg-current/5"
+                        : "hover:scale-110"
+                    }`}
+                    title={isMobile ? undefined : `Status: ${cfg.label} — click to advance`}
+                    aria-label={`Advance status from ${cfg.label}`}
+                  >
+                    <StatusIcon
+                      className={isMobile ? "h-5 w-5" : "h-4.5 w-4.5"}
+                    />
+                  </button>
 
-                {/* Task info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p
-                      className={`text-sm font-medium ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}
-                    >
-                      {item.title}
-                    </p>
-                    {isDeferred && (
-                      <span
-                        className="text-[8px] px-1.5 py-0.5 bg-orange-400/15 border border-orange-400/30 text-orange-400 font-bold tracking-widest uppercase"
-                        style={{ fontFamily: "var(--font-condensed)" }}
+                  {/* Task info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <p
+                        className={`text-sm font-medium ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}
                       >
-                        ⚠ Rain
-                      </span>
-                    )}
-                    {item.is_outdoor && (
-                      <span
-                        className="text-[8px] px-1.5 py-0.5 bg-sky-400/10 border border-sky-400/20 text-sky-400 font-bold tracking-widest uppercase"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        Outdoor
-                      </span>
-                    )}
+                        {item.title}
+                      </p>
+                      {isDeferred && (
+                        <span
+                          className="text-[8px] px-1.5 py-0.5 bg-orange-400/15 border border-orange-400/30 text-orange-400 font-bold tracking-widest uppercase"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          ⚠ Rain
+                        </span>
+                      )}
+                      {item.is_outdoor && (
+                        <span
+                          className="text-[8px] px-1.5 py-0.5 bg-sky-400/10 border border-sky-400/20 text-sky-400 font-bold tracking-widest uppercase"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          Outdoor
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
+                      {item.planned_start && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-2.5 w-2.5" />
+                          {new Date(item.planned_start).toLocaleDateString(
+                            "en-US",
+                            { month: "short", day: "numeric" }
+                          )}
+                          {item.planned_end &&
+                            ` – ${new Date(item.planned_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                        </span>
+                      )}
+                      {item.duration_days && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {item.duration_days}d
+                        </span>
+                      )}
+                      {item.assigned_to && <span>{item.assigned_to}</span>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                    {item.planned_start && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-2.5 w-2.5" />
-                        {new Date(item.planned_start).toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric" }
-                        )}
-                        {item.planned_end &&
-                          ` – ${new Date(item.planned_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-                      </span>
-                    )}
-                    {item.duration_days && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" />
-                        {item.duration_days}d
-                      </span>
-                    )}
-                    {item.assigned_to && <span>{item.assigned_to}</span>}
+
+                  {/* Badges — stacked on mobile */}
+                  <div
+                    className={`flex shrink-0 gap-1.5 ${isMobile ? "flex-col items-end" : "items-center"}`}
+                  >
+                    <span
+                      className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase ${tagCls}`}
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      {item.task_type?.replace("_", " ") ?? "other"}
+                    </span>
+                    <span
+                      className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase ${cfg.color} border-current/30`}
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      {cfg.label}
+                    </span>
                   </div>
                 </div>
-
-                {/* Task type badge */}
-                <span
-                  className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase flex-shrink-0 ${tagCls}`}
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {item.task_type?.replace("_", " ") ?? "other"}
-                </span>
-
-                {/* Status badge */}
-                <span
-                  className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase flex-shrink-0 ${cfg.color} border-current/30`}
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {cfg.label}
-                </span>
+                {isMobile && (
+                  <p className="text-[9px] text-muted-foreground/50 mt-2 text-center tracking-wide">
+                    Tap status icon to advance
+                  </p>
+                )}
               </div>
             );
           })}

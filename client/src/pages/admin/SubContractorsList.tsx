@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -57,6 +58,7 @@ export default function SubContractorsList() {
     notes: "",
   });
   const utils = trpc.useUtils();
+  const isMobile = useIsMobile();
   const { data: subs, isLoading } = trpc.subContractors.list.useQuery();
 
   const createMut = useMutationWithToast(
@@ -291,6 +293,30 @@ export default function SubContractorsList() {
                     </span>
                   )}
                 </div>
+
+                {/* Mobile: one-tap call / email buttons */}
+                {isMobile && (sub.phone || sub.email) && (
+                  <div className="flex gap-2 mb-3">
+                    {sub.phone && (
+                      <a
+                        href={`tel:${sub.phone}`}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 border border-primary/40 bg-primary/5 text-primary text-[11px] font-bold tracking-widest uppercase active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <Phone className="h-4 w-4" /> Call
+                      </a>
+                    )}
+                    {sub.email && (
+                      <a
+                        href={`mailto:${sub.email}`}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <Mail className="h-4 w-4" /> Email
+                      </a>
+                    )}
+                  </div>
+                )}
 
                 {sub.rating && (
                   <div className="flex items-center gap-0.5 mb-3">

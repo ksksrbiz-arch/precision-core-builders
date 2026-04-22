@@ -1,13 +1,14 @@
 /**
  * MobileBottomNav — Persistent bottom navigation for mobile admin.
- * Prioritizes high-frequency workflows and fast actions.
+ * Prioritizes high-frequency field workflows: home, projects, new report,
+ * schedule, and search.
  */
 import {
+  Calendar,
   ClipboardList,
   HardHat,
   Mic,
   Search,
-  Sparkles,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -21,8 +22,8 @@ const MOBILE_NAV = [
     path: "/admin/field-reports/new",
     accent: true,
   },
+  { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
   { icon: Search, label: "Search", path: "/admin/search" },
-  { icon: Sparkles, label: "Vision", path: "/admin/vision-studio" },
 ];
 
 export function MobileBottomNav() {
