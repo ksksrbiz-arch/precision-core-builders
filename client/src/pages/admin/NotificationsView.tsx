@@ -193,15 +193,12 @@ export default function NotificationsView() {
     (item: any) => item.status === "read"
   ).length;
 
-  const applyTemplate = (template: {
-    subject?: string;
-    body: string;
-  }) => {
+  const applyTemplate = (template: { subject?: string; body: string }) => {
     setForm(prev => ({
       ...prev,
       subject:
         prev.channel === "email"
-          ? template.subject ?? prev.subject
+          ? (template.subject ?? prev.subject)
           : prev.subject,
       body: template.body,
     }));

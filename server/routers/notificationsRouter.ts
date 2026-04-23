@@ -173,7 +173,7 @@ export const notificationsRouter = router({
         data: notifications.map(item => ({
           ...item,
           recipient: item.recipient_id
-            ? clientsByUserId.get(item.recipient_id) ?? null
+            ? (clientsByUserId.get(item.recipient_id) ?? null)
             : null,
         })),
         total: count ?? 0,
