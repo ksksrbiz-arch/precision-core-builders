@@ -97,12 +97,12 @@ Once your project is ready:
 >
 > To stay under this limit you **must** scope variables correctly:
 >
-> | Scope | When to use |
-> |---|---|
+> | Scope                    | When to use                                                                                 |
+> | ------------------------ | ------------------------------------------------------------------------------------------- |
 > | **All scopes** (default) | Secrets needed by functions at runtime (SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, etc.) |
-> | **Builds only** | Variables that Vite embeds at build time (all `VITE_*` vars, DATABASE_URL) |
+> | **Builds only**          | Variables that Vite embeds at build time (all `VITE_*` vars, DATABASE_URL)                  |
 >
-> The table below specifies the correct scope for each variable.  After adding
+> The table below specifies the correct scope for each variable. After adding
 > all variables, see **Step 2.4** for how to change an existing variable's scope.
 
 1. Go to **Site settings → Environment variables**
@@ -178,9 +178,9 @@ update the scope of the variables listed above as "Builds only":
 5. Repeat for every `VITE_*` variable and for `DATABASE_URL`
 6. Trigger a new deploy after all scopes are updated
 
-> **Tip — remove unused variables.**  Variables left over from previous
+> **Tip — remove unused variables.** Variables left over from previous
 > configurations (e.g. `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, etc.) that are not
-> listed above should be **deleted** from the Netlify dashboard.  Each unused
+> listed above should be **deleted** from the Netlify dashboard. Each unused
 > variable still counts against the 4 KB budget.
 
 ---
