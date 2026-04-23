@@ -6,6 +6,11 @@
 [build.environment]
   NODE_VERSION = "20"
   PNPM_VERSION = "10.4.1"
+  # Static, non-secret VITE_ vars live here so they are available to `pnpm build`
+  # but are NOT attached to Netlify Functions (build.environment is build-time only).
+  # This helps keep the per-function env-var payload under Netlify's 4 KB limit.
+  VITE_FEATURE_BLUEPRINT = "false"
+  VITE_DEV_MODE = "false"
 
 # ── Custom domain redirect ───────────────────────────────────
 # After Eric sets up a custom domain, uncomment the block below

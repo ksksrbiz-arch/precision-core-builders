@@ -187,12 +187,20 @@ export const handler: Handler = async event => {
     const failed: Array<{ key: string; error: string }> = [];
 
     for (const [key, value] of Object.entries(vars)) {
+      // VITE_* variables are embedded by Vite at build time and must NOT be
+      // attached to functions — keeping them build-scoped helps stay under
+      // Netlify's 4 KB per-function environment-variable limit.
+      const isViteVar = key.startsWith("VITE_");
+      const varScopes = isViteVar
+        ? ["builds"]
+        : ["functions", "builds", "runtime"];
+
       try {
         let res = await fetch(`${base}/${key}${qs}`, {
           method: "PATCH",
           headers: authH,
           body: JSON.stringify({
-            scopes: ["functions", "builds", "runtime"],
+            scopes: varScopes,
             value,
             context: "all",
           }),
@@ -205,7 +213,9 @@ export const handler: Handler = async event => {
             body: JSON.stringify([
               {
                 key,
-                scopes: ["functions", "builds", "runtime", "post_processing"],
+                scopes: isViteVar
+                  ? ["builds"]
+                  : ["functions", "builds", "runtime", "post_processing"],
                 values: [{ context: "all", value }],
               },
             ]),
