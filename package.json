@@ -18,6 +18,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "lint": "pnpm check && pnpm format:check",
+    "check:env": "node scripts/check-env-size.js",
     "validate": "pnpm lint && pnpm test && pnpm build",
     "clean": "rm -rf dist/ node_modules/.cache/ .manus-logs/"
   },

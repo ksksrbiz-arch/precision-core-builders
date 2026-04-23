@@ -6,11 +6,40 @@
 [build.environment]
   NODE_VERSION = "20"
   PNPM_VERSION = "10.4.1"
-  # Static, non-secret VITE_ vars live here so they are available to `pnpm build`
-  # but are NOT attached to Netlify Functions (build.environment is build-time only).
-  # This helps keep the per-function env-var payload under Netlify's 4 KB limit.
+  # ─────────────────────────────────────────────────────────────────────────────
+  # AWS Lambda imposes a hard 4 KB limit on total environment-variable payload.
+  # Variables set in [build.environment] (here) are available ONLY during the
+  # build step — they are NEVER forwarded to Netlify Functions. Use this section
+  # for all non-secret, build-time-only values so the per-function payload stays
+  # well under 4 KB.
+  #
+  # Secret values (Supabase keys, API keys) MUST be set in the Netlify dashboard
+  # (Site → Environment variables).  In the dashboard, set their "Scope" to:
+  #   • "Builds" — for VITE_* and other build-only vars
+  #   • "Functions" (or "All") — only for vars your Lambda functions read at runtime
+  #
+  # Dashboard vars that Lambda functions need at runtime (keep scope = All):
+  #   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
+  #   SUPABASE_JWT_SECRET, SUPABASE_DATABASE_URL,
+  #   ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_AI_API_KEY,
+  #   OPENWEATHERMAP_API_KEY, N8N_WEBHOOK_URL, N8N_API_KEY,
+  #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+  #   BLUEPRINT_ENCRYPTION_KEY, BLUEPRINT_CLIENT_ID, BLUEPRINT_CLIENT_SECRET
+  #
+  # Dashboard vars that should be scoped to "Builds" only:
+  #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_STRIPE_PUBLISHABLE_KEY
+  #   STRIPE_PUBLISHABLE_KEY, BLUEPRINT_BASE_URL, BLUEPRINT_API_BASE_URL
+  #
+  # Run `node scripts/check-env-size.js` locally to estimate your payload size.
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Non-secret feature flags — keep here, remove from dashboard entirely
   VITE_FEATURE_BLUEPRINT = "false"
   VITE_DEV_MODE = "false"
+
+  # Build tooling flags — keep here, remove from dashboard entirely
+  TAILWINDCSS_DISABLE_OXIDE = "1"
+  NODE_ENV = "production"
 
 # ── Custom domain redirect ───────────────────────────────────
 # After Eric sets up a custom domain, uncomment the block below
@@ -134,9 +163,7 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 # Context-specific build configurations
-[context.production]
-  environment = { NODE_ENV = "production" }
-
+# NODE_ENV = "production" is now set in [build.environment] above.
 [context.deploy-preview]
   environment = { NODE_ENV = "development" }
 
