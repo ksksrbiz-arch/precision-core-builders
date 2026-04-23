@@ -1,4 +1,5 @@
 import { db } from "../db";
+import { paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { ENV } from "../_core/env";
 import { z } from "zod";
@@ -98,5 +99,84 @@ export const notificationsRouter = router({
       }
 
       return data;
+    }),
+
+  adminList: adminProcedure
+    .input(
+      z.object({
+        page: z.number().int().positive().optional(),
+        pageSize: z.number().int().min(1).max(100).optional(),
+        search: z.string().optional(),
+        channel: z.enum(["email", "sms", "in_app"]).optional(),
+        status: z.enum(["pending", "sent", "read", "failed"]).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { from, to } = paginate(input);
+      let q = db
+        .from("notifications")
+        .select(
+          "id, recipient_id, project_id, channel, status, subject, body, created_at, sent_at, read_at, failure_reason, projects(name)",
+          { count: "exact" }
+        )
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (input.channel) q = q.eq("channel", input.channel);
+      if (input.status) q = q.eq("status", input.status);
+      if (input.search) {
+        q = q.or(
+          `subject.ilike.%${input.search}%,body.ilike.%${input.search}%`
+        );
+      }
+
+      const { data, error, count } = await q;
+      if (error) throw new Error(error.message);
+
+      const notifications = data ?? [];
+      const recipientIds = Array.from(
+        new Set(
+          notifications
+            .map(item => item.recipient_id)
+            .filter((value): value is string => !!value)
+        )
+      );
+
+      let clientsByUserId = new Map<
+        string,
+        { name: string; email: string; id: number }
+      >();
+
+      if (recipientIds.length > 0) {
+        const { data: clients, error: clientsError } = await db
+          .from("clients")
+          .select("id, user_id, name, email")
+          .in("user_id", recipientIds);
+
+        if (clientsError) throw new Error(clientsError.message);
+
+        clientsByUserId = new Map(
+          (clients ?? [])
+            .filter(client => !!client.user_id)
+            .map(client => [
+              client.user_id as string,
+              {
+                id: client.id,
+                name: client.name,
+                email: client.email,
+              },
+            ])
+        );
+      }
+
+      return {
+        data: notifications.map(item => ({
+          ...item,
+          recipient: item.recipient_id
+            ? clientsByUserId.get(item.recipient_id) ?? null
+            : null,
+        })),
+        total: count ?? 0,
+      };
     }),
 });
