@@ -89,51 +89,99 @@ Once your project is ready:
 
 ### Step 2.3: Set Environment Variables
 
+> **⚠️ Important — Netlify 4 KB function limit**
+>
+> Netlify attaches every environment variable to each serverless function at
+> deploy time. If the combined size of all variable _values_ exceeds **4 KB**,
+> every function upload will fail with a 400 error and the deploy will abort.
+>
+> To stay under this limit you **must** scope variables correctly:
+>
+> | Scope | When to use |
+> |---|---|
+> | **All scopes** (default) | Secrets needed by functions at runtime (SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, etc.) |
+> | **Builds only** | Variables that Vite embeds at build time (all `VITE_*` vars, DATABASE_URL) |
+>
+> The table below specifies the correct scope for each variable.  After adding
+> all variables, see **Step 2.4** for how to change an existing variable's scope.
+
 1. Go to **Site settings → Environment variables**
 2. Click **"Add a variable"** for each of the following:
 
-#### Required Variables
+#### Required Variables — "All scopes" (functions + builds)
 
 ```bash
-# Supabase (from Part 1)
+# Supabase — needed by serverless functions at runtime
 SUPABASE_URL=https://[your-project-ref].supabase.co
 SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
-DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
 
-# Client-side Supabase (VITE_ prefix makes them available in browser)
-VITE_SUPABASE_URL=https://[your-project-ref].supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-
-# AI APIs
+# AI APIs — needed by serverless functions at runtime
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 
-# Weather API (get free key at openweathermap.org)
+# Weather API
 OPENWEATHERMAP_API_KEY=...
+```
 
-# Application
-NODE_ENV=production
+#### Required Variables — **"Builds only"** scope ⚡
+
+> These variables are embedded into the browser bundle by Vite during the build.
+> They do **not** need to be available to functions at runtime.
+> Setting them to "Builds only" keeps the per-function payload well under 4 KB.
+
+```bash
+# Client-side Supabase (VITE_ prefix → browser bundle only)
+VITE_SUPABASE_URL=https://[your-project-ref].supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+
+# Postgres connection string (build-time migrations / Drizzle Studio only)
+DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
 ```
 
 #### Optional Variables (can add later)
 
 ```bash
-# Stripe (for billing)
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_PUBLISHABLE_KEY=pk_live_...
-VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
+# Stripe — secret key is "All scopes"; publishable keys are "Builds only"
+STRIPE_SECRET_KEY=sk_live_...          # All scopes
+STRIPE_PUBLISHABLE_KEY=pk_live_...     # All scopes (used in webhook signature checks)
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_... # Builds only
 
-# n8n (for automation)
+# n8n automation — "All scopes"
 N8N_WEBHOOK_URL=https://...
 N8N_API_KEY=...
 
-# Admin Setup Token (change from default)
+# Admin / onboarding tokens — "All scopes"
 ADMIN_TOKEN=your-secure-random-token
+SETUP_ADMIN_TOKEN=your-secure-random-token
+ONBOARDING_TOKEN=your-secure-random-token
+
+# Netlify API access (used by setup-env / onboarding-provision functions)
+NETLIFY_AUTH_TOKEN=...   # All scopes
+NETLIFY_SITE_ID=...      # All scopes
+NETLIFY_ACCOUNT_ID=...   # All scopes
 ```
 
 3. Click **"Save"** after adding all variables
 4. Trigger a new deploy: **Deploys → Trigger deploy → Deploy site**
+
+### Step 2.4: Change Scope of Existing Variables (fix the 4 KB limit)
+
+If your site is already deployed and you are hitting the 4 KB function limit,
+update the scope of the variables listed above as "Builds only":
+
+1. Go to **Site settings → Environment variables**
+2. Click the variable name (e.g. `VITE_SUPABASE_ANON_KEY`)
+3. Under **"Scopes"**, uncheck **"Functions"** and **"Runtime"**, leaving only
+   **"Builds"** checked
+4. Click **"Save"**
+5. Repeat for every `VITE_*` variable and for `DATABASE_URL`
+6. Trigger a new deploy after all scopes are updated
+
+> **Tip — remove unused variables.**  Variables left over from previous
+> configurations (e.g. `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, etc.) that are not
+> listed above should be **deleted** from the Netlify dashboard.  Each unused
+> variable still counts against the 4 KB budget.
 
 ---
 
