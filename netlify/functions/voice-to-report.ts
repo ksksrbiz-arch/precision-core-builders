@@ -197,8 +197,7 @@ export const handler: Handler = async event => {
   } catch (err) {
     console.error("[voice-to-report]", err);
     const isConfigError =
-      err instanceof Error &&
-      err.message.includes("No LLM API key configured");
+      err instanceof Error && err.message.includes("No LLM API key configured");
     return {
       statusCode: 500,
       headers,

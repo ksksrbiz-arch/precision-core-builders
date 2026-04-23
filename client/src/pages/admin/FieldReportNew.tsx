@@ -24,17 +24,48 @@ import { useLocation } from "wouter";
 
 type Step = "select" | "record" | "processing" | "review" | "done";
 
+type SpeechRecognitionAlternativeLike = {
+  transcript: string;
+};
+
+type SpeechRecognitionResultLike =
+  ArrayLike<SpeechRecognitionAlternativeLike> & {
+    isFinal: boolean;
+  };
+
+type SpeechRecognitionEventLike = Event & {
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
+type SpeechRecognitionErrorEventLike = Event & {
+  error: string;
+};
+
+interface BrowserSpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+
 // Web Speech API type declarations
 declare global {
   interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
+    SpeechRecognition?: new () => BrowserSpeechRecognition;
+    webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
   }
 }
 
-const SpeechRecognitionAPI =
+const SpeechRecognitionAPI:
+  | (new () => BrowserSpeechRecognition)
+  | null
+  | undefined =
   typeof window !== "undefined"
-    ? window.SpeechRecognition ?? window.webkitSpeechRecognition
+    ? (window.SpeechRecognition ?? window.webkitSpeechRecognition)
     : null;
 
 const SPEECH_ERROR_MESSAGES: Record<string, string> = {
@@ -58,7 +89,7 @@ export default function FieldReportNew() {
   // Web Speech API state
   const [liveTranscript, setLiveTranscript] = useState("");
   const [finalTranscript, setFinalTranscript] = useState("");
-  const speechRef = useRef<SpeechRecognition | null>(null);
+  const speechRef = useRef<BrowserSpeechRecognition | null>(null);
   const usingWebSpeech = SpeechRecognitionAPI !== null;
   const [recordingTime, setRecordingTime] = useState(0);
   const [report, setReport] = useState<any>(null);
@@ -94,7 +125,7 @@ export default function FieldReportNew() {
         sr.interimResults = true;
         sr.lang = "en-US";
 
-        sr.onresult = e => {
+        sr.onresult = (e: SpeechRecognitionEventLike) => {
           let interim = "";
           let final = "";
           for (let i = 0; i < e.results.length; i++) {
@@ -108,7 +139,7 @@ export default function FieldReportNew() {
           setLiveTranscript(interim);
         };
 
-        sr.onerror = e => {
+        sr.onerror = (e: SpeechRecognitionErrorEventLike) => {
           if (e.error !== "aborted") {
             setError(
               SPEECH_ERROR_MESSAGES[e.error] ??
@@ -196,9 +227,7 @@ export default function FieldReportNew() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(accessToken
-              ? { Authorization: `Bearer ${accessToken}` }
-              : {}),
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({ projectId, transcript }),
         });
@@ -239,16 +268,19 @@ export default function FieldReportNew() {
         let binary = "";
         const chunkSize = 8192;
         for (let i = 0; i < uint8.length; i += chunkSize) {
-          binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+          const chunk = uint8.subarray(i, i + chunkSize);
+          let segment = "";
+          for (let j = 0; j < chunk.length; j++) {
+            segment += String.fromCharCode(chunk[j]);
+          }
+          binary += segment;
         }
         const base64Audio = btoa(binary);
         const res = await fetch(`/api/voice-to-report`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(accessToken
-              ? { Authorization: `Bearer ${accessToken}` }
-              : {}),
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             projectId,

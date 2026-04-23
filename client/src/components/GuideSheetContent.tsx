@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import {
   SheetContent,
+  SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
@@ -96,7 +97,9 @@ export function GuideIdentity({
       </div>
       <div>
         <SheetTitle className="text-base">{title} Guide</SheetTitle>
-        <p className="text-xs text-muted-foreground mt-0.5">{tagline}</p>
+        <SheetDescription className="mt-0.5 text-xs">
+          {tagline}
+        </SheetDescription>
       </div>
     </div>
   );

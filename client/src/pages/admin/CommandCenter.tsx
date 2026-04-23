@@ -116,7 +116,7 @@ function LeadScoringPanel() {
       const data = await res.json();
       if (!res.ok) {
         throw new Error(
-          res.status === 429 ? "HTTP 429" : data.error ?? `HTTP ${res.status}`
+          res.status === 429 ? "HTTP 429" : (data.error ?? `HTTP ${res.status}`)
         );
       }
       setResult(data);
@@ -128,7 +128,8 @@ function LeadScoringPanel() {
           err instanceof Error && err.message.startsWith("HTTP 429")
             ? "Rate limit reached. Please wait before scoring another lead."
             : "AI scoring service is temporarily unavailable. Please try again.",
-        suggestedAction: "Retry in a moment or score manually based on project details.",
+        suggestedAction:
+          "Retry in a moment or score manually based on project details.",
         estimatedValue: null,
       });
     } finally {

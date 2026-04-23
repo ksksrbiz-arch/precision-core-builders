@@ -2,6 +2,7 @@ import { GuideSheetContent } from "@/components/GuideSheetContent";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/useMobile";
 import { getGuideByPath } from "@/pages/admin/guides-data";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -31,12 +32,14 @@ export function AdminGuidePrompt() {
   const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   const [silencePrompt, setSilencePrompt] = useState(false);
+  const isMobile = useIsMobile();
 
   const guide = useMemo(() => getGuideByPath(location), [location]);
 
   useEffect(() => {
     if (
       !guide ||
+      isMobile ||
       !location.startsWith("/admin") ||
       location === "/admin/guides"
     ) {
@@ -56,7 +59,7 @@ export function AdminGuidePrompt() {
     writeGuideStorage(GUIDE_SEEN_KEY, { ...seen, [location]: true });
     setSilencePrompt(false);
     setOpen(true);
-  }, [guide, location]);
+  }, [guide, isMobile, location]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);

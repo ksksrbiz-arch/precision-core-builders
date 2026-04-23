@@ -462,6 +462,30 @@ describe("Notifications Router", () => {
       })
     ).rejects.toThrow(/forbidden/i);
   });
+
+  it("notifications.adminList requires admin role", async () => {
+    const userCaller = appRouter.createCaller(
+      createMockContext("user-123", "user")
+    );
+
+    await expect(userCaller.notifications.adminList({})).rejects.toThrow(
+      /forbidden/i
+    );
+  });
+
+  it("notifications.adminList returns paginated results for admins", async () => {
+    const adminCaller = appRouter.createCaller(
+      createMockContext("admin-1", "admin")
+    );
+
+    await expect(
+      adminCaller.notifications.adminList({
+        page: 1,
+        pageSize: 10,
+        channel: "email",
+      })
+    ).resolves.toEqual({ data: [], total: 0 });
+  });
 });
 
 // ─── Input Validation Tests ─────────────────────────────────

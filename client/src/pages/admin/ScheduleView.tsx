@@ -625,7 +625,11 @@ export default function ScheduleView() {
                         ? "h-11 w-11 flex items-center justify-center rounded-full border border-current/20 bg-current/5"
                         : "hover:scale-110"
                     }`}
-                    title={isMobile ? undefined : `Status: ${cfg.label} — click to advance`}
+                    title={
+                      isMobile
+                        ? undefined
+                        : `Status: ${cfg.label} — click to advance`
+                    }
                     aria-label={`Advance status from ${cfg.label}`}
                   >
                     <StatusIcon
