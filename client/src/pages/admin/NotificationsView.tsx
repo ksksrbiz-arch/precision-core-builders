@@ -72,6 +72,7 @@ const STATUS_LABELS = {
   read: "Read",
   failed: "Failed",
 } as const;
+const FEED_PAGE_SIZE = 12;
 
 const QUICK_TEMPLATES: Record<
   Channel,
@@ -139,9 +140,11 @@ export default function NotificationsView() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "" | "pending" | "sent" | "read" | "failed"
-  >("");
-  const [channelFilter, setChannelFilter] = useState<"" | Channel>("");
+    "pending" | "sent" | "read" | "failed" | undefined
+  >(undefined);
+  const [channelFilter, setChannelFilter] = useState<Channel | undefined>(
+    undefined
+  );
 
   const utils = trpc.useUtils();
 
@@ -150,10 +153,10 @@ export default function NotificationsView() {
   const { data: feed, isLoading: feedLoading } =
     trpc.notifications.adminList.useQuery({
       page,
-      pageSize: 12,
+      pageSize: FEED_PAGE_SIZE,
       search: search || undefined,
-      status: statusFilter || undefined,
-      channel: channelFilter || undefined,
+      status: statusFilter,
+      channel: channelFilter,
     });
 
   const set = (key: keyof SendFormState, value: string) =>
@@ -623,7 +626,12 @@ export default function NotificationsView() {
               value={statusFilter}
               onChange={e => {
                 setStatusFilter(
-                  e.target.value as "" | "pending" | "sent" | "read" | "failed"
+                  (e.target.value || undefined) as
+                    | "pending"
+                    | "sent"
+                    | "read"
+                    | "failed"
+                    | undefined
                 );
                 setPage(1);
               }}
@@ -639,7 +647,9 @@ export default function NotificationsView() {
             <select
               value={channelFilter}
               onChange={e => {
-                setChannelFilter(e.target.value as "" | Channel);
+                setChannelFilter(
+                  (e.target.value || undefined) as Channel | undefined
+                );
                 setPage(1);
               }}
               className="w-full bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60"
@@ -747,7 +757,7 @@ export default function NotificationsView() {
           {(feed?.total ?? 0) > 12 && (
             <div className="mt-5 flex items-center justify-between border-t border-border/40 pt-4 text-xs text-muted-foreground">
               <span>
-                Page {page} of {Math.ceil((feed?.total ?? 0) / 12)}
+                Page {page} of {Math.ceil((feed?.total ?? 0) / FEED_PAGE_SIZE)}
               </span>
               <div className="flex gap-2">
                 <button
@@ -759,7 +769,7 @@ export default function NotificationsView() {
                 </button>
                 <button
                   onClick={() => setPage(prev => prev + 1)}
-                  disabled={page * 12 >= (feed?.total ?? 0)}
+                  disabled={page * FEED_PAGE_SIZE >= (feed?.total ?? 0)}
                   className="border border-border/60 px-3 py-1.5 hover:border-primary/40 disabled:opacity-40 transition-colors"
                 >
                   Next

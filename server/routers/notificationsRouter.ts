@@ -4,6 +4,12 @@ import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { ENV } from "../_core/env";
 import { z } from "zod";
 
+type ClientInfo = {
+  id: number;
+  name: string;
+  email: string;
+};
+
 async function dispatchViaN8n(payload: {
   channel: string;
   recipientId: string;
@@ -142,10 +148,7 @@ export const notificationsRouter = router({
         )
       );
 
-      let clientsMap = new Map<
-        string,
-        { name: string; email: string; id: number }
-      >();
+      let clientsMap = new Map<string, ClientInfo>();
 
       if (recipientIds.length > 0) {
         const { data: clients, error: clientsError } = await db
