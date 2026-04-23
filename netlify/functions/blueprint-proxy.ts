@@ -111,7 +111,7 @@ export const handler: Handler = async event => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: "Failed to load connection" }),
+      body: JSON.stringify({ error: "Failed to load Blueprint connection" }),
     };
   }
   if (!conn) {
@@ -157,7 +157,7 @@ export const handler: Handler = async event => {
   const forwardHeaders: Record<string, string> = {
     Authorization: authHeaderValue,
     Accept: "application/json",
-    "User-Agent": "PrecisionCoreBuilders/1.0",
+    "User-Agent": "Precision-Core-Builders/1.0",
   };
   const method = event.httpMethod;
   const hasBody =

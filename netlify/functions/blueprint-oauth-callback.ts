@@ -181,7 +181,7 @@ export const handler: Handler = async event => {
         "[blueprint-oauth-callback] persistence failed:",
         error.message
       );
-      return errorRedirect(returnTo, "persist_failed");
+      return errorRedirect(returnTo, "connection_save_failed");
     }
   } catch (err) {
     console.error("[blueprint-oauth-callback] unexpected error:", err);

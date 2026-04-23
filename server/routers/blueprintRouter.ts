@@ -68,8 +68,8 @@ async function loadConnection(userId: string) {
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) return null;
+  if (error)
+    throw new Error(`Failed to load Blueprint connection: ${error.message}`);
 
   let accessToken: string | null = null;
   let refreshToken: string | null = null;
@@ -243,7 +243,10 @@ export const blueprintRouter = router({
         )
         .select()
         .single();
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(
+          `Failed to persist Blueprint OAuth connection: ${error.message}`
+        );
 
       await logAdminAction(
         db,
@@ -281,7 +284,8 @@ export const blueprintRouter = router({
         )
         .select()
         .single();
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(`Failed to save Blueprint API key: ${error.message}`);
 
       await logAdminAction(
         db,
@@ -300,7 +304,10 @@ export const blueprintRouter = router({
       .from("blueprint_connections")
       .delete()
       .eq("user_id", ctx.user!.id);
-    if (error) throw new Error(error.message);
+    if (error)
+      throw new Error(
+        `Failed to disconnect Blueprint account: ${error.message}`
+      );
 
     await logAdminAction(
       db,
@@ -351,7 +358,8 @@ export const blueprintRouter = router({
         q = q.eq("visible_to_client", true);
       }
       const { data, error } = await q;
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(`Failed to load Blueprint artifacts: ${error.message}`);
       return data ?? [];
     }),
 
@@ -373,7 +381,10 @@ export const blueprintRouter = router({
         })
         .select()
         .single();
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(
+          `Failed to attach Blueprint artifact: ${error.message}`
+        );
 
       await logAdminAction(
         db,
@@ -404,7 +415,10 @@ export const blueprintRouter = router({
         .from("blueprint_artifacts")
         .delete()
         .eq("id", input.id);
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(
+          `Failed to remove Blueprint artifact: ${error.message}`
+        );
 
       await logAdminAction(
         db,
