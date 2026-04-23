@@ -32,6 +32,20 @@ type SendFormState = {
   body: string;
 };
 
+type NotificationFeedItem = {
+  id: number;
+  channel: Channel;
+  status: keyof typeof STATUS_LABELS;
+  subject: string | null;
+  body: string;
+  created_at: string;
+  sent_at: string | null;
+  read_at: string | null;
+  failure_reason: string | null;
+  projects: Array<{ name: string }> | null;
+  recipient: { id: number; name: string; email: string } | null;
+};
+
 const DEFAULT_FORM: SendFormState = {
   recipientId: "",
   projectId: "",
@@ -182,16 +196,16 @@ export default function NotificationsView() {
   const selectedClient = clientsWithUser.find(
     (client: any) => client.user_id === form.recipientId
   );
-  const visibleNotifications = feed?.data ?? [];
-  const pendingCount = visibleNotifications.filter(
-    (item: any) => item.status === "pending"
-  ).length;
-  const failedCount = visibleNotifications.filter(
-    (item: any) => item.status === "failed"
-  ).length;
-  const readCount = visibleNotifications.filter(
-    (item: any) => item.status === "read"
-  ).length;
+  const visibleNotifications: NotificationFeedItem[] = feed?.data ?? [];
+  const queueStats = visibleNotifications.reduce(
+    (acc, item) => {
+      if (item.status === "pending") acc.pending += 1;
+      if (item.status === "failed") acc.failed += 1;
+      if (item.status === "read") acc.read += 1;
+      return acc;
+    },
+    { pending: 0, failed: 0, read: 0 }
+  );
 
   const applyTemplate = (template: { subject?: string; body: string }) => {
     setForm(prev => ({
@@ -256,13 +270,13 @@ export default function NotificationsView() {
             </p>
             <div className="mt-2 flex items-end gap-3">
               <p className="text-2xl font-semibold text-foreground">
-                {pendingCount}
+                {queueStats.pending}
               </p>
               <p className="text-xs text-muted-foreground pb-1">pending</p>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {failedCount > 0
-                ? `${failedCount} delivery issue${failedCount === 1 ? "" : "s"} need attention`
+              {queueStats.failed > 0
+                ? `${queueStats.failed} delivery issue${queueStats.failed === 1 ? "" : "s"} need attention`
                 : "No recent delivery failures in the current feed"}
             </p>
           </div>
@@ -277,7 +291,7 @@ export default function NotificationsView() {
               {feed?.total ?? 0}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {readCount} read in the visible results
+              {queueStats.read} read in the visible results
             </p>
           </div>
         </div>
@@ -652,9 +666,9 @@ export default function NotificationsView() {
                 </p>
               </div>
             ) : (
-              visibleNotifications.map((item: any) => {
+              visibleNotifications.map(item => {
                 const channel = item.channel as Channel;
-                const projectName = item.projects?.name ?? "No project";
+                const projectName = item.projects?.[0]?.name ?? "No project";
                 const failed = item.status === "failed";
 
                 return (

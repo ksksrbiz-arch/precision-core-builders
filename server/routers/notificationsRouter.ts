@@ -142,7 +142,7 @@ export const notificationsRouter = router({
         )
       );
 
-      let clientsByUserId = new Map<
+      let clientsMap = new Map<
         string,
         { name: string; email: string; id: number }
       >();
@@ -155,7 +155,7 @@ export const notificationsRouter = router({
 
         if (clientsError) throw new Error(clientsError.message);
 
-        clientsByUserId = new Map(
+        clientsMap = new Map(
           (clients ?? [])
             .filter(client => !!client.user_id)
             .map(client => [
@@ -173,7 +173,7 @@ export const notificationsRouter = router({
         data: notifications.map(item => ({
           ...item,
           recipient: item.recipient_id
-            ? (clientsByUserId.get(item.recipient_id) ?? null)
+            ? (clientsMap.get(item.recipient_id) ?? null)
             : null,
         })),
         total: count ?? 0,
