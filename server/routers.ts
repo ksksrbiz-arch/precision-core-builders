@@ -1,5 +1,6 @@
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, router } from "./_core/trpc";
+import { blueprintRouter } from "./routers/blueprintRouter";
 import { clientsRouter } from "./routers/clientsRouter";
 import { estimatesRouter } from "./routers/estimatesRouter";
 import { fieldReportsRouter } from "./routers/fieldReportsRouter";
@@ -30,6 +31,7 @@ export const appRouter = router({
   notifications: notificationsRouter,
   portfolio: portfolioRouter,
   sitePlans: sitePlansRouter,
+  blueprint: blueprintRouter,
 });
 
 export type AppRouter = typeof appRouter;

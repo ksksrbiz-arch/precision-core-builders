@@ -554,3 +554,70 @@ export const sitePlans = pgTable("site_plans", {
 
 export type SitePlan = typeof sitePlans.$inferSelect;
 export type InsertSitePlan = typeof sitePlans.$inferInsert;
+
+// ─── Blueprint.am Integration ────────────────────────────────────────────────
+// Per-user link to an external Blueprint.am account.  Tokens are stored
+// encrypted at rest via server/_core/crypto.ts — they are NEVER stored in
+// plaintext. A single row per PCB user: admin (Eric) plus any client who
+// connects their own Blueprint account.
+
+export const blueprintAuthMethodEnum = pgEnum("blueprint_auth_method", [
+  "oauth",
+  "api_key",
+]);
+
+export const blueprintConnections = pgTable("blueprint_connections", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  /** Blueprint's own user identifier (email, username or id — opaque to PCB) */
+  providerUserId: varchar("provider_user_id", { length: 320 }),
+  /** Display handle shown in UI (typically the Blueprint email) */
+  providerEmail: varchar("provider_email", { length: 320 }),
+  authMethod: blueprintAuthMethodEnum("auth_method").notNull().default("oauth"),
+  /** Encrypted access token (AES-256-GCM, base64 payload) */
+  accessTokenEnc: text("access_token_enc"),
+  /** Encrypted refresh token */
+  refreshTokenEnc: text("refresh_token_enc"),
+  /** Encrypted raw API key (when authMethod = 'api_key') */
+  apiKeyEnc: text("api_key_enc"),
+  expiresAt: timestamp("expires_at"),
+  scopes: text("scopes"), // space-separated scope list
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BlueprintConnection = typeof blueprintConnections.$inferSelect;
+export type InsertBlueprintConnection =
+  typeof blueprintConnections.$inferInsert;
+
+/** Reference to a Blueprint resource that has been attached to a PCB project. */
+export const blueprintArtifacts = pgTable("blueprint_artifacts", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  /** Blueprint's opaque ID for the linked resource (plan/design/etc.) */
+  blueprintResourceId: varchar("blueprint_resource_id", {
+    length: 200,
+  }).notNull(),
+  resourceType: varchar("resource_type", { length: 50 })
+    .notNull()
+    .default("plan"),
+  title: varchar("title", { length: 500 }),
+  url: text("url"),
+  /** Free-form JSON string for additional metadata from Blueprint */
+  metadata: text("metadata"),
+  attachedBy: uuid("attached_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  /** Whether this artifact is visible in the client portal */
+  visibleToClient: boolean("visible_to_client").default(false).notNull(),
+  syncedAt: timestamp("synced_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type BlueprintArtifact = typeof blueprintArtifacts.$inferSelect;
+export type InsertBlueprintArtifact = typeof blueprintArtifacts.$inferInsert;

@@ -100,6 +100,7 @@ describe("App Router Structure", () => {
     expect(routers).toContain("subContractors");
     expect(routers).toContain("finishSelections");
     expect(routers).toContain("notifications");
+    expect(routers).toContain("blueprint");
   });
 
   it("has at least 50 total procedures across all routers", () => {

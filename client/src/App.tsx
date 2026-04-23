@@ -66,6 +66,7 @@ const FinishSelectionsAdmin = lazy(
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
 const NotificationsView = lazy(() => import("./pages/admin/NotificationsView"));
+const BlueprintTools = lazy(() => import("./pages/admin/BlueprintTools"));
 
 // Portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -73,6 +74,7 @@ const PortalReports = lazy(() => import("./pages/portal/PortalReports"));
 const PortalFinishes = lazy(() => import("./pages/portal/PortalFinishes"));
 const PortalLedger = lazy(() => import("./pages/portal/PortalLedger"));
 const PortalPayments = lazy(() => import("./pages/portal/PortalPayments"));
+const PortalBlueprint = lazy(() => import("./pages/portal/PortalBlueprint"));
 
 // Service pages
 const LazyResidential = lazy(() =>
@@ -112,6 +114,7 @@ function PageLoader() {
 }
 
 function Router() {
+  const blueprintEnabled = import.meta.env.VITE_FEATURE_BLUEPRINT === "true";
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
@@ -161,6 +164,9 @@ function Router() {
         <Route path="/admin/analytics" component={Analytics} />
         <Route path="/admin/activity-log" component={ActivityLog} />
         <Route path="/admin/notifications" component={NotificationsView} />
+        {blueprintEnabled && (
+          <Route path="/admin/blueprint" component={BlueprintTools} />
+        )}
 
         {/* Client portal — auth required */}
         <Route path="/portal">
@@ -198,6 +204,15 @@ function Router() {
             </ProtectedRoute>
           )}
         </Route>
+        {blueprintEnabled && (
+          <Route path="/portal/blueprint">
+            {() => (
+              <ProtectedRoute>
+                <PortalBlueprint />
+              </ProtectedRoute>
+            )}
+          </Route>
+        )}
 
         {/* Service pages */}
         <Route path="/services/residential" component={LazyResidential} />

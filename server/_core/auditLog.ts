@@ -40,7 +40,11 @@ export type AuditAction =
   | "portfolioProject.delete"
   | "scheduleItem.create"
   | "scheduleItem.update"
-  | "scheduleItem.delete";
+  | "scheduleItem.delete"
+  | "blueprint.connect"
+  | "blueprint.disconnect"
+  | "blueprint.attachArtifact"
+  | "blueprint.removeArtifact";
 
 type AuditContext = {
   user: { id: string; email?: string } | null;

@@ -22,6 +22,18 @@ export const ENV = {
   // Billing
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
 
+  // Blueprint.am integration
+  // Public site URL (used to build OAuth redirect URIs) — prefer SITE_URL,
+  // fall back to Netlify's built-in URL env var.
+  siteUrl: process.env.SITE_URL ?? process.env.URL ?? "",
+  blueprintClientId: process.env.BLUEPRINT_CLIENT_ID ?? "",
+  blueprintClientSecret: process.env.BLUEPRINT_CLIENT_SECRET ?? "",
+  blueprintBaseUrl: process.env.BLUEPRINT_BASE_URL ?? "https://blueprint.am",
+  blueprintApiBaseUrl:
+    process.env.BLUEPRINT_API_BASE_URL ?? "https://api.blueprint.am",
+  /** Hex-encoded 32-byte key used by server/_core/crypto.ts (AES-256-GCM). */
+  blueprintEncryptionKey: process.env.BLUEPRINT_ENCRYPTION_KEY ?? "",
+
   // Application
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction: process.env.NODE_ENV === "production",

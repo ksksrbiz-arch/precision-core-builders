@@ -13,6 +13,9 @@ const NAV_LINKS = [
   { label: "Selections", href: "/portal/finishes" },
   { label: "Ledger", href: "/portal/ledger" },
   { label: "Payments", href: "/portal/payments" },
+  ...(import.meta.env?.VITE_FEATURE_BLUEPRINT === "true"
+    ? [{ label: "Blueprints", href: "/portal/blueprint" }]
+    : []),
 ] as const;
 
 function PortalNav() {
