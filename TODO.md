@@ -1,7 +1,7 @@
 # Precision Core Builders: Development TODO
 
-**Last Updated:** April 6, 2026  
-**Overall Progress:** 45% complete (Foundation ~95% | Operations ~40% | Portal/Features ~15-25%)  
+**Last Updated:** April 23, 2026
+**Overall Progress:** 55% complete (Foundation ~95% | Operations ~40% | Portal/Features ~20-30% | Blueprint ✅ shipped)
 **Next Milestone:** Complete Phase 2 (Gantt chart + real-time updates)
 
 ---
@@ -296,6 +296,42 @@
 
 ---
 
+## PHASE 3.5: Blueprint.am Integration ✅ _Shipped — gated by `VITE_FEATURE_BLUEPRINT=true`_
+
+See [`docs/integrations/blueprint.md`](docs/integrations/blueprint.md) for full setup and troubleshooting.
+
+### [BLUEPRINT-1] Connection management — ✅ Done
+
+- [x] `blueprint_connections` table in `drizzle/schema.ts` (tokens AES-256-GCM encrypted at rest)
+- [x] `blueprint_artifacts` table for project-scoped Blueprint resource references
+- [x] `server/_core/crypto.ts` — AES-256-GCM encrypt/decrypt + HMAC OAuth `state` signing
+- [x] `blueprintRouter` — `getConnectionStatus`, `startOAuth`, `completeOAuth`, `saveApiKey`, `disconnect`
+- [x] `BLUEPRINT_ENCRYPTION_KEY` env var in `server/_core/env.ts` and `.env.example`
+- [x] Admin page `/admin/blueprint` (OAuth + API-key connect, status indicator, disconnect)
+- [x] Client portal page `/portal/blueprint` (onboarding guard + read-only artifact list)
+- [x] Nav entry in `DashboardLayout` + portal nav link in `PortalLayout` (both flag-gated)
+
+### [BLUEPRINT-2] Netlify Functions — ✅ Done
+
+- [x] `blueprint-oauth-callback` — verifies signed state, exchanges code, persists encrypted tokens
+- [x] `blueprint-proxy` — PCB-JWT auth, strict path allowlist, per-IP rate limit, tokens stay server-side
+
+### [BLUEPRINT-3] Artifact sharing — ✅ Done
+
+- [x] `attachArtifact` / `removeArtifact` admin procedures (ledger-logged)
+- [x] `listArtifacts` — admins see all; clients see only `visible_to_client = true` rows
+- [x] 16 Vitest tests covering auth, crypto round-trip, state tamper/expiry, input validation
+
+### [BLUEPRINT-4] Pending / Future
+
+- [ ] Activate OAuth button once Blueprint publishes `BLUEPRINT_CLIENT_ID` / `_SECRET`
+- [ ] Token-refresh flow in `blueprint-proxy` (exchange refresh token when access token expires)
+- [ ] Expand `ALLOWED_PATH_PATTERNS` in `blueprint-proxy.ts` as API surface is documented
+- [ ] Write-back / sync actions (import Blueprint plans as PCB schedule items) — read path must be stable first
+- [ ] Client portal E2E test: connect → view artifact → disconnect → verify cleanup
+
+---
+
 ## PHASE 4: Automation & Procurement (Priority 2 — Week 2)
 
 ### [PHASE4-1] Implement AI Lead Scoring
@@ -573,6 +609,8 @@
   - [ ] OPENWEATHERMAP_API_KEY
   - [ ] STRIPE_SECRET_KEY
   - [ ] N8N_WEBHOOK_URL
+  - [ ] BLUEPRINT*ENCRYPTION_KEY *(required to enable Blueprint integration)\_
+  - [ ] BLUEPRINT*CLIENT_ID / BLUEPRINT_CLIENT_SECRET *(optional — enables OAuth button)\_
 - [ ] Rotate secrets quarterly
 - [ ] Document env var purpose and retrieval
 
@@ -625,14 +663,15 @@
 
 ## KNOWN BLOCKERS & DEPENDENCIES
 
-| Blocker                              | Impact               | Owner       | Status                            |
-| ------------------------------------ | -------------------- | ----------- | --------------------------------- |
-| Supabase Realtime setup              | Real-time features   | Claude      | ⏳ Ready, pending implementation  |
-| n8n workflow creation                | Automation           | Eric/Claude | ⏳ Pending                        |
-| Stripe API integration               | Billing              | Claude      | ⏳ Scaffolded, pending completion |
-| Vendor API keys (Home Depot, Lowe's) | Material procurement | Eric        | ⏳ Pending                        |
-| Netlify Identity setup               | Authentication       | Claude      | ⏳ Pending                        |
-| Project photography                  | Portfolio            | Eric        | ⏳ Waiting for completed projects |
+| Blocker                              | Impact               | Owner       | Status                                  |
+| ------------------------------------ | -------------------- | ----------- | --------------------------------------- |
+| Supabase Realtime setup              | Real-time features   | Claude      | ⏳ Ready, pending implementation        |
+| n8n workflow creation                | Automation           | Eric/Claude | ⏳ Pending                              |
+| Stripe API integration               | Billing              | Claude      | ⏳ Scaffolded, pending completion       |
+| Vendor API keys (Home Depot, Lowe's) | Material procurement | Eric        | ⏳ Pending                              |
+| Netlify Identity setup               | Authentication       | Claude      | ⏳ Pending                              |
+| Project photography                  | Portfolio            | Eric        | ⏳ Waiting for completed projects       |
+| Blueprint.am API credentials         | Blueprint OAuth      | Eric        | ⏳ Contact Blueprint for partner access |
 
 ---
 
@@ -666,6 +705,6 @@
 
 ---
 
-**Last Reviewed:** April 6, 2026  
-**Next Review:** April 13, 2026 (weekly sync)  
-**Estimated Completion:** April 20-27, 2026 (3 weeks)
+**Last Reviewed:** April 23, 2026
+**Next Review:** April 30, 2026 (weekly sync)
+**Estimated Completion:** May 2026

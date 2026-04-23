@@ -76,6 +76,7 @@ This document primes AI assistants with the codebase structure, development work
 | **Forms**           | React Hook Form + Zod 4                              | Type-safe validation                         |
 | **Charts**          | Recharts 2                                           | Data visualization                           |
 | **Platform**        | GitHub → Netlify                                     | CI/CD with edge deployment                   |
+| **Integrations**    | blueprint.am (optional, feature-flagged)             | See `docs/integrations/blueprint.md`         |
 | **Package Manager** | pnpm 10.4.1                                          | Strict, fast, workspace-ready                |
 
 ### 3.0. Service Architecture Principle
@@ -435,13 +436,15 @@ Netlify is the **sole infrastructure platform**. All services are managed throug
 
 These functions are documented in `netlify/functions/` but **not yet implemented**:
 
-| Function               | Purpose                                          |
-| :--------------------- | :----------------------------------------------- |
-| `voice-to-report`      | Whisper transcription + Gemini report generation |
-| `estimate-project`     | Real-time cost calculation from project params   |
-| `weather-schedule`     | Eugene, OR weather → Gantt chart adjustments     |
-| `material-procurement` | Phase tracking, PO drafts, vendor pricing        |
-| `lead-score`           | AI lead prioritization by type/budget/location   |
+| Function                   | Purpose                                                            |
+| :------------------------- | :----------------------------------------------------------------- |
+| `voice-to-report`          | Whisper transcription + Gemini report generation                   |
+| `estimate-project`         | Real-time cost calculation from project params                     |
+| `weather-schedule`         | Eugene, OR weather → Gantt chart adjustments                       |
+| `material-procurement`     | Phase tracking, PO drafts, vendor pricing                          |
+| `lead-score`               | AI lead prioritization by type/budget/location                     |
+| `blueprint-oauth-callback` | Blueprint.am OAuth redirect handler (token exchange)               |
+| `blueprint-proxy`          | Authenticated proxy to the Blueprint API (tokens server-side only) |
 
 ---
 

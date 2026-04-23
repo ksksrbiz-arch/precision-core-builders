@@ -10,7 +10,7 @@ Precision Core Builders is built on the **Cathedral Principle**: sequential, pha
 
 ### 1. AI-Powered Voice-to-Report Field Logging
 
-Eric records voice memos on-site. The system automatically transcribes them with Whisper, generates structured daily field reports using Gemini, and updates the client portal in real-time. No manual data entry required.
+Eric records voice memos on-site. The system automatically transcribes them with Whisper, generates structured daily field reports using Claude/Gemini, and updates the client portal in real-time. No manual data entry required.
 
 ### 2. Smart Weather-Responsive Scheduling
 
@@ -44,6 +44,10 @@ Supabase Auth handles login/logout. Eric is `admin`; clients are `user`. Row-Lev
 
 Interactive 360-degree walkthroughs and high-fidelity before/after sliders showcase completed work. Designed to impress potential clients and demonstrate craftsmanship.
 
+### 10. Blueprint.am Integration _(feature-flagged — `VITE_FEATURE_BLUEPRINT=true`)_
+
+Connect Blueprint.am accounts for both Eric and clients. Attach plans and designs to PCB projects; control which artifacts are visible in the client portal. Supports deep-link, per-user API key, and OAuth flows — all with tokens encrypted at rest (AES-256-GCM). See [`docs/integrations/blueprint.md`](docs/integrations/blueprint.md) for setup instructions.
+
 ## Design System: "Quiet Luxury"
 
 The visual language is **"Warm Modern"**—minimalist, high-contrast, utilizing natural textures (wood, stone, steel) in the UI. This aesthetic reflects Eric's 20+ years of craftsmanship.
@@ -55,22 +59,26 @@ The visual language is **"Warm Modern"**—minimalist, high-contrast, utilizing 
 
 ## Tech Stack
 
-| Layer          | Technology                                       | Purpose                                                      |
-| :------------- | :----------------------------------------------- | :----------------------------------------------------------- |
-| **Frontend**   | React 19 / Vite / Tailwind CSS 4 / Framer Motion | High-performance, SEO-optimized UI with tactile animations.  |
-| **Backend**    | Node.js / Express.js / tRPC                      | Type-safe API layer, serverless-ready.                       |
-| **Database**   | Supabase (PostgreSQL)                            | Real-time subscriptions, Row-Level Security, Auth.           |
-| **AI/LLM**     | Gemini-2.5-Flash                                 | Field report generation, lead scoring, cost estimation.      |
-| **Voice**      | Whisper API                                      | Voice-to-text for field memos.                               |
-| **Automation** | n8n                                              | Orchestration of leads, notifications, sub-contractor comms. |
-| **Deployment** | GitHub → Netlify                                 | CI/CD with automatic builds and edge deployment.             |
-| **Storage**    | Supabase Storage                                 | Images, videos, documents, site-cam feeds.                   |
+| Layer            | Technology                                         | Purpose                                                           |
+| :--------------- | :------------------------------------------------- | :---------------------------------------------------------------- |
+| **Frontend**     | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion | High-performance UI with tactile animations and PWA support.      |
+| **Routing**      | Wouter 3                                           | Lightweight client-side router.                                   |
+| **State/API**    | tRPC 11 + React Query 5                            | End-to-end type-safe API with server-state caching.               |
+| **Backend**      | Netlify Functions (serverless)                     | Stateless compute — AI, voice, weather, OAuth callbacks, proxies. |
+| **Database**     | Supabase (PostgreSQL)                              | Real-time subscriptions, Row-Level Security, Auth.                |
+| **AI/LLM**       | Anthropic Claude / Google Gemini                   | Field report generation, lead scoring, cost estimation, chat.     |
+| **Voice**        | OpenAI Whisper                                     | Voice-to-text for field memos.                                    |
+| **Automation**   | n8n                                                | Orchestration of leads, notifications, sub-contractor comms.      |
+| **Deployment**   | GitHub → Netlify                                   | CI/CD with automatic builds and edge deployment.                  |
+| **Storage**      | Supabase Storage                                   | Images, videos, documents, site-cam feeds.                        |
+| **Package Mgr**  | pnpm 10.4.1                                        | Fast, strict, workspace-ready.                                    |
+| **Integrations** | Blueprint.am _(feature-flagged)_                   | Plan/design attachment; see `docs/integrations/blueprint.md`.     |
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 20+ and pnpm
+- Node.js 20+ and pnpm 10+
 - Supabase account (for database and auth)
 - Netlify account (for deployment)
 - GitHub account (for version control)
@@ -89,9 +97,8 @@ pnpm install
 cp .env.example .env.local
 # Edit .env.local with your Supabase credentials, API keys, etc.
 
-# Run database migrations
-pnpm drizzle-kit generate
-pnpm drizzle-kit migrate
+# Run database migrations (requires DATABASE_URL in .env.local)
+pnpm db:push
 
 # Start the development server
 pnpm dev
@@ -103,93 +110,133 @@ The app will be available at `http://localhost:3000`.
 
 ```
 precision-core-builders/
-├── client/                    # React frontend
+├── client/                     # React frontend (Vite)
 │   ├── src/
-│   │   ├── pages/            # Page components
-│   │   ├── components/        # Reusable UI components
-│   │   ├── lib/              # Utilities (tRPC, Supabase client)
-│   │   ├── contexts/         # React contexts
-│   │   ├── hooks/            # Custom hooks
-│   │   └── index.css         # Design system (colors, typography)
-│   └── public/               # Static assets (favicon, robots.txt only)
-├── server/                   # Backend
-│   ├── routers.ts           # tRPC procedures
-│   ├── db.ts                # Database query helpers
-│   ├── functions/           # Netlify Functions (serverless)
-│   └── _core/               # Framework internals
-├── drizzle/                 # Database schema & migrations
-├── CLAUDE.md                # Agent priming & implementation guardrails
-├── README.md                # This file
+│   │   ├── pages/             # Page components (admin/, portal/, public)
+│   │   ├── components/        # Reusable UI (ui/, layout/, DashboardLayout, etc.)
+│   │   ├── _core/hooks/       # Core hooks (useAuth, useMutationWithToast)
+│   │   ├── lib/               # Utilities (trpc.ts, utils.ts)
+│   │   ├── hooks/             # Feature hooks
+│   │   └── index.css          # Design system (colors, typography, animations)
+│   └── public/                # Static assets (favicon, manifest, icons)
+├── server/                    # Backend (tRPC routers)
+│   ├── routers/               # Feature routers (projects, fieldReports, blueprint, …)
+│   ├── routers.ts             # Root appRouter definition
+│   ├── db.ts                  # Supabase admin client + query helpers
+│   └── _core/                 # Framework internals (trpc, context, env, crypto, audit)
+├── netlify/
+│   └── functions/             # Serverless functions (ai-chat, voice-to-report, blueprint-proxy, …)
+├── drizzle/                   # Database schema & migration files
+├── shared/                    # Shared types and error classes
+├── docs/integrations/         # Third-party integration guides
+├── CLAUDE.md                  # Agent priming & implementation guardrails
+├── README.md                  # This file
 └── package.json
 ```
 
 ## Development Workflow
 
-### 1. Database Changes
-
-Update the schema in `drizzle/schema.ts`, generate migrations, and apply them:
+### 1. Common commands
 
 ```bash
-pnpm drizzle-kit generate
-# Review the generated SQL, then apply via Supabase dashboard or CLI
+pnpm dev              # Start dev server with HMR
+pnpm build            # Production build
+pnpm check            # TypeScript type check (0 errors required)
+pnpm lint             # Type check + Prettier format check
+pnpm format           # Auto-format with Prettier
+pnpm test             # Run Vitest test suite
+pnpm db:push          # Generate + apply Drizzle migration
+pnpm db:studio        # Open Drizzle Studio (visual DB browser)
 ```
 
-### 2. Backend Procedures
+### 2. Database Changes
 
-Add or extend tRPC procedures in `server/routers.ts`. Use `protectedProcedure` for admin-only logic, `publicProcedure` for client-facing endpoints.
+Update the schema in `drizzle/schema.ts`, then:
 
-### 3. Frontend Components
+```bash
+pnpm db:push   # generate SQL migration and apply to Supabase
+```
 
-Create components in `client/src/components/` and pages in `client/src/pages/`. Use shadcn/ui components for consistency. Call backend procedures via `trpc.*.useQuery()` or `trpc.*.useMutation()`.
+### 3. Backend Procedures
 
-### 4. Testing
+Add or extend tRPC routers in `server/routers/`. Use `adminProcedure` for Eric-only logic, `protectedProcedure` for any authenticated user, and `publicProcedure` for unauthenticated access. Register new routers in `server/routers.ts`.
 
-Write Vitest tests for critical procedures in `server/*.test.ts`. Run tests with `pnpm test`.
+### 4. Netlify Functions
 
-### 5. Deployment
+Add new functions under `netlify/functions/`. Each function exports a `handler`. Use the shared utilities in `netlify/functions/_utils/` for auth guarding, CORS, and rate limiting.
+
+### 5. Testing
+
+Write Vitest tests in `server/**/*.test.ts` or `netlify/functions/__tests__/`. Run with `pnpm test`.
+
+### 6. Deployment
 
 Push to GitHub. Netlify automatically builds and deploys on every commit to `main`.
 
 ## Key Files
 
-| File                                 | Purpose                                                     |
-| :----------------------------------- | :---------------------------------------------------------- |
-| `CLAUDE.md`                          | Agent priming, architecture, implementation guardrails.     |
-| `drizzle/schema.ts`                  | Database tables and types.                                  |
-| `server/routers.ts`                  | tRPC procedures (all backend logic).                        |
-| `server/functions/`                  | Netlify Functions for serverless compute (AI, voice, etc.). |
-| `client/src/index.css`               | Design system: colors, typography, animations.              |
-| `client/src/pages/Home.tsx`          | Landing page with "Quiet Luxury" aesthetic.                 |
-| `client/src/pages/CommandCenter.tsx` | Eric's admin dashboard.                                     |
-| `client/src/pages/ClientPortal.tsx`  | Client project view.                                        |
+| File                                            | Purpose                                                         |
+| :---------------------------------------------- | :-------------------------------------------------------------- |
+| `CLAUDE.md`                                     | Agent priming, architecture, implementation guardrails.         |
+| `drizzle/schema.ts`                             | All database tables and TypeScript types.                       |
+| `server/routers.ts`                             | Root tRPC router — assembles all feature routers.               |
+| `server/routers/blueprintRouter.ts`             | Blueprint.am integration (status, OAuth, API key, artifacts).   |
+| `server/_core/crypto.ts`                        | AES-256-GCM token encryption + HMAC OAuth state signing.        |
+| `netlify/functions/blueprint-oauth-callback.ts` | Blueprint OAuth redirect handler (code exchange).               |
+| `netlify/functions/blueprint-proxy.ts`          | Authenticated proxy to Blueprint API (tokens stay server-side). |
+| `netlify/functions/_utils/`                     | Shared utilities: auth guard, CORS, rate limiter.               |
+| `client/src/index.css`                          | Design system: colors, typography, animations.                  |
+| `client/src/pages/admin/CommandCenter.tsx`      | Eric's admin dashboard.                                         |
+| `client/src/pages/admin/BlueprintTools.tsx`     | Blueprint.am admin connection + artifact management.            |
+| `client/src/pages/portal/PortalDashboard.tsx`   | Client project view.                                            |
+| `client/src/pages/portal/PortalBlueprint.tsx`   | Blueprint.am client portal (onboarding + shared plans).         |
+| `docs/integrations/blueprint.md`                | Blueprint setup guide, env vars, troubleshooting.               |
 
 ## Environment Variables
 
-Required environment variables (set via Netlify dashboard or `.env.local`):
+Required environment variables — set via **Netlify dashboard** (production) or `.env.local` (local dev). See `.env.example` for the full annotated list.
 
 ```
-# Supabase
+# Supabase (required)
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...       # server-side only
+VITE_SUPABASE_URL=https://...          # client-side (anon only)
+VITE_SUPABASE_ANON_KEY=eyJ...
 
-# AI/LLM
-GEMINI_API_KEY=your-gemini-api-key
-OPENWEATHERMAP_API_KEY=your-weather-api-key
+# AI / LLM (at least one required)
+ANTHROPIC_API_KEY=sk-ant-...           # Claude (preferred)
+GOOGLE_AI_API_KEY=AIza...             # Gemini (free fallback)
+OPENAI_API_KEY=sk-...                  # Whisper voice transcription
 
-# n8n (for automation workflows)
-N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/...
+# Weather (optional — Open-Meteo used automatically if omitted)
+OPENWEATHERMAP_API_KEY=...
 
-# Netlify Functions
-NETLIFY_AUTH_TOKEN=your-netlify-token
+# Automation
+N8N_WEBHOOK_URL=https://...
+N8N_API_KEY=...
+
+# Billing
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_PUBLISHABLE_KEY=pk_live_...
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
+
+# Blueprint.am integration (optional — enable with VITE_FEATURE_BLUEPRINT=true)
+VITE_FEATURE_BLUEPRINT=false
+BLUEPRINT_ENCRYPTION_KEY=<64 hex chars>   # 32-byte AES-256-GCM key
+BLUEPRINT_CLIENT_ID=                      # OAuth (when available)
+BLUEPRINT_CLIENT_SECRET=
+BLUEPRINT_BASE_URL=https://blueprint.am
+BLUEPRINT_API_BASE_URL=https://api.blueprint.am
 ```
 
 ## Security & Compliance
 
 - **Data Privacy:** All data encrypted at rest and in transit. Supabase Row-Level Security ensures clients see only their projects.
-- **Federal Scrutiny:** Architecture designed with OMB M-25-21/22 principles (security-by-design).
-- **Audit Trails:** Comprehensive logging of all financial and contractual interactions via the "Core Values" ledger.
+- **Token Storage:** Blueprint OAuth tokens and API keys encrypted with AES-256-GCM before being written to the database — plaintext never touches the database.
+- **Audit Trails:** Comprehensive logging of all financial, contractual, and cross-service interactions via the immutable "Core Values" ledger.
 - **CCB Compliance:** Transparent documentation of all project decisions and costs, supporting Oregon CCB #246527 compliance.
+- **Rate Limiting:** All Netlify Functions are rate-limited per IP; the Blueprint proxy additionally enforces a strict API path allowlist.
 
 ## Success Metrics
 

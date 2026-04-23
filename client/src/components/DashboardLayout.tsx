@@ -41,6 +41,7 @@ import {
   Image,
   LayoutDashboard,
   LogOut,
+  Layers,
   Package,
   PanelLeft,
   Pencil,
@@ -65,7 +66,7 @@ type NavItem = {
   badge?: string;
 };
 
-const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
+const BASE_NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Operations",
     items: [
@@ -111,6 +112,26 @@ const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
     ],
   },
 ];
+
+const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> =
+  buildNavSections();
+
+function buildNavSections() {
+  const sections = BASE_NAV_SECTIONS.map(s => ({
+    label: s.label,
+    items: [...s.items],
+  }));
+  const blueprintEnabled = import.meta.env?.VITE_FEATURE_BLUEPRINT === "true";
+  if (blueprintEnabled) {
+    const biz = sections.find(s => s.label === "Business");
+    biz?.items.push({
+      icon: Layers,
+      label: "Blueprint",
+      path: "/admin/blueprint",
+    });
+  }
+  return sections;
+}
 
 const NAV = NAV_SECTIONS.flatMap(section => section.items);
 
