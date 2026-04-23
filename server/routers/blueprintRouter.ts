@@ -17,6 +17,7 @@
  * gated on the artifact's `visibleToClient` flag.
  */
 import { TRPCError } from "@trpc/server";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db";
 import { logAdminAction } from "../_core/auditLog";
@@ -24,6 +25,7 @@ import {
   decryptSecret,
   encryptSecret,
   isCryptoConfigured,
+  OAUTH_STATE_EXPIRY_MS,
   signState,
   verifyState,
 } from "../_core/crypto";
@@ -85,16 +87,31 @@ async function loadConnection(userId: string) {
 }
 
 /** Compute the status summary for a connection row. */
-function statusFor(row: any): "connected" | "expired" | "disconnected" {
+function statusFor(
+  row: any
+): "connected" | "expired" | "disconnected" | "invalid" {
   if (!row) return "disconnected";
   if (row.auth_method === "api_key") {
-    return row.api_key_enc ? "connected" : "disconnected";
+    if (!row.api_key_enc) return "disconnected";
+    // Attempt decryption so a rotated/invalid encryption key surfaces as
+    // "invalid" rather than silently masquerading as connected.
+    try {
+      decryptSecret(row.api_key_enc);
+      return "connected";
+    } catch {
+      return "invalid";
+    }
   }
   if (!row.access_token_enc) return "disconnected";
   if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
     return "expired";
   }
-  return "connected";
+  try {
+    decryptSecret(row.access_token_enc);
+    return "connected";
+  } catch {
+    return "invalid";
+  }
 }
 
 // ── Input schemas ──────────────────────────────────────────────────────────
@@ -168,9 +185,10 @@ export const blueprintRouter = router({
       assertCryptoReady();
 
       // State = base64(JSON({ uid, nonce, returnTo })) — signed with HMAC.
+      // Use a cryptographically secure nonce to prevent prediction/guessing.
       const payload = {
         uid: ctx.user!.id,
-        nonce: Math.random().toString(36).slice(2, 12),
+        nonce: randomBytes(16).toString("hex"),
         returnTo: input.returnTo ?? "/admin/blueprint",
         iat: Date.now(),
       };
@@ -414,8 +432,8 @@ export function __verifyOAuthState(state: string): {
     const payload = JSON.parse(
       Buffer.from(raw, "base64url").toString("utf8")
     ) as { uid: string; returnTo?: string; iat?: number };
-    // Expire state after 10 minutes.
-    if (payload.iat && Date.now() - payload.iat > 10 * 60_000) {
+    // Expire state after OAUTH_STATE_EXPIRY_MS.
+    if (payload.iat && Date.now() - payload.iat > OAUTH_STATE_EXPIRY_MS) {
       return { ok: false };
     }
     return { ok: true, uid: payload.uid, returnTo: payload.returnTo };

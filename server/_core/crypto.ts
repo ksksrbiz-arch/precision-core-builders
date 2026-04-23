@@ -17,6 +17,7 @@
 import {
   createCipheriv,
   createDecipheriv,
+  createHmac,
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
@@ -87,7 +88,6 @@ export function decryptSecret(payload: string): string {
  */
 export function signState(value: string): string {
   if (!value) throw new TypeError("signState requires a value");
-  const { createHmac } = require("node:crypto") as typeof import("node:crypto");
   const key = getKey();
   return createHmac("sha256", key).update(value).digest("hex");
 }
@@ -114,3 +114,6 @@ export function isCryptoConfigured(): boolean {
     return false;
   }
 }
+
+/** OAuth state blobs are valid for 10 minutes.  Shared so callers agree. */
+export const OAUTH_STATE_EXPIRY_MS = 10 * 60_000;

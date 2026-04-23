@@ -121,9 +121,7 @@ function buildNavSections() {
     label: s.label,
     items: [...s.items],
   }));
-  const blueprintEnabled =
-    typeof import.meta !== "undefined" &&
-    import.meta.env?.VITE_FEATURE_BLUEPRINT === "true";
+  const blueprintEnabled = import.meta.env?.VITE_FEATURE_BLUEPRINT === "true";
   if (blueprintEnabled) {
     const biz = sections.find(s => s.label === "Business");
     biz?.items.push({

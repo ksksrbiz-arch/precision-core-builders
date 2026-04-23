@@ -19,7 +19,11 @@
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
 import { ENV } from "../../server/_core/env";
-import { encryptSecret, verifyState } from "../../server/_core/crypto";
+import {
+  encryptSecret,
+  OAUTH_STATE_EXPIRY_MS,
+  verifyState,
+} from "../../server/_core/crypto";
 import { checkRateLimit, getClientIp } from "./_utils/rateLimiter";
 
 function supabase() {
@@ -43,7 +47,7 @@ function parseState(
       Buffer.from(raw, "base64url").toString("utf8")
     ) as { uid?: string; returnTo?: string; iat?: number };
     if (!payload.uid) return { ok: false };
-    if (payload.iat && Date.now() - payload.iat > 10 * 60_000) {
+    if (payload.iat && Date.now() - payload.iat > OAUTH_STATE_EXPIRY_MS) {
       return { ok: false };
     }
     return {

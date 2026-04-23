@@ -26,10 +26,17 @@ import {
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
 
-/** Paths a user is allowed to proxy (simple allowlist — expand as needed). */
+/**
+ * Paths a user is allowed to proxy.  Patterns are deliberately strict:
+ * only alphanumerics, dashes, and underscores are permitted in resource
+ * identifiers so path-traversal sequences (`..`, `/`) are rejected.
+ * Expand as specific use cases arise.
+ */
 const ALLOWED_PATH_PATTERNS: RegExp[] = [
-  /^\/v1\/projects(\/[^\s]*)?$/,
-  /^\/v1\/designs(\/[^\s]*)?$/,
+  /^\/v1\/projects$/,
+  /^\/v1\/projects\/[A-Za-z0-9_-]+$/,
+  /^\/v1\/designs$/,
+  /^\/v1\/designs\/[A-Za-z0-9_-]+$/,
   /^\/v1\/me$/,
 ];
 
