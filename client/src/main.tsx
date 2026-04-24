@@ -69,6 +69,20 @@ createRoot(document.getElementById("root")!).render(
 
 // ── Service Worker Registration ─────────────────────────────────────────
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  // If a controller was already present on load, a subsequent controllerchange
+  // means a new SW activated and claimed the page — reload once so the UI
+  // picks up the freshly deployed JS/CSS instead of running stale cached code.
+  // Guarding on the pre-existing controller prevents an unwanted reload on
+  // first-ever install.
+  if (navigator.serviceWorker.controller) {
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    });
+  }
+
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
