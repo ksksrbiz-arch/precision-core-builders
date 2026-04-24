@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { AdminGuidePrompt } from "@/components/AdminGuidePrompt";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { getGuideByPath } from "@/pages/admin/guides-data";
+import { ASSETS } from "@/const";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -325,7 +326,7 @@ function DashboardLayoutContent({
       <div className="relative" ref={sidebarRef}>
         <Sidebar collapsible="icon" className="border-r border-border/40">
           <SidebarHeader className="h-14 justify-center border-b border-border/40">
-            <div className="flex items-center gap-3 px-2">
+            <div className="flex items-center gap-2 px-2">
               <button
                 onClick={toggleSidebar}
                 className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded transition-colors shrink-0"
@@ -334,12 +335,19 @@ function DashboardLayoutContent({
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed && (
-                <span
-                  className="text-xs font-bold tracking-widest uppercase text-muted-foreground truncate"
-                  style={{ fontFamily: "var(--font-condensed)" }}
+                <a
+                  href="/"
+                  aria-label="Precision Core Builders — Home"
+                  className="flex items-center min-w-0 flex-1"
                 >
-                  Precision Core
-                </span>
+                  <img
+                    src={ASSETS.logo}
+                    alt="Precision Core Builders"
+                    className="h-6 w-auto max-w-full object-contain"
+                    width="140"
+                    height="24"
+                  />
+                </a>
               )}
             </div>
             {!isCollapsed && (
@@ -520,22 +528,29 @@ function DashboardLayoutContent({
         )}
         {isMobile && (
           <div
-            className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-3"
+            className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-2"
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
           >
             <SidebarTrigger className="h-10 w-10 rounded flex-shrink-0" />
-            <div className="flex-1 min-w-0">
+            <a
+              href="/"
+              aria-label="Precision Core Builders — Home"
+              className="flex items-center flex-shrink-0"
+            >
+              <img
+                src={ASSETS.logo}
+                alt="Precision Core Builders"
+                className="h-7 w-auto object-contain"
+                width="120"
+                height="28"
+              />
+            </a>
+            <div className="flex-1 min-w-0 text-right">
               <p
-                className="text-sm font-semibold text-foreground truncate leading-tight"
+                className="text-xs font-semibold text-foreground truncate leading-tight"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 {getCurrentNavItem(location)?.label ?? "Admin"}
-              </p>
-              <p
-                className="text-[10px] tracking-widest uppercase text-muted-foreground/60 leading-tight"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                Precision Core
               </p>
             </div>
             {currentGuide && <GuideHelpButton guideId={currentGuide.id} />}
