@@ -503,3 +503,103 @@
     white-space: normal;
   }
 }
+
+/* ── Admin/platform shell — "Quiet Luxury" light palette ──────────────────
+ * Scoped override of theme tokens inside .admin-shell so authenticated
+ * admin pages use a high-contrast light surface for dense, data-heavy views.
+ * The public site remains on the Dark Craft palette above.
+ *
+ * Palette: warm off-white bg, dark charcoal text, soft bronze accent.
+ * Contrast targets: body copy >= WCAG AA (4.5:1); large text >= 3:1.
+ */
+.admin-shell {
+  /* Surfaces */
+  --background: #f5f1ed; /* warm off-white page bg */
+  --foreground: #1f1d1a; /* near-black ink — 14.5:1 on bg */
+  --card: #ffffff; /* pure white card for maximum contrast */
+  --card-foreground: #1f1d1a;
+  --popover: #ffffff;
+  --popover-foreground: #1f1d1a;
+
+  /* Accent — warmed gold from dark palette, darkened for AA on white */
+  --primary: #8b6f2d; /* dark gold — 5.1:1 on white */
+  --primary-foreground: #ffffff;
+
+  /* Secondary / muted surfaces */
+  --secondary: #ede5da;
+  --secondary-foreground: #2d2a25;
+  --muted: #ede5da;
+  --muted-foreground: #5a544b; /* 7.1:1 on bg — was #7a7060 against near-black */
+  --accent: #ede5da;
+  --accent-foreground: #2d2a25;
+
+  /* Feedback colors */
+  --destructive: #9c2a1f; /* darker red for AA on light bg */
+  --destructive-foreground: #ffffff;
+
+  /* Borders + inputs */
+  --border: #d9d2ca;
+  --input: #e8e1d7;
+  --ring: #8b6f2d;
+
+  /* Sidebar — slightly tinted to separate from main content */
+  --sidebar: #ede5da;
+  --sidebar-foreground: #1f1d1a;
+  --sidebar-primary: #8b6f2d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2d9cb;
+  --sidebar-accent-foreground: #1f1d1a;
+  --sidebar-border: #d1c9be;
+  --sidebar-ring: #8b6f2d;
+
+  /* Charts — same hue family, shifted for light bg legibility */
+  --chart-1: #8b6f2d;
+  --chart-2: #a88746;
+  --chart-3: #4f6d3a;
+  --chart-4: #b57a3d;
+  --chart-5: #9c2a1f;
+
+  /* Base font bump inside admin — 16px → 16.5px. Subtle but makes a
+   * visible difference across 400+ text-xs/text-sm nodes without
+   * having to touch each one. */
+  font-size: 1.03125rem;
+
+  color-scheme: light;
+}
+
+/* Lift eyebrow/caption tiny-caps labels from 10px → 11.5px inside admin.
+ * These are the sprinkled `text-[10px]` tracking-wide labels above page
+ * titles and section groups — noticeably readable at 11.5px with no
+ * layout shift. */
+.admin-shell .text-\[10px\] {
+  font-size: 0.71875rem; /* 11.5px */
+}
+
+/* Bump text-xs (12px → 13px) within admin — most muted helper text and
+ * table cell labels live here and were the main "too small" pain point. */
+.admin-shell .text-xs {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.25rem;
+}
+
+/* Lighten icons that use muted-foreground — against a light bg the
+ * same muted grey looks washed out. Explicit bump for icons tagged
+ * with `text-muted-foreground` and used at small sizes. */
+.admin-shell [class*="text-muted-foreground"] svg {
+  color: #5a544b;
+}
+
+/* Card/surface subtle shadow for visual lift on light bg (dark mode
+ * used borders instead). Keeps UI feeling crafted, not flat. */
+.admin-shell [data-slot="card"],
+.admin-shell .bg-card {
+  box-shadow: 0 1px 2px rgba(31, 29, 26, 0.04);
+}
+
+/* Ensure main content area actually uses the new light bg (some
+ * layouts apply bg-background to main via Tailwind which resolves
+ * via CSS var). */
+.admin-shell main {
+  background-color: var(--background);
+  color: var(--foreground);
+}

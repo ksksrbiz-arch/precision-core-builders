@@ -259,6 +259,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider
+      className="admin-shell"
       style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
     >
       <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
