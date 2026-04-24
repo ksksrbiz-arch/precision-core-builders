@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # pnpm version read from packageManager in package.json — no hardcoded version
+      # pnpm version read from packageManager in package.json
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
@@ -75,16 +75,10 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      # Replaces deprecated nwtgck/actions-netlify@v3 — its bundled esbuild
+      # 0.11.10 fails to spawn on recent GH runners (ENOENT).
       - name: Deploy to Netlify (Preview)
-        uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: "./dist/public"
-          functions-dir: "./netlify/functions"
-          production-deploy: false
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Preview — PR #${{ github.event.number }}"
-          enable-pull-request-comment: true
-          enable-commit-comment: false
+        run: npx -y netlify-cli@19 deploy --dir=./dist/public --functions=./netlify/functions --message="Preview — PR #${{ github.event.number }}"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -122,15 +116,10 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      # Official Netlify CLI — maintained, supports modern Node + esbuild.
+      # `--prod` promotes to production context. Site id + auth token from secrets.
       - name: Deploy to Netlify (Production)
-        uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: "./dist/public"
-          functions-dir: "./netlify/functions"
-          production-deploy: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Production — ${{ github.sha }}"
-          enable-commit-comment: true
+        run: npx -y netlify-cli@19 deploy --dir=./dist/public --functions=./netlify/functions --prod --message="Production — ${{ github.sha }}"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

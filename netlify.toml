@@ -2,6 +2,10 @@
   base = "/"
   publish = "dist/public"
   command = "pnpm install --prod=false && pnpm build"
+  # Skip Netlify's parallel git-webhook build — GitHub Actions is the SSOT
+  # deploy path (see .github/workflows/deploy.yml). This prevents duplicate
+  # deploys and stops Netlify auto-build errors from muddying the deploy feed.
+  ignore = "exit 0"
 
 [build.environment]
   NODE_VERSION = "20"
