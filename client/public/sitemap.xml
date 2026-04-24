@@ -3,91 +3,91 @@
 
   <!-- Home -->
   <url>
-    <loc>https://precisioncorebuilders.com/</loc>
+    <loc>https://precision-core.netlify.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- About -->
   <url>
-    <loc>https://precisioncorebuilders.com/about</loc>
+    <loc>https://precision-core.netlify.app/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Services hub -->
   <url>
-    <loc>https://precisioncorebuilders.com/services</loc>
+    <loc>https://precision-core.netlify.app/services</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- Individual service pages -->
   <url>
-    <loc>https://precisioncorebuilders.com/services/residential</loc>
+    <loc>https://precision-core.netlify.app/services/residential</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://precisioncorebuilders.com/services/remodels</loc>
+    <loc>https://precision-core.netlify.app/services/remodels</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://precisioncorebuilders.com/services/new-construction</loc>
+    <loc>https://precision-core.netlify.app/services/new-construction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://precisioncorebuilders.com/services/restoration</loc>
+    <loc>https://precision-core.netlify.app/services/restoration</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://precisioncorebuilders.com/services/outdoor</loc>
+    <loc>https://precision-core.netlify.app/services/outdoor</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://precisioncorebuilders.com/services/painting</loc>
+    <loc>https://precision-core.netlify.app/services/painting</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://precisioncorebuilders.com/services/roofing</loc>
+    <loc>https://precision-core.netlify.app/services/roofing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://precisioncorebuilders.com/services/cabinets</loc>
+    <loc>https://precision-core.netlify.app/services/cabinets</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Portfolio -->
   <url>
-    <loc>https://precisioncorebuilders.com/portfolio</loc>
+    <loc>https://precision-core.netlify.app/portfolio</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Estimator -->
   <url>
-    <loc>https://precisioncorebuilders.com/estimator</loc>
+    <loc>https://precision-core.netlify.app/estimator</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- FAQ -->
   <url>
-    <loc>https://precisioncorebuilders.com/faq</loc>
+    <loc>https://precision-core.netlify.app/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Contact -->
   <url>
-    <loc>https://precisioncorebuilders.com/contact</loc>
+    <loc>https://precision-core.netlify.app/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>

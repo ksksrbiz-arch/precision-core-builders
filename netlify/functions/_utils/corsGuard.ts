@@ -8,8 +8,6 @@
 
 /** Origins that are always allowed regardless of env vars. */
 const ALWAYS_ALLOWED: ReadonlySet<string> = new Set([
-  "https://precisioncorebuilders.com",
-  "https://www.precisioncorebuilders.com",
   "https://precision-core.netlify.app",
 ]);
 
@@ -78,7 +76,7 @@ export function corsHeaders(
 ): Record<string, string> {
   const allowed = isOriginAllowed(origin);
   const allowOrigin =
-    allowed && origin ? origin : "https://precisioncorebuilders.com";
+    allowed && origin ? origin : "https://precision-core.netlify.app";
 
   return {
     "Access-Control-Allow-Origin": allowOrigin,
