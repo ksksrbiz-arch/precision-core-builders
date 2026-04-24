@@ -257,6 +257,16 @@ export default function DashboardLayout({
     );
   }
 
+  // Apply .admin-shell class to document.body so React portals
+  // (Dropdown/Dialog/Popover/Toast — which mount outside the SidebarProvider
+  // tree via document.body) inherit the admin light palette.
+  useEffect(() => {
+    document.body.classList.add("admin-shell");
+    return () => {
+      document.body.classList.remove("admin-shell");
+    };
+  }, []);
+
   return (
     <SidebarProvider
       className="admin-shell"

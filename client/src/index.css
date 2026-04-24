@@ -603,3 +603,81 @@
   background-color: var(--background);
   color: var(--foreground);
 }
+
+/* ── Admin shell: portal-safe specificity boost ─────────────────────────
+ * React portals (Dialog/Dropdown/Popover/Toast/Sheet) attach to document.body,
+ * so they sit outside the .admin-shell element tree. DashboardLayout toggles
+ * `body.admin-shell` on mount so these portaled surfaces pick up the light
+ * palette too.
+ *
+ * We also handle the case where the public site has `<html class="dark">` —
+ * the `.dark .admin-shell` selector makes sure our light vars still win.
+ */
+body.admin-shell,
+.dark .admin-shell,
+.dark body.admin-shell {
+  --background: #f5f1ed;
+  --foreground: #1f1d1a;
+  --card: #ffffff;
+  --card-foreground: #1f1d1a;
+  --popover: #ffffff;
+  --popover-foreground: #1f1d1a;
+  --primary: #8b6f2d;
+  --primary-foreground: #ffffff;
+  --secondary: #ede5da;
+  --secondary-foreground: #2d2a25;
+  --muted: #ede5da;
+  --muted-foreground: #5a544b;
+  --accent: #ede5da;
+  --accent-foreground: #2d2a25;
+  --destructive: #9c2a1f;
+  --destructive-foreground: #ffffff;
+  --border: #d9d2ca;
+  --input: #e8e1d7;
+  --ring: #8b6f2d;
+  --sidebar: #ede5da;
+  --sidebar-foreground: #1f1d1a;
+  --sidebar-primary: #8b6f2d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2d9cb;
+  --sidebar-accent-foreground: #1f1d1a;
+  --sidebar-border: #d1c9be;
+  --sidebar-ring: #8b6f2d;
+  --chart-1: #8b6f2d;
+  --chart-2: #a88746;
+  --chart-3: #4f6d3a;
+  --chart-4: #b57a3d;
+  --chart-5: #9c2a1f;
+  color-scheme: light;
+}
+
+/* Browser chrome — scrollbars, form controls — flip to light when in admin */
+html:has(body.admin-shell) {
+  color-scheme: light;
+}
+
+/* Background/90 semi-transparent overlays inside admin — force light base
+ * because `bg-background/90` = `color-mix(..., var(--background), 10% transparent)`
+ * which can still look murky. Instead flatten to the page bg. */
+body.admin-shell .bg-background\/90,
+body.admin-shell .bg-background\/80,
+body.admin-shell .bg-background\/70,
+body.admin-shell .bg-background\/60 {
+  background-color: rgba(245, 241, 237, 0.92);
+}
+
+/* Make sure the main content area + all descendants get the light bg,
+ * not just the top-level container. */
+body.admin-shell main,
+body.admin-shell [data-slot="sidebar-inset"],
+body.admin-shell [data-sidebar="inset"] {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Prose/markdown blocks default to dark-invert in index.css — force light
+ * tone inside admin */
+body.admin-shell .prose-invert,
+body.admin-shell .dark\:prose-invert {
+  color: var(--foreground);
+}
