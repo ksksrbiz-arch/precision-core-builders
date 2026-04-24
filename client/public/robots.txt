@@ -9,4 +9,4 @@ Disallow: /portal/
 Disallow: /auth/
 Disallow: /api/
 
-Sitemap: https://precisioncorebuilders.com/sitemap.xml
+Sitemap: https://precision-core.netlify.app/sitemap.xml

@@ -41,8 +41,8 @@ export default function PortfolioDetail() {
       ? `${project.summary} Built by Precision Core Builders in ${project.location || "Lane County, Oregon"}.`
       : "The project you're looking for could not be found.",
     canonical: project
-      ? `https://precisioncorebuilders.com/portfolio/${project.slug}`
-      : "https://precisioncorebuilders.com/portfolio",
+      ? `https://precision-core.netlify.app/portfolio/${project.slug}`
+      : "https://precision-core.netlify.app/portfolio",
   });
 
   if (!project) {

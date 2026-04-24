@@ -34,7 +34,7 @@ export default function Portfolio() {
     title: "Portfolio — Custom Homes, Remodels & Restoration",
     description:
       "Real work from Precision Core Builders in Eugene and Lane County, Oregon. Custom homes, full restorations, kitchens, baths, decks, and structures — built by Eric Tadlock and crew. CCB #246527.",
-    canonical: "https://precisioncorebuilders.com/portfolio",
+    canonical: "https://precision-core.netlify.app/portfolio",
   });
 
   const [filter, setFilter] = useState<Filter>("All");

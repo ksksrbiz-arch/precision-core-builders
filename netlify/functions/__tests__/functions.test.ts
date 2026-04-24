@@ -23,7 +23,7 @@ function mockEvent(
     httpMethod: method,
     headers: {
       "content-type": "application/json",
-      origin: "https://precisioncorebuilders.com",
+      origin: "https://precision-core.netlify.app",
       ...headers,
     },
     body: body ? JSON.stringify(body) : null,

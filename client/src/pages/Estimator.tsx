@@ -54,7 +54,7 @@ export default function Estimator() {
     title: "Free Project Estimator — Get a Cost Estimate",
     description:
       "Get an instant AI-powered construction cost estimate for your project. Precision Core Builders serves Eugene, Springfield, and Lane County, Oregon. No obligation.",
-    canonical: "https://precisioncorebuilders.com/estimator",
+    canonical: "https://precision-core.netlify.app/estimator",
   });
 
   const [step, setStep] = useState<Step>(1);
