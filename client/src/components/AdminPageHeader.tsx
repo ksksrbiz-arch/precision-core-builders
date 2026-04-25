@@ -17,31 +17,37 @@ export function AdminPageHeader({
   actions,
 }: AdminPageHeaderProps) {
   return (
-    <header className="border border-border/60 bg-gradient-to-b from-card to-card/70 p-4 sm:p-5 mb-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
+    <header className="border border-border/60 bg-gradient-to-b from-card to-card/70 p-4 sm:p-5 mb-4 sm:mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
           <p
             className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary mb-1.5"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
             {eyebrow}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2 min-w-0">
             <h1
-              className="text-2xl font-semibold"
+              className="text-xl sm:text-2xl font-semibold leading-tight break-words min-w-0"
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {title}
             </h1>
-            {guideId && <GuideHelpButton guideId={guideId} />}
+            {guideId && (
+              <span className="flex-shrink-0 mt-0.5">
+                <GuideHelpButton guideId={guideId} />
+              </span>
+            )}
           </div>
           {description && (
-            <p className="text-sm text-muted-foreground font-light mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground font-light mt-1">
               {description}
             </p>
           )}
         </div>
-        {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">{actions}</div>
+        )}
       </div>
     </header>
   );

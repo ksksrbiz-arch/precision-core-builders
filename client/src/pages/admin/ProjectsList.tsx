@@ -119,8 +119,8 @@ export default function ProjectsList() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
+                <div className="space-y-2">
+                  <div>
                     <div className="flex items-center justify-between mb-1">
                       <span
                         className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
@@ -139,31 +139,35 @@ export default function ProjectsList() {
                       />
                     </div>
                   </div>
-                  {p.estimated_budget && (
-                    <div className="text-right shrink-0">
-                      <p
-                        className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        Budget
-                      </p>
-                      <p className="text-xs font-semibold text-foreground flex items-center gap-0.5">
-                        <DollarSign className="h-3 w-3" />
-                        {Number(p.estimated_budget).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                  {(p as any).clients?.name && (
-                    <div className="text-right shrink-0">
-                      <p
-                        className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        Client
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[80px]">
-                        {(p as any).clients.name}
-                      </p>
+                  {(p.estimated_budget || (p as any).clients?.name) && (
+                    <div className="flex items-center gap-4 pt-0.5">
+                      {p.estimated_budget && (
+                        <div className="min-w-0">
+                          <p
+                            className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
+                            style={{ fontFamily: "var(--font-condensed)" }}
+                          >
+                            Budget
+                          </p>
+                          <p className="text-xs font-semibold text-foreground flex items-center gap-0.5">
+                            <DollarSign className="h-3 w-3 shrink-0" />
+                            {Number(p.estimated_budget).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                      {(p as any).clients?.name && (
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/60"
+                            style={{ fontFamily: "var(--font-condensed)" }}
+                          >
+                            Client
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {(p as any).clients.name}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

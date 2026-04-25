@@ -214,7 +214,7 @@ export default function ClientsList() {
               return (
                 <div
                   key={client.id}
-                  className="bg-card border border-border/60 p-4 hover:border-primary/20 transition-colors flex items-center gap-4"
+                  className="bg-card border border-border/60 p-3 sm:p-4 hover:border-primary/20 transition-colors flex items-center gap-3 sm:gap-4"
                 >
                   <div className="h-11 w-11 bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <span className="text-sm font-bold text-primary">
@@ -248,9 +248,9 @@ export default function ClientsList() {
                       )}
                     </div>
                   </button>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     {projectCount > 0 && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="hidden sm:inline text-xs text-muted-foreground">
                         {projectCount} project{projectCount !== 1 ? "s" : ""}
                         {activeProjects > 0 && (
                           <span className="text-primary ml-1">
@@ -262,15 +262,20 @@ export default function ClientsList() {
                     {client.phone && (
                       <a
                         href={`tel:${client.phone}`}
-                        className="text-muted-foreground hover:text-primary transition-colors"
+                        aria-label={`Call ${client.name}`}
+                        className="h-9 w-9 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-accent/50 transition-colors active:scale-95"
+                        onClick={e => e.stopPropagation()}
                       >
-                        <Phone className="h-3.5 w-3.5" />
+                        <Phone className="h-4 w-4" />
                       </a>
                     )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <button className="text-muted-foreground/40 hover:text-destructive transition-colors">
-                          <Trash2 className="h-3.5 w-3.5" />
+                        <button
+                          aria-label={`Delete ${client.name}`}
+                          className="h-9 w-9 inline-flex items-center justify-center rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors active:scale-95"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>

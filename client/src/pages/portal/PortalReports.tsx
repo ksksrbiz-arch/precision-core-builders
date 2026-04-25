@@ -72,7 +72,7 @@ export default function PortalReports() {
             Field Reports
           </p>
           <h1
-            className="text-3xl font-semibold mb-2"
+            className="text-2xl sm:text-3xl font-semibold mb-2 break-words"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {project?.name ?? "Your Project"}

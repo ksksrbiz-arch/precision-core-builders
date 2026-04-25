@@ -23,6 +23,7 @@ import {
 import { CloudRain } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/useMobile";
 
 // ScheduleItem matches the Supabase schedule_items column names returned by
 // the scheduleRouter.list query.
@@ -93,6 +94,7 @@ export function GanttChart({
   const [chartData, setChartData] = useState<GanttBarData[]>([]);
   const [draggingTaskId, setDraggingTaskId] = useState<number | null>(null);
   const [dragStartPos, setDragStartPos] = useState<number>(0);
+  const isMobile = useIsMobile();
   const dragRef = useRef<HTMLDivElement>(null);
 
   // Fetch schedule items from database (overrides prop items when available)
@@ -260,14 +262,14 @@ export function GanttChart({
   return (
     <Card ref={dragRef}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-lg">Project Schedule</CardTitle>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-yellow-500 rounded-sm" />
               <span>Weather-sensitive</span>
             </div>
-            {!readOnly && (
+            {!readOnly && !isMobile && (
               <span className="text-[10px]">Drag bars to reschedule</span>
             )}
           </div>
@@ -275,61 +277,97 @@ export function GanttChart({
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-x-auto">
-          <ResponsiveContainer width="100%" height={chartHeight}>
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ top: 10, right: 30, left: 180, bottom: 10 }}
-              barCategoryGap="20%"
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="var(--border)"
-                horizontal={false}
-              />
-              <XAxis
-                type="number"
-                stroke="var(--muted-foreground)"
-                tick={{ fontSize: 11 }}
-                tickFormatter={v => `Day ${Math.round(Math.max(0, v))}`}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={170}
-                tick={{ fontSize: 11 }}
-                stroke="var(--muted-foreground)"
-              />
-              <Tooltip content={<CustomTooltip />} cursor={false} />
-
-              {/* Transparent spacer pushes each bar to its start offset */}
-              <Bar dataKey="start" stackId="gantt" fill="transparent" />
-
-              {/* Colored duration bar */}
-              <Bar
-                dataKey="duration"
-                stackId="gantt"
-                radius={[2, 2, 2, 2]}
-                style={{ cursor: readOnly ? "default" : "grab" }}
-                onMouseDown={(data: any, _idx: number, e: React.MouseEvent) =>
-                  handleBarMouseDown(e, data.id)
-                }
+        {isMobile ? (
+          <ol className="space-y-3">
+            {chartData.map(bar => (
+              <li
+                key={bar.id}
+                className="border border-border/60 rounded p-3 flex gap-3"
               >
-                {chartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={getBarColor(entry)}
-                    opacity={draggingTaskId === entry.id ? 0.6 : 0.85}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+                <span
+                  className="mt-1 inline-block h-3 w-3 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: getBarColor(bar) }}
+                  aria-hidden="true"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground break-words">
+                    {bar.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(bar.startDate).toLocaleDateString()} –{" "}
+                    {new Date(bar.endDate).toLocaleDateString()}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground capitalize">
+                      {bar.status.replace("_", " ")}
+                    </span>
+                    {bar.weatherSensitive && (
+                      <span className="text-[11px] text-yellow-600 dark:text-yellow-500 flex items-center gap-1">
+                        <CloudRain className="h-3 w-3" /> Weather
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="overflow-x-auto">
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 10, right: 30, left: 180, bottom: 10 }}
+                barCategoryGap="20%"
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                  horizontal={false}
+                />
+                <XAxis
+                  type="number"
+                  stroke="var(--muted-foreground)"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={v => `Day ${Math.round(Math.max(0, v))}`}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={170}
+                  tick={{ fontSize: 11 }}
+                  stroke="var(--muted-foreground)"
+                />
+                <Tooltip content={<CustomTooltip />} cursor={false} />
+
+                {/* Transparent spacer pushes each bar to its start offset */}
+                <Bar dataKey="start" stackId="gantt" fill="transparent" />
+
+                {/* Colored duration bar */}
+                <Bar
+                  dataKey="duration"
+                  stackId="gantt"
+                  radius={[2, 2, 2, 2]}
+                  style={{ cursor: readOnly ? "default" : "grab" }}
+                  onMouseDown={(data: any, _idx: number, e: React.MouseEvent) =>
+                    handleBarMouseDown(e, data.id)
+                  }
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={getBarColor(entry)}
+                      opacity={draggingTaskId === entry.id ? 0.6 : 0.85}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Legend */}
-        <div className="mt-4 grid grid-cols-2 gap-4 text-xs border-t border-border pt-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs border-t border-border pt-4">
           <div className="space-y-2">
             <p className="font-semibold text-foreground">Status</p>
             {Object.entries(STATUS_COLORS).map(([status, color]) => (
