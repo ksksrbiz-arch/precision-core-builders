@@ -18,45 +18,10 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     sourcemap: false, // Disable sourcemaps in production for security
-    // Split large vendors into separate chunks so the main bundle stays small
-    // and browser caching is more granular.
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // Framer Motion is large (~90 kB gz) — isolate it so pages that
-          // don't animate don't pay the cost.
-          if (id.includes("node_modules/framer-motion")) {
-            return "vendor-framer";
-          }
-          // tRPC + superjson in their own chunk
-          if (
-            id.includes("node_modules/@trpc") ||
-            id.includes("node_modules/superjson")
-          ) {
-            return "vendor-trpc";
-          }
-          // Supabase auth SDK
-          if (id.includes("node_modules/@supabase")) {
-            return "vendor-supabase";
-          }
-          // Radix UI primitives (bundled with shadcn) can be large
-          if (id.includes("node_modules/@radix-ui")) {
-            return "vendor-radix";
-          }
-          // Lucide icons
-          if (id.includes("node_modules/lucide-react")) {
-            return "vendor-lucide";
-          }
-          // React + React-DOM stay in the default "vendor" chunk
-          if (
-            id.includes("node_modules/react/") ||
-            id.includes("node_modules/react-dom/")
-          ) {
-            return "vendor-react";
-          }
-        },
-      },
-    },
+    // NOTE: Do NOT add custom manualChunks here. It has black-screened prod twice
+    // (Apr 16 and Apr 21) due to cross-chunk export reference issues. Default Vite
+    // chunking is safe; custom chunking requires full headless Chrome verification
+    // before push. See PCB deploy-safety memory.
   },
   server: {
     host: true,

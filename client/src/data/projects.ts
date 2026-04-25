@@ -72,28 +72,22 @@ export const PROJECTS: Project[] = [
       "Accessory structure siding, trim, and finish",
     ],
     featured: true,
-    hero: "https://github.com/user-attachments/assets/f7b02df1-994b-451f-be6a-7efd3aa10a30",
+    hero: "signature-outdoor-01.jpg",
+    beforeAfter: {
+      before: "pergola-deck-01.jpg",
+      after: "signature-outdoor-01.jpg",
+      caption: "From bare frame to outdoor living room",
+    },
     photos: [
-      {
-        file: "https://github.com/user-attachments/assets/f7b02df1-994b-451f-be6a-7efd3aa10a30",
-        role: "after",
-        caption: "Tadlock Residence — after photo 1",
-      },
-      {
-        file: "https://github.com/user-attachments/assets/b6a46033-3bd9-412a-985d-566a3ab80b81",
-        role: "after",
-        caption: "Tadlock Residence — after photo 2",
-      },
-      {
-        file: "https://github.com/user-attachments/assets/f94cc967-76d7-46e3-aaf2-c0a13dabd8cd",
-        role: "after",
-        caption: "Tadlock Residence — after photo 3",
-      },
-      {
-        role: "after",
-        file: "https://github.com/user-attachments/assets/8547275d-27d3-438e-92bf-ff5ec3e685e5",
-        caption: "Tadlock Residence — after photo 4",
-      },
+      { file: "signature-outdoor-01.jpg", role: "hero", caption: "Finished outdoor living room" },
+      { file: "signature-deck-01.jpg", role: "hero", caption: "Raw cedar pergola stage" },
+      { file: "pergola-deck-01.jpg", role: "progress", caption: "Pergola framing install" },
+      { file: "pergola-deck-02.jpg", role: "progress", caption: "Deck progress" },
+      { file: "pergola-deck-03.jpg", role: "after", caption: "Composite step detail" },
+      { file: "cedar-fence-01.jpg", role: "progress", caption: "Cedar privacy fence going up" },
+      { file: "cedar-fence-02.jpg", role: "progress", caption: "Fence panel assembly" },
+      { file: "front-fence-01.jpg", role: "hero", caption: "Front hog-wire fence" },
+      { file: "front-fence-02.jpg", role: "hero", caption: "Matched-stain front and rear fencing" },
     ],
   },
 

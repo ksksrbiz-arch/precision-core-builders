@@ -18,7 +18,7 @@ export const SITE = {
 /** All real assets hosted on the existing Webflow CDN */
 export const ASSETS = {
   // Logo + hero video remain on Webflow CDN (no local equivalents yet)
-  logo: "https://cdn.prod.website-files.com/65300180be390eef2e927062/653a89c73404a257b6f07037_Precision-Core-Builders-Main-Logo.svg",
+  logo: "/logo.svg",
   heroVideo:
     "https://cdn.prod.website-files.com/65300180be390eef2e927062/65308f58afaa8e053210676a_Construction-Consultation%20-%2002-transcode.mp4",
 
