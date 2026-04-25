@@ -69,7 +69,9 @@ export default function PortalBlueprint() {
   return (
     <PortalLayout className="container py-10">
       <header className="mb-8">
-        <h1 className="text-3xl font-serif tracking-tight">Blueprints</h1>
+        <h1 className="text-2xl sm:text-3xl font-serif tracking-tight">
+          Blueprints
+        </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
           Plans and designs shared by your builder from blueprint.am. Connecting
           your own Blueprint account lets you view them in context and carry

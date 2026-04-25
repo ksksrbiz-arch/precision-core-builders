@@ -79,15 +79,51 @@ export const PROJECTS: Project[] = [
       caption: "From bare frame to outdoor living room",
     },
     photos: [
-      { file: "signature-outdoor-01.jpg", role: "hero", caption: "Finished outdoor living room" },
-      { file: "signature-deck-01.jpg", role: "hero", caption: "Raw cedar pergola stage" },
-      { file: "pergola-deck-01.jpg", role: "progress", caption: "Pergola framing install" },
-      { file: "pergola-deck-02.jpg", role: "progress", caption: "Deck progress" },
-      { file: "pergola-deck-03.jpg", role: "after", caption: "Composite step detail" },
-      { file: "cedar-fence-01.jpg", role: "progress", caption: "Cedar privacy fence going up" },
-      { file: "cedar-fence-02.jpg", role: "progress", caption: "Fence panel assembly" },
-      { file: "front-fence-01.jpg", role: "hero", caption: "Front hog-wire fence" },
-      { file: "front-fence-02.jpg", role: "hero", caption: "Matched-stain front and rear fencing" },
+      {
+        file: "signature-outdoor-01.jpg",
+        role: "hero",
+        caption: "Finished outdoor living room",
+      },
+      {
+        file: "signature-deck-01.jpg",
+        role: "hero",
+        caption: "Raw cedar pergola stage",
+      },
+      {
+        file: "pergola-deck-01.jpg",
+        role: "progress",
+        caption: "Pergola framing install",
+      },
+      {
+        file: "pergola-deck-02.jpg",
+        role: "progress",
+        caption: "Deck progress",
+      },
+      {
+        file: "pergola-deck-03.jpg",
+        role: "after",
+        caption: "Composite step detail",
+      },
+      {
+        file: "cedar-fence-01.jpg",
+        role: "progress",
+        caption: "Cedar privacy fence going up",
+      },
+      {
+        file: "cedar-fence-02.jpg",
+        role: "progress",
+        caption: "Fence panel assembly",
+      },
+      {
+        file: "front-fence-01.jpg",
+        role: "hero",
+        caption: "Front hog-wire fence",
+      },
+      {
+        file: "front-fence-02.jpg",
+        role: "hero",
+        caption: "Matched-stain front and rear fencing",
+      },
     ],
   },
 

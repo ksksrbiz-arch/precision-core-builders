@@ -7,9 +7,9 @@
 // Bump these version numbers whenever we ship a client change that users
 // must pick up immediately. On activate, any cache whose name is not in the
 // current list is deleted, purging stale HTML/JS/CSS from returning users.
-const CACHE_NAME = "pcb-v2";
-const STATIC_CACHE = "pcb-static-v2";
-const API_CACHE = "pcb-api-v2";
+const CACHE_NAME = "pcb-v3";
+const STATIC_CACHE = "pcb-static-v3";
+const API_CACHE = "pcb-api-v3";
 
 // Shell files to precache on install
 const PRECACHE_URLS = ["/", "/admin", "/offline.html"];

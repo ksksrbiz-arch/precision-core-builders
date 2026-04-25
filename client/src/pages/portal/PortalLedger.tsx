@@ -87,7 +87,7 @@ export default function PortalLedger() {
             Decision Ledger
           </p>
           <h1
-            className="text-3xl font-semibold mb-2"
+            className="text-2xl sm:text-3xl font-semibold mb-2"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             Project Record

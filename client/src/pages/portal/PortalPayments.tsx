@@ -169,8 +169,8 @@ export default function PortalPayments() {
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="grid grid-cols-3 gap-4 mb-5">
+              <div className="p-4 sm:p-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-5">
                   {[
                     {
                       label: "Conservative",
@@ -279,7 +279,7 @@ export default function PortalPayments() {
                   {milestones.map((m, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-4 px-5 py-3.5"
+                      className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5"
                     >
                       <div
                         className={`h-7 w-7 flex items-center justify-center shrink-0 border ${

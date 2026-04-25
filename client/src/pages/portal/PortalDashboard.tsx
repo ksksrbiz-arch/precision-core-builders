@@ -112,7 +112,7 @@ export default function PortalDashboard() {
             Client Portal
           </p>
           <h1
-            className="text-3xl font-semibold mb-1"
+            className="text-2xl sm:text-3xl font-semibold mb-1 break-words"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             Welcome, {user.name ?? user.email}
