@@ -37,6 +37,26 @@ type WeatherDay = {
   willRain: boolean;
 };
 
+// Must match server/routers/scheduleRouter.ts TaskTypeEnum.
+const TASK_TYPES = [
+  "outdoor",
+  "indoor",
+  "framing",
+  "roofing",
+  "electrical",
+  "plumbing",
+  "insulation",
+  "drywall",
+  "flooring",
+  "cabinetry",
+  "painting",
+  "finish_work",
+  "inspection",
+  "other",
+] as const;
+
+type TaskType = (typeof TASK_TYPES)[number];
+
 type WeatherData = {
   forecast: WeatherDay[];
   adjustments: Array<{
@@ -163,9 +183,15 @@ export default function ScheduleView() {
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showAddTask, setShowAddTask] = useState(false);
-  const [newTask, setNewTask] = useState({
+  const [newTask, setNewTask] = useState<{
+    title: string;
+    taskType: TaskType;
+    plannedStartDate: string;
+    plannedEndDate: string;
+    notes: string;
+  }>({
     title: "",
-    taskType: "general",
+    taskType: "other",
     plannedStartDate: "",
     plannedEndDate: "",
     notes: "",
@@ -222,7 +248,7 @@ export default function ScheduleView() {
       setShowAddTask(false);
       setNewTask({
         title: "",
-        taskType: "general",
+        taskType: "other",
         plannedStartDate: "",
         plannedEndDate: "",
         notes: "",
@@ -360,28 +386,14 @@ export default function ScheduleView() {
               <select
                 value={newTask.taskType}
                 onChange={e =>
-                  setNewTask(t => ({ ...t, taskType: e.target.value }))
+                  setNewTask(t => ({
+                    ...t,
+                    taskType: e.target.value as TaskType,
+                  }))
                 }
                 className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
               >
-                {[
-                  "general",
-                  "framing",
-                  "foundation",
-                  "electrical",
-                  "plumbing",
-                  "hvac",
-                  "roofing",
-                  "drywall",
-                  "painting",
-                  "flooring",
-                  "concrete",
-                  "inspection",
-                  "permit",
-                  "demolition",
-                  "landscaping",
-                  "punch_list",
-                ].map(t => (
+                {TASK_TYPES.map(t => (
                   <option key={t} value={t}>
                     {t.replace(/_/g, " ")}
                   </option>
@@ -420,7 +432,7 @@ export default function ScheduleView() {
                 createTask.mutate({
                   projectId: selectedProject,
                   title: newTask.title,
-                  taskType: newTask.taskType as any,
+                  taskType: newTask.taskType,
                   plannedStart: newTask.plannedStartDate
                     ? new Date(newTask.plannedStartDate).toISOString()
                     : undefined,

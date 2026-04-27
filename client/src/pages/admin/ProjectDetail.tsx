@@ -984,7 +984,9 @@ const STATUS_OPTIONS = [
   { value: "punch_list", label: "Punch List" },
   { value: "complete", label: "Complete" },
   { value: "on_hold", label: "On Hold" },
-];
+] as const;
+
+type ProjectStatus = (typeof STATUS_OPTIONS)[number]["value"];
 
 function ProjectStatusUpdate({
   projectId,
@@ -993,7 +995,9 @@ function ProjectStatusUpdate({
   projectId: number;
   currentStatus: string;
 }) {
-  const [status, setStatus] = useState(currentStatus);
+  const [status, setStatus] = useState<ProjectStatus>(
+    currentStatus as ProjectStatus
+  );
   const utils = trpc.useUtils();
   const mut = trpc.projects.update.useMutation({
     onSuccess: () => {
@@ -1020,7 +1024,7 @@ function ProjectStatusUpdate({
       <div className="flex gap-3 items-center">
         <select
           value={status}
-          onChange={e => setStatus(e.target.value)}
+          onChange={e => setStatus(e.target.value as ProjectStatus)}
           className="flex-1 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
         >
           {STATUS_OPTIONS.map(s => (
@@ -1030,7 +1034,7 @@ function ProjectStatusUpdate({
           ))}
         </select>
         <button
-          onClick={() => mut.mutate({ id: projectId, status: status as any })}
+          onClick={() => mut.mutate({ id: projectId, status })}
           disabled={!isDirty || mut.isPending}
           className="px-4 py-2 text-[11px] font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-50 transition-colors"
           style={{ fontFamily: "var(--font-condensed)" }}
