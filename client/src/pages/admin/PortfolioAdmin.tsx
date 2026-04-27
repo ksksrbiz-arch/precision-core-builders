@@ -7,6 +7,16 @@ import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Eye,
   EyeOff,
   Globe,
@@ -17,7 +27,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const BLANK_FORM = {
   title: "",
@@ -53,6 +63,16 @@ export default function PortfolioAdmin() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(BLANK_FORM);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [brokenCovers, setBrokenCovers] = useState<Record<number, boolean>>({});
+  const [coverPreviewBroken, setCoverPreviewBroken] = useState(false);
+
+  useEffect(() => {
+    setCoverPreviewBroken(false);
+  }, [form.coverImageUrl]);
   const utils = trpc.useUtils();
   const { data: projects, isLoading } = trpc.portfolio.listAdmin.useQuery();
 
@@ -67,41 +87,35 @@ export default function PortfolioAdmin() {
     },
   });
 
-  const update = useMutationWithToast(
-    trpc.portfolio.update?.useMutation?.() ?? {
-      mutateAsync: async () => ({}) as any,
-      isPending: false,
+  const update = useMutationWithToast(trpc.portfolio.update.useMutation(), {
+    success: "Project Updated",
+    successMessage: "Project updated.",
+    error: "Update Failed",
+    errorMessage: "Could not update the portfolio project. Please try again.",
+    invalidate: () => utils.portfolio.listAdmin.invalidate(),
+    onSuccess: () => {
+      setShowForm(false);
+      setEditId(null);
     },
-    {
-      success: "Project Updated",
-      successMessage: "Project updated.",
-      error: "Update Failed",
-      invalidate: () => utils.portfolio.listAdmin.invalidate(),
-      onSuccess: () => {
-        setShowForm(false);
-        setEditId(null);
-      },
-    }
-  );
+  });
 
   const togglePublished = useMutationWithToast(
     trpc.portfolio.togglePublished.useMutation(),
     {
       success: "Status Updated",
       error: "Update Failed",
+      errorMessage: "Could not change the publish status. Please try again.",
       invalidate: () => utils.portfolio.listAdmin.invalidate(),
     }
   );
 
   const deleteProject = useMutationWithToast(
-    trpc.portfolio.delete?.useMutation?.() ?? {
-      mutateAsync: async () => ({}) as any,
-      isPending: false,
-    },
+    trpc.portfolio.delete.useMutation(),
     {
       success: "Project Deleted",
       successMessage: "Project deleted.",
       error: "Delete Failed",
+      errorMessage: "Could not delete the project. Please try again.",
       invalidate: () => utils.portfolio.listAdmin.invalidate(),
     }
   );
@@ -387,15 +401,13 @@ export default function PortfolioAdmin() {
             </div>
 
             {/* Cover preview */}
-            {form.coverImageUrl && (
+            {form.coverImageUrl && !coverPreviewBroken && (
               <div className="mt-3 h-32 overflow-hidden border border-border/40">
                 <img
                   src={form.coverImageUrl}
                   alt="Cover preview"
                   className="w-full h-full object-cover"
-                  onError={e => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
+                  onError={() => setCoverPreviewBroken(true)}
                 />
               </div>
             )}
@@ -455,16 +467,21 @@ export default function PortfolioAdmin() {
             >
               {/* Cover thumbnail */}
               <div className="w-20 h-16 shrink-0 border border-border/40 overflow-hidden bg-muted/20">
-                {p.cover_image_url ? (
+                {p.cover_image_url && !brokenCovers[p.id] ? (
                   <img
                     src={p.cover_image_url}
                     alt={p.title}
                     className="w-full h-full object-cover"
-                    onError={e => {
-                      (e.target as HTMLImageElement).parentElement!.innerHTML =
-                        '<div class="w-full h-full flex items-center justify-center"><span class="text-muted-foreground/30">No img</span></div>';
-                    }}
+                    onError={() =>
+                      setBrokenCovers(prev => ({ ...prev, [p.id]: true }))
+                    }
                   />
+                ) : p.cover_image_url ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-muted-foreground/30 text-[10px]">
+                      No img
+                    </span>
+                  </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Image className="h-5 w-5 text-muted-foreground/30" />
@@ -535,15 +552,12 @@ export default function PortfolioAdmin() {
                 {/* Delete */}
                 {deleteProject && (
                   <button
-                    onClick={() => {
-                      if (
-                        confirm(`Delete "${p.title}"? This cannot be undone.`)
-                      ) {
-                        deleteProject.mutate({ id: p.id });
-                      }
-                    }}
+                    onClick={() =>
+                      setDeleteTarget({ id: p.id, title: p.title })
+                    }
                     className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-red-400/40 hover:text-red-400 text-muted-foreground transition-colors"
                     title="Delete"
+                    aria-label={`Delete ${p.title}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -553,6 +567,40 @@ export default function PortfolioAdmin() {
           ))}
         </div>
       </div>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={open => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete portfolio project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete{" "}
+              <span className="font-semibold text-foreground">
+                "{deleteTarget?.title}"
+              </span>
+              . This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-500/90 text-white"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteProject.mutate({ id: deleteTarget.id });
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

@@ -33,16 +33,34 @@ import { useLocation } from "wouter";
 
 // ─── Admin Token Hook ────────────────────────────────────────────────────────
 
+const TOKEN_KEY = "pcb-setup-token";
+
+// Safari private mode + locked-down corporate browsers throw on storage access.
+// Wrap so the wizard still loads even when persistence isn't available.
+function safeRead(): string {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function useAdminToken() {
-  const [token, setTokenState] = useState(
-    () => sessionStorage.getItem("pcb-setup-token") ?? ""
-  );
+  const [token, setTokenState] = useState(safeRead);
   const setToken = (t: string) => {
-    sessionStorage.setItem("pcb-setup-token", t);
+    try {
+      sessionStorage.setItem(TOKEN_KEY, t);
+    } catch {
+      /* storage unavailable — keep token in memory only */
+    }
     setTokenState(t);
   };
   const clear = () => {
-    sessionStorage.removeItem("pcb-setup-token");
+    try {
+      sessionStorage.removeItem(TOKEN_KEY);
+    } catch {
+      /* storage unavailable */
+    }
     setTokenState("");
   };
   return { token, setToken, clear, isSet: !!token };

@@ -41,12 +41,31 @@ const ENTRY_COLORS: Record<string, string> = {
   note: "text-muted-foreground bg-muted-foreground/10",
 };
 
+// Must match server/routers/ledgerRouter.ts EntryTypeEnum.
+const ENTRY_TYPES = [
+  "decision",
+  "change_order",
+  "inspection",
+  "permit",
+  "milestone",
+  "cost_adjustment",
+  "note",
+] as const;
+
+type EntryType = (typeof ENTRY_TYPES)[number];
+
 export default function LedgerView() {
   const [projectId, setProjectId] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [showNew, setShowNew] = useState(false);
-  const [form, setForm] = useState({
-    entryType: "note" as string,
+  const [form, setForm] = useState<{
+    entryType: EntryType;
+    title: string;
+    description: string;
+    amountDelta: string;
+    visibleToClient: boolean;
+  }>({
+    entryType: "note",
     title: "",
     description: "",
     amountDelta: "",
@@ -157,19 +176,14 @@ export default function LedgerView() {
                 <select
                   value={form.entryType}
                   onChange={e =>
-                    setForm(prev => ({ ...prev, entryType: e.target.value }))
+                    setForm(prev => ({
+                      ...prev,
+                      entryType: e.target.value as EntryType,
+                    }))
                   }
                   className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
                 >
-                  {[
-                    "decision",
-                    "change_order",
-                    "inspection",
-                    "permit",
-                    "milestone",
-                    "cost_adjustment",
-                    "note",
-                  ].map(t => (
+                  {ENTRY_TYPES.map(t => (
                     <option key={t} value={t}>
                       {t
                         .replace("_", " ")
@@ -260,7 +274,7 @@ export default function LedgerView() {
                 onClick={() =>
                   appendMut.mutate({
                     projectId: projectId!,
-                    entryType: form.entryType as any,
+                    entryType: form.entryType,
                     title: form.title,
                     description: form.description,
                     amountDelta: form.amountDelta

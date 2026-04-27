@@ -10,6 +10,16 @@
  *           provision/verify call via timing-safe comparison.
  */
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -1395,6 +1405,7 @@ function CompletePhase({
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
   const [deployError, setDeployError] = useState("");
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const verifiedCount = Object.values(phases).filter(
     p => p.status === "verified"
@@ -1548,15 +1559,7 @@ function CompletePhase({
                 <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
               </Button>
               <Button
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Reset the wizard? Your saved progress will be cleared."
-                    )
-                  ) {
-                    onReset();
-                  }
-                }}
+                onClick={() => setShowResetConfirm(true)}
                 variant="ghost"
                 className="text-neutral-500 hover:text-neutral-300"
               >
@@ -1576,6 +1579,30 @@ function CompletePhase({
           Back
         </Button>
       </CardFooter>
+
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset onboarding?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your saved progress for every step will be cleared and you'll
+              start over from the beginning. Already-deployed keys remain on
+              Netlify.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowResetConfirm(false);
+                onReset();
+              }}
+            >
+              Reset
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
