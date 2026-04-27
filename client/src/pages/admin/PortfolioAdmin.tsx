@@ -7,6 +7,16 @@ import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Eye,
   EyeOff,
   Globe,
@@ -53,6 +63,10 @@ export default function PortfolioAdmin() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(BLANK_FORM);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
   const utils = trpc.useUtils();
   const { data: projects, isLoading } = trpc.portfolio.listAdmin.useQuery();
 
@@ -535,15 +549,12 @@ export default function PortfolioAdmin() {
                 {/* Delete */}
                 {deleteProject && (
                   <button
-                    onClick={() => {
-                      if (
-                        confirm(`Delete "${p.title}"? This cannot be undone.`)
-                      ) {
-                        deleteProject.mutate({ id: p.id });
-                      }
-                    }}
+                    onClick={() =>
+                      setDeleteTarget({ id: p.id, title: p.title })
+                    }
                     className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-red-400/40 hover:text-red-400 text-muted-foreground transition-colors"
                     title="Delete"
+                    aria-label={`Delete ${p.title}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -553,6 +564,40 @@ export default function PortfolioAdmin() {
           ))}
         </div>
       </div>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={open => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete portfolio project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete{" "}
+              <span className="font-semibold text-foreground">
+                "{deleteTarget?.title}"
+              </span>
+              . This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-500/90 text-white"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteProject.mutate({ id: deleteTarget.id });
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

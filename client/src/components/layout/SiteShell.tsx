@@ -27,7 +27,10 @@ const NAV_LINKS = [
 ];
 
 /* ─── Dev Password Modal ────────────────────────────────────── */
-const DEV_PASSWORD = "devonly1034A";
+// Sourced from Netlify env (VITE_DEV_PASSWORD). When unset, the dev modal
+// stays disabled in production so a credential is never shipped in the bundle.
+const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD ?? "";
+const DEV_MODAL_ENABLED = import.meta.env.DEV || DEV_PASSWORD.length > 0;
 const TAP_TARGET = 7;
 const TAP_RESET_MS = 2000;
 
@@ -46,7 +49,8 @@ function DevPasswordModal({ onClose }: DevPasswordModalProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (value === DEV_PASSWORD) {
+    // Defense-in-depth: without a configured password, never accept a match
+    if (DEV_PASSWORD && value === DEV_PASSWORD) {
       localStorage.setItem(DEV_BYPASS_KEY, "true");
       window.location.href = "/admin";
     } else {
@@ -128,6 +132,9 @@ export function SiteNav() {
   }, []);
 
   function handleLogoTap(e: React.MouseEvent) {
+    // When the dev modal isn't enabled (e.g. prod with no VITE_DEV_PASSWORD),
+    // act as a normal home link instead of swallowing the click.
+    if (!DEV_MODAL_ENABLED) return;
     e.preventDefault();
     const next = tapCount + 1;
     if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
@@ -146,7 +153,7 @@ export function SiteNav() {
 
   return (
     <>
-      {showDevModal && (
+      {showDevModal && DEV_MODAL_ENABLED && (
         <DevPasswordModal onClose={() => setShowDevModal(false)} />
       )}
       <header
