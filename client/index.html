@@ -71,10 +71,14 @@
     <meta property="og:site_name" content="Precision Core Builders" />
     <meta
       property="og:image"
-      content="https://precision-core.netlify.app/logo.svg"
+      content="https://precision-core.netlify.app/portfolio/signature-outdoor-01.jpg"
     />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content="1261" />
+    <meta property="og:image:height" content="946" />
+    <meta
+      property="og:image:alt"
+      content="Pergola, deck, and cedar privacy fence — built by Precision Core Builders, Eugene, OR"
+    />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -88,7 +92,7 @@
     />
     <meta
       name="twitter:image"
-      content="https://precision-core.netlify.app/logo.svg"
+      content="https://precision-core.netlify.app/portfolio/signature-outdoor-01.jpg"
     />
 
     <script type="application/ld+json">
@@ -206,6 +210,155 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!--
+      Netlify Forms registration. Netlify's build-time HTML scanner only
+      registers forms it can see in static HTML — React-rendered forms in
+      the SPA bundle are invisible to it, so submissions to "/" would 404
+      silently. Each <form> below mirrors the field set of its live React
+      counterpart so submissions are accepted and routed to the dashboard.
+      Hidden via display:none but still parsed at build time.
+    -->
+    <div hidden aria-hidden="true">
+      <form
+        name="project-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="budget" />
+        <select name="projectType"></select>
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="estimator-lead"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="projectType" />
+        <input type="text" name="complexity" />
+        <input type="text" name="sqft" />
+        <input type="text" name="estimatedMid" />
+        <input type="text" name="bot-field" />
+      </form>
+
+      <!--
+        Per-service inquiry forms. Form names match the slug produced by
+        client/src/pages/services/_template.tsx (formName). Keep in sync
+        when adding/renaming a service.
+      -->
+      <form
+        name="residential-construction-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="remodels-renovations-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="new-construction-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="restoration-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="outdoor-spaces-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="painting-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="roofing-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+
+      <form
+        name="custom-cabinets-inquiry"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+      >
+        <input type="text" name="name" />
+        <input type="email" name="email" />
+        <input type="tel" name="phone" />
+        <input type="text" name="service" />
+        <textarea name="message"></textarea>
+        <input type="text" name="bot-field" />
+      </form>
+    </div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

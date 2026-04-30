@@ -76,6 +76,11 @@ export function ServicePage(p: ServicePageProps) {
   const input =
     "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors";
 
+  const formName = `${p.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}-inquiry`;
+
   return (
     <>
       {/* Dynamic SEO head */}
@@ -313,7 +318,7 @@ export function ServicePage(p: ServicePageProps) {
                         Get Your Free Estimate
                       </h3>
                       <form
-                        name={`${p.title.toLowerCase().replace(/\s+/g, "-")}-inquiry`}
+                        name={formName}
                         method="POST"
                         data-netlify="true"
                         netlify-honeypot="bot-field"
@@ -324,7 +329,7 @@ export function ServicePage(p: ServicePageProps) {
                         <input
                           type="hidden"
                           name="form-name"
-                          value={`${p.title.toLowerCase().replace(/\s+/g, "-")}-inquiry`}
+                          value={formName}
                         />
                         <input type="hidden" name="service" value={p.title} />
                         <p className="hidden" aria-hidden>

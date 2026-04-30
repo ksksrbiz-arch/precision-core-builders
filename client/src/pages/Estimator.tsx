@@ -161,17 +161,9 @@ export default function Estimator() {
 
   return (
     <>
-      {/* Netlify form detection */}
-      <form name="estimator-lead" data-netlify="true" className="hidden">
-        <input name="name" />
-        <input name="email" />
-        <input name="phone" />
-        <input name="projectType" />
-        <input name="complexity" />
-        <input name="sqft" />
-        <input name="estimatedMid" />
-      </form>
-
+      {/* Netlify form registration lives in client/index.html so the
+          build-time HTML scanner can detect it (SPA bundles are invisible
+          to that scanner). */}
       <SiteNav />
       <MobileCTABar />
       <main className="pt-[68px] min-h-screen">
