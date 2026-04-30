@@ -19,28 +19,28 @@ The admin side is **substantially more complete than the project docs claim.** A
 
 ### Fully wired (real tRPC + DB persistence, no mocks)
 
-| Page                                                              | Backend                                                                        | Notes                                                                        |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `ProjectsList`, `ProjectNew`, `ProjectDetail`                     | `projectsRouter.ts` (9 procs incl. profitability/stats)                        | Real CRUD, ledger, n8n event emit                                            |
-| `ClientsList`, `ClientDetail`                                     | `clientsRouter.ts`                                                             | Full CRUD                                                                    |
-| `EstimatesList`                                                   | `estimatesRouter.ts`                                                           | list/markSent/markApproved persist                                           |
-| `FieldReportsList`, `FieldReportNew`, `FieldReportDetail`         | `fieldReportsRouter.ts` + `voice-to-report.ts`                                 | Whisper → Claude → DB pipeline real; publish/unpublish work; Realtime active |
-| `MaterialsView`                                                   | `materialsRouter.ts` + `material-procurement.ts`                               | Real DB; ledger writes; n8n emit                                             |
-| `ScheduleView`                                                    | `scheduleRouter.ts` (7 procs) + `weather-schedule.ts` + `GanttChart.tsx`       | Drag-to-reschedule wired                                                     |
-| `LedgerView`                                                      | `ledgerRouter.ts`                                                              | Append-only, real inserts                                                    |
-| `FinishSelectionsAdmin`                                           | `finishSelectionsRouter.ts`                                                    | calcBudgetImpact, adminApprove                                               |
-| `SubContractorsList`                                              | `subContractorsRouter.ts`                                                      | sendBriefing wired                                                           |
-| `PortfolioAdmin`                                                  | `portfolioRouter.ts`                                                           | Full CRUD + togglePublished                                                  |
-| `SitePlanBuilder` (1131 LOC)                                      | `sitePlansRouter.ts`                                                           | Canvas + saved-plans persistence                                             |
-| `BlueprintTools`                                                  | `blueprintRouter.ts` (has tests)                                               | OAuth + API-key paths real                                                   |
-| `Analytics`                                                       | Composes `projects.stats/list`, `fieldReports.weeklyStats`, `materials.list`   | All real, no hardcoded values                                                |
-| `CommandCenter`                                                   | tRPC stats/list + `lead-score.ts` (real Claude call) + `useRealtimeTable`      | Realtime active                                                              |
-| `ActivityLog`                                                     | Direct Supabase channel on `ledger_entries`                                    | Works                                                                        |
-| `VisionStudio` (admin)                                            | `vision-studio.ts`                                                             | Real Claude vision calls                                                     |
-| `Search`                                                          | `search.ts`                                                                    | Real                                                                         |
-| `BillingView`                                                     | `stripe-billing.ts` + `stripe-webhook.ts`                                      | **Code-complete Stripe integration** with graceful no-key fallback           |
-| `NotificationsView`                                               | `notificationsRouter.ts`                                                       | adminList/send/markRead all persist                                          |
-| `SetupWizard` (1348 LOC)                                          | `platform-health`, `setup-env`, `platform-actions`, `onboarding-{provision,verify}` | All functions exist; `onboarding-verify` has 400+ LOC of tests           |
+| Page                                                      | Backend                                                                             | Notes                                                                        |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `ProjectsList`, `ProjectNew`, `ProjectDetail`             | `projectsRouter.ts` (9 procs incl. profitability/stats)                             | Real CRUD, ledger, n8n event emit                                            |
+| `ClientsList`, `ClientDetail`                             | `clientsRouter.ts`                                                                  | Full CRUD                                                                    |
+| `EstimatesList`                                           | `estimatesRouter.ts`                                                                | list/markSent/markApproved persist                                           |
+| `FieldReportsList`, `FieldReportNew`, `FieldReportDetail` | `fieldReportsRouter.ts` + `voice-to-report.ts`                                      | Whisper → Claude → DB pipeline real; publish/unpublish work; Realtime active |
+| `MaterialsView`                                           | `materialsRouter.ts` + `material-procurement.ts`                                    | Real DB; ledger writes; n8n emit                                             |
+| `ScheduleView`                                            | `scheduleRouter.ts` (7 procs) + `weather-schedule.ts` + `GanttChart.tsx`            | Drag-to-reschedule wired                                                     |
+| `LedgerView`                                              | `ledgerRouter.ts`                                                                   | Append-only, real inserts                                                    |
+| `FinishSelectionsAdmin`                                   | `finishSelectionsRouter.ts`                                                         | calcBudgetImpact, adminApprove                                               |
+| `SubContractorsList`                                      | `subContractorsRouter.ts`                                                           | sendBriefing wired                                                           |
+| `PortfolioAdmin`                                          | `portfolioRouter.ts`                                                                | Full CRUD + togglePublished                                                  |
+| `SitePlanBuilder` (1131 LOC)                              | `sitePlansRouter.ts`                                                                | Canvas + saved-plans persistence                                             |
+| `BlueprintTools`                                          | `blueprintRouter.ts` (has tests)                                                    | OAuth + API-key paths real                                                   |
+| `Analytics`                                               | Composes `projects.stats/list`, `fieldReports.weeklyStats`, `materials.list`        | All real, no hardcoded values                                                |
+| `CommandCenter`                                           | tRPC stats/list + `lead-score.ts` (real Claude call) + `useRealtimeTable`           | Realtime active                                                              |
+| `ActivityLog`                                             | Direct Supabase channel on `ledger_entries`                                         | Works                                                                        |
+| `VisionStudio` (admin)                                    | `vision-studio.ts`                                                                  | Real Claude vision calls                                                     |
+| `Search`                                                  | `search.ts`                                                                         | Real                                                                         |
+| `BillingView`                                             | `stripe-billing.ts` + `stripe-webhook.ts`                                           | **Code-complete Stripe integration** with graceful no-key fallback           |
+| `NotificationsView`                                       | `notificationsRouter.ts`                                                            | adminList/send/markRead all persist                                          |
+| `SetupWizard` (1348 LOC)                                  | `platform-health`, `setup-env`, `platform-actions`, `onboarding-{provision,verify}` | All functions exist; `onboarding-verify` has 400+ LOC of tests               |
 
 ### Partial — config or polish, not feature build
 
@@ -78,13 +78,13 @@ After setting, validate end-to-end: file a test estimate, run a Stripe payment-l
 
 Workflow templates the codebase is already emitting events for:
 
-| Event                    | Emit site                  | Workflow purpose                                |
-| ------------------------ | -------------------------- | ----------------------------------------------- |
-| `project_status_changed` | `projectsRouter.ts:1006`   | Notify owner + client on phase transitions      |
-| `schedule_changed`       | `scheduleRouter.ts:221,446`| SMS sub-contractors when their tasks shift      |
-| `material_shortage`      | `materialsRouter.ts:139`   | Auto-draft PO + ping Eric for approval          |
-| `field_report_published` | `fieldReportsRouter.ts`    | Push to client portal + email if subscribed     |
-| `invoice_created`        | `stripe-billing.ts:143`    | Email client with payment link + log to ledger  |
+| Event                    | Emit site                   | Workflow purpose                               |
+| ------------------------ | --------------------------- | ---------------------------------------------- |
+| `project_status_changed` | `projectsRouter.ts:1006`    | Notify owner + client on phase transitions     |
+| `schedule_changed`       | `scheduleRouter.ts:221,446` | SMS sub-contractors when their tasks shift     |
+| `material_shortage`      | `materialsRouter.ts:139`    | Auto-draft PO + ping Eric for approval         |
+| `field_report_published` | `fieldReportsRouter.ts`     | Push to client portal + email if subscribed    |
+| `invoice_created`        | `stripe-billing.ts:143`     | Email client with payment link + log to ledger |
 
 These workflows live in n8n itself, not the repo. Once authored and the URL is set, the existing `n8n-webhook.ts` proxy starts dispatching automatically — no code change.
 
@@ -134,10 +134,12 @@ These are not on the critical path and shouldn't gate go-live:
 A realistic two-day plan:
 
 **Day 1 (config + verification, half-day each):**
+
 - Item 1 — production secrets, validate via `platform-health`.
 - Item 4 — Stripe smoke test against live mode.
 
 **Day 2 (code, half-day each):**
+
 - Item 3 — wire Realtime into the four pages.
 - Item 5 — onboarding rate limit + secret hygiene.
 
