@@ -27,7 +27,6 @@ const About = lazy(() => import("./pages/About"));
 const Services = lazy(() => import("./pages/Services"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const VisionStudio = lazy(() => import("./pages/VisionStudio"));
 
 // Auth pages
 const AuthLogin = lazy(() => import("./pages/auth/Login"));
@@ -127,7 +126,6 @@ function Router() {
         <Route path="/faq" component={FAQ} />
         <Route path="/contact" component={Contact} />
         <Route path="/estimator" component={Estimator} />
-        <Route path="/vision-studio" component={VisionStudio} />
 
         {/* Auth */}
         <Route path="/auth/login" component={AuthLogin} />
