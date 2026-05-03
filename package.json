@@ -23,8 +23,8 @@
     "clean": "rm -rf dist/ node_modules/.cache/ .manus-logs/"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.81.0",
-    "@excalidraw/excalidraw": "^0.18.0",
+    "@anthropic-ai/sdk": "^0.92.0",
+    "@excalidraw/excalidraw": "^0.18.1",
     "@hookform/resolvers": "^5.2.2",
     "@netlify/functions": "^2.8.2",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -131,7 +131,9 @@
       "esbuild": ">=0.25.0",
       "mermaid": ">=10.9.4",
       "vite": ">=8.0.9",
-      "drizzle-orm": ">=0.45.2"
+      "drizzle-orm": ">=0.45.2",
+      "uuid": ">=14.0.0",
+      "@excalidraw/mermaid-to-excalidraw": ">=1.1.3"
     }
   }
 }

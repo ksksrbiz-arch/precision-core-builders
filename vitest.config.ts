@@ -22,6 +22,7 @@ export default defineConfig({
       "server/**/*.test.ts",
       "server/**/*.spec.ts",
       "netlify/functions/__tests__/onboarding-*.test.ts",
+      "netlify/functions/__tests__/stripe-*.test.ts",
       "client/src/pages/OnboardingWizard.test.ts",
     ],
     // Vitest 4: environmentMatchGlobs → projects[].test.environment.

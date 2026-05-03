@@ -4,6 +4,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -147,6 +148,15 @@ export default function NotificationsView() {
   );
 
   const utils = trpc.useUtils();
+
+  // Live updates: incoming notifications appear in the feed without refresh.
+  useRealtimeTable({
+    table: "notifications",
+    onUpdate: () => {
+      utils.notifications.adminList.invalidate();
+      utils.notifications.list.invalidate();
+    },
+  });
 
   const { data: clients } = trpc.clients.list.useQuery({ pageSize: 100 });
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });

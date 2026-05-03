@@ -8,6 +8,7 @@ import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -70,6 +71,18 @@ export default function MaterialsView() {
   });
   const utils = trpc.useUtils();
   const appendLedger = trpc.ledger.append.useMutation();
+
+  // Live updates: deliveries marked received from another device show up here.
+  useRealtimeTable({
+    table: "materials",
+    onUpdate: payload => {
+      const row = (payload.new ?? payload.old) as {
+        project_id?: number;
+      } | null;
+      if (selectedProject && row?.project_id !== selectedProject) return;
+      utils.materials.list.invalidate();
+    },
+  });
   const createMaterial = useMutationWithToast(
     trpc.materials.create.useMutation(),
     {

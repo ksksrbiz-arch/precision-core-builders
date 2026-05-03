@@ -5,6 +5,10 @@
  * where <your-site-url> is the value of VITE_SITE_URL (e.g.
  * https://precisioncorebuilders.com or https://precision-core.netlify.app).
  *
+ * Security: every request is verified with the Stripe-Signature header
+ * against STRIPE_WEBHOOK_SECRET. Unsigned or tampered events are rejected
+ * before any database write happens.
+ *
  * Events handled:
  * - invoice.paid → record payment in billing_events
  * - checkout.session.completed → record payment link completion
@@ -12,6 +16,7 @@
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { ENV } from "../../server/_core/env";
 
 function getDb() {
@@ -20,6 +25,50 @@ function getDb() {
   }
   return createClient(ENV.supabaseUrl, ENV.supabaseServiceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+/**
+ * Verify a Stripe webhook signature.
+ * Mirrors `stripe.webhooks.constructEvent` so we don't pull in the SDK.
+ *
+ * @returns true when the signature is valid AND the timestamp is within
+ *          `toleranceSeconds` of now (default 5 minutes — Stripe default).
+ */
+export function verifyStripeSignature(
+  rawBody: string,
+  signatureHeader: string | undefined,
+  secret: string,
+  toleranceSeconds = 300,
+  nowSeconds = Math.floor(Date.now() / 1000)
+): boolean {
+  if (!signatureHeader || !secret) return false;
+
+  // Header format: "t=<timestamp>,v1=<sig1>,v1=<sig2>,..."
+  let timestamp: string | null = null;
+  const v1Sigs: string[] = [];
+  for (const part of signatureHeader.split(",")) {
+    const [k, v] = part.split("=");
+    if (k === "t") timestamp = v ?? null;
+    else if (k === "v1" && v) v1Sigs.push(v);
+  }
+  if (!timestamp || v1Sigs.length === 0) return false;
+
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) return false;
+  if (Math.abs(nowSeconds - ts) > toleranceSeconds) return false;
+
+  const expected = createHmac("sha256", secret)
+    .update(`${timestamp}.${rawBody}`, "utf8")
+    .digest("hex");
+  const expectedBuf = Buffer.from(expected, "hex");
+
+  return v1Sigs.some(sig => {
+    const sigBuf = Buffer.from(sig, "hex");
+    return (
+      sigBuf.length === expectedBuf.length &&
+      timingSafeEqual(sigBuf, expectedBuf)
+    );
   });
 }
 
@@ -32,8 +81,32 @@ export const handler: Handler = async event => {
     return { statusCode: 405, headers, body: "" };
   }
 
+  // Reject unsigned events outright. Without a secret in the env we can't
+  // trust anything that arrives — fail closed.
+  if (!ENV.stripeWebhookSecret) {
+    console.error("[stripe-webhook] STRIPE_WEBHOOK_SECRET not configured");
+    return {
+      statusCode: 503,
+      headers,
+      body: JSON.stringify({ error: "Webhook secret not configured" }),
+    };
+  }
+
+  const rawBody = event.body ?? "";
+  const sigHeader =
+    (event.headers as Record<string, string | undefined>)["stripe-signature"] ??
+    (event.headers as Record<string, string | undefined>)["Stripe-Signature"];
+
+  if (!verifyStripeSignature(rawBody, sigHeader, ENV.stripeWebhookSecret)) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid signature" }),
+    };
+  }
+
   try {
-    const body = JSON.parse(event.body ?? "{}");
+    const body = JSON.parse(rawBody || "{}");
     const eventType: string = body.type ?? "";
     const data = body.data?.object;
 
@@ -127,7 +200,7 @@ export const handler: Handler = async event => {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: err instanceof Error ? err.message : "Webhook processing failed",
+        error: "Webhook processing failed",
       }),
     };
   }

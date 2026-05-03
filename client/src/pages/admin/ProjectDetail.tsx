@@ -1,6 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
   ArrowLeft,
   Plus,
@@ -92,6 +93,40 @@ export default function ProjectDetail() {
   );
 
   const utils = trpc.useUtils();
+
+  // Live updates: schedule + ledger changes from another session refresh in place.
+  useRealtimeTable({
+    table: "schedule_items",
+    onUpdate: payload => {
+      const row = (payload.new ?? payload.old) as {
+        project_id?: number;
+      } | null;
+      if (row?.project_id !== projectId) return;
+      utils.schedule.list.invalidate({ projectId });
+    },
+  });
+  useRealtimeTable({
+    table: "ledger_entries",
+    onUpdate: payload => {
+      const row = (payload.new ?? payload.old) as {
+        project_id?: number;
+      } | null;
+      if (row?.project_id !== projectId) return;
+      utils.ledger.list.invalidate({ projectId });
+      utils.projects.profitability.invalidate({ id: projectId });
+    },
+  });
+  useRealtimeTable({
+    table: "materials",
+    onUpdate: payload => {
+      const row = (payload.new ?? payload.old) as {
+        project_id?: number;
+      } | null;
+      if (row?.project_id !== projectId) return;
+      utils.materials.list.invalidate({ projectId });
+    },
+  });
+
   const updateProgress = useMutationWithToast(
     trpc.projects.updateProgress.useMutation(),
     {

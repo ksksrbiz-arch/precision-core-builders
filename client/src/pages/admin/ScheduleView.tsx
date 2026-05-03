@@ -8,6 +8,7 @@ import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -253,6 +254,19 @@ export default function ScheduleView() {
         plannedEndDate: "",
         notes: "",
       });
+      refetch();
+    },
+  });
+
+  // Live updates: when another session changes a task in this project, repaint.
+  useRealtimeTable({
+    table: "schedule_items",
+    onUpdate: payload => {
+      if (!selectedProject) return;
+      const row = (payload.new ?? payload.old) as {
+        project_id?: number;
+      } | null;
+      if (row?.project_id !== selectedProject) return;
       refetch();
     },
   });
