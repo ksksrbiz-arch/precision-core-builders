@@ -17,10 +17,16 @@
  * Security:
  * - Token-gated with timing-safe comparison (same as setup-env)
  * - Allowlist-gated per phase (can't write arbitrary keys)
- * - Rate-limited to 20 requests/hour per IP via KV (TODO: wire in)
+ * - Rate-limited per IP via the shared sliding-window limiter
+ *   (10 req / 5 min). Defense-in-depth on top of the token gate.
  */
 import type { Handler } from "@netlify/functions";
 import { timingSafeEqual as _tse } from "node:crypto";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
 
 function timingSafeEqual(a: string, b: string): boolean {
   try {
@@ -72,6 +78,20 @@ export const handler: Handler = async event => {
     return { statusCode: 204, headers, body: "" };
   if (event.httpMethod !== "POST")
     return { statusCode: 405, headers, body: "" };
+
+  // Rate-limit by IP before doing any auth or parsing work.
+  const ip = getClientIp(event.headers as Record<string, string | undefined>);
+  const rl = checkRateLimit(`onboarding-provision:${ip}`, {
+    maxRequests: 10,
+    windowMs: 5 * 60_000,
+  });
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...headers, ...rateLimitHeaders(rl) },
+      body: JSON.stringify({ error: "Too Many Requests" }),
+    };
+  }
 
   try {
     // Config sanity check
@@ -223,8 +243,14 @@ export const handler: Handler = async event => {
         }
 
         if (!res.ok) {
-          const err = (await res.json()) as { message?: string };
-          failed.push({ key, error: err?.message ?? `Netlify ${res.status}` });
+          // Don't surface upstream error bodies — they can echo the value
+          // back. Log server-side and return only a status code.
+          console.error(
+            "[onboarding-provision] netlify rejected key",
+            res.status,
+            key
+          );
+          failed.push({ key, error: `Netlify ${res.status}` });
           continue;
         }
 
@@ -268,11 +294,12 @@ export const handler: Handler = async event => {
       }),
     };
   } catch (err) {
+    console.error("[onboarding-provision]", err);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: "Internal error provisioning environment",
       }),
     };
   }

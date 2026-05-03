@@ -21,6 +21,7 @@ export const ENV = {
 
   // Billing
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
 
   // Blueprint.am integration
   // Public site URL (used to build OAuth redirect URIs) — prefer SITE_URL,

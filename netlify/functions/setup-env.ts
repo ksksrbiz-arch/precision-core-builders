@@ -12,6 +12,11 @@
  */
 import type { Handler } from "@netlify/functions";
 import { timingSafeEqual as _tse } from "node:crypto";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
 
 /** Timing-safe string comparison to prevent side-channel attacks */
 function timingSafeEqual(a: string, b: string): boolean {
@@ -47,6 +52,19 @@ export const handler: Handler = async event => {
     return { statusCode: 204, headers, body: "" };
   if (event.httpMethod !== "POST")
     return { statusCode: 405, headers, body: "" };
+
+  const ip = getClientIp(event.headers as Record<string, string | undefined>);
+  const rl = checkRateLimit(`setup-env:${ip}`, {
+    maxRequests: 10,
+    windowMs: 5 * 60_000,
+  });
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...headers, ...rateLimitHeaders(rl) },
+      body: JSON.stringify({ error: "Too Many Requests" }),
+    };
+  }
 
   try {
     // Validate required env vars are set (no hardcoded fallbacks)
@@ -149,8 +167,14 @@ export const handler: Handler = async event => {
     }
 
     if (!res.ok) {
-      const err = (await res.json()) as any;
-      throw new Error(err?.message ?? `Netlify API ${res.status}`);
+      // Drop the raw upstream message — it can echo the value back in some
+      // error paths. Surface only the status code to the caller.
+      console.error(
+        "[setup-env] netlify API rejected key write",
+        res.status,
+        key
+      );
+      throw new Error(`Netlify API ${res.status}`);
     }
 
     // Trigger a new deploy so the key is live immediately
@@ -170,11 +194,15 @@ export const handler: Handler = async event => {
       body: JSON.stringify({ success: true, key, deployed }),
     };
   } catch (err) {
+    // Log the full error server-side; return only a generic message to the
+    // client so we never leak the value or upstream details.
     console.error("[setup-env]", err);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: String(err) }),
+      body: JSON.stringify({
+        error: "Internal error writing environment variable",
+      }),
     };
   }
 };
