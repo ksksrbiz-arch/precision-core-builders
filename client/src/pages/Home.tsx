@@ -53,7 +53,6 @@ const fadeIn = {
 };
 const stagger = { visible: { transition: { staggerChildren: 0.12 } } };
 const SUPER_SPLAT_URL = "https://superspl.at";
-const SUPER_SPLAT_SIGNUP_URL = "https://superspl.at";
 const SUPER_SPLAT_DEMO_URL =
   "https://supersplat-demo.vercel.app/?model=https://huggingface.co/spaces/nerfstudio-office/nerf_assets/resolve/main/splat-data/office.splat";
 
@@ -666,6 +665,7 @@ function SuperSplatTeaser() {
                 src={SUPER_SPLAT_DEMO_URL}
                 className="w-full h-full"
                 loading="lazy"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                 allowFullScreen
               />
             </div>
@@ -685,7 +685,7 @@ function SuperSplatTeaser() {
             </ul>
             <div className="flex flex-col gap-3">
               <a
-                href={SUPER_SPLAT_SIGNUP_URL}
+                href={SUPER_SPLAT_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 font-medium hover:bg-primary/90 transition-colors rounded-sm uppercase text-sm"
