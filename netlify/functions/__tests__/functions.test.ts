@@ -116,6 +116,31 @@ describe("lead-score function", () => {
   });
 });
 
+// ─── SuperSplat Config Function Tests ────────────────────────
+
+describe("supersplat-config function", () => {
+  it("returns public integration configuration", async () => {
+    const { handler } = await import("../supersplat-config");
+    const event = mockEvent("GET");
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.provider).toBe("SuperSplat");
+    expect(body.accountUrl).toMatch(/^https:\/\/superspl\.at/);
+    expect(body.demoUrl).toMatch(/^https:\/\//);
+    expect(Array.isArray(body.features)).toBe(true);
+  });
+
+  it("returns 405 for non-GET requests", async () => {
+    const { handler } = await import("../supersplat-config");
+    const event = mockEvent("POST", {});
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(405);
+  });
+});
+
 // ─── Platform Health Function Tests ─────────────────────────
 
 describe("platform-health function", () => {

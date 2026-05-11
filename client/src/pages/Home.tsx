@@ -27,6 +27,7 @@ import { motion, useInView } from "framer-motion";
 import {
   ArrowRight,
   Award,
+  ExternalLink,
   Hammer,
   Home as HomeIcon,
   Paintbrush,
@@ -51,6 +52,20 @@ const fadeIn = {
   visible: { opacity: 1, transition: { duration: 0.9, ease } },
 };
 const stagger = { visible: { transition: { staggerChildren: 0.12 } } };
+const DEFAULT_SUPER_SPLAT_URL = "https://superspl.at";
+const DEFAULT_SUPER_SPLAT_DEMO_URL =
+  "https://supersplat-demo.vercel.app/?model=https://huggingface.co/spaces/nerfstudio-office/nerf_assets/resolve/main/splat-data/office.splat";
+const DEFAULT_SUPER_SPLAT_FEATURES = [
+  "Create a free SuperSplat account.",
+  "Upload and publish your own 3D splat scenes.",
+  "Share links with clients and teams instantly.",
+] as const;
+
+type SuperSplatConfig = {
+  accountUrl: string;
+  demoUrl: string;
+  features: string[];
+};
 
 // ─── Counter hook (preserved from original) ────────────────────────
 function useCounter(target: number, inView: boolean) {
@@ -98,6 +113,9 @@ export default function Home() {
         <MidpageCTA />
         <div className="cv-auto">
           <PortfolioTeaser />
+        </div>
+        <div className="cv-auto">
+          <SuperSplatTeaser />
         </div>
         <div className="cv-auto">
           <TestimonialTeaser />
@@ -616,6 +634,121 @@ function PortfolioTeaser() {
               </Link>
             </motion.div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SuperSplatTeaser() {
+  const [config, setConfig] = useState<SuperSplatConfig>({
+    accountUrl: DEFAULT_SUPER_SPLAT_URL,
+    demoUrl: DEFAULT_SUPER_SPLAT_DEMO_URL,
+    features: [...DEFAULT_SUPER_SPLAT_FEATURES],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/supersplat-config")
+      .then(async response => {
+        if (!response.ok) return;
+        const data = (await response.json()) as Partial<SuperSplatConfig>;
+        if (cancelled) return;
+        setConfig({
+          accountUrl: data.accountUrl ?? DEFAULT_SUPER_SPLAT_URL,
+          demoUrl: data.demoUrl ?? DEFAULT_SUPER_SPLAT_DEMO_URL,
+          features:
+            data.features && data.features.length > 0
+              ? data.features
+              : [...DEFAULT_SUPER_SPLAT_FEATURES],
+        });
+      })
+      .catch(() => {
+        // Keep rendering with the static defaults if the function is offline.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <section
+      className="py-24 md:py-32 bg-card/40 border-y border-border/40"
+      aria-labelledby="supersplat-heading"
+    >
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <Reveal className="max-w-3xl mb-10">
+          <div
+            className="text-[10px] tracking-[0.3em] uppercase text-primary mb-4 font-medium"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            3D Mapping Preview
+          </div>
+          <h2
+            id="supersplat-heading"
+            className="text-4xl md:text-5xl font-semibold text-foreground mb-5 leading-tight"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Explore projects in interactive 3D with SuperSplat.
+          </h2>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Rotate, zoom, and inspect a live Gaussian-splat model directly from
+            our homepage. Customers can create a free SuperSplat account to
+            publish and share their own scenes through this workflow.
+          </p>
+        </Reveal>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="lg:col-span-2 rounded-sm overflow-hidden border border-border/60 bg-background">
+            <div className="aspect-video bg-muted">
+              <iframe
+                title="SuperSplat 3D mapping example"
+                src={config.demoUrl}
+                className="w-full h-full"
+                loading="lazy"
+                sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+                allowFullScreen
+              />
+            </div>
+          </div>
+
+          <div className="rounded-sm border border-border/60 bg-background p-6 md:p-7">
+            <h3
+              className="text-2xl font-semibold text-foreground mb-4"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Get started
+            </h3>
+            <ul className="space-y-2 text-sm text-muted-foreground leading-relaxed mb-6">
+              {config.features.map(feature => (
+                <li key={feature}>• {feature}</li>
+              ))}
+            </ul>
+            <div className="flex flex-col gap-3">
+              <a
+                href={config.accountUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 font-medium hover:bg-primary/90 transition-colors rounded-sm uppercase text-sm"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Create Free Account (Sign Up)
+                <ExternalLink className="w-4 h-4" aria-hidden="true" />
+              </a>
+              <a
+                href={config.demoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 border border-border text-foreground px-6 py-3 font-medium hover:bg-muted/60 transition-colors rounded-sm uppercase text-sm"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Open Full Demo
+                <ExternalLink className="w-4 h-4" aria-hidden="true" />
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
