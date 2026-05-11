@@ -691,17 +691,17 @@ function SuperSplatTeaser() {
                 className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 font-medium hover:bg-primary/90 transition-colors rounded-sm uppercase text-sm"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                Create Free SuperSplat Account
+                Create Free Account (Sign Up)
                 <ExternalLink className="w-4 h-4" aria-hidden="true" />
               </a>
               <a
-                href={SUPER_SPLAT_URL}
+                href={SUPER_SPLAT_DEMO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 border border-border text-foreground px-6 py-3 font-medium hover:bg-muted/60 transition-colors rounded-sm uppercase text-sm"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                Open SuperSplat
+                Open Full Demo
                 <ExternalLink className="w-4 h-4" aria-hidden="true" />
               </a>
             </div>
