@@ -52,9 +52,20 @@ const fadeIn = {
   visible: { opacity: 1, transition: { duration: 0.9, ease } },
 };
 const stagger = { visible: { transition: { staggerChildren: 0.12 } } };
-const SUPER_SPLAT_URL = "https://superspl.at";
-const SUPER_SPLAT_DEMO_URL =
+const DEFAULT_SUPER_SPLAT_URL = "https://superspl.at";
+const DEFAULT_SUPER_SPLAT_DEMO_URL =
   "https://supersplat-demo.vercel.app/?model=https://huggingface.co/spaces/nerfstudio-office/nerf_assets/resolve/main/splat-data/office.splat";
+const DEFAULT_SUPER_SPLAT_FEATURES = [
+  "Create a free SuperSplat account.",
+  "Upload and publish your own 3D splat scenes.",
+  "Share links with clients and teams instantly.",
+] as const;
+
+type SuperSplatConfig = {
+  accountUrl: string;
+  demoUrl: string;
+  features: string[];
+};
 
 // ─── Counter hook (preserved from original) ────────────────────────
 function useCounter(target: number, inView: boolean) {
@@ -630,6 +641,38 @@ function PortfolioTeaser() {
 }
 
 function SuperSplatTeaser() {
+  const [config, setConfig] = useState<SuperSplatConfig>({
+    accountUrl: DEFAULT_SUPER_SPLAT_URL,
+    demoUrl: DEFAULT_SUPER_SPLAT_DEMO_URL,
+    features: [...DEFAULT_SUPER_SPLAT_FEATURES],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/supersplat-config")
+      .then(async response => {
+        if (!response.ok) return;
+        const data = (await response.json()) as Partial<SuperSplatConfig>;
+        if (cancelled) return;
+        setConfig({
+          accountUrl: data.accountUrl ?? DEFAULT_SUPER_SPLAT_URL,
+          demoUrl: data.demoUrl ?? DEFAULT_SUPER_SPLAT_DEMO_URL,
+          features:
+            data.features && data.features.length > 0
+              ? data.features
+              : [...DEFAULT_SUPER_SPLAT_FEATURES],
+        });
+      })
+      .catch(() => {
+        // Keep rendering with the static defaults if the function is offline.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section
       className="py-24 md:py-32 bg-card/40 border-y border-border/40"
@@ -662,7 +705,7 @@ function SuperSplatTeaser() {
             <div className="aspect-video bg-muted">
               <iframe
                 title="SuperSplat 3D mapping example"
-                src={SUPER_SPLAT_DEMO_URL}
+                src={config.demoUrl}
                 className="w-full h-full"
                 loading="lazy"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
@@ -679,13 +722,13 @@ function SuperSplatTeaser() {
               Get started
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground leading-relaxed mb-6">
-              <li>• Create a free SuperSplat account.</li>
-              <li>• Upload and publish your own 3D splat scenes.</li>
-              <li>• Share links with clients and teams instantly.</li>
+              {config.features.map(feature => (
+                <li key={feature}>• {feature}</li>
+              ))}
             </ul>
             <div className="flex flex-col gap-3">
               <a
-                href={SUPER_SPLAT_URL}
+                href={config.accountUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 font-medium hover:bg-primary/90 transition-colors rounded-sm uppercase text-sm"
@@ -695,7 +738,7 @@ function SuperSplatTeaser() {
                 <ExternalLink className="w-4 h-4" aria-hidden="true" />
               </a>
               <a
-                href={SUPER_SPLAT_DEMO_URL}
+                href={config.demoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 border border-border text-foreground px-6 py-3 font-medium hover:bg-muted/60 transition-colors rounded-sm uppercase text-sm"
