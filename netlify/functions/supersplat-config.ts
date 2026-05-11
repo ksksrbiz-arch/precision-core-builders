@@ -36,7 +36,7 @@ function safeUrl(
 }
 
 export const handler: Handler = async event => {
-  const origin = event.headers.origin ?? event.headers.Origin;
+  const origin = event.headers.origin;
   const headers = {
     ...corsHeaders(origin),
     "Cache-Control": "public, max-age=300",
@@ -95,7 +95,7 @@ export const handler: Handler = async event => {
         "Upload and publish 3D Gaussian splat scenes.",
         "Share interactive project links with clients and teams.",
       ],
-      generatedAt: new Date().toISOString(),
+      fetchedAt: new Date().toISOString(),
     }),
   };
 };
