@@ -63,8 +63,8 @@ async function supabaseUserToAuthUser(user: User): Promise<AuthUser> {
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!error && profile?.role === "admin") {
-      role = "admin";
+    if (!error && (profile?.role === "admin" || profile?.role === "user")) {
+      role = profile.role;
     }
   } catch {
     // Fall back to role embedded in auth metadata when profile lookup fails.
@@ -113,22 +113,22 @@ export function useAuth() {
       return;
     }
 
-    let isActive = true;
-    let requestId = 0;
+    let isEffectActive = true;
+    let latestRequestId = 0;
 
     const syncSession = async (nextSession: Session | null) => {
-      const currentRequestId = ++requestId;
+      const thisRequestId = ++latestRequestId;
       setSession(nextSession);
 
       if (!nextSession) {
-        if (!isActive || currentRequestId !== requestId) return;
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
         setUser(null);
         setLoading(false);
         return;
       }
 
       const nextUser = await supabaseUserToAuthUser(nextSession.user);
-      if (!isActive || currentRequestId !== requestId) return;
+      if (!isEffectActive || thisRequestId !== latestRequestId) return;
       setUser(nextUser);
       setLoading(false);
     };
@@ -146,7 +146,7 @@ export function useAuth() {
     });
 
     return () => {
-      isActive = false;
+      isEffectActive = false;
       subscription.unsubscribe();
     };
   }, []);
