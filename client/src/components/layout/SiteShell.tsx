@@ -389,6 +389,7 @@ export function SiteFooter() {
                 { label: "Our Work", href: "/portfolio" },
                 { label: "FAQ", href: "/faq" },
                 { label: "Contact", href: "/contact" },
+                { label: "Eric Login", href: "/auth/login" },
               ].map(l => (
                 <li key={l.href}>
                   <a
