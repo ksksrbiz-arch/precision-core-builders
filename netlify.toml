@@ -20,6 +20,7 @@
   #
   # Dashboard vars that Lambda functions need at runtime (keep scope = All):
   #   ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_SESSION_TOKEN  ← simple admin login
+  #   AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET  ← optional Auth0 SSO
   #   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
   #   SUPABASE_JWT_SECRET, SUPABASE_DATABASE_URL,
   #   ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_AI_API_KEY,
@@ -29,6 +30,7 @@
   #
   # Dashboard vars that should be scoped to "Builds" only:
   #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_STRIPE_PUBLISHABLE_KEY
+  #   VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID
   #   STRIPE_PUBLISHABLE_KEY, BLUEPRINT_BASE_URL, BLUEPRINT_API_BASE_URL
   #
   # Run `node scripts/check-env-size.js` locally to estimate your payload size.
@@ -116,7 +118,7 @@
     # Strict Transport Security (HSTS) - force HTTPS for 1 year
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     # Content Security Policy - prevent XSS and injection attacks
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.openweathermap.org https://api.anthropic.com https://blueprint.am https://api.blueprint.am; frame-src 'self' https://superspl.at https://supersplat-demo.vercel.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://*.auth0.com https://api.openweathermap.org https://api.anthropic.com https://blueprint.am https://api.blueprint.am; frame-src 'self' https://superspl.at https://supersplat-demo.vercel.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
     # Allow mic (voice reports), camera (site cam), geolocation (weather/site)
     # Uses structured-header syntax required by Chromium 116+
     Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self), interest-cohort=()"
