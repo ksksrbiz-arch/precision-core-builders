@@ -1,8 +1,12 @@
 /**
  * Login page — password auth primary, magic link as fallback.
  * Quiet Luxury design matching PCB brand.
+ *
+ * Password login calls the admin-auth Netlify Function which validates
+ * credentials against ADMIN_EMAIL / ADMIN_PASSWORD env vars (no database).
  */
 import { ASSETS } from "@/const";
+import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, Loader2, Lock, Mail, Shield } from "lucide-react";
@@ -27,23 +31,30 @@ export default function AuthLogin() {
     setLoading(true);
     setError("");
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    try {
+      const res = await fetch("/api/admin-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
 
-    if (authError) {
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Sign-in failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Store admin session token and redirect to dashboard
+      localStorage.setItem(ADMIN_SESSION_KEY, data.token as string);
+      setLocation("/admin");
+    } catch {
       setError(
-        authError.message === "Invalid login credentials"
-          ? "Email or password is incorrect."
-          : authError.message
+        "Unable to reach the sign-in service. Check your connection and try again."
       );
       setLoading(false);
-      return;
     }
-
-    setLoading(false);
-    setLocation("/admin");
   };
 
   const handleMagicLink = async (e: React.FormEvent) => {
