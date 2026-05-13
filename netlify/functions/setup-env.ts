@@ -7,8 +7,8 @@
  *
  * adminToken must match SETUP_ADMIN_TOKEN env var (set to any secret string
  * in Netlify dashboard → Site config → Environment variables).
- * Falls back to a well-known default so Eric can use it immediately before
- * setting his own token.
+ * This endpoint is create-only and will not overwrite existing keys that are
+ * already configured in the Netlify dashboard.
  */
 import type { Handler } from "@netlify/functions";
 import { timingSafeEqual as _tse } from "node:crypto";
@@ -139,32 +139,45 @@ export const handler: Handler = async event => {
       ? ["builds"]
       : ["functions", "builds", "runtime"];
 
-    // Try PATCH first (update), fall back to POST (create)
-    let res = await fetch(`${base}/${key}${qs}`, {
-      method: "PATCH",
+    // Create-only behavior: do not overwrite keys that already exist in
+    // Netlify dashboard.
+    const existingRes = await fetch(`${base}/${key}${qs}`, {
+      method: "GET",
       headers: authH,
-      body: JSON.stringify({
-        scopes: varScopes,
-        value,
-        context: "all",
-      }),
     });
 
-    if (res.status === 404) {
-      res = await fetch(`${base}${qs}`, {
-        method: "POST",
-        headers: authH,
-        body: JSON.stringify([
-          {
-            key,
-            scopes: isViteVar
-              ? ["builds"]
-              : ["functions", "builds", "runtime", "post_processing"],
-            values: [{ context: "all", value }],
-          },
-        ]),
-      });
+    if (existingRes.status === 200) {
+      return {
+        statusCode: 409,
+        headers,
+        body: JSON.stringify({
+          error: `Key "${key}" already exists in Netlify and will not be overwritten by setup-env.`,
+        }),
+      };
     }
+
+    if (existingRes.status !== 404) {
+      console.error(
+        "[setup-env] netlify API could not check existing key",
+        existingRes.status,
+        key
+      );
+      throw new Error(`Netlify API ${existingRes.status}`);
+    }
+
+    const res = await fetch(`${base}${qs}`, {
+      method: "POST",
+      headers: authH,
+      body: JSON.stringify([
+        {
+          key,
+          scopes: isViteVar
+            ? ["builds"]
+            : ["functions", "builds", "runtime", "post_processing"],
+          values: [{ context: "all", value }],
+        },
+      ]),
+    });
 
     if (!res.ok) {
       // Drop the raw upstream message — it can echo the value back in some

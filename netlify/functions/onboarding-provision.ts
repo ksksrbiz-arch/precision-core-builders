@@ -12,7 +12,15 @@
  *   triggerDeploy: boolean         // default true on final phase, false mid-flow
  * }
  *
- * Response: { ok: true, written: string[], deployId?: string }
+ * Response: {
+ *   ok: true,
+ *   written: string[],
+ *   skippedExisting: string[],
+ *   deployId?: string
+ * }
+ *
+ * This endpoint is create-only and never overwrites existing keys already
+ * configured in Netlify dashboard.
  *
  * Security:
  * - Token-gated with timing-safe comparison (same as setup-env)
@@ -204,6 +212,7 @@ export const handler: Handler = async event => {
     };
 
     const written: string[] = [];
+    const skippedExisting: string[] = [];
     const failed: Array<{ key: string; error: string }> = [];
 
     for (const [key, value] of Object.entries(vars)) {
@@ -211,36 +220,36 @@ export const handler: Handler = async event => {
       // attached to functions — keeping them build-scoped helps stay under
       // Netlify's 4 KB per-function environment-variable limit.
       const isViteVar = key.startsWith("VITE_");
-      const varScopes = isViteVar
-        ? ["builds"]
-        : ["functions", "builds", "runtime"];
-
       try {
-        let res = await fetch(`${base}/${key}${qs}`, {
-          method: "PATCH",
+        // Create-only behavior: skip keys that already exist.
+        const existingRes = await fetch(`${base}/${key}${qs}`, {
+          method: "GET",
           headers: authH,
-          body: JSON.stringify({
-            scopes: varScopes,
-            value,
-            context: "all",
-          }),
         });
 
-        if (res.status === 404) {
-          res = await fetch(`${base}${qs}`, {
-            method: "POST",
-            headers: authH,
-            body: JSON.stringify([
-              {
-                key,
-                scopes: isViteVar
-                  ? ["builds"]
-                  : ["functions", "builds", "runtime", "post_processing"],
-                values: [{ context: "all", value }],
-              },
-            ]),
-          });
+        if (existingRes.status === 200) {
+          skippedExisting.push(key);
+          continue;
         }
+
+        if (existingRes.status !== 404) {
+          failed.push({ key, error: `Netlify ${existingRes.status}` });
+          continue;
+        }
+
+        const res = await fetch(`${base}${qs}`, {
+          method: "POST",
+          headers: authH,
+          body: JSON.stringify([
+            {
+              key,
+              scopes: isViteVar
+                ? ["builds"]
+                : ["functions", "builds", "runtime", "post_processing"],
+              values: [{ context: "all", value }],
+            },
+          ]),
+        });
 
         if (!res.ok) {
           // Don't surface upstream error bodies — they can echo the value
@@ -289,6 +298,7 @@ export const handler: Handler = async event => {
         ok: failed.length === 0,
         phase,
         written,
+        skippedExisting,
         failed,
         deployId,
       }),

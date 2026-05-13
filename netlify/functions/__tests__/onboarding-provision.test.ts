@@ -53,11 +53,14 @@ describe("onboarding-provision function", () => {
     vi.stubEnv("NETLIFY_ACCOUNT_ID", "account-456");
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ id: "deploy-789" }), {
-          status: 200,
-        })
-      )
+      vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+        if (init?.method === "GET") {
+          return new Response("not found", { status: 404 });
+        }
+        return new Response(JSON.stringify({ id: "deploy-789" }), {
+          status: 201,
+        });
+      })
     );
   });
 
@@ -293,10 +296,13 @@ describe("onboarding-provision function", () => {
   });
 
   describe("Happy path", () => {
-    it("writes a single var via PATCH, returns 200", async () => {
+    it("writes a single missing var via POST, returns 200", async () => {
       const fetchMock = vi
         .fn()
-        .mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
+        .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({}), { status: 201 })
+        );
       vi.stubGlobal("fetch", fetchMock);
 
       const handler = await loadHandler();
@@ -313,14 +319,18 @@ describe("onboarding-provision function", () => {
       const body = JSON.parse(res.body!);
       expect(body.ok).toBe(true);
       expect(body.written).toEqual(["ANTHROPIC_API_KEY"]);
-      // Verify PATCH was called
+      // Verify GET (exists check) then POST (create) were called
       expect(fetchMock).toHaveBeenCalledWith(
         expect.stringContaining("/env/ANTHROPIC_API_KEY"),
-        expect.objectContaining({ method: "PATCH" })
+        expect.objectContaining({ method: "GET" })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/env?site_id="),
+        expect.objectContaining({ method: "POST" })
       );
     });
 
-    it("falls back to POST on 404 PATCH", async () => {
+    it("creates on GET 404", async () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(new Response("not found", { status: 404 }))
@@ -341,13 +351,45 @@ describe("onboarding-provision function", () => {
 
       expect(res.statusCode).toBe(200);
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
+      expect(fetchMock.mock.calls[0][1].method).toBe("GET");
       expect(fetchMock.mock.calls[1][1].method).toBe("POST");
+    });
+
+    it("does not overwrite an existing env var", async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ key: "ANTHROPIC_API_KEY" }), {
+            status: 200,
+          })
+        );
+      vi.stubGlobal("fetch", fetchMock);
+
+      const handler = await loadHandler();
+      const res = await handler(
+        mockEvent("POST", {
+          onboardingToken: VALID_TOKEN,
+          phase: "ai",
+          vars: { ANTHROPIC_API_KEY: "sk-ant-existing" },
+        }) as any,
+        {} as any
+      );
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body!);
+      expect(body.ok).toBe(true);
+      expect(body.written).toEqual([]);
+      expect(body.skippedExisting).toEqual(["ANTHROPIC_API_KEY"]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][1].method).toBe("GET");
     });
 
     it("triggers deploy when triggerDeploy=true", async () => {
       const fetchMock = vi
         .fn()
+        .mockResolvedValueOnce(
+          new Response("not found", { status: 404 })
+        )
         .mockResolvedValueOnce(
           new Response(JSON.stringify({}), { status: 200 })
         )
@@ -378,7 +420,10 @@ describe("onboarding-provision function", () => {
     it("does NOT trigger deploy when triggerDeploy is false or omitted", async () => {
       const fetchMock = vi
         .fn()
-        .mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
+        .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({}), { status: 200 })
+        );
       vi.stubGlobal("fetch", fetchMock);
 
       const handler = await loadHandler();
@@ -391,22 +436,29 @@ describe("onboarding-provision function", () => {
         {} as any
       );
 
-      // 1 call for PATCH; no /builds call
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock.mock.calls[0][0]).not.toContain("/builds");
+      // 2 calls (GET exists check + POST create); no /builds call
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(String(fetchMock.mock.calls[0][0])).not.toContain("/builds");
+      expect(String(fetchMock.mock.calls[1][0])).not.toContain("/builds");
     });
 
     it("returns 207 multi-status when some keys fail", async () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(
+          new Response("not found", { status: 404 })
+        ) // key 1 exists check
+        .mockResolvedValueOnce(
           new Response(JSON.stringify({}), { status: 200 })
-        ) // first key succeeds
+        ) // key 1 create succeeds
+        .mockResolvedValueOnce(
+          new Response("not found", { status: 404 })
+        ) // key 2 exists check
         .mockResolvedValueOnce(
           new Response(JSON.stringify({ message: "rate limited" }), {
             status: 429,
           })
-        ); // second fails
+        ); // key 2 create fails
       vi.stubGlobal("fetch", fetchMock);
 
       const handler = await loadHandler();
