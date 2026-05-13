@@ -47,6 +47,15 @@ function getSupabase() {
 }
 
 /**
+ * Return the configured admin session token, or null if not set.
+ * This token is set as ADMIN_SESSION_TOKEN in Netlify env vars and returned
+ * by the admin-auth function after a successful credential check.
+ */
+function getAdminSessionToken(): string | null {
+  return process.env.ADMIN_SESSION_TOKEN ?? null;
+}
+
+/**
  * Extract and verify a Supabase Bearer JWT from the Authorization header.
  * Returns the verified user record, or a structured error result.
  *
@@ -70,6 +79,19 @@ export async function verifyAuth(
       ok: false,
       statusCode: 401,
       message: "Missing authorization token",
+    };
+  }
+
+  // Admin session token — set by the admin-auth function, no DB required.
+  const adminSessionToken = getAdminSessionToken();
+  if (adminSessionToken && token === adminSessionToken) {
+    return {
+      ok: true,
+      user: {
+        id: "admin",
+        email: process.env.ADMIN_EMAIL ?? "admin@precisioncorebuilders.com",
+        role: "admin" as const,
+      },
     };
   }
 

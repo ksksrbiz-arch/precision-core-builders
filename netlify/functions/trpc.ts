@@ -31,6 +31,17 @@ function getSupabaseAdmin() {
 async function resolveUser(token: string | null): Promise<SessionUser | null> {
   if (!token) return null;
 
+  // Admin session token — set via ADMIN_SESSION_TOKEN env var, no DB required.
+  const adminSessionToken = process.env.ADMIN_SESSION_TOKEN ?? "";
+  if (adminSessionToken && token === adminSessionToken) {
+    return {
+      id: "admin",
+      email: process.env.ADMIN_EMAIL ?? "admin@precisioncorebuilders.com",
+      name: "Eric Tadlock",
+      role: "admin",
+    };
+  }
+
   // Dev bypass — never trusted in production.
   if (token === DEV_ADMIN_TOKEN && process.env.NODE_ENV !== "production") {
     return {
