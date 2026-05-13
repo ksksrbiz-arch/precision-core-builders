@@ -4,6 +4,8 @@
  * based on the role stored in public.users (set by DB trigger on first login).
  */
 import { ASSETS } from "@/const";
+import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
+import { consumeAuth0ReturnTo, consumeAuth0State } from "@/lib/auth0";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -31,6 +33,66 @@ export default function AuthCallback() {
     if (oauthError) {
       setState("error");
       setErrorMsg(decodeURIComponent(oauthError).replace(/\+/g, " "));
+      return;
+    }
+
+    /**
+     * Auth0 Authorization Code flow.  Auth0 redirects back with
+     * `?code=...&state=...` in the query string (no hash).  When we see
+     * those params, swap them for an admin session token via the
+     * `auth0-exchange` Netlify Function.  The expected `state` was
+     * stashed in sessionStorage by `beginAuth0Login`, so we can detect
+     * (and reject) cross-site forgeries before contacting the server.
+     */
+    const auth0Code = url.searchParams.get("code");
+    const auth0State = url.searchParams.get("state");
+    if (auth0Code && auth0State && !didRedirect.current) {
+      const expectedState = consumeAuth0State();
+      const returnTo = consumeAuth0ReturnTo();
+
+      if (!expectedState || expectedState !== auth0State) {
+        setState("error");
+        setErrorMsg(
+          "Sign-in could not be verified (state mismatch). Please try again."
+        );
+        return;
+      }
+
+      didRedirect.current = true;
+      (async () => {
+        try {
+          const res = await fetch("/api/auth0-exchange", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: auth0Code,
+              redirectUri: `${window.location.origin}/auth/callback`,
+            }),
+          });
+          const data = (await res.json()) as {
+            token?: string;
+            error?: string;
+          };
+          if (!res.ok || !data.token) {
+            didRedirect.current = false;
+            setState("error");
+            setErrorMsg(data.error ?? "Auth0 sign-in failed.");
+            return;
+          }
+          try {
+            localStorage.setItem(ADMIN_SESSION_KEY, data.token);
+          } catch {
+            // Fall through — useAuth will recover on next load.
+          }
+          setLocation(returnTo);
+        } catch {
+          didRedirect.current = false;
+          setState("error");
+          setErrorMsg(
+            "Unable to reach the sign-in service. Check your connection and try again."
+          );
+        }
+      })();
       return;
     }
 

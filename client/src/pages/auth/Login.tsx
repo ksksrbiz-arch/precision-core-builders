@@ -7,9 +7,18 @@
  */
 import { ASSETS } from "@/const";
 import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
+import { beginAuth0Login, isAuth0Configured } from "@/lib/auth0";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Loader2, Lock, Mail, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  KeyRound,
+  Loader2,
+  Lock,
+  Mail,
+  Shield,
+} from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -270,6 +279,41 @@ export default function AuthLogin() {
                   Forgot your password? Switch to magic link and we'll email you
                   a sign-in link.
                 </p>
+
+                {isAuth0Configured && (
+                  <>
+                    <div className="mt-5 pt-5 border-t border-border/40 flex items-center gap-3">
+                      <span className="h-px flex-1 bg-border/40" />
+                      <span
+                        className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/50"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Or
+                      </span>
+                      <span className="h-px flex-1 bg-border/40" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError("");
+                        try {
+                          beginAuth0Login("/admin");
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : "Unable to start Auth0 sign-in."
+                          );
+                        }
+                      }}
+                      className="mt-4 w-full flex items-center justify-center gap-2 bg-card border border-border/80 text-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-primary/60 hover:bg-primary/5 transition-all min-h-[48px]"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                      Continue with Auth0
+                    </button>
+                  </>
+                )}
 
                 <div className="mt-5 pt-5 border-t border-border/40 text-center">
                   <button
