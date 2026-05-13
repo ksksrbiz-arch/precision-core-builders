@@ -52,9 +52,22 @@ export function getStoredAdminSessionToken(): string | null {
   }
 }
 
+function authUserFromMetadata(user: User): AuthUser {
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    name:
+      user.user_metadata?.name ??
+      user.user_metadata?.full_name ??
+      user.email?.split("@")[0] ??
+      null,
+    role: (user.user_metadata?.role as "admin" | "user") ?? "user",
+  };
+}
+
 async function supabaseUserToAuthUser(user: User): Promise<AuthUser> {
-  let role: "admin" | "user" =
-    (user.user_metadata?.role as "admin" | "user") ?? "user";
+  const fallbackUser = authUserFromMetadata(user);
+  let role = fallbackUser.role;
 
   try {
     const { data: profile, error } = await supabase
@@ -71,13 +84,7 @@ async function supabaseUserToAuthUser(user: User): Promise<AuthUser> {
   }
 
   return {
-    id: user.id,
-    email: user.email ?? "",
-    name:
-      user.user_metadata?.name ??
-      user.user_metadata?.full_name ??
-      user.email?.split("@")[0] ??
-      null,
+    ...fallbackUser,
     role,
   };
 }
@@ -118,31 +125,46 @@ export function useAuth() {
 
     const syncSession = async (nextSession: Session | null) => {
       const thisRequestId = ++latestRequestId;
-      setSession(nextSession);
+      setLoading(true);
 
       if (!nextSession) {
         if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        setSession(null);
         setUser(null);
         setLoading(false);
         return;
       }
 
-      const nextUser = await supabaseUserToAuthUser(nextSession.user);
-      if (!isEffectActive || thisRequestId !== latestRequestId) return;
-      setUser(nextUser);
-      setLoading(false);
+      try {
+        const nextUser = await supabaseUserToAuthUser(nextSession.user);
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        setSession(nextSession);
+        setUser(nextUser);
+      } catch (error) {
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        console.error("[useAuth] Failed to resolve session user:", error);
+        setSession(nextSession);
+        setUser(authUserFromMetadata(nextSession.user));
+      } finally {
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        setLoading(false);
+      }
     };
 
     // Hydrate from existing Supabase session
     supabase.auth.getSession().then(({ data }) => {
-      void syncSession(data.session);
+      syncSession(data.session).catch(error => {
+        console.error("[useAuth] Initial session sync failed:", error);
+      });
     });
 
     // Subscribe to auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      void syncSession(newSession);
+      syncSession(newSession).catch(error => {
+        console.error("[useAuth] Auth state sync failed:", error);
+      });
     });
 
     return () => {
