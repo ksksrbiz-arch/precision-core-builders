@@ -356,13 +356,11 @@ describe("onboarding-provision function", () => {
     });
 
     it("does not overwrite an existing env var", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ key: "ANTHROPIC_API_KEY" }), {
-            status: 200,
-          })
-        );
+      const fetchMock = vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({ key: "ANTHROPIC_API_KEY" }), {
+          status: 200,
+        })
+      );
       vi.stubGlobal("fetch", fetchMock);
 
       const handler = await loadHandler();
@@ -387,9 +385,7 @@ describe("onboarding-provision function", () => {
     it("triggers deploy when triggerDeploy=true", async () => {
       const fetchMock = vi
         .fn()
-        .mockResolvedValueOnce(
-          new Response("not found", { status: 404 })
-        )
+        .mockResolvedValueOnce(new Response("not found", { status: 404 }))
         .mockResolvedValueOnce(
           new Response(JSON.stringify({}), { status: 200 })
         )
@@ -445,15 +441,11 @@ describe("onboarding-provision function", () => {
     it("returns 207 multi-status when some keys fail", async () => {
       const fetchMock = vi
         .fn()
-        .mockResolvedValueOnce(
-          new Response("not found", { status: 404 })
-        ) // key 1 exists check
+        .mockResolvedValueOnce(new Response("not found", { status: 404 })) // key 1 exists check
         .mockResolvedValueOnce(
           new Response(JSON.stringify({}), { status: 200 })
         ) // key 1 create succeeds
-        .mockResolvedValueOnce(
-          new Response("not found", { status: 404 })
-        ) // key 2 exists check
+        .mockResolvedValueOnce(new Response("not found", { status: 404 })) // key 2 exists check
         .mockResolvedValueOnce(
           new Response(JSON.stringify({ message: "rate limited" }), {
             status: 429,

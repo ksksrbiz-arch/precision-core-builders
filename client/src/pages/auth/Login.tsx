@@ -10,7 +10,14 @@ import { ASSETS } from "@/const";
 import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
 import { beginAuth0Login, isAuth0Configured } from "@/lib/auth0";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, KeyRound, Loader2, Lock, Mail, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  KeyRound,
+  Loader2,
+  Lock,
+  Mail,
+  Shield,
+} from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
