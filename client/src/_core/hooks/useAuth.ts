@@ -44,7 +44,7 @@ function isDevBypassActive(): boolean {
   return isDevModeEnabled() && localStorage.getItem(DEV_BYPASS_KEY) === "true";
 }
 
-function getAdminSessionToken(): string | null {
+export function getStoredAdminSessionToken(): string | null {
   try {
     return localStorage.getItem(ADMIN_SESSION_KEY) || null;
   } catch {
@@ -52,7 +52,7 @@ function getAdminSessionToken(): string | null {
   }
 }
 
-function supabaseUserToAuthUser(user: User): AuthUser {
+function authUserFromMetadata(user: User): AuthUser {
   return {
     id: user.id,
     email: user.email ?? "",
@@ -65,8 +65,33 @@ function supabaseUserToAuthUser(user: User): AuthUser {
   };
 }
 
+async function supabaseUserToAuthUser(user: User): Promise<AuthUser> {
+  const fallbackUser = authUserFromMetadata(user);
+  let role = fallbackUser.role;
+
+  try {
+    const { data: profile, error } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!error && (profile?.role === "admin" || profile?.role === "user")) {
+      role = profile.role;
+    }
+  } catch {
+    // Fall back to role embedded in auth metadata when profile lookup fails.
+  }
+
+  return {
+    ...fallbackUser,
+    role,
+  };
+}
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   // Tracks whether the dev bypass is currently active (re-evaluates on mount)
   const [devBypass, setDevBypass] = useState(false);
@@ -82,7 +107,7 @@ export function useAuth() {
     }
 
     // 2. Check admin session token (simple credential-based auth, no DB)
-    const token = getAdminSessionToken();
+    const token = getStoredAdminSessionToken();
     if (token) {
       setAdminToken(token);
       setLoading(false);
@@ -95,21 +120,57 @@ export function useAuth() {
       return;
     }
 
+    let isEffectActive = true;
+    let latestRequestId = 0;
+
+    const syncSession = async (nextSession: Session | null) => {
+      const thisRequestId = ++latestRequestId;
+      setLoading(true);
+
+      if (!nextSession) {
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const nextUser = await supabaseUserToAuthUser(nextSession.user);
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        setSession(nextSession);
+        setUser(nextUser);
+      } catch (error) {
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        console.error("[useAuth] Failed to resolve session user:", error);
+        setSession(nextSession);
+        setUser(authUserFromMetadata(nextSession.user));
+      } finally {
+        if (!isEffectActive || thisRequestId !== latestRequestId) return;
+        setLoading(false);
+      }
+    };
+
     // Hydrate from existing Supabase session
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
+      syncSession(data.session).catch(error => {
+        console.error("[useAuth] Initial session sync failed:", error);
+      });
     });
 
     // Subscribe to auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      setLoading(false);
+      syncSession(newSession).catch(error => {
+        console.error("[useAuth] Auth state sync failed:", error);
+      });
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isEffectActive = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Path 1: dev bypass
@@ -151,10 +212,6 @@ export function useAuth() {
   }
 
   // Path 3: Supabase session (portal clients)
-  const user: AuthUser | null = session?.user
-    ? supabaseUserToAuthUser(session.user)
-    : null;
-
   return {
     user,
     session,
