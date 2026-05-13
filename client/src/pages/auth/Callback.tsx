@@ -35,36 +35,69 @@ export default function AuthCallback() {
     }
 
     /**
-     * Reads role from public.users and navigates.
-     * Retries once — the DB trigger may not have fired yet on first login.
+     * Resolve the user's role and navigate.
+     *
+     * Primary path: POST the access token to `/api/auth-sync-role`. The
+     * server uses the service role key to upsert `public.users` with the
+     * correct role (admin allowlist defaults to Eric + the platform admin
+     * email; see netlify/functions/auth-sync-role.ts). This makes the
+     * magic-link flow work end-to-end without any manual SQL editor step
+     * in Supabase.
+     *
+     * Fallback: if the function is unreachable (e.g. dev without service
+     * role configured), read the role directly from `public.users` using
+     * the user's own session; if that also fails we send them to /portal.
      */
-    async function redirectByRole(userId: string, attempt = 1) {
+    async function redirectByRole(accessToken: string, userId: string) {
       if (didRedirect.current) return;
 
+      let role: "admin" | "user" | null = null;
+
+      // 1. Server-side sync (preferred — also writes the row).
       try {
-        const { data: profile, error } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", userId)
-          .single();
-
-        if (error && attempt < 3) {
-          // Trigger still running — wait and retry
-          await new Promise(r => setTimeout(r, 600 * attempt));
-          return redirectByRole(userId, attempt + 1);
+        const res = await fetch("/api/auth-sync-role", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { role?: string };
+          if (data.role === "admin" || data.role === "user") {
+            role = data.role;
+          }
         }
-
-        didRedirect.current = true;
-        setLocation(profile?.role === "admin" ? "/admin" : "/portal");
       } catch {
-        if (attempt < 3) {
-          await new Promise(r => setTimeout(r, 600 * attempt));
-          return redirectByRole(userId, attempt + 1);
-        }
-        // Give up — default to portal
-        didRedirect.current = true;
-        setLocation("/portal");
+        // Network / function unavailable — fall through to direct read.
       }
+
+      // 2. Fallback: direct read from public.users (in case the function
+      //    failed but the row was set by another path, e.g. the DB trigger).
+      if (!role) {
+        for (let attempt = 1; attempt <= 3 && !role; attempt += 1) {
+          try {
+            const { data: profile, error } = await supabase
+              .from("users")
+              .select("role")
+              .eq("id", userId)
+              .maybeSingle();
+            if (!error && profile?.role) {
+              if (profile.role === "admin" || profile.role === "user") {
+                role = profile.role;
+              }
+            }
+          } catch {
+            // ignore and retry
+          }
+          if (!role && attempt < 3) {
+            await new Promise(r => setTimeout(r, 600 * attempt));
+          }
+        }
+      }
+
+      didRedirect.current = true;
+      setLocation(role === "admin" ? "/admin" : "/portal");
     }
 
     // Supabase handles token exchange from hash/PKCE automatically.
@@ -73,18 +106,18 @@ export default function AuthCallback() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        await redirectByRole(session.user.id);
+        await redirectByRole(session.access_token, session.user.id);
       } else if (event === "SIGNED_OUT") {
         setLocation("/auth/login");
       } else if (event === "TOKEN_REFRESHED" && session) {
-        await redirectByRole(session.user.id);
+        await redirectByRole(session.access_token, session.user.id);
       }
     });
 
     // Fallback: session already exists (e.g. refresh after partial redirect)
     supabase.auth.getSession().then(({ data }) => {
       if (data.session && !didRedirect.current) {
-        redirectByRole(data.session.user.id);
+        redirectByRole(data.session.access_token, data.session.user.id);
       }
     });
 
