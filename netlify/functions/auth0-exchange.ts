@@ -44,6 +44,24 @@ type UserInfo = {
   name?: string;
 };
 
+function normalizeAuth0Domain(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  try {
+    const withProtocol = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    const parsed = new URL(withProtocol);
+    return parsed.hostname.trim();
+  } catch {
+    return trimmed
+      .replace(/^https?:\/\//i, "")
+      .replace(/\/.*$/, "")
+      .trim();
+  }
+}
+
 export const handler: Handler = async event => {
   const origin = event.headers["origin"];
   const headers = corsHeaders(origin);
@@ -103,22 +121,31 @@ export const handler: Handler = async event => {
     };
   }
 
-  const domain = (process.env.AUTH0_DOMAIN ?? "").trim();
-  const clientId = (process.env.AUTH0_CLIENT_ID ?? "").trim();
+  const domain = normalizeAuth0Domain(
+    process.env.AUTH0_DOMAIN ??
+      process.env.AUTH0_ISSUER_BASE_URL ??
+      process.env.VITE_AUTH0_DOMAIN ??
+      ""
+  );
+  const clientId = (
+    process.env.AUTH0_CLIENT_ID ??
+    process.env.VITE_AUTH0_CLIENT_ID ??
+    ""
+  ).trim();
   const clientSecret = (process.env.AUTH0_CLIENT_SECRET ?? "").trim();
   const adminEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
   const sessionToken = process.env.ADMIN_SESSION_TOKEN ?? "";
 
   if (!domain || !clientId || !clientSecret) {
     console.error(
-      "[auth0-exchange] AUTH0_DOMAIN, AUTH0_CLIENT_ID, or AUTH0_CLIENT_SECRET not set"
+      "[auth0-exchange] Missing Auth0 config (expected AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, and AUTH0_DOMAIN or AUTH0_ISSUER_BASE_URL)"
     );
     return {
       statusCode: 503,
       headers,
       body: JSON.stringify({
         error:
-          "Auth0 is not configured. Set AUTH0_DOMAIN, AUTH0_CLIENT_ID, and AUTH0_CLIENT_SECRET in Netlify environment variables.",
+          "Auth0 is not configured. Set AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, and either AUTH0_DOMAIN or AUTH0_ISSUER_BASE_URL in Netlify environment variables.",
       }),
     };
   }
