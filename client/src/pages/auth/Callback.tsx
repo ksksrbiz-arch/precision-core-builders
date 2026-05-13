@@ -17,7 +17,7 @@ type State = "loading" | "error" | "notice";
 export default function AuthCallback() {
   const [, setLocation] = useLocation();
   const [state, setState] = useState<State>("loading");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
   const didRedirect = useRef(false);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function AuthCallback() {
 
     if (oauthError) {
       setState("error");
-      setErrorMsg(decodeURIComponent(oauthError).replace(/\+/g, " "));
+      setStatusMessage(decodeURIComponent(oauthError).replace(/\+/g, " "));
       return;
     }
 
@@ -44,13 +44,13 @@ export default function AuthCallback() {
         : "";
       if (auth0VerificationStatus === "false") {
         setState("error");
-        setErrorMsg(
+        setStatusMessage(
           message ||
-            "Auth0 could not verify your email. Please request a new verification email and try again."
+            "Auth0 could not verify your email. Please return to the sign-in page, check your inbox, or request a new verification email from Auth0."
         );
       } else {
         setState("notice");
-        setErrorMsg(
+        setStatusMessage(
           message
             ? `${message} Please sign in again to continue.`
             : "Your email is verified. Please sign in again to continue."
@@ -75,7 +75,7 @@ export default function AuthCallback() {
 
       if (!expectedState || expectedState !== auth0State) {
         setState("error");
-        setErrorMsg(
+        setStatusMessage(
           "Sign-in could not be verified (state mismatch). Please try again."
         );
         return;
@@ -99,7 +99,7 @@ export default function AuthCallback() {
           if (!res.ok || !data.token) {
             didRedirect.current = false;
             setState("error");
-            setErrorMsg(data.error ?? "Auth0 sign-in failed.");
+            setStatusMessage(data.error ?? "Auth0 sign-in failed.");
             return;
           }
           try {
@@ -111,7 +111,7 @@ export default function AuthCallback() {
         } catch {
           didRedirect.current = false;
           setState("error");
-          setErrorMsg(
+          setStatusMessage(
             "Unable to reach the sign-in service. Check your connection and try again."
           );
         }
@@ -240,7 +240,7 @@ export default function AuthCallback() {
             {isNotice ? "Email verified" : "Sign-in failed"}
           </h2>
           <p className="text-sm text-muted-foreground font-light mb-6 leading-relaxed">
-            {errorMsg ||
+            {statusMessage ||
               "Something went wrong during sign-in. Please try again."}
           </p>
           <a
