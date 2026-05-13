@@ -21,6 +21,7 @@ export default defineConfig({
     include: [
       "server/**/*.test.ts",
       "server/**/*.spec.ts",
+      "netlify/functions/__tests__/auth-sync-role.test.ts",
       "netlify/functions/__tests__/onboarding-*.test.ts",
       "netlify/functions/__tests__/stripe-*.test.ts",
       "client/src/pages/OnboardingWizard.test.ts",
