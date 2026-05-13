@@ -432,10 +432,11 @@ describe("onboarding-provision function", () => {
         {} as any
       );
 
-      // 2 calls (GET exists check + POST create); no /builds call
+      // 2 calls (GET exists check + POST create); no deploy /builds call
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(String(fetchMock.mock.calls[0][0])).not.toContain("/builds");
-      expect(String(fetchMock.mock.calls[1][0])).not.toContain("/builds");
+      expect(
+        fetchMock.mock.calls.some(call => String(call[0]).includes("/builds"))
+      ).toBe(false);
     });
 
     it("returns 207 multi-status when some keys fail", async () => {

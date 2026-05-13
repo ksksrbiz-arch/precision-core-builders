@@ -230,7 +230,7 @@ export default function AuthLogin() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    Sign In with Password
+                    Continue with Password
                     <ArrowRight className="h-3.5 w-3.5" />
                   </>
                 )}

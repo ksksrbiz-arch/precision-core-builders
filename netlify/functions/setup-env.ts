@@ -148,10 +148,14 @@ export const handler: Handler = async event => {
 
     if (existingRes.status === 200) {
       return {
-        statusCode: 409,
+        statusCode: 200,
         headers,
         body: JSON.stringify({
-          error: `Key "${key}" already exists in Netlify and will not be overwritten by setup-env.`,
+          success: true,
+          key,
+          deployed: false,
+          existing: true,
+          message: `Key "${key}" already exists in Netlify and was left unchanged.`,
         }),
       };
     }
