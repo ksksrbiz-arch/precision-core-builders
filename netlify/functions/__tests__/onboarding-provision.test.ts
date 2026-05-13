@@ -432,8 +432,10 @@ describe("onboarding-provision function", () => {
         {} as any
       );
 
-      // 2 calls (GET exists check + POST create); no deploy /builds call
+      // Expected sequence: GET exists check, then POST create. No deploy call.
       expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+      expect(fetchMock.mock.calls[1][1].method).toBe("POST");
       expect(
         fetchMock.mock.calls.some(call => String(call[0]).includes("/builds"))
       ).toBe(false);

@@ -141,10 +141,19 @@ export const handler: Handler = async event => {
 
     // Create-only behavior: do not overwrite keys that already exist in
     // Netlify dashboard.
-    const existingRes = await fetch(`${base}/${key}${qs}`, {
-      method: "GET",
-      headers: authH,
-    });
+    let existingRes: Response;
+    try {
+      existingRes = await fetch(`${base}/${key}${qs}`, {
+        method: "GET",
+        headers: authH,
+      });
+    } catch (err) {
+      throw new Error(
+        `Failed to check existing environment variable "${key}": ${
+          err instanceof Error ? err.message : "network error"
+        }`
+      );
+    }
 
     if (existingRes.status === 200) {
       return {
@@ -166,7 +175,9 @@ export const handler: Handler = async event => {
         existingRes.status,
         key
       );
-      throw new Error(`Netlify API ${existingRes.status}`);
+      throw new Error(
+        `Failed to check existing environment variable "${key}": Netlify API ${existingRes.status}`
+      );
     }
 
     const res = await fetch(`${base}${qs}`, {

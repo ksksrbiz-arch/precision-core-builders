@@ -233,7 +233,10 @@ export const handler: Handler = async event => {
         }
 
         if (existingRes.status !== 404) {
-          failed.push({ key, error: `Netlify ${existingRes.status}` });
+          failed.push({
+            key,
+            error: `Failed to check existing key "${key}": Netlify API ${existingRes.status}`,
+          });
           continue;
         }
 
