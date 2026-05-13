@@ -12,7 +12,23 @@
  * on subsequent API calls.
  */
 import type { Handler } from "@netlify/functions";
+import { timingSafeEqual, createHash } from "crypto";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
+
+/**
+ * Hash both strings with SHA-256 before comparing so `timingSafeEqual`
+ * never leaks information about input length or content via timing.
+ */
+function safeEqual(a: string, b: string): boolean {
+  const aHash = createHash("sha256").update(a).digest();
+  const bHash = createHash("sha256").update(b).digest();
+  return timingSafeEqual(aHash, bHash);
+}
 
 export const handler: Handler = async event => {
   const origin = event.headers["origin"];
@@ -30,6 +46,22 @@ export const handler: Handler = async event => {
       statusCode: 405,
       headers,
       body: JSON.stringify({ error: "Method not allowed" }),
+    };
+  }
+
+  // Rate limit: 5 attempts per minute per IP
+  const ip = getClientIp(event.headers);
+  const rl = checkRateLimit(`admin-auth:${ip}`, {
+    maxRequests: 5,
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...headers, ...rateLimitHeaders(rl) },
+      body: JSON.stringify({
+        error: "Too many login attempts. Please wait a minute and try again.",
+      }),
     };
   }
 
@@ -65,10 +97,11 @@ export const handler: Handler = async event => {
     };
   }
 
-  // Small delay to slow brute-force attempts regardless of outcome
-  await new Promise(r => setTimeout(r, 400));
+  // Use timing-safe comparison to prevent timing-based enumeration attacks
+  const emailOk = safeEqual(email, adminEmail);
+  const passwordOk = safeEqual(password, adminPassword);
 
-  if (email !== adminEmail || password !== adminPassword) {
+  if (!emailOk || !passwordOk) {
     return {
       statusCode: 401,
       headers,

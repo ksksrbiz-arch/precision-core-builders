@@ -132,7 +132,7 @@ export function useAuth() {
   if (adminToken) {
     const adminUser: AuthUser = {
       id: "admin",
-      email: "",
+      email: "admin@precisioncorebuilders.com",
       name: "Eric Tadlock",
       role: "admin",
     };
