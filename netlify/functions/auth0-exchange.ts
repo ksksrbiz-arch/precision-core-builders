@@ -62,6 +62,14 @@ function normalizeAuth0Domain(value: string): string {
   }
 }
 
+function firstNonEmptyEnv(...values: Array<string | undefined>): string {
+  for (const value of values) {
+    const trimmed = (value ?? "").trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}
+
 export const handler: Handler = async event => {
   const origin = event.headers["origin"];
   const headers = corsHeaders(origin);
@@ -122,16 +130,16 @@ export const handler: Handler = async event => {
   }
 
   const domain = normalizeAuth0Domain(
-    process.env.AUTH0_DOMAIN ??
-      process.env.AUTH0_ISSUER_BASE_URL ??
-      process.env.VITE_AUTH0_DOMAIN ??
-      ""
+    firstNonEmptyEnv(
+      process.env.AUTH0_DOMAIN,
+      process.env.AUTH0_ISSUER_BASE_URL,
+      process.env.VITE_AUTH0_DOMAIN
+    )
   );
-  const clientId = (
-    process.env.AUTH0_CLIENT_ID ??
-    process.env.VITE_AUTH0_CLIENT_ID ??
-    ""
-  ).trim();
+  const clientId = firstNonEmptyEnv(
+    process.env.AUTH0_CLIENT_ID,
+    process.env.VITE_AUTH0_CLIENT_ID
+  );
   const clientSecret = (process.env.AUTH0_CLIENT_SECRET ?? "").trim();
   const adminEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
   const sessionToken = process.env.ADMIN_SESSION_TOKEN ?? "";

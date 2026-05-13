@@ -17,7 +17,6 @@ function mockEvent(method = "POST", body?: object): NetlifyEvent {
 }
 
 async function loadHandler() {
-  vi.resetModules();
   const mod = await import("../auth0-exchange");
   return mod.handler;
 }
