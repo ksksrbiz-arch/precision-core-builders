@@ -1,17 +1,16 @@
 /**
- * Login page — Auth0 is the primary sign-in method.
- * Quiet Luxury design matching PCB brand.
- *
- * Password login remains as an admin fallback and calls the admin-auth
- * Netlify Function which validates credentials against ADMIN_EMAIL /
- * ADMIN_PASSWORD env vars (no database).
+ * Login page — Supabase email/password is the default sign-in method.
+ * Auth0 remains available as an admin fallback.
  */
 import { ASSETS } from "@/const";
 import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
 import { beginAuth0Login, isAuth0Configured } from "@/lib/auth0";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
+  Building2,
   KeyRound,
   Loader2,
   Lock,
@@ -28,36 +27,92 @@ export default function AuthLogin() {
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
 
-  const handlePasswordSignIn = async (e: React.FormEvent) => {
+  const redirectByRole = async (user: User, accessToken: string) => {
+    let role: "admin" | "user" =
+      user.user_metadata?.role === "admin" ? "admin" : "user";
+
+    try {
+      const res = await fetch("/api/auth-sync-role", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { role?: string };
+        if (data.role === "admin" || data.role === "user") {
+          role = data.role;
+        }
+      }
+    } catch {
+      // Fall back to the profile lookup below.
+    }
+
+    if (role !== "admin") {
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (
+          !profileError &&
+          (profile?.role === "admin" || profile?.role === "user")
+        ) {
+          role = profile.role;
+        }
+      } catch {
+        // Fall back to metadata-derived user role.
+      }
+    }
+
+    setLocation(role === "admin" ? "/admin" : "/portal");
+  };
+
+  const handleSupabaseSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
+    if (!isSupabaseConfigured) {
+      setError(
+        "Supabase sign-in is not configured yet. Use Auth0 fallback if available."
+      );
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      const res = await fetch("/api/admin-auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
+      const { data, error: authError } = await supabase.auth.signInWithPassword(
+        {
+          email: email.trim(),
+          password,
+        }
+      );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Sign-in failed. Please try again.");
+      if (authError || !data.session) {
+        setError(
+          authError?.message === "Invalid login credentials"
+            ? "The email or password does not match a Supabase account."
+            : (authError?.message ??
+                "Supabase sign-in failed. Please try again.")
+        );
         setLoading(false);
         return;
       }
 
-      // Store admin session token and redirect to dashboard.
-      // Trade-off: localStorage is accessible to JS (XSS risk), but the
-      // entire app is served from the same Netlify origin with a strict CSP,
-      // so XSS vectors are already blocked at the transport/header level.
-      localStorage.setItem(ADMIN_SESSION_KEY, data.token as string);
-      setLocation("/admin");
+      try {
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+      } catch {
+        // Ignore storage failures; Supabase has already persisted the session.
+      }
+
+      await redirectByRole(data.session.user, data.session.access_token);
     } catch {
       setError(
-        "Unable to reach the sign-in service. Check your connection and try again."
+        "Unable to reach Supabase sign-in. Check your connection and try again."
       );
       setLoading(false);
     }
@@ -87,7 +142,7 @@ export default function AuthLogin() {
         aria-hidden
       />
 
-      <div className="relative w-full max-w-[360px]">
+      <div className="relative w-full max-w-[400px]">
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
@@ -120,14 +175,18 @@ export default function AuthLogin() {
                 className="block text-[9px] tracking-[0.3em] uppercase text-primary font-semibold mb-1.5"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                Digital Foreman
+                Supabase Secure Access
               </span>
               <h1
-                className="text-xl font-semibold"
+                className="text-2xl font-semibold"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Sign in to your dashboard
+                Sign in to Precision Core
               </h1>
+              <p className="mt-3 text-sm text-muted-foreground font-light leading-relaxed">
+                Use your Supabase account credentials for dashboard and portal
+                access.
+              </p>
             </div>
 
             <AnimatePresence>
@@ -144,37 +203,14 @@ export default function AuthLogin() {
               )}
             </AnimatePresence>
 
-            {isAuth0Configured && (
-              <button
-                type="button"
-                onClick={handleAuth0SignIn}
-                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/90 transition-all hover:gap-3 min-h-[48px]"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                <KeyRound className="h-3.5 w-3.5" />
-                Continue with Auth0
-              </button>
-            )}
-
-            <div className="mt-5 pt-5 border-t border-border/40 flex items-center gap-3">
-              <span className="h-px flex-1 bg-border/40" />
-              <span
-                className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/50"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                {isAuth0Configured ? "Fallback" : "Admin Sign In"}
-              </span>
-              <span className="h-px flex-1 bg-border/40" />
-            </div>
-
-            <form onSubmit={handlePasswordSignIn} className="mt-4 space-y-4">
+            <form onSubmit={handleSupabaseSignIn} className="space-y-4">
               <div>
                 <label
                   htmlFor="email"
                   className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-2 font-medium"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Email Address
+                  Supabase Email
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
@@ -223,23 +259,61 @@ export default function AuthLogin() {
               <button
                 type="submit"
                 disabled={loading || !email.trim() || !password}
-                className="w-full flex items-center justify-center gap-2 bg-card border border-border/80 text-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-primary/60 hover:bg-primary/5 disabled:opacity-50 transition-all min-h-[48px]"
+                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/90 disabled:opacity-50 transition-all hover:gap-3 min-h-[48px]"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    Continue with Password
+                    Continue with Supabase
                     <ArrowRight className="h-3.5 w-3.5" />
                   </>
                 )}
               </button>
             </form>
 
+            <div className="mt-4 flex items-center justify-between gap-3 text-[10px] text-muted-foreground/50">
+              <span className="inline-flex items-center gap-1.5">
+                <Building2 className="h-3 w-3" />
+                Admin and client portal access
+              </span>
+              <a
+                href="/auth/resend"
+                className="text-primary/80 hover:text-primary transition-colors"
+              >
+                Send magic link
+              </a>
+            </div>
+
+            {isAuth0Configured && (
+              <>
+                <div className="mt-6 pt-5 border-t border-border/40 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border/40" />
+                  <span
+                    className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/50"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Auth0 Fallback
+                  </span>
+                  <span className="h-px flex-1 bg-border/40" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAuth0SignIn}
+                  className="mt-4 w-full flex items-center justify-center gap-2 bg-card border border-border/80 text-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-primary/60 hover:bg-primary/5 transition-all min-h-[48px]"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Continue with Auth0
+                </button>
+              </>
+            )}
+
             <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-center gap-2 text-[10px] text-muted-foreground/40">
               <Shield className="h-3 w-3" />
-              <span>Secured login</span>
+              <span>Secured by Supabase Auth</span>
             </div>
           </motion.div>
         </motion.div>
