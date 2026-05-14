@@ -41,16 +41,22 @@ Once your project is ready:
 1. Go to **Settings → API**
 2. Copy these values (you'll need them for Netlify):
    ```
-   Project URL: https://[your-project-ref].supabase.co
+   Project URL: https://mdxfvxycwzauixuphjau.supabase.co
    anon/public key: eyJ... (long JWT)
    service_role key: eyJ... (long JWT, keep secret!)
    ```
 
 ### Step 1.3: Configure Database Connection
 
-1. Go to **Settings → Database**
-2. Copy the **Connection string** (Postgres URI format)
-3. Replace `[YOUR-PASSWORD]` with your database password from Step 1.1
+1. Go to **Settings → Database → Connection string**
+2. **⚠️ IPv4 note:** Netlify Functions and most local dev machines run on IPv4, where
+   the direct host (`db.mdxfvxycwzauixuphjau.supabase.co:5432`) is unreachable.
+   Switch to the **Session Pooler** tab on the same page and copy that URL:
+   ```
+   postgresql://postgres.mdxfvxycwzauixuphjau:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:5432/postgres
+   ```
+   The exact pooler host (including region) is shown in your Supabase dashboard.
+3. Replace `[YOUR-PASSWORD]` with your database password
 4. Save this as `DATABASE_URL` for later
 
 ### Step 1.4: Enable Realtime
@@ -112,7 +118,7 @@ Once your project is ready:
 
 ```bash
 # Supabase — needed by serverless functions at runtime
-SUPABASE_URL=https://[your-project-ref].supabase.co
+SUPABASE_URL=https://mdxfvxycwzauixuphjau.supabase.co
 SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
@@ -132,11 +138,13 @@ OPENWEATHERMAP_API_KEY=...
 
 ```bash
 # Client-side Supabase (VITE_ prefix → browser bundle only)
-VITE_SUPABASE_URL=https://[your-project-ref].supabase.co
+VITE_SUPABASE_URL=https://mdxfvxycwzauixuphjau.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 
 # Postgres connection string (build-time migrations / Drizzle Studio only)
-DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+# ⚠️  Use Session Pooler URL (IPv4 compatible) — copy from Supabase dashboard
+#   Settings → Database → Connection string → Session pooler tab:
+DATABASE_URL=postgresql://postgres.mdxfvxycwzauixuphjau:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:5432/postgres
 ```
 
 #### Optional Variables (can add later)
