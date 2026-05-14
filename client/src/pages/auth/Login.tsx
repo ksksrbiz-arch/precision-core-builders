@@ -20,6 +20,57 @@ import {
 import { useState } from "react";
 import { useLocation } from "wouter";
 
+type Role = "admin" | "user";
+
+function roleFromMetadata(user: User): Role {
+  return user.user_metadata?.role === "admin" ? "admin" : "user";
+}
+
+async function resolveRoleFromSyncApi(
+  accessToken: string
+): Promise<Role | null> {
+  try {
+    const res = await fetch("/api/auth-sync-role", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { role?: string };
+      if (data.role === "admin" || data.role === "user") {
+        return data.role;
+      }
+    }
+  } catch {
+    // Fall through to the next role source.
+  }
+
+  return null;
+}
+
+async function resolveRoleFromProfile(userId: string): Promise<Role | null> {
+  try {
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (
+      !profileError &&
+      (profile?.role === "admin" || profile?.role === "user")
+    ) {
+      return profile.role;
+    }
+  } catch {
+    // Fall through to metadata.
+  }
+
+  return null;
+}
+
 export default function AuthLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,45 +79,10 @@ export default function AuthLogin() {
   const [, setLocation] = useLocation();
 
   const redirectByRole = async (user: User, accessToken: string) => {
-    let role: "admin" | "user" =
-      user.user_metadata?.role === "admin" ? "admin" : "user";
-
-    try {
-      const res = await fetch("/api/auth-sync-role", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (res.ok) {
-        const data = (await res.json()) as { role?: string };
-        if (data.role === "admin" || data.role === "user") {
-          role = data.role;
-        }
-      }
-    } catch {
-      // Fall back to the profile lookup below.
-    }
-
-    if (role !== "admin") {
-      try {
-        const { data: profile, error: profileError } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (
-          !profileError &&
-          (profile?.role === "admin" || profile?.role === "user")
-        ) {
-          role = profile.role;
-        }
-      } catch {
-        // Fall back to metadata-derived user role.
-      }
-    }
+    const role =
+      (await resolveRoleFromSyncApi(accessToken)) ??
+      (await resolveRoleFromProfile(user.id)) ??
+      roleFromMetadata(user);
 
     setLocation(role === "admin" ? "/admin" : "/portal");
   };
@@ -76,7 +92,7 @@ export default function AuthLogin() {
     if (!email.trim() || !password) return;
     if (!isSupabaseConfigured) {
       setError(
-        "Supabase sign-in is not configured yet. Use Auth0 fallback if available."
+        "Primary sign-in is not configured yet. Use Auth0 fallback if available."
       );
       return;
     }
@@ -95,9 +111,8 @@ export default function AuthLogin() {
       if (authError || !data.session) {
         setError(
           authError?.message === "Invalid login credentials"
-            ? "The email or password does not match a Supabase account."
-            : (authError?.message ??
-                "Supabase sign-in failed. Please try again.")
+            ? "The email or password is incorrect."
+            : (authError?.message ?? "Sign-in failed. Please try again.")
         );
         setLoading(false);
         return;
@@ -112,7 +127,7 @@ export default function AuthLogin() {
       await redirectByRole(data.session.user, data.session.access_token);
     } catch {
       setError(
-        "Unable to reach Supabase sign-in. Check your connection and try again."
+        "Unable to reach the sign-in service. Check your connection and try again."
       );
       setLoading(false);
     }
@@ -175,7 +190,7 @@ export default function AuthLogin() {
                 className="block text-[9px] tracking-[0.3em] uppercase text-primary font-semibold mb-1.5"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                Supabase Secure Access
+                Secure Account Access
               </span>
               <h1
                 className="text-2xl font-semibold"
@@ -184,8 +199,8 @@ export default function AuthLogin() {
                 Sign in to Precision Core
               </h1>
               <p className="mt-3 text-sm text-muted-foreground font-light leading-relaxed">
-                Use your Supabase account credentials for dashboard and portal
-                access.
+                Use your Precision Core account credentials for dashboard and
+                portal access.
               </p>
             </div>
 
@@ -210,7 +225,7 @@ export default function AuthLogin() {
                   className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-2 font-medium"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Supabase Email
+                  Email Address
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
@@ -266,7 +281,7 @@ export default function AuthLogin() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    Continue with Supabase
+                    Continue Securely
                     <ArrowRight className="h-3.5 w-3.5" />
                   </>
                 )}
@@ -313,7 +328,7 @@ export default function AuthLogin() {
 
             <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-center gap-2 text-[10px] text-muted-foreground/40">
               <Shield className="h-3 w-3" />
-              <span>Secured by Supabase Auth</span>
+              <span>Secured login</span>
             </div>
           </motion.div>
         </motion.div>
