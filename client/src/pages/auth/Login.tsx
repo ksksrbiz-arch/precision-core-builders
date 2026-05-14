@@ -119,6 +119,8 @@ export default function AuthLogin() {
       }
 
       try {
+        // Clear any legacy Auth0/admin fallback token so this Supabase
+        // session is the source of truth for useAuth.
         localStorage.removeItem(ADMIN_SESSION_KEY);
       } catch {
         // Ignore storage failures; Supabase has already persisted the session.
@@ -293,12 +295,13 @@ export default function AuthLogin() {
                 <Building2 className="h-3 w-3" />
                 Admin and client portal access
               </span>
-              <a
-                href="/auth/resend"
+              <button
+                type="button"
+                onClick={() => setLocation("/auth/resend")}
                 className="text-primary/80 hover:text-primary transition-colors"
               >
                 Send magic link
-              </a>
+              </button>
             </div>
 
             {isAuth0Configured && (
