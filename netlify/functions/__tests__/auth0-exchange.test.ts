@@ -1,3 +1,5 @@
+import type { HandlerContext, HandlerEvent } from "@netlify/functions";
+import { handler } from "../auth0-exchange";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type NetlifyEvent = {
@@ -14,11 +16,6 @@ function mockEvent(method = "POST", body?: object): NetlifyEvent {
     },
     body: body ? JSON.stringify(body) : null,
   };
-}
-
-async function loadHandler() {
-  const mod = await import("../auth0-exchange");
-  return mod.handler;
 }
 
 describe("auth0-exchange function", () => {
@@ -38,18 +35,19 @@ describe("auth0-exchange function", () => {
   });
 
   it("returns 503 when domain and issuer config are missing", async () => {
-    const handler = await loadHandler();
     const res = await handler(
       mockEvent("POST", {
         code: "oauth-code",
         redirectUri: "https://precision-core.netlify.app/auth/callback",
-      }) as any,
-      {} as any
+      }) as unknown as HandlerEvent,
+      {} as HandlerContext
     );
 
     expect(res.statusCode).toBe(503);
     const body = JSON.parse(res.body as string);
-    expect(body.error).toMatch(/AUTH0_ISSUER_BASE_URL/);
+    expect(body.error).toBe(
+      "Auth0 is not configured. Set AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, and either AUTH0_DOMAIN or AUTH0_ISSUER_BASE_URL in Netlify environment variables."
+    );
   });
 
   it("uses AUTH0_ISSUER_BASE_URL when AUTH0_DOMAIN is unset", async () => {
@@ -70,13 +68,12 @@ describe("auth0-exchange function", () => {
       } as Response);
     vi.stubGlobal("fetch", fetchMock);
 
-    const handler = await loadHandler();
     const res = await handler(
       mockEvent("POST", {
         code: "oauth-code",
         redirectUri: "https://precision-core.netlify.app/auth/callback",
-      }) as any,
-      {} as any
+      }) as unknown as HandlerEvent,
+      {} as HandlerContext
     );
 
     expect(res.statusCode).toBe(200);
