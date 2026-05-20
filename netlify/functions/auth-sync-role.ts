@@ -19,6 +19,7 @@
  * Required env vars (server-side, Netlify dashboard):
  *   SUPABASE_URL                 — Supabase project URL
  *   SUPABASE_SERVICE_ROLE_KEY    — service role key (bypasses RLS for upsert)
+ *   ADMIN_EMAIL (optional)       — primary admin email to allowlist
  *   ADMIN_EMAILS  (optional)     — extra allowlisted admin emails
  */
 import type { Handler } from "@netlify/functions";
@@ -29,10 +30,15 @@ import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 const DEFAULT_ADMIN_EMAILS: ReadonlyArray<string> = [
   "skdev@1commerce.online",
   "erictadlock@precisioncorebuilders.com",
+  "eric@precisioncorebuilders.com",
 ];
 
 function getAdminEmailSet(): Set<string> {
   const set = new Set<string>(DEFAULT_ADMIN_EMAILS.map(e => e.toLowerCase()));
+  const primaryAdmin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (primaryAdmin) {
+    set.add(primaryAdmin);
+  }
   const extra = process.env.ADMIN_EMAILS;
   if (extra) {
     for (const e of extra.split(",")) {
