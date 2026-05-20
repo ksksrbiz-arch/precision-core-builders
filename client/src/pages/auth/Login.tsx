@@ -21,6 +21,9 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 
 type Role = "admin" | "user";
+type AdminAuthResult =
+  | { ok: true; token: string }
+  | { ok: false; error: string };
 
 function roleFromMetadata(user: User): Role {
   return user.user_metadata?.role === "admin" ? "admin" : "user";
@@ -71,6 +74,40 @@ async function resolveRoleFromProfile(userId: string): Promise<Role | null> {
   return null;
 }
 
+async function signInWithAdminCredentials(
+  email: string,
+  password: string
+): Promise<AdminAuthResult> {
+  try {
+    const res = await fetch("/api/admin-auth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const data = (await res.json()) as { token?: string; error?: string };
+    if (!res.ok || !data.token) {
+      return {
+        ok: false,
+        error: data.error ?? "Sign-in failed. Please try again.",
+      };
+    }
+
+    return { ok: true, token: data.token };
+  } catch {
+    return {
+      ok: false,
+      error:
+        "Unable to reach the sign-in service. Check your connection and try again.",
+    };
+  }
+}
+
 export default function AuthLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -90,47 +127,55 @@ export default function AuthLogin() {
   const handleSupabaseSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
-    if (!isSupabaseConfigured) {
-      setError(
-        "Primary sign-in is not configured yet. Use Auth0 fallback if available."
-      );
-      return;
-    }
 
     setLoading(true);
     setError("");
 
-    try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword(
-        {
-          email: email.trim(),
-          password,
-        }
-      );
+    const normalizedEmail = email.trim();
+    let primaryError = "";
 
-      if (authError || !data.session) {
-        setError(
+    try {
+      if (isSupabaseConfigured) {
+        const { data, error: authError } = await supabase.auth.signInWithPassword(
+          {
+            email: normalizedEmail,
+            password,
+          }
+        );
+
+        if (!authError && data.session) {
+          try {
+            // Clear any legacy Auth0/admin fallback token so this Supabase
+            // session is the source of truth for useAuth.
+            localStorage.removeItem(ADMIN_SESSION_KEY);
+          } catch {
+            // Ignore storage failures; Supabase already persisted the session.
+          }
+
+          await redirectByRole(data.session.user, data.session.access_token);
+          return;
+        }
+
+        primaryError =
           authError?.message === "Invalid login credentials"
             ? "The email or password is incorrect."
-            : (authError?.message ?? "Sign-in failed. Please try again.")
-        );
-        setLoading(false);
+            : (authError?.message ?? "Sign-in failed. Please try again.");
+      }
+
+      const adminLogin = await signInWithAdminCredentials(
+        normalizedEmail,
+        password
+      );
+      if (adminLogin.ok) {
+        localStorage.setItem(ADMIN_SESSION_KEY, adminLogin.token);
+        setLocation("/admin");
         return;
       }
 
-      try {
-        // Clear any legacy Auth0/admin fallback token so this Supabase
-        // session is the source of truth for useAuth.
-        localStorage.removeItem(ADMIN_SESSION_KEY);
-      } catch {
-        // Ignore storage failures; Supabase has already persisted the session.
-      }
-
-      await redirectByRole(data.session.user, data.session.access_token);
+      setError(primaryError || adminLogin.error);
     } catch {
-      setError(
-        "Unable to reach the sign-in service. Check your connection and try again."
-      );
+      setError("Unable to sign in right now. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
