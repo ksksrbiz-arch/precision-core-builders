@@ -15,7 +15,26 @@ import {
   SkipToContent,
 } from "./components/SiteEnhancements";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { ProtectedRoute } from "./components/RouteGuards";
+import { AdminRoute, ProtectedRoute } from "./components/RouteGuards";
+import type { ComponentType } from "react";
+
+/** Wrap a lazy-loaded page component with the AdminRoute guard. */
+function adminPage<P extends object>(Component: ComponentType<P>) {
+  return (props: P) => (
+    <AdminRoute>
+      <Component {...props} />
+    </AdminRoute>
+  );
+}
+
+/** Wrap a lazy-loaded page component with the ProtectedRoute guard. */
+function protectedPage<P extends object>(Component: ComponentType<P>) {
+  return (props: P) => (
+    <ProtectedRoute>
+      <Component {...props} />
+    </ProtectedRoute>
+  );
+}
 import Home from "./pages/Home";
 
 // Public pages
@@ -133,83 +152,95 @@ function Router() {
         <Route path="/auth/resend" component={ResendLink} />
         <Route path="/dev-login" component={DevLogin} />
 
-        {/* Admin */}
-        <Route path="/admin" component={CommandCenter} />
-        <Route path="/admin/projects" component={ProjectsList} />
-        <Route path="/admin/projects/new" component={ProjectNew} />
-        <Route path="/admin/projects/:id" component={ProjectDetail} />
-        <Route path="/admin/field-reports/new" component={FieldReportNew} />
-        <Route path="/admin/field-reports/:id" component={FieldReportDetail} />
-        <Route path="/admin/field-reports" component={FieldReportsList} />
-        <Route path="/admin/clients/:id" component={ClientDetail} />
-        <Route path="/admin/clients" component={ClientsList} />
-        <Route path="/admin/estimates" component={EstimatesList} />
-        <Route path="/admin/sub-contractors" component={SubContractorsList} />
-        <Route path="/admin/ledger" component={LedgerView} />
-        <Route path="/admin/site-plans" component={SitePlanBuilder} />
-        <Route path="/admin/guides" component={Guides} />
-        <Route path="/admin/schedule" component={ScheduleView} />
-        <Route path="/admin/materials" component={MaterialsView} />
-        <Route path="/admin/billing" component={BillingView} />
-        <Route path="/admin/portfolio-cms" component={PortfolioAdmin} />
+        {/* Admin — all routes require role=admin via AdminRoute guard.
+            /admin/setup is intentionally NOT wrapped because it has its
+            own bootstrapping token flow used before an admin exists. */}
+        <Route path="/admin" component={adminPage(CommandCenter)} />
+        <Route path="/admin/projects" component={adminPage(ProjectsList)} />
+        <Route path="/admin/projects/new" component={adminPage(ProjectNew)} />
+        <Route
+          path="/admin/projects/:id"
+          component={adminPage(ProjectDetail)}
+        />
+        <Route
+          path="/admin/field-reports/new"
+          component={adminPage(FieldReportNew)}
+        />
+        <Route
+          path="/admin/field-reports/:id"
+          component={adminPage(FieldReportDetail)}
+        />
+        <Route
+          path="/admin/field-reports"
+          component={adminPage(FieldReportsList)}
+        />
+        <Route path="/admin/clients/:id" component={adminPage(ClientDetail)} />
+        <Route path="/admin/clients" component={adminPage(ClientsList)} />
+        <Route path="/admin/estimates" component={adminPage(EstimatesList)} />
+        <Route
+          path="/admin/sub-contractors"
+          component={adminPage(SubContractorsList)}
+        />
+        <Route path="/admin/ledger" component={adminPage(LedgerView)} />
+        <Route
+          path="/admin/site-plans"
+          component={adminPage(SitePlanBuilder)}
+        />
+        <Route path="/admin/guides" component={adminPage(Guides)} />
+        <Route path="/admin/schedule" component={adminPage(ScheduleView)} />
+        <Route path="/admin/materials" component={adminPage(MaterialsView)} />
+        <Route path="/admin/billing" component={adminPage(BillingView)} />
+        <Route
+          path="/admin/portfolio-cms"
+          component={adminPage(PortfolioAdmin)}
+        />
+        {/* Bootstrapping wizard — guarded by its own token, not AdminRoute. */}
         <Route path="/admin/setup" component={SetupWizard} />
 
         {/* Public token-gated onboarding wizard for new account owner */}
         <Route path="/onboarding" component={OnboardingWizard} />
-        <Route path="/admin/vision-studio" component={VisionStudioAdmin} />
-        <Route path="/admin/search" component={SearchView} />
-        <Route path="/admin/finishes" component={FinishSelectionsAdmin} />
-        <Route path="/admin/analytics" component={Analytics} />
-        <Route path="/admin/activity-log" component={ActivityLog} />
-        <Route path="/admin/notifications" component={NotificationsView} />
+        <Route
+          path="/admin/vision-studio"
+          component={adminPage(VisionStudioAdmin)}
+        />
+        <Route path="/admin/search" component={adminPage(SearchView)} />
+        <Route
+          path="/admin/finishes"
+          component={adminPage(FinishSelectionsAdmin)}
+        />
+        <Route path="/admin/analytics" component={adminPage(Analytics)} />
+        <Route path="/admin/activity-log" component={adminPage(ActivityLog)} />
+        <Route
+          path="/admin/notifications"
+          component={adminPage(NotificationsView)}
+        />
         {blueprintEnabled && (
-          <Route path="/admin/blueprint" component={BlueprintTools} />
+          <Route
+            path="/admin/blueprint"
+            component={adminPage(BlueprintTools)}
+          />
         )}
 
         {/* Client portal — auth required */}
-        <Route path="/portal">
-          {() => (
-            <ProtectedRoute>
-              <PortalDashboard />
-            </ProtectedRoute>
-          )}
-        </Route>
-        <Route path="/portal/reports">
-          {() => (
-            <ProtectedRoute>
-              <PortalReports />
-            </ProtectedRoute>
-          )}
-        </Route>
-        <Route path="/portal/finishes">
-          {() => (
-            <ProtectedRoute>
-              <PortalFinishes />
-            </ProtectedRoute>
-          )}
-        </Route>
-        <Route path="/portal/ledger">
-          {() => (
-            <ProtectedRoute>
-              <PortalLedger />
-            </ProtectedRoute>
-          )}
-        </Route>
-        <Route path="/portal/payments">
-          {() => (
-            <ProtectedRoute>
-              <PortalPayments />
-            </ProtectedRoute>
-          )}
-        </Route>
+        <Route path="/portal" component={protectedPage(PortalDashboard)} />
+        <Route
+          path="/portal/reports"
+          component={protectedPage(PortalReports)}
+        />
+        <Route
+          path="/portal/finishes"
+          component={protectedPage(PortalFinishes)}
+        />
+        <Route path="/portal/ledger" component={protectedPage(PortalLedger)} />
+        <Route
+          path="/portal/payments"
+          component={protectedPage(PortalPayments)}
+        />
         {blueprintEnabled && (
-          <Route path="/portal/blueprint">
-            {() => (
-              <ProtectedRoute>
-                <PortalBlueprint />
-              </ProtectedRoute>
-            )}
-          </Route>
+          <Route
+            path="/portal/blueprint"
+            component={protectedPage(PortalBlueprint)}
+          />
         )}
 
         {/* Service pages */}
