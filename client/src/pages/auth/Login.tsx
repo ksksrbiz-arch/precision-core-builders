@@ -136,12 +136,11 @@ export default function AuthLogin() {
 
     try {
       if (isSupabaseConfigured) {
-        const { data, error: authError } = await supabase.auth.signInWithPassword(
-          {
+        const { data, error: authError } =
+          await supabase.auth.signInWithPassword({
             email: normalizedEmail,
             password,
-          }
-        );
+          });
 
         if (!authError && data.session) {
           try {
