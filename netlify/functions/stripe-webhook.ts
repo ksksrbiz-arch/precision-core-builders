@@ -105,21 +105,30 @@ export const handler: Handler = async event => {
     };
   }
 
+  let body: Record<string, any>;
   try {
-    const body = JSON.parse(rawBody || "{}");
-    const eventType: string = body.type ?? "";
-    const data = body.data?.object;
+    body = JSON.parse(rawBody || "{}");
+  } catch {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid JSON in webhook body" }),
+    };
+  }
+  const eventType: string = body.type ?? "";
+  const data = body.data?.object;
 
-    if (!data) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: "No event data" }),
-      };
-    }
+  if (!data) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "No event data" }),
+    };
+  }
 
-    const db = getDb();
+  const db = getDb();
 
+  try {
     switch (eventType) {
       case "invoice.paid": {
         const { error } = await db.from("billing_events").insert({

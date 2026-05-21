@@ -2,7 +2,6 @@ import { db, paginate } from "../db";
 import {
   adminProcedure,
   protectedProcedure,
-  publicProcedure,
   router,
 } from "../_core/trpc";
 import { z } from "zod";
@@ -43,7 +42,8 @@ export const estimatesRouter = router({
       return data;
     }),
 
-  create: publicProcedure
+  // Protected: only authenticated users (admin saving AI estimates, portal approvals, etc.)
+  create: protectedProcedure
     .input(
       z.object({
         projectId: z.number().int().positive().optional(),

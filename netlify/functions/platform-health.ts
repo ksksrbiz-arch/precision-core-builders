@@ -160,7 +160,7 @@ async function checkAnthropicAI(): Promise<ServiceStatus> {
     name: "Anthropic Claude (Fallback)",
     status: "healthy",
     message: "API key configured (format valid)",
-    details: { keyPrefix: key.slice(0, 10) + "..." },
+    details: { keyLength: key.length },
   };
 }
 

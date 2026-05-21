@@ -27,13 +27,20 @@ export const fieldReportsRouter = router({
 
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { data, error } = await db
         .from("field_reports")
         .select("*, projects(id,name,client_id,clients(user_id))")
         .eq("id", input.id)
         .single();
       if (error) throw new Error(error.message);
+      // Clients may only read reports for their own project.
+      if (ctx.user.role !== "admin") {
+        const clientUserId = (data?.projects as any)?.clients?.user_id;
+        if (!clientUserId || clientUserId !== ctx.user.id) {
+          throw new Error("Forbidden");
+        }
+      }
       return data;
     }),
 

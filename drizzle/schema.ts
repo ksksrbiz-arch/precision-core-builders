@@ -9,6 +9,7 @@
 import {
   boolean,
   decimal,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -105,225 +106,251 @@ export const users = pgTable("users", {
 
 // ─── 2. Clients ───────────────────────────────────────────────────────────────
 
-export const clients = pgTable("clients", {
-  id: serial("id").primaryKey(),
-  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
-  name: varchar("name", { length: 200 }).notNull(),
-  email: varchar("email", { length: 320 }).notNull(),
-  phone: varchar("phone", { length: 20 }),
-  address: text("address"),
-  city: varchar("city", { length: 100 }),
-  state: varchar("state", { length: 50 }),
-  zip: varchar("zip", { length: 10 }),
-  notes: text("notes"),
-  leadSource: varchar("lead_source", { length: 100 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const clients = pgTable(
+  "clients",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    name: varchar("name", { length: 200 }).notNull(),
+    email: varchar("email", { length: 320 }).notNull(),
+    phone: varchar("phone", { length: 20 }),
+    address: text("address"),
+    city: varchar("city", { length: 100 }),
+    state: varchar("state", { length: 50 }),
+    zip: varchar("zip", { length: 10 }),
+    notes: text("notes"),
+    leadSource: varchar("lead_source", { length: 100 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [index("idx_clients_user_id").on(t.userId)]
+);
 
 // ─── 3. Projects ──────────────────────────────────────────────────────────────
 
-export const projects = pgTable("projects", {
-  id: serial("id").primaryKey(),
-  clientId: integer("client_id")
-    .notNull()
-    .references(() => clients.id, { onDelete: "restrict" }),
-  name: varchar("name", { length: 300 }).notNull(),
-  description: text("description"),
-  status: projectStatusEnum("status").default("lead").notNull(),
-  projectType: varchar("project_type", { length: 100 }), // e.g. "new build", "remodel", "addition"
-  address: text("address"),
-  city: varchar("city", { length: 100 }),
-  state: varchar("state", { length: 50 }).default("OR"),
-  zip: varchar("zip", { length: 10 }),
-  // Budget tracking
-  estimatedBudget: decimal("estimated_budget", { precision: 12, scale: 2 }),
-  contractedBudget: decimal("contracted_budget", { precision: 12, scale: 2 }),
-  actualCost: decimal("actual_cost", { precision: 12, scale: 2 }).default("0"),
-  // Timeline
-  estimatedStartDate: timestamp("estimated_start_date"),
-  estimatedEndDate: timestamp("estimated_end_date"),
-  actualStartDate: timestamp("actual_start_date"),
-  actualEndDate: timestamp("actual_end_date"),
-  // Progress
-  completionPercent: integer("completion_percent").default(0),
-  // Portal access
-  clientPortalEnabled: boolean("client_portal_enabled").default(true),
-  siteCamUrl: text("site_cam_url"),
-  // CCB compliance
-  permitNumbers: text("permit_numbers"), // comma-separated
-  licenseNumber: varchar("license_number", { length: 50 }).default(
-    "CCB #246527"
-  ),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const projects = pgTable(
+  "projects",
+  {
+    id: serial("id").primaryKey(),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "restrict" }),
+    name: varchar("name", { length: 300 }).notNull(),
+    description: text("description"),
+    status: projectStatusEnum("status").default("lead").notNull(),
+    projectType: varchar("project_type", { length: 100 }),
+    address: text("address"),
+    city: varchar("city", { length: 100 }),
+    state: varchar("state", { length: 50 }).default("OR"),
+    zip: varchar("zip", { length: 10 }),
+    estimatedBudget: decimal("estimated_budget", { precision: 12, scale: 2 }),
+    contractedBudget: decimal("contracted_budget", { precision: 12, scale: 2 }),
+    actualCost: decimal("actual_cost", { precision: 12, scale: 2 }).default(
+      "0"
+    ),
+    estimatedStartDate: timestamp("estimated_start_date"),
+    estimatedEndDate: timestamp("estimated_end_date"),
+    actualStartDate: timestamp("actual_start_date"),
+    actualEndDate: timestamp("actual_end_date"),
+    completionPercent: integer("completion_percent").default(0),
+    clientPortalEnabled: boolean("client_portal_enabled").default(true),
+    siteCamUrl: text("site_cam_url"),
+    permitNumbers: text("permit_numbers"),
+    licenseNumber: varchar("license_number", { length: 50 }).default(
+      "CCB #246527"
+    ),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_projects_client_id").on(t.clientId),
+    index("idx_projects_status").on(t.status),
+  ]
+);
 
 // ─── 4. Field Reports ─────────────────────────────────────────────────────────
 
-export const fieldReports = pgTable("field_reports", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id")
-    .notNull()
-    .references(() => projects.id, { onDelete: "cascade" }),
-  authorId: uuid("author_id").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  reportDate: timestamp("report_date").defaultNow().notNull(),
-  // Voice-to-report pipeline
-  voiceMemoUrl: text("voice_memo_url"), // Supabase Storage URL
-  transcription: text("transcription"),
-  // AI-generated structured report
-  summary: text("summary"),
-  tasksCompleted: text("tasks_completed"), // JSON array string
-  materialsUsed: text("materials_used"), // JSON array string
-  issuesFlagged: text("issues_flagged"), // JSON array string
-  materialShortages: text("material_shortages"), // JSON array string
-  // Publishing
-  publishedToClient: boolean("published_to_client").default(false),
-  publishedAt: timestamp("published_at"),
-  // Attachments (photo URLs from Supabase Storage)
-  photoUrls: text("photo_urls"), // JSON array string
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const fieldReports = pgTable(
+  "field_reports",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    reportDate: timestamp("report_date").defaultNow().notNull(),
+    voiceMemoUrl: text("voice_memo_url"),
+    transcription: text("transcription"),
+    summary: text("summary"),
+    tasksCompleted: text("tasks_completed"),
+    materialsUsed: text("materials_used"),
+    issuesFlagged: text("issues_flagged"),
+    materialShortages: text("material_shortages"),
+    publishedToClient: boolean("published_to_client").default(false),
+    publishedAt: timestamp("published_at"),
+    photoUrls: text("photo_urls"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_field_reports_project_id").on(t.projectId),
+    index("idx_field_reports_report_date").on(t.reportDate),
+  ]
+);
 
 // ─── 5. Schedule Items (Gantt) ────────────────────────────────────────────────
 
-export const scheduleItems = pgTable("schedule_items", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id")
-    .notNull()
-    .references(() => projects.id, { onDelete: "cascade" }),
-  parentId: integer("parent_id"), // self-reference for sub-tasks
-  title: varchar("title", { length: 300 }).notNull(),
-  description: text("description"),
-  taskType: scheduleTaskTypeEnum("task_type").default("other"),
-  status: scheduleTaskStatusEnum("status").default("pending"),
-  // Weather sensitivity: outdoor tasks are auto-deprioritized on rain forecast
-  isOutdoor: boolean("is_outdoor").default(false),
-  weatherSensitive: boolean("weather_sensitive").default(false),
-  // Timeline
-  plannedStart: timestamp("planned_start"),
-  plannedEnd: timestamp("planned_end"),
-  actualStart: timestamp("actual_start"),
-  actualEnd: timestamp("actual_end"),
-  durationDays: integer("duration_days"),
-  // Dependencies (comma-separated schedule_item IDs)
-  dependsOn: text("depends_on"),
-  // Display order in Gantt
-  sortOrder: integer("sort_order").default(0),
-  assignedTo: text("assigned_to"), // sub-contractor name or internal
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const scheduleItems = pgTable(
+  "schedule_items",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    parentId: integer("parent_id"),
+    title: varchar("title", { length: 300 }).notNull(),
+    description: text("description"),
+    taskType: scheduleTaskTypeEnum("task_type").default("other"),
+    status: scheduleTaskStatusEnum("status").default("pending"),
+    isOutdoor: boolean("is_outdoor").default(false),
+    weatherSensitive: boolean("weather_sensitive").default(false),
+    plannedStart: timestamp("planned_start"),
+    plannedEnd: timestamp("planned_end"),
+    actualStart: timestamp("actual_start"),
+    actualEnd: timestamp("actual_end"),
+    durationDays: integer("duration_days"),
+    dependsOn: text("depends_on"),
+    sortOrder: integer("sort_order").default(0),
+    assignedTo: text("assigned_to"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_schedule_items_project_id").on(t.projectId),
+    index("idx_schedule_items_status").on(t.status),
+    index("idx_schedule_items_planned_start").on(t.plannedStart),
+  ]
+);
 
 // ─── 6. Estimates ─────────────────────────────────────────────────────────────
 
-export const estimates = pgTable("estimates", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => projects.id, {
-    onDelete: "set null",
-  }),
-  clientId: integer("client_id").references(() => clients.id, {
-    onDelete: "set null",
-  }),
-  // Input parameters
-  squareFootage: decimal("square_footage", { precision: 10, scale: 2 }),
-  projectType: varchar("project_type", { length: 100 }),
-  complexity: varchar("complexity", { length: 20 }), // low | medium | high
-  materials: text("materials"), // JSON array string of selected materials
-  location: varchar("location", { length: 200 }),
-  additionalNotes: text("additional_notes"),
-  // AI-generated cost ranges
-  estimatedLow: decimal("estimated_low", { precision: 12, scale: 2 }),
-  estimatedMid: decimal("estimated_mid", { precision: 12, scale: 2 }),
-  estimatedHigh: decimal("estimated_high", { precision: 12, scale: 2 }),
-  // Cost breakdown
-  laborCost: decimal("labor_cost", { precision: 12, scale: 2 }),
-  materialsCost: decimal("materials_cost", { precision: 12, scale: 2 }),
-  permitsCost: decimal("permits_cost", { precision: 12, scale: 2 }),
-  contingency: decimal("contingency", { precision: 12, scale: 2 }),
-  // AI reasoning
-  aiReasoning: text("ai_reasoning"),
-  // Status
-  sentToClient: boolean("sent_to_client").default(false),
-  sentAt: timestamp("sent_at"),
-  approvedByClient: boolean("approved_by_client").default(false),
-  approvedAt: timestamp("approved_at"),
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const estimates = pgTable(
+  "estimates",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+    clientId: integer("client_id").references(() => clients.id, {
+      onDelete: "set null",
+    }),
+    squareFootage: decimal("square_footage", { precision: 10, scale: 2 }),
+    projectType: varchar("project_type", { length: 100 }),
+    complexity: varchar("complexity", { length: 20 }),
+    materials: text("materials"),
+    location: varchar("location", { length: 200 }),
+    additionalNotes: text("additional_notes"),
+    estimatedLow: decimal("estimated_low", { precision: 12, scale: 2 }),
+    estimatedMid: decimal("estimated_mid", { precision: 12, scale: 2 }),
+    estimatedHigh: decimal("estimated_high", { precision: 12, scale: 2 }),
+    laborCost: decimal("labor_cost", { precision: 12, scale: 2 }),
+    materialsCost: decimal("materials_cost", { precision: 12, scale: 2 }),
+    permitsCost: decimal("permits_cost", { precision: 12, scale: 2 }),
+    contingency: decimal("contingency", { precision: 12, scale: 2 }),
+    aiReasoning: text("ai_reasoning"),
+    sentToClient: boolean("sent_to_client").default(false),
+    sentAt: timestamp("sent_at"),
+    approvedByClient: boolean("approved_by_client").default(false),
+    approvedAt: timestamp("approved_at"),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_estimates_project_id").on(t.projectId),
+    index("idx_estimates_client_id").on(t.clientId),
+    index("idx_estimates_created_at").on(t.createdAt),
+  ]
+);
 
 // ─── 7. Ledger Entries (Core Values — Immutable Decision Log) ─────────────────
 
-export const ledgerEntries = pgTable("ledger_entries", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id")
-    .notNull()
-    .references(() => projects.id, { onDelete: "cascade" }),
-  authorId: uuid("author_id").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  entryType: ledgerEntryTypeEnum("entry_type").notNull(),
-  title: varchar("title", { length: 300 }).notNull(),
-  description: text("description").notNull(),
-  // For cost adjustments / change orders
-  amountDelta: decimal("amount_delta", { precision: 12, scale: 2 }),
-  // Document URL (permits, inspection reports, change orders)
-  documentUrl: text("document_url"),
-  documentName: text("document_name"),
-  // Client-visible flag
-  visibleToClient: boolean("visible_to_client").default(true),
-  // Immutability: entries are never updated after creation
-  // createdAt is the canonical timestamp
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const ledgerEntries = pgTable(
+  "ledger_entries",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    entryType: ledgerEntryTypeEnum("entry_type").notNull(),
+    title: varchar("title", { length: 300 }).notNull(),
+    description: text("description").notNull(),
+    amountDelta: decimal("amount_delta", { precision: 12, scale: 2 }),
+    documentUrl: text("document_url"),
+    documentName: text("document_name"),
+    visibleToClient: boolean("visible_to_client").default(true),
+    // Immutable: entries are never updated after creation
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  t => [index("idx_ledger_entries_project_id").on(t.projectId)]
+);
 
 // ─── 8. Materials ─────────────────────────────────────────────────────────────
 
-export const materials = pgTable("materials", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => projects.id, {
-    onDelete: "cascade",
-  }),
-  name: varchar("name", { length: 300 }).notNull(),
-  description: text("description"),
-  category: varchar("category", { length: 100 }), // lumber, hardware, roofing, etc.
-  unit: varchar("unit", { length: 50 }), // board-ft, sq-ft, each, etc.
-  quantityNeeded: decimal("quantity_needed", { precision: 10, scale: 2 }),
-  quantityOrdered: decimal("quantity_ordered", {
-    precision: 10,
-    scale: 2,
-  }).default("0"),
-  quantityReceived: decimal("quantity_received", {
-    precision: 10,
-    scale: 2,
-  }).default("0"),
-  // Pricing
-  unitPriceCurrent: decimal("unit_price_current", { precision: 10, scale: 2 }),
-  unitPriceBudgeted: decimal("unit_price_budgeted", {
-    precision: 10,
-    scale: 2,
-  }),
-  // Vendor
-  vendorName: varchar("vendor_name", { length: 200 }),
-  vendorSku: varchar("vendor_sku", { length: 100 }),
-  vendorUrl: text("vendor_url"),
-  // PO linkage
-  poNumber: varchar("po_number", { length: 100 }),
-  orderedAt: timestamp("ordered_at"),
-  expectedDelivery: timestamp("expected_delivery"),
-  receivedAt: timestamp("received_at"),
-  // Alerts
-  isShortage: boolean("is_shortage").default(false),
-  phaseNeeded: varchar("phase_needed", { length: 100 }),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const materials = pgTable(
+  "materials",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+    name: varchar("name", { length: 300 }).notNull(),
+    description: text("description"),
+    category: varchar("category", { length: 100 }),
+    unit: varchar("unit", { length: 50 }),
+    quantityNeeded: decimal("quantity_needed", { precision: 10, scale: 2 }),
+    quantityOrdered: decimal("quantity_ordered", {
+      precision: 10,
+      scale: 2,
+    }).default("0"),
+    quantityReceived: decimal("quantity_received", {
+      precision: 10,
+      scale: 2,
+    }).default("0"),
+    unitPriceCurrent: decimal("unit_price_current", {
+      precision: 10,
+      scale: 2,
+    }),
+    unitPriceBudgeted: decimal("unit_price_budgeted", {
+      precision: 10,
+      scale: 2,
+    }),
+    vendorName: varchar("vendor_name", { length: 200 }),
+    vendorSku: varchar("vendor_sku", { length: 100 }),
+    vendorUrl: text("vendor_url"),
+    poNumber: varchar("po_number", { length: 100 }),
+    orderedAt: timestamp("ordered_at"),
+    expectedDelivery: timestamp("expected_delivery"),
+    receivedAt: timestamp("received_at"),
+    isShortage: boolean("is_shortage").default(false),
+    phaseNeeded: varchar("phase_needed", { length: 100 }),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_materials_project_id").on(t.projectId),
+    index("idx_materials_is_shortage").on(t.isShortage),
+  ]
+);
 
 // ─── 9. Portfolio Projects (Public Showcase) ──────────────────────────────────
 
@@ -379,61 +406,68 @@ export const subContractors = pgTable("sub_contractors", {
 
 // ─── 11. Finish Selections (Digital Showroom) ─────────────────────────────────
 
-export const finishSelections = pgTable("finish_selections", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id")
-    .notNull()
-    .references(() => projects.id, { onDelete: "cascade" }),
-  clientId: integer("client_id").references(() => clients.id, {
-    onDelete: "set null",
-  }),
-  room: varchar("room", { length: 100 }), // kitchen, master bath, living room, etc.
-  category: varchar("category", { length: 100 }), // flooring, tile, countertop, cabinet, paint, etc.
-  itemName: varchar("item_name", { length: 300 }).notNull(),
-  brand: varchar("brand", { length: 200 }),
-  sku: varchar("sku", { length: 100 }),
-  colorName: varchar("color_name", { length: 200 }),
-  imageUrl: text("image_url"),
-  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
-  quantity: decimal("quantity", { precision: 10, scale: 2 }),
-  totalCost: decimal("total_cost", { precision: 12, scale: 2 }),
-  // Budget delta vs. allowance
-  allowance: decimal("allowance", { precision: 12, scale: 2 }),
-  budgetDelta: decimal("budget_delta", { precision: 12, scale: 2 }), // positive = over
-  // Approval workflow
-  clientApproved: boolean("client_approved").default(false),
-  clientApprovedAt: timestamp("client_approved_at"),
-  ericApproved: boolean("eric_approved").default(false),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const finishSelections = pgTable(
+  "finish_selections",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    clientId: integer("client_id").references(() => clients.id, {
+      onDelete: "set null",
+    }),
+    room: varchar("room", { length: 100 }),
+    category: varchar("category", { length: 100 }),
+    itemName: varchar("item_name", { length: 300 }).notNull(),
+    brand: varchar("brand", { length: 200 }),
+    sku: varchar("sku", { length: 100 }),
+    colorName: varchar("color_name", { length: 200 }),
+    imageUrl: text("image_url"),
+    unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
+    quantity: decimal("quantity", { precision: 10, scale: 2 }),
+    totalCost: decimal("total_cost", { precision: 12, scale: 2 }),
+    allowance: decimal("allowance", { precision: 12, scale: 2 }),
+    budgetDelta: decimal("budget_delta", { precision: 12, scale: 2 }),
+    clientApproved: boolean("client_approved").default(false),
+    clientApprovedAt: timestamp("client_approved_at"),
+    ericApproved: boolean("eric_approved").default(false),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [index("idx_finish_selections_project_id").on(t.projectId)]
+);
 
 // ─── 12. Notifications ────────────────────────────────────────────────────────
 
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  recipientId: uuid("recipient_id").references(() => users.id, {
-    onDelete: "cascade",
-  }),
-  projectId: integer("project_id").references(() => projects.id, {
-    onDelete: "cascade",
-  }),
-  channel: notificationChannelEnum("channel").notNull(),
-  status: notificationStatusEnum("status").default("pending"),
-  subject: varchar("subject", { length: 500 }),
-  body: text("body").notNull(),
-  // External delivery
-  externalId: varchar("external_id", { length: 200 }), // SendGrid/Twilio message ID
-  // Scheduling
-  scheduledFor: timestamp("scheduled_for"),
-  sentAt: timestamp("sent_at"),
-  readAt: timestamp("read_at"),
-  failureReason: text("failure_reason"),
-  // n8n workflow reference
-  n8nWorkflowId: varchar("n8n_workflow_id", { length: 200 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    recipientId: uuid("recipient_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    projectId: integer("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+    channel: notificationChannelEnum("channel").notNull(),
+    status: notificationStatusEnum("status").default("pending"),
+    subject: varchar("subject", { length: 500 }),
+    body: text("body").notNull(),
+    externalId: varchar("external_id", { length: 200 }),
+    scheduledFor: timestamp("scheduled_for"),
+    sentAt: timestamp("sent_at"),
+    readAt: timestamp("read_at"),
+    failureReason: text("failure_reason"),
+    n8nWorkflowId: varchar("n8n_workflow_id", { length: 200 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_notifications_recipient_id").on(t.recipientId),
+    index("idx_notifications_status").on(t.status),
+    index("idx_notifications_project_id").on(t.projectId),
+  ]
+);
 
 // ─── Type Exports ─────────────────────────────────────────────────────────────
 
