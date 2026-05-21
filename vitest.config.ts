@@ -26,6 +26,7 @@ export default defineConfig({
       "netlify/functions/__tests__/onboarding-*.test.ts",
       "netlify/functions/__tests__/stripe-*.test.ts",
       "client/src/pages/OnboardingWizard.test.ts",
+      "client/src/components/RouteGuards.test.tsx",
     ],
     // Vitest 4: environmentMatchGlobs → projects[].test.environment.
     // Keeping a single "node" env with jsdom override on the one
