@@ -31,6 +31,14 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      // Use PKCE flow so the code verifier is stored locally when a magic link
+      // is requested.  Modern Supabase projects default to PKCE server-side;
+      // without this the client sends no challenge and the code exchange will
+      // fail when the link is opened in a different browser (e.g. the email
+      // app opens it in Chrome while the app ran in Safari).
+      // detectSessionInUrl still handles implicit-flow (#hash) redirects for
+      // older projects, so this setting is backwards-compatible.
+      flowType: "pkce",
     },
   }
 );
