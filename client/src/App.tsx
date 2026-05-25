@@ -149,6 +149,7 @@ function Router() {
         {/* Auth */}
         <Route path="/auth/login" component={AuthLogin} />
         <Route path="/auth/callback" component={AuthCallback} />
+        <Route path="/callback" component={AuthCallback} />
         <Route path="/auth/resend" component={ResendLink} />
         <Route path="/dev-login" component={DevLogin} />
 
