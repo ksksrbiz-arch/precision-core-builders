@@ -1,6 +1,6 @@
 /**
- * Login page — Supabase email/password is the default sign-in method.
- * Facebook OAuth is available as a social sign-in option.
+ * Login page — Supabase magic link is the default sign-in method.
+ * Email/password is available as a secondary option.
  * Auth0 remains available as an admin fallback.
  */
 import { ASSETS } from "@/const";
@@ -12,11 +12,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Building2,
+  Check,
   Facebook,
   KeyRound,
   Loader2,
   Lock,
   Mail,
+  RefreshCw,
   Shield,
 } from "lucide-react";
 import { useState } from "react";
@@ -77,7 +79,10 @@ export default function AuthLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [fbLoading, setFbLoading] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
 
@@ -90,12 +95,47 @@ export default function AuthLogin() {
     setLocation(role === "admin" ? "/admin" : "/portal");
   };
 
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    if (!isSupabaseConfigured) {
+      setError(
+        "Sign-in is not configured yet. Use Auth0 fallback if available."
+      );
+      return;
+    }
+
+    setMagicLinkLoading(true);
+    setError("");
+
+    try {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (otpError) {
+        setError(otpError.message);
+      } else {
+        setMagicLinkSent(true);
+      }
+    } catch {
+      setError(
+        "Unable to reach the sign-in service. Check your connection and try again."
+      );
+    } finally {
+      setMagicLinkLoading(false);
+    }
+  };
+
   const handleSupabaseSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
     if (!isSupabaseConfigured) {
       setError(
-        "Primary sign-in is not configured yet. Use Auth0 fallback if available."
+        "Sign-in is not configured yet. Use Auth0 fallback if available."
       );
       return;
     }
@@ -114,7 +154,7 @@ export default function AuthLogin() {
       if (authError || !data.session) {
         setError(
           authError?.message === "Invalid login credentials"
-            ? "The email or password is incorrect."
+            ? "The email or password is incorrect. Try a magic link instead."
             : (authError?.message ?? "Sign-in failed. Please try again.")
         );
         setLoading(false);
@@ -179,6 +219,80 @@ export default function AuthLogin() {
     }
   };
 
+  // Magic link sent — show confirmation view
+  if (magicLinkSent) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div
+          className="fixed inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, #C8A84B 0, #C8A84B 1px, transparent 0, transparent 50%)",
+            backgroundSize: "12px 12px",
+          }}
+          aria-hidden
+        />
+        <div className="relative w-full max-w-[400px]">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="bg-card border border-border/60 shadow-xl shadow-black/20 p-8 text-center"
+          >
+            <div className="h-12 w-12 border border-primary/40 bg-primary/10 flex items-center justify-center mx-auto mb-5">
+              <Check className="h-6 w-6 text-primary" />
+            </div>
+            <h2
+              className="text-lg font-semibold mb-2"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Check your email
+            </h2>
+            <p className="text-sm text-muted-foreground font-light mb-6 leading-relaxed">
+              We sent a sign-in link to{" "}
+              <span className="font-semibold text-foreground">{email}</span>.
+              Click the link to sign in — no password needed.
+            </p>
+            <div className="bg-card border border-border/40 p-4 mb-6 text-xs text-muted-foreground text-left leading-relaxed">
+              <p className="font-semibold mb-2">Tips:</p>
+              <ul className="space-y-1.5">
+                <li>✓ Check your spam / junk folder</li>
+                <li>✓ Open the link in the same browser</li>
+                <li>✓ The link expires after one hour</li>
+              </ul>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMagicLinkSent(false);
+                  setError("");
+                }}
+                className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Request New Link
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMagicLinkSent(false);
+                  setShowPasswordForm(true);
+                  setError("");
+                }}
+                className="inline-flex items-center justify-center gap-2 bg-card border border-border/60 text-muted-foreground px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 hover:text-foreground transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Sign in with password instead
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       {/* Background texture */}
@@ -234,8 +348,8 @@ export default function AuthLogin() {
                 Sign in to Precision Core
               </h1>
               <p className="mt-3 text-sm text-muted-foreground font-light leading-relaxed">
-                Use your Precision Core account credentials for dashboard and
-                portal access.
+                Enter your email to receive a secure sign-in link — no password
+                needed.
               </p>
             </div>
 
@@ -253,75 +367,125 @@ export default function AuthLogin() {
               )}
             </AnimatePresence>
 
-            <form onSubmit={handleSupabaseSignIn} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-2 font-medium"
+            {/* Primary: Magic link form */}
+            {!showPasswordForm && (
+              <form onSubmit={handleMagicLink} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-2 font-medium"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={e => {
+                        setEmail(e.target.value);
+                        setError("");
+                      }}
+                      placeholder="you@precisioncorebuilders.com"
+                      className="w-full pl-10 pr-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={magicLinkLoading || !email.trim()}
+                  className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/90 disabled:opacity-50 transition-all hover:gap-3 min-h-[48px]"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={e => {
-                      setEmail(e.target.value);
-                      setError("");
-                    }}
-                    placeholder="you@precisioncorebuilders.com"
-                    className="w-full pl-10 pr-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
-                  />
-                </div>
-              </div>
+                  {magicLinkLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Send Sign-In Link
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-2 font-medium"
+            {/* Secondary: Email/password form (toggled) */}
+            {showPasswordForm && (
+              <form onSubmit={handleSupabaseSignIn} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="email-pw"
+                    className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-2 font-medium"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
+                    <input
+                      id="email-pw"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={e => {
+                        setEmail(e.target.value);
+                        setError("");
+                      }}
+                      placeholder="you@precisioncorebuilders.com"
+                      className="w-full pl-10 pr-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-2 font-medium"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
+                    <input
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={e => {
+                        setPassword(e.target.value);
+                        setError("");
+                      }}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !email.trim() || !password}
+                  className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/90 disabled:opacity-50 transition-all hover:gap-3 min-h-[48px]"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
-                  <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={e => {
-                      setPassword(e.target.value);
-                      setError("");
-                    }}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || !email.trim() || !password}
-                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/90 disabled:opacity-50 transition-all hover:gap-3 min-h-[48px]"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    Continue Securely
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </>
-                )}
-              </button>
-            </form>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Continue Securely
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
 
             <div className="mt-4 flex items-center justify-between gap-3 text-[10px] text-muted-foreground/50">
               <span className="inline-flex items-center gap-1.5">
@@ -330,10 +494,15 @@ export default function AuthLogin() {
               </span>
               <button
                 type="button"
-                onClick={() => setLocation("/auth/resend")}
+                onClick={() => {
+                  setShowPasswordForm(!showPasswordForm);
+                  setError("");
+                }}
                 className="text-primary/80 hover:text-primary transition-colors"
               >
-                Send magic link
+                {showPasswordForm
+                  ? "Use magic link instead"
+                  : "Use password instead"}
               </button>
             </div>
 

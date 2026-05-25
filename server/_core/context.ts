@@ -81,12 +81,20 @@ export async function createContext(
     // Check role in public.users table first, fall back to metadata
     let role: UserRole = "user";
     try {
-      const { data: profile } = await admin
+      const { data: profile, error: profileErr } = await admin
         .from("users")
         .select("role")
         .eq("id", u.id)
-        .single();
-      if (profile?.role === "admin") role = "admin";
+        .maybeSingle();
+      if (
+        !profileErr &&
+        profile?.role &&
+        (profile.role === "admin" || profile.role === "user")
+      ) {
+        role = profile.role;
+      } else {
+        role = (u.user_metadata?.role as UserRole) ?? "user";
+      }
     } catch {
       role = (u.user_metadata?.role as UserRole) ?? "user";
     }

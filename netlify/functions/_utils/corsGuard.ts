@@ -9,6 +9,7 @@
 /** Origins that are always allowed regardless of env vars. */
 const ALWAYS_ALLOWED: ReadonlySet<string> = new Set([
   "https://precision-core.netlify.app",
+  "https://precisioncorebuilders.com",
 ]);
 
 /**

@@ -6,7 +6,14 @@
 import { ASSETS } from "@/const";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Loader2, Mail, ShieldAlert } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Loader2,
+  Mail,
+  RefreshCw,
+  ShieldAlert,
+} from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -249,16 +256,17 @@ export default function ResendLoginLink() {
                       setStep("idle");
                       setError("");
                     }}
-                    className="w-full px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/85 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/85 transition-colors"
                   >
-                    Try Again
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Request New Link
                   </button>
                 )}
                 <a
-                  href="/"
-                  className="block px-4 py-2 border border-border/60 text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors"
+                  href="/auth/login"
+                  className="block text-center px-4 py-2 border border-border/60 text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors"
                 >
-                  Back Home
+                  Back to Sign In
                 </a>
               </div>
             </motion.div>
