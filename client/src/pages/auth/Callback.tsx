@@ -7,12 +7,16 @@ import { ASSETS } from "@/const";
 import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
 import { consumeAuth0ReturnTo, consumeAuth0State } from "@/lib/auth0";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 type State = "loading" | "error" | "notice";
+
+/** How long to wait before declaring the sign-in attempt timed out. */
+const SIGN_IN_TIMEOUT_MS = 20_000;
 
 /** Errors that are recoverable by requesting a new magic link. */
 function isResendableError(msg: string): boolean {
@@ -286,13 +290,15 @@ export default function AuthCallback() {
         );
         setResendable(true);
       }
-    }, 20_000);
+    }, SIGN_IN_TIMEOUT_MS);
 
     return () => {
       subscription.unsubscribe();
       clearTimeout(timeout);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally
+    // run once on mount; including setState/setStatusMessage/setResendable
+    // would make no difference (they're stable) but would obscure the intent.
   }, [setLocation]);
 
   if (state === "error" || state === "notice") {
@@ -342,11 +348,12 @@ export default function AuthCallback() {
             )}
             <a
               href="/auth/login"
-              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase transition-colors ${
+              className={cn(
+                "inline-flex items-center justify-center gap-2 px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase transition-colors",
                 !isNotice && resendable
                   ? "bg-card border border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                   : "bg-primary text-primary-foreground hover:bg-primary/85"
-              }`}
+              )}
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               {isNotice ? "Sign In" : "Back to Login"}
