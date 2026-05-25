@@ -27,7 +27,9 @@ import { useLocation } from "wouter";
 type Role = "admin" | "user";
 
 function roleFromMetadata(user: User): Role {
-  return user.user_metadata?.role === "admin" ? "admin" : "user";
+  return (user.app_metadata?.role ?? user.user_metadata?.role) === "admin"
+    ? "admin"
+    : "user";
 }
 
 async function resolveRoleFromSyncApi(

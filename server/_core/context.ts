@@ -93,10 +93,16 @@ export async function createContext(
       ) {
         role = profile.role;
       } else {
-        role = (u.user_metadata?.role as UserRole) ?? "user";
+        role =
+          (u.app_metadata?.role as UserRole) ??
+          (u.user_metadata?.role as UserRole) ??
+          "user";
       }
     } catch {
-      role = (u.user_metadata?.role as UserRole) ?? "user";
+      role =
+        (u.app_metadata?.role as UserRole) ??
+        (u.user_metadata?.role as UserRole) ??
+        "user";
     }
 
     return {
