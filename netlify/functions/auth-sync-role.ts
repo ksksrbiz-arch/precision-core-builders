@@ -23,25 +23,8 @@
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
+import { getAdminEmailSet } from "./_utils/adminEmails";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
-
-/** Hard-coded production admins. Lower-cased at comparison time. */
-const DEFAULT_ADMIN_EMAILS: ReadonlyArray<string> = [
-  "skdev@1commerce.online",
-  "erictadlock@precisioncorebuilders.com",
-];
-
-function getAdminEmailSet(): Set<string> {
-  const set = new Set<string>(DEFAULT_ADMIN_EMAILS.map(e => e.toLowerCase()));
-  const extra = process.env.ADMIN_EMAILS;
-  if (extra) {
-    for (const e of extra.split(",")) {
-      const trimmed = e.trim().toLowerCase();
-      if (trimmed) set.add(trimmed);
-    }
-  }
-  return set;
-}
 
 function getSupabaseAdminClient() {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;

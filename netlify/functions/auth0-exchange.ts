@@ -10,7 +10,7 @@
  *   AUTH0_DOMAIN          e.g. dev-pr1jfeygsxp2xggy.us.auth0.com
  *   AUTH0_CLIENT_ID       Auth0 application client id
  *   AUTH0_CLIENT_SECRET   Auth0 application client secret
- *   ADMIN_EMAIL           Eric's login email (must match the Auth0 user)
+ *   ADMIN_EMAIL(S)        optional extra admin emails for Auth0 fallback
  *   ADMIN_SESSION_TOKEN   the platform session token returned on success
  *
  * Auth0 may set `AUTH0_*` automatically when the native Netlify
@@ -22,6 +22,7 @@
  * `client/src/_core/hooks/useAuth.ts`).
  */
 import type { Handler } from "@netlify/functions";
+import { getAdminEmailSet } from "./_utils/adminEmails";
 import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
 import {
   checkRateLimit,
@@ -141,7 +142,7 @@ export const handler: Handler = async event => {
     process.env.VITE_AUTH0_CLIENT_ID
   );
   const clientSecret = (process.env.AUTH0_CLIENT_SECRET ?? "").trim();
-  const adminEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
+  const adminEmails = getAdminEmailSet();
   const sessionToken = process.env.ADMIN_SESSION_TOKEN ?? "";
 
   if (!domain || !clientId || !clientSecret) {
@@ -158,16 +159,14 @@ export const handler: Handler = async event => {
     };
   }
 
-  if (!adminEmail || !sessionToken) {
-    console.error(
-      "[auth0-exchange] ADMIN_EMAIL or ADMIN_SESSION_TOKEN not set"
-    );
+  if (!sessionToken) {
+    console.error("[auth0-exchange] ADMIN_SESSION_TOKEN not set");
     return {
       statusCode: 503,
       headers,
       body: JSON.stringify({
         error:
-          "Admin session is not configured. Set ADMIN_EMAIL and ADMIN_SESSION_TOKEN in Netlify environment variables.",
+          "Admin session is not configured. Set ADMIN_SESSION_TOKEN in Netlify environment variables.",
       }),
     };
   }
@@ -257,10 +256,10 @@ export const handler: Handler = async event => {
     };
   }
 
-  // 3. Only the configured admin email may receive an admin session.
+  // 3. Only allowlisted admin emails may receive an admin session.
   //    Non-admin Auth0 users are rejected — extend this branch if/when
   //    client-portal users are added to the Auth0 tenant.
-  if (email !== adminEmail) {
+  if (!adminEmails.has(email)) {
     return {
       statusCode: 403,
       headers,
