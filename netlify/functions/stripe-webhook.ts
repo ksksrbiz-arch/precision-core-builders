@@ -108,7 +108,8 @@ export const handler: Handler = async event => {
   let body: Record<string, any>;
   try {
     body = JSON.parse(rawBody || "{}");
-  } catch {
+  } catch (err) {
+    console.warn("[stripe-webhook] invalid JSON payload", err);
     return {
       statusCode: 400,
       headers,
