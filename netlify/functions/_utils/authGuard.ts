@@ -117,12 +117,20 @@ export async function verifyAuth(
     // Look up role in public.users table first; fall back to metadata.
     let role: "admin" | "user" = "user";
     try {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileErr } = await supabase
         .from("users")
         .select("role")
         .eq("id", u.id)
-        .single();
-      if (profile?.role === "admin") role = "admin";
+        .maybeSingle();
+      if (
+        !profileErr &&
+        profile?.role &&
+        (profile.role === "admin" || profile.role === "user")
+      ) {
+        role = profile.role;
+      } else {
+        role = (u.user_metadata?.role as "admin" | "user") ?? "user";
+      }
     } catch {
       role = (u.user_metadata?.role as "admin" | "user") ?? "user";
     }

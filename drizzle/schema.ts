@@ -104,6 +104,26 @@ export const users = pgTable("users", {
   lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
 });
 
+// ─── Admin Email Allowlist ────────────────────────────────────────────────────
+// Emails in this table are treated as admins during login role resolution.
+
+export const adminEmails = pgTable("admin_emails", {
+  email: text("email").primaryKey(),
+  addedAt: timestamp("added_at", { withTimezone: true }).defaultNow(),
+  addedBy: text("added_by"),
+});
+
+// ─── Profiles ─────────────────────────────────────────────────────────────────
+// Lightweight profile table — may be auto-created by Supabase triggers.
+
+export const profiles = pgTable("profiles", {
+  id: uuid("id").primaryKey(),
+  displayName: text("display_name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 // ─── 2. Clients ───────────────────────────────────────────────────────────────
 
 export const clients = pgTable(

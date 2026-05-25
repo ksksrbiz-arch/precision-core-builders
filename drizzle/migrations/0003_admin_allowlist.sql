@@ -11,19 +11,25 @@
 -- ============================================================
 
 -- ─── 1. Allowlist helper ─────────────────────────────────────
--- Single source of truth for which emails are admins. Edit the
--- ARRAY[...] literal to add or remove admins, then re-run this
--- migration; the trigger and backfill below will pick up the
+-- Checks hardcoded admin emails AND the admin_emails table.
+-- Edit the ARRAY[...] literal to add or remove admins, then re-run
+-- this migration; the trigger and backfill below will pick up the
 -- change.
 CREATE OR REPLACE FUNCTION public.is_admin_email(p_email text)
 RETURNS boolean
 LANGUAGE sql
-IMMUTABLE
+STABLE
 AS $$
-  SELECT lower(coalesce(p_email, '')) = ANY (ARRAY[
-    'skdev@1commerce.online',
-    'erictadlock@precisioncorebuilders.com'
-  ]);
+  SELECT
+    lower(coalesce(p_email, '')) = ANY (ARRAY[
+      'skdev@1commerce.online',
+      'erictadlock@precisioncorebuilders.com',
+      'eric@precisioncorebuilders.com'
+    ])
+    OR EXISTS (
+      SELECT 1 FROM public.admin_emails
+      WHERE lower(email) = lower(coalesce(p_email, ''))
+    );
 $$;
 
 -- ─── 2. Upsert helper for auth → public.users sync ───────────

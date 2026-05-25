@@ -24,7 +24,7 @@
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
-import { getAdminEmailSet } from "./_utils/adminEmails";
+import { getAdminEmailSetWithDb } from "./_utils/adminEmails";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 
 function getSupabaseAdminClient() {
@@ -105,7 +105,7 @@ export const handler: Handler = async event => {
     };
   }
 
-  const adminEmails = getAdminEmailSet();
+  const adminEmails = await getAdminEmailSetWithDb(supabase);
   const isAdminEmail = adminEmails.has(email);
 
   // 2. Look up any existing public.users row so we don't downgrade admins
