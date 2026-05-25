@@ -71,7 +71,10 @@ async function resolveUser(token: string | null): Promise<SessionUser | null> {
         .single();
       if (profile?.role === "admin") role = "admin";
     } catch {
-      role = (u.user_metadata?.role as "admin" | "user") ?? "user";
+      role =
+        (u.app_metadata?.role as "admin" | "user") ??
+        (u.user_metadata?.role as "admin" | "user") ??
+        "user";
     }
 
     return {

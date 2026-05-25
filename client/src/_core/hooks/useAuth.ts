@@ -53,6 +53,12 @@ export function getStoredAdminSessionToken(): string | null {
 }
 
 function authUserFromMetadata(user: User): AuthUser {
+  // Prefer app_metadata.role (set server-side by auth-sync-role, tamper-proof)
+  // over user_metadata.role (can be set by the user themselves).
+  const role: "admin" | "user" =
+    (user.app_metadata?.role as "admin" | "user") ??
+    (user.user_metadata?.role as "admin" | "user") ??
+    "user";
   return {
     id: user.id,
     email: user.email ?? "",
@@ -61,7 +67,7 @@ function authUserFromMetadata(user: User): AuthUser {
       user.user_metadata?.full_name ??
       user.email?.split("@")[0] ??
       null,
-    role: (user.user_metadata?.role as "admin" | "user") ?? "user",
+    role,
   };
 }
 

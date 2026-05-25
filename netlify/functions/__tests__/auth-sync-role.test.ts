@@ -34,6 +34,7 @@ function mockEvent(
 
 // ── Supabase client mock ────────────────────────────────────────────────────
 const getUserMock = vi.fn();
+const updateUserByIdMock = vi.fn();
 const upsertMock = vi.fn();
 const maybeSingleMock = vi.fn();
 
@@ -53,7 +54,10 @@ const fromMock = vi.fn(() => buildFromBuilder());
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({
-    auth: { getUser: getUserMock },
+    auth: {
+      getUser: getUserMock,
+      admin: { updateUserById: updateUserByIdMock },
+    },
     from: fromMock,
   })),
 }));
@@ -70,10 +74,12 @@ describe("auth-sync-role function", () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key-test");
     vi.stubEnv("ADMIN_EMAILS", "");
     getUserMock.mockReset();
+    updateUserByIdMock.mockReset();
     upsertMock.mockReset();
     maybeSingleMock.mockReset();
     fromMock.mockClear();
     upsertMock.mockResolvedValue({ error: null });
+    updateUserByIdMock.mockResolvedValue({ data: {}, error: null });
     maybeSingleMock.mockResolvedValue({ data: null, error: null });
   });
 

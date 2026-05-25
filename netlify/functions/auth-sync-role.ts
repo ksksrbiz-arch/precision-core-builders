@@ -166,6 +166,27 @@ export const handler: Handler = async event => {
     };
   }
 
+  // Also persist role in Supabase Auth metadata so the JWT carries the
+  // role even when the client-side `public.users` read fails (e.g. RLS
+  // not yet applied, table latency, or network hiccup).  `app_metadata`
+  // is preferred because only the service role can write to it — the
+  // user cannot escalate their own privileges.  We also mirror the value
+  // into `user_metadata` so legacy fallback paths that read it continue
+  // to work.
+  try {
+    await supabase.auth.admin.updateUserById(authUser.id, {
+      app_metadata: { role: nextRole },
+      user_metadata: { role: nextRole },
+    });
+  } catch (metaErr) {
+    // Non-fatal — the public.users row was already written so the
+    // primary role resolution path will still work.
+    console.warn(
+      "[auth-sync-role] failed to update auth metadata (non-fatal):",
+      metaErr
+    );
+  }
+
   return {
     statusCode: 200,
     headers,

@@ -129,10 +129,16 @@ export async function verifyAuth(
       ) {
         role = profile.role;
       } else {
-        role = (u.user_metadata?.role as "admin" | "user") ?? "user";
+        role =
+          (u.app_metadata?.role as "admin" | "user") ??
+          (u.user_metadata?.role as "admin" | "user") ??
+          "user";
       }
     } catch {
-      role = (u.user_metadata?.role as "admin" | "user") ?? "user";
+      role =
+        (u.app_metadata?.role as "admin" | "user") ??
+        (u.user_metadata?.role as "admin" | "user") ??
+        "user";
     }
 
     return {
