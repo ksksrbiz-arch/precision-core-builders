@@ -85,9 +85,7 @@ export const handler: Handler = async event => {
   const sessionToken = process.env.ADMIN_SESSION_TOKEN ?? "";
 
   if (!adminPassword || !sessionToken) {
-    console.error(
-      "[admin-auth] ADMIN_PASSWORD or ADMIN_SESSION_TOKEN not set"
-    );
+    console.error("[admin-auth] ADMIN_PASSWORD or ADMIN_SESSION_TOKEN not set");
     return {
       statusCode: 503,
       headers,
