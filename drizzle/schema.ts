@@ -92,17 +92,24 @@ export const leadPriorityEnum = pgEnum("lead_priority", [
 // ─── 1. Users ─────────────────────────────────────────────────────────────────
 // Extends Supabase Auth users. auth.uid() = id here.
 
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey(), // matches auth.uid()
-  email: varchar("email", { length: 320 }).notNull().unique(),
-  name: text("name"),
-  phone: varchar("phone", { length: 20 }),
-  role: userRoleEnum("role").default("user").notNull(),
-  avatarUrl: text("avatar_url"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey(), // matches auth.uid()
+    email: varchar("email", { length: 320 }).notNull().unique(),
+    name: text("name"),
+    phone: varchar("phone", { length: 20 }),
+    role: userRoleEnum("role").default("user").notNull(),
+    avatarUrl: text("avatar_url"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
+  },
+  t => [
+    // Fast admin role lookup for RLS policies — critical on Nano tier
+    index("idx_users_id_role").on(t.id, t.role),
+  ]
+);
 
 // ─── Admin Email Allowlist ────────────────────────────────────────────────────
 // Emails in this table are treated as admins during login role resolution.

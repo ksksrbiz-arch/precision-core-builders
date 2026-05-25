@@ -205,6 +205,22 @@ export default function DashboardLayout({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // Apply .admin-shell class to document.body so React portals
+  // (Dropdown/Dialog/Popover/Toast — which mount outside the SidebarProvider
+  // tree via document.body) inherit the admin light palette.
+  //
+  // Must be called here — before any conditional returns — to satisfy React's
+  // Rules of Hooks: every hook must be called on every render in the same order.
+  // The guard inside the effect body ensures the class is only added/removed
+  // when the user is authenticated as an admin.
+  useEffect(() => {
+    if (!isAdmin) return;
+    document.body.classList.add("admin-shell");
+    return () => {
+      document.body.classList.remove("admin-shell");
+    };
+  }, [isAdmin]);
+
   if (loading) return <DashboardLayoutSkeleton />;
 
   if (!user) {
@@ -270,16 +286,6 @@ export default function DashboardLayout({
       </div>
     );
   }
-
-  // Apply .admin-shell class to document.body so React portals
-  // (Dropdown/Dialog/Popover/Toast — which mount outside the SidebarProvider
-  // tree via document.body) inherit the admin light palette.
-  useEffect(() => {
-    document.body.classList.add("admin-shell");
-    return () => {
-      document.body.classList.remove("admin-shell");
-    };
-  }, []);
 
   return (
     <SidebarProvider
