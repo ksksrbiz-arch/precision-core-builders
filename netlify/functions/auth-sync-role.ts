@@ -12,7 +12,7 @@
  *      exists yet — never silently downgrades an existing admin).
  *   4. Return { role } so the client can redirect appropriately.
  *
- * The allowlist defaults to the two hard-coded production admins so the
+ * The allowlist defaults to hard-coded production admins so the
  * site works the moment it's pushed to main. Additional emails may be
  * added via the optional `ADMIN_EMAILS` env var (comma-separated).
  *

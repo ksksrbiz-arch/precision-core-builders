@@ -6,7 +6,11 @@
 import type { Handler } from "@netlify/functions";
 import { ENV } from "../../server/_core/env";
 import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
-import { checkRateLimit, getClientIp, rateLimitHeaders } from "./_utils/rateLimiter";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
@@ -53,16 +57,25 @@ export const handler: Handler = async event => {
   if (originBlock) return originBlock;
 
   if (event.httpMethod !== "POST")
-    return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
 
   // Rate limit: 20 billing requests per minute per IP (Stripe is idempotent enough).
   const ip = getClientIp(event.headers);
-  const rl = checkRateLimit(`stripe-billing:${ip}`, { maxRequests: 20, windowMs: 60_000 });
+  const rl = checkRateLimit(`stripe-billing:${ip}`, {
+    maxRequests: 20,
+    windowMs: 60_000,
+  });
   if (!rl.allowed) {
     return {
       statusCode: 429,
       headers: { ...headers, ...rateLimitHeaders(rl) },
-      body: JSON.stringify({ error: "Too many requests. Please wait a minute and try again." }),
+      body: JSON.stringify({
+        error: "Too many requests. Please wait a minute and try again.",
+      }),
     };
   }
 
