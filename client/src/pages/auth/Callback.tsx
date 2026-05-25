@@ -21,7 +21,6 @@ function isResendableError(msg: string): boolean {
     lower.includes("invalid or has expired") ||
     lower.includes("otp_expired") ||
     lower.includes("token_hash") ||
-    lower.includes("has expired") ||
     lower.includes("already been used") ||
     lower.includes("pkce") ||
     lower.includes("code verifier") ||
@@ -33,18 +32,19 @@ function isResendableError(msg: string): boolean {
 /** Map raw Supabase error strings to user-friendly text. */
 function friendlyMagicLinkError(raw: string): string {
   const lower = raw.toLowerCase();
+  // Expired / consumed OTP — single-use link already clicked or timed out.
   if (
     lower.includes("invalid or has expired") ||
     lower.includes("otp_expired") ||
-    lower.includes("has expired")
+    lower.includes("already been used")
   ) {
     return "Your sign-in link has expired or was already used. Links are single-use and valid for one hour.";
   }
+  // PKCE verifier missing — link opened in a different browser/device.
   if (
     lower.includes("pkce") ||
     lower.includes("code verifier") ||
-    lower.includes("invalid exchange") ||
-    lower.includes("already been used")
+    lower.includes("invalid exchange")
   ) {
     return "Your sign-in link could not be verified. This usually happens when the link is opened in a different browser than where it was requested.";
   }
@@ -250,12 +250,14 @@ export default function AuthCallback() {
         // one that requested it, so the verifier is missing from localStorage).
         // Show an actionable error instead of silently bouncing to /auth/login.
         if (url.searchParams.get("code") && !didRedirect.current) {
+          didRedirect.current = true; // prevent timeout from overriding
           setState("error");
           setStatusMessage(
             "Your sign-in link could not be verified. This usually happens when the link is opened in a different browser or device than where it was requested. Please request a new link below."
           );
           setResendable(true);
         } else if (!didRedirect.current) {
+          didRedirect.current = true;
           setLocation("/auth/login");
         }
       } else if (event === "TOKEN_REFRESHED" && session) {
@@ -272,8 +274,12 @@ export default function AuthCallback() {
 
     // Safety-net timeout: if nothing has happened after 20 s the exchange
     // silently failed.  Show an actionable error so the user isn't stuck.
+    // Use didRedirect.current (a ref) rather than reading `state` from the
+    // closure, which would always reflect the "loading" value captured at
+    // effect creation time and cannot detect errors set later.
     const timeout = setTimeout(() => {
-      if (!didRedirect.current && state === "loading") {
+      if (!didRedirect.current) {
+        didRedirect.current = true; // prevent further state changes
         setState("error");
         setStatusMessage(
           "Sign-in is taking longer than expected. Please request a new magic link."
