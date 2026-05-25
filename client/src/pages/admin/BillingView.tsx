@@ -97,6 +97,8 @@ function fmtDollars(d: number) {
 }
 
 function sanitizeCachedInvoices(list: Invoice[]): Invoice[] {
+  // Do not persist hosted payment or invoice URLs; they grant access to
+  // billing artifacts and should only live in memory for the current session.
   return list.map(({ invoicePdf, invoiceUrl, paymentLinkUrl, ...invoice }) => ({
     ...invoice,
   }));
