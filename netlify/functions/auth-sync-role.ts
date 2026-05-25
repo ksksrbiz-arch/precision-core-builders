@@ -19,6 +19,7 @@
  * Required env vars (server-side, Netlify dashboard):
  *   SUPABASE_URL                 — Supabase project URL
  *   SUPABASE_SERVICE_ROLE_KEY    — service role key (bypasses RLS for upsert)
+ *   ADMIN_EMAIL (optional)       — primary admin email to allowlist
  *   ADMIN_EMAILS  (optional)     — extra allowlisted admin emails
  */
 import type { Handler } from "@netlify/functions";

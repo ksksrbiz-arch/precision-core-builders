@@ -1,6 +1,7 @@
 const DEFAULT_ADMIN_EMAILS: ReadonlyArray<string> = [
   "skdev@1commerce.online",
   "erictadlock@precisioncorebuilders.com",
+  "eric@precisioncorebuilders.com",
 ];
 
 function addEmail(set: Set<string>, email: string | undefined) {

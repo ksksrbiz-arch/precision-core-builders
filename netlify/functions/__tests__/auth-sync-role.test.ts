@@ -180,6 +180,27 @@ describe("auth-sync-role function", () => {
     expect(JSON.parse(res.body as string).role).toBe("admin");
   });
 
+  it("upserts eric@precisioncorebuilders.com as admin", async () => {
+    getUserMock.mockResolvedValue({
+      data: {
+        user: {
+          id: "user-eric-alt",
+          email: "eric@precisioncorebuilders.com",
+          user_metadata: {},
+        },
+      },
+      error: null,
+    });
+
+    const handler = await loadHandler();
+    const res = await handler(
+      mockEvent("POST", { authorization: "Bearer good" }) as any,
+      {} as any
+    );
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body as string).role).toBe("admin");
+  });
+
   it("upserts non-allowlisted email as user", async () => {
     getUserMock.mockResolvedValue({
       data: {

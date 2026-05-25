@@ -91,7 +91,19 @@ export const handler: Handler = async event => {
       temperature: 0.1,
     });
 
-    const score = JSON.parse(result.text);
+    let score: Record<string, unknown>;
+    try {
+      score = JSON.parse(result.text);
+    } catch {
+      console.error("[lead-score] LLM returned invalid JSON:", result.text);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          error: "Lead scoring returned an unexpected response. Please retry.",
+        }),
+      };
+    }
     return { statusCode: 200, headers, body: JSON.stringify(score) };
   } catch (err) {
     console.error("[lead-score]", err);

@@ -1,6 +1,9 @@
 /**
  * BillingView — Milestone-based invoicing via Stripe.
  * Creates payment links and formal invoices for project milestones.
+ * Invoices created this session are cached in localStorage so they survive
+ * page reloads even when Stripe is not yet configured. On mount the view also
+ * attempts to list recent invoices from Stripe and merges them with the cache.
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
@@ -8,16 +11,56 @@ import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2,
+  ClipboardCopy,
   CreditCard,
   DollarSign,
   ExternalLink,
   FileText,
   Loader2,
   Plus,
+  RefreshCw,
   Send,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+// ─── localStorage helpers ────────────────────────────────────────────────────
+
+const LS_KEY = "pcb_billing_invoices";
+
+function loadCachedInvoices(): Invoice[] {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? (JSON.parse(raw) as Invoice[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedInvoices(list: Invoice[]) {
+  try {
+    // Keep at most 100 entries to avoid bloating localStorage.
+    localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, 100)));
+  } catch {
+    // Storage full — silently ignore; in-memory state is still correct.
+  }
+}
+
+/** De-duplicate invoices by (invoiceId | paymentLinkId), newest-first. */
+function mergeInvoices(a: Invoice[], b: Invoice[]): Invoice[] {
+  const seen = new Set<string>();
+  const result: Invoice[] = [];
+  for (const inv of [...a, ...b]) {
+    const key = inv.invoiceId ?? inv.paymentLinkId ?? `${inv.createdAt}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(inv);
+    }
+  }
+  return result.sort(
+    (x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime()
+  );
+}
 
 type Invoice = {
   invoiceId?: string;
@@ -58,7 +101,8 @@ export default function BillingView() {
   const [clientEmail, setClientEmail] = useState("");
   const [clientName, setClientName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [invoices, setInvoices] = useState<Invoice[]>(loadCachedInvoices);
   const [showForm, setShowForm] = useState(false);
   const [stripeNotConfigured, setStripeNotConfigured] = useState(false);
   const { addToast } = useToast();
@@ -69,6 +113,69 @@ export default function BillingView() {
   const selectedProjectData = projects?.data.find(
     p => p.id === selectedProject
   );
+
+  // ─── Auto-populate client email when a project is selected ────────────────
+  useEffect(() => {
+    if (!selectedProjectData) return;
+    const clientId = (selectedProjectData as any).client_id;
+    if (!clientId || !clients?.data) return;
+    const client = clients.data.find((c: any) => c.id === clientId);
+    if (client && !clientEmail) {
+      setClientEmail(client.email ?? "");
+      setClientName(client.name ?? "");
+    }
+  }, [selectedProjectData, clients, clientEmail]);
+
+  // ─── Load recent Stripe invoices on mount ─────────────────────────────────
+  const fetchStripeInvoices = useCallback(async () => {
+    setStripeLoading(true);
+    try {
+      const res = await fetch("/api/stripe-billing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list_invoices", limit: 30 }),
+      });
+      if (!res.ok) return; // Stripe not configured — cached data is fine
+      const data = (await res.json()) as {
+        invoices?: Array<{
+          id: string;
+          amount_due: number;
+          description: string | null;
+          hosted_invoice_url: string | null;
+          invoice_pdf: string | null;
+          status: string;
+          created: number;
+          customer_email?: string;
+        }>;
+      };
+      if (data.invoices) {
+        const normalized: Invoice[] = data.invoices.map(inv => ({
+          invoiceId: inv.id,
+          amountCents: inv.amount_due,
+          description: inv.description ?? "Stripe invoice",
+          invoiceUrl: inv.hosted_invoice_url ?? undefined,
+          invoicePdf: inv.invoice_pdf ?? undefined,
+          status: inv.status,
+          clientEmail: inv.customer_email,
+          createdAt: new Date(inv.created * 1000).toISOString(),
+          type: "invoice" as const,
+        }));
+        setInvoices(prev => {
+          const merged = mergeInvoices(normalized, prev);
+          saveCachedInvoices(merged);
+          return merged;
+        });
+      }
+    } catch {
+      // Network error — silently use cached data
+    } finally {
+      setStripeLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStripeInvoices();
+  }, [fetchStripeInvoices]);
 
   const applyTemplate = (tpl: (typeof MILESTONE_TEMPLATES)[0]) => {
     const budget = selectedProjectData?.contracted_budget
@@ -137,7 +244,11 @@ export default function BillingView() {
         createdAt: new Date().toISOString(),
         type: mode,
       };
-      setInvoices(prev => [newInvoice, ...prev]);
+      setInvoices(prev => {
+        const merged = mergeInvoices([newInvoice], prev);
+        saveCachedInvoices(merged);
+        return merged;
+      });
 
       // Fire payment_received / invoice sent event via n8n-webhook
       fetch("/api/n8n-webhook", {
@@ -192,13 +303,26 @@ export default function BillingView() {
           guideId="billing"
           description="Milestone-based invoicing, payment links, and Stripe billing operations."
           actions={
-            <button
-              onClick={() => setShowForm(v => !v)}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              <Plus className="h-3.5 w-3.5" /> New Invoice
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchStripeInvoices}
+                disabled={stripeLoading}
+                className="flex items-center gap-2 border border-border/60 text-muted-foreground px-3 py-2 text-[11px] font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+                title="Reload invoices from Stripe"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${stripeLoading ? "animate-spin" : ""}`}
+                />
+              </button>
+              <button
+                onClick={() => setShowForm(v => !v)}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> New Invoice
+              </button>
+            </div>
           }
         />
 
@@ -464,7 +588,14 @@ export default function BillingView() {
         )}
 
         {/* Invoice list */}
-        {invoices.length === 0 ? (
+        {stripeLoading && invoices.length === 0 ? (
+          <div className="py-20 text-center">
+            <Loader2 className="h-8 w-8 text-primary/40 animate-spin mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground font-light">
+              Loading invoices…
+            </p>
+          </div>
+        ) : invoices.length === 0 ? (
           <div className="py-20 text-center">
             <CreditCard className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground font-light mb-1">
@@ -477,70 +608,101 @@ export default function BillingView() {
           </div>
         ) : (
           <div className="space-y-3">
-            {invoices.map((inv, i) => (
-              <div
-                key={i}
-                className="bg-card border border-border/60 p-5 flex items-center gap-4"
-              >
-                <div className="h-9 w-9 border border-primary/30 flex items-center justify-center shrink-0">
-                  {inv.type === "invoice" ? (
-                    <FileText className="h-4 w-4 text-primary" />
-                  ) : (
-                    <CreditCard className="h-4 w-4 text-primary" />
+            {invoices.map((inv, i) => {
+              const link = inv.paymentLinkUrl ?? inv.invoiceUrl;
+              return (
+                <div
+                  key={inv.invoiceId ?? inv.paymentLinkId ?? i}
+                  className="bg-card border border-border/60 p-5 flex items-center gap-4"
+                >
+                  <div className="h-9 w-9 border border-primary/30 flex items-center justify-center shrink-0">
+                    {inv.type === "invoice" ? (
+                      <FileText className="h-4 w-4 text-primary" />
+                    ) : (
+                      <CreditCard className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {inv.description}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-0.5">
+                      {inv.projectName && (
+                        <span className="text-xs text-muted-foreground">
+                          {inv.projectName}
+                        </span>
+                      )}
+                      {inv.clientEmail && (
+                        <span className="text-xs text-muted-foreground">
+                          {inv.clientEmail}
+                        </span>
+                      )}
+                      <span className="text-[9px] text-muted-foreground/60">
+                        {new Date(inv.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-lg font-bold text-primary">
+                      {fmtCents(inv.amountCents)}
+                    </p>
+                    <div className="flex items-center justify-end gap-1.5 mt-1">
+                      {inv.status === "paid" ? (
+                        <span className="flex items-center gap-1 text-[9px] text-green-400">
+                          <CheckCircle2 className="h-3 w-3" /> Paid
+                        </span>
+                      ) : (
+                        <span
+                          className="text-[9px] px-1.5 py-0.5 border border-primary/30 bg-primary/10 text-primary font-bold tracking-widest uppercase"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {inv.status === "void" ? "Void" : "Active"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Copy link */}
+                  {link && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(link);
+                          addToast({
+                            type: "success",
+                            title: "Copied",
+                            message: "Payment link copied to clipboard.",
+                            duration: 3000,
+                          });
+                        } catch {
+                          addToast({
+                            type: "error",
+                            title: "Copy failed",
+                            message: "Could not copy to clipboard.",
+                            duration: 4000,
+                          });
+                        }
+                      }}
+                      className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors shrink-0"
+                      title="Copy link"
+                    >
+                      <ClipboardCopy className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {/* Open in Stripe */}
+                  {link && (
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors shrink-0"
+                      title="Open in Stripe"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {inv.description}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-3 mt-0.5">
-                    {inv.projectName && (
-                      <span className="text-xs text-muted-foreground">
-                        {inv.projectName}
-                      </span>
-                    )}
-                    {inv.clientEmail && (
-                      <span className="text-xs text-muted-foreground">
-                        {inv.clientEmail}
-                      </span>
-                    )}
-                    <span className="text-[9px] text-muted-foreground/60">
-                      {new Date(inv.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-lg font-bold text-primary">
-                    {fmtCents(inv.amountCents)}
-                  </p>
-                  <div className="flex items-center justify-end gap-1.5 mt-1">
-                    {inv.status === "open" || inv.type === "payment_link" ? (
-                      <span
-                        className="text-[9px] px-1.5 py-0.5 border border-primary/30 bg-primary/10 text-primary font-bold tracking-widest uppercase"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        Active
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[9px] text-green-400">
-                        <CheckCircle2 className="h-3 w-3" /> Paid
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {(inv.paymentLinkUrl || inv.invoiceUrl) && (
-                  <a
-                    href={inv.paymentLinkUrl ?? inv.invoiceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors shrink-0"
-                    title="Open link"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

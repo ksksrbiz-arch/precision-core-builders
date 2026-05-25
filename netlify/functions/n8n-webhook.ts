@@ -12,6 +12,7 @@
  */
 import type { Handler } from "@netlify/functions";
 import { ENV } from "../../server/_core/env";
+import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
 
 const VALID_EVENTS = [
   "lead_captured",
@@ -28,16 +29,17 @@ const VALID_EVENTS = [
 type WebhookEvent = (typeof VALID_EVENTS)[number];
 
 export const handler: Handler = async event => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Content-Type": "application/json",
-  };
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
 
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers, body: "" };
   }
+  // n8n webhooks arrive server-to-server (no Origin header) so checkOrigin
+  // allows them; browser requests from allowed origins are also permitted.
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: "" };
   }
@@ -108,13 +110,21 @@ export const handler: Handler = async event => {
       console.error(
         `[n8n-webhook] Relay failed: ${res.status} ${res.statusText}`
       );
+      return {
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({
+          error: `n8n relay failed with status ${res.status}`,
+          event: eventType,
+        }),
+      };
     }
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        relayed: relaySuccess,
+        relayed: true,
         event: eventType,
         n8nStatus: res.status,
       }),

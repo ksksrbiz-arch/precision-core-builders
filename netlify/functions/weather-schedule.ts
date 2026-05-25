@@ -1,12 +1,16 @@
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
 import { EUGENE_OR } from "../../server/_core/map";
+import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
 
-const db = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+function getDb() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 type WeatherDay = {
   date: string;
@@ -36,15 +40,21 @@ function wmoCodeToDescription(code: number): string {
 }
 
 export const handler: Handler = async event => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  };
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
+
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
+
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "GET") return { statusCode: 405, headers, body: "" };
 
   try {
     const projectId = parseInt(event.queryStringParameters?.projectId ?? "0");
     const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+    const db = getDb();
 
     // Fetch 7-day forecast for Eugene OR
     // Priority: OpenWeatherMap (if key set) → Open-Meteo (free, no key needed)
@@ -139,7 +149,7 @@ export const handler: Handler = async event => {
 
     // Get weather-sensitive schedule items for this project
     let adjustments: any[] = [];
-    if (projectId) {
+    if (projectId && db) {
       const rainyDates = forecast.filter(f => f.willRain).map(f => f.date);
       if (rainyDates.length > 0) {
         const startDate = rainyDates[0] + "T00:00:00Z";

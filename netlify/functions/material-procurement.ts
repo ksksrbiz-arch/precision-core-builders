@@ -1,20 +1,41 @@
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
 import { invokeLLM } from "../../server/_core/llm";
+import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
 
-const db = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+function getDb() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 export const handler: Handler = async event => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  };
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
+
+  if (event.httpMethod === "OPTIONS")
+    return { statusCode: 204, headers, body: "" };
+
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "POST")
     return { statusCode: 405, headers, body: "" };
+
+  const db = getDb();
+  if (!db) {
+    return {
+      statusCode: 503,
+      headers,
+      body: JSON.stringify({
+        error:
+          "Database not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+      }),
+    };
+  }
 
   try {
     const { projectId, phase } = JSON.parse(event.body ?? "{}");
