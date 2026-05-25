@@ -7,17 +7,62 @@ import { ASSETS } from "@/const";
 import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
 import { consumeAuth0ReturnTo, consumeAuth0State } from "@/lib/auth0";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 type State = "loading" | "error" | "notice";
 
+/** How long to wait before declaring the sign-in attempt timed out. */
+const SIGN_IN_TIMEOUT_MS = 20_000;
+
+/** Errors that are recoverable by requesting a new magic link. */
+function isResendableError(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("invalid or has expired") ||
+    lower.includes("otp_expired") ||
+    lower.includes("token_hash") ||
+    lower.includes("already been used") ||
+    lower.includes("pkce") ||
+    lower.includes("code verifier") ||
+    lower.includes("invalid exchange") ||
+    lower.includes("could not be verified")
+  );
+}
+
+/** Map raw Supabase error strings to user-friendly text. */
+function friendlyMagicLinkError(raw: string): string {
+  const lower = raw.toLowerCase();
+  // Expired / consumed OTP — single-use link already clicked or timed out.
+  if (
+    lower.includes("invalid or has expired") ||
+    lower.includes("otp_expired") ||
+    lower.includes("already been used")
+  ) {
+    return "Your sign-in link has expired or was already used. Links are single-use and valid for one hour.";
+  }
+  // PKCE verifier missing — link opened in a different browser/device.
+  if (
+    lower.includes("pkce") ||
+    lower.includes("code verifier") ||
+    lower.includes("invalid exchange")
+  ) {
+    return "Your sign-in link could not be verified. This usually happens when the link is opened in a different browser than where it was requested.";
+  }
+  if (lower.includes("redirect") || lower.includes("not allowed")) {
+    return "Sign-in was blocked by a redirect URL configuration. Please contact support or request a new link.";
+  }
+  return raw;
+}
+
 export default function AuthCallback() {
   const [, setLocation] = useLocation();
   const [state, setState] = useState<State>("loading");
   const [statusMessage, setStatusMessage] = useState("");
+  const [resendable, setResendable] = useState(false);
   const didRedirect = useRef(false);
 
   useEffect(() => {
@@ -31,8 +76,11 @@ export default function AuthCallback() {
       hashParams.get("error");
 
     if (oauthError) {
+      const decoded = decodeURIComponent(oauthError).replace(/\+/g, " ");
+      const friendly = friendlyMagicLinkError(decoded);
       setState("error");
-      setStatusMessage(decodeURIComponent(oauthError).replace(/\+/g, " "));
+      setStatusMessage(friendly);
+      setResendable(isResendableError(decoded));
       return;
     }
 
@@ -181,6 +229,14 @@ export default function AuthCallback() {
         }
       }
 
+      // Clear any stale admin-session token so the fresh Supabase session
+      // is the single source of truth in useAuth (mirrors Login.tsx).
+      try {
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+      } catch {
+        // Ignore storage failures.
+      }
+
       didRedirect.current = true;
       setLocation(role === "admin" ? "/admin" : "/portal");
     }
@@ -193,7 +249,21 @@ export default function AuthCallback() {
       if (event === "SIGNED_IN" && session) {
         await redirectByRole(session.access_token, session.user.id);
       } else if (event === "SIGNED_OUT") {
-        setLocation("/auth/login");
+        // If a ?code= was present in the URL it means the PKCE code exchange
+        // failed (e.g. the link was opened in a different browser than the
+        // one that requested it, so the verifier is missing from localStorage).
+        // Show an actionable error instead of silently bouncing to /auth/login.
+        if (url.searchParams.get("code") && !didRedirect.current) {
+          didRedirect.current = true; // prevent timeout from overriding
+          setState("error");
+          setStatusMessage(
+            "Your sign-in link could not be verified. This usually happens when the link is opened in a different browser or device than where it was requested. Please request a new link below."
+          );
+          setResendable(true);
+        } else if (!didRedirect.current) {
+          didRedirect.current = true;
+          setLocation("/auth/login");
+        }
       } else if (event === "TOKEN_REFRESHED" && session) {
         await redirectByRole(session.access_token, session.user.id);
       }
@@ -206,7 +276,29 @@ export default function AuthCallback() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Safety-net timeout: if nothing has happened after 20 s the exchange
+    // silently failed.  Show an actionable error so the user isn't stuck.
+    // Use didRedirect.current (a ref) rather than reading `state` from the
+    // closure, which would always reflect the "loading" value captured at
+    // effect creation time and cannot detect errors set later.
+    const timeout = setTimeout(() => {
+      if (!didRedirect.current) {
+        didRedirect.current = true; // prevent further state changes
+        setState("error");
+        setStatusMessage(
+          "Sign-in is taking longer than expected. Please request a new magic link."
+        );
+        setResendable(true);
+      }
+    }, SIGN_IN_TIMEOUT_MS);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally
+    // run once on mount; including setState/setStatusMessage/setResendable
+    // would make no difference (they're stable) but would obscure the intent.
   }, [setLocation]);
 
   if (state === "error" || state === "notice") {
@@ -243,13 +335,30 @@ export default function AuthCallback() {
             {statusMessage ||
               "Something went wrong during sign-in. Please try again."}
           </p>
-          <a
-            href="/auth/login"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            {isNotice ? "Sign In" : "Try Again"}
-          </a>
+          <div className="flex flex-col gap-2">
+            {!isNotice && resendable && (
+              <a
+                href="/auth/resend"
+                className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Request New Link
+              </a>
+            )}
+            <a
+              href="/auth/login"
+              className={cn(
+                "inline-flex items-center justify-center gap-2 px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase transition-colors",
+                !isNotice && resendable
+                  ? "bg-card border border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  : "bg-primary text-primary-foreground hover:bg-primary/85"
+              )}
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              {isNotice ? "Sign In" : "Back to Login"}
+            </a>
+          </div>
         </motion.div>
       </div>
     );
