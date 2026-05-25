@@ -16,7 +16,19 @@
 --   Returns TRUE when the calling JWT belongs to a user whose role
 --   in public.users is 'admin'.  Uses SECURITY DEFINER so RLS on
 --   the users table itself doesn't block the lookup.
+--
+-- Performance note:
+--   The idx_users_id_role index below is critical on Nano tier
+--   (t4g.nano) — every admin EXISTS sub-query in every policy
+--   would otherwise trigger a table scan on public.users.
 -- ============================================================
+
+-- ─── Performance Index (run first — used by every admin check) ─
+CREATE INDEX IF NOT EXISTS idx_users_id_role
+  ON public.users (id, role);
+
+COMMENT ON INDEX idx_users_id_role IS
+  'Supports fast admin role checks in RLS policies. Critical for Nano tier performance when RLS is active.';
 
 -- ─── Helper: is_admin() ──────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -210,7 +222,7 @@ CREATE POLICY "portfolio_admin_all"
 
 CREATE POLICY "portfolio_public_select"
   ON public.portfolio_projects FOR SELECT
-  USING (is_published = true);
+  USING (published = true);
 
 -- ============================================================
 -- 10. sub_contractors
@@ -296,3 +308,100 @@ CREATE POLICY "billing_events_admin_all"
 -- key and is therefore not affected by these policies.
 -- Client-side code uses the anon key and IS subject to RLS.
 -- ============================================================
+
+-- ============================================================
+-- 15. admin_emails
+--     • Admins: full access (defence in depth — the trigger
+--       that auto-assigns admin role reads this table, but UI
+--       management is admin-only).
+--     • All others: no access.
+-- ============================================================
+ALTER TABLE public.admin_emails ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admin_emails_admin_all"
+  ON public.admin_emails FOR ALL
+  USING (public.is_admin());
+
+-- ============================================================
+-- 16. profiles
+--     • Users: can read/update their own profile.
+--     • Admins: full access.
+-- ============================================================
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "profiles_admin_all"
+  ON public.profiles FOR ALL
+  USING (public.is_admin());
+
+CREATE POLICY "profiles_self_select"
+  ON public.profiles FOR SELECT
+  USING (id = auth.uid());
+
+CREATE POLICY "profiles_self_update"
+  ON public.profiles FOR UPDATE
+  USING (id = auth.uid())
+  WITH CHECK (id = auth.uid());
+
+-- ============================================================
+-- 17. site_plans (Excalidraw canvases)
+--     • Admins: full access.
+--     • Clients: can read plans for their projects.
+-- ============================================================
+ALTER TABLE public.site_plans ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "site_plans_admin_all"
+  ON public.site_plans FOR ALL
+  USING (public.is_admin());
+
+CREATE POLICY "site_plans_client_select"
+  ON public.site_plans FOR SELECT
+  USING (
+    project_id IN (
+      SELECT id FROM public.projects
+      WHERE client_id = public.client_id_for_user()
+        AND client_portal_enabled = true
+    )
+  );
+
+-- ============================================================
+-- 18. blueprint_connections (encrypted OAuth tokens)
+--     • Users: can read/update their own connection only.
+--     • Admins: full access.
+-- ============================================================
+ALTER TABLE public.blueprint_connections ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "blueprint_connections_admin_all"
+  ON public.blueprint_connections FOR ALL
+  USING (public.is_admin());
+
+CREATE POLICY "blueprint_connections_self_select"
+  ON public.blueprint_connections FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "blueprint_connections_self_update"
+  ON public.blueprint_connections FOR UPDATE
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- ============================================================
+-- 19. blueprint_artifacts (linked Blueprint resources)
+--     • Admins: full access.
+--     • Clients: can read artifacts marked visible_to_client
+--       for their projects.
+-- ============================================================
+ALTER TABLE public.blueprint_artifacts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "blueprint_artifacts_admin_all"
+  ON public.blueprint_artifacts FOR ALL
+  USING (public.is_admin());
+
+CREATE POLICY "blueprint_artifacts_client_select"
+  ON public.blueprint_artifacts FOR SELECT
+  USING (
+    visible_to_client = true
+    AND project_id IN (
+      SELECT id FROM public.projects
+      WHERE client_id = public.client_id_for_user()
+        AND client_portal_enabled = true
+    )
+  );
