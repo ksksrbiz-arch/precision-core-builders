@@ -1,5 +1,6 @@
 /**
  * Login page — Supabase email/password is the default sign-in method.
+ * Facebook OAuth is available as a social sign-in option.
  * Auth0 remains available as an admin fallback.
  */
 import { ASSETS } from "@/const";
@@ -11,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Building2,
+  Facebook,
   KeyRound,
   Loader2,
   Lock,
@@ -75,6 +77,7 @@ export default function AuthLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fbLoading, setFbLoading] = useState(false);
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
 
@@ -132,6 +135,36 @@ export default function AuthLogin() {
         "Unable to reach the sign-in service. Check your connection and try again."
       );
       setLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    if (!isSupabaseConfigured) {
+      setError(
+        "Facebook sign-in is not available — Supabase is not configured."
+      );
+      return;
+    }
+    setFbLoading(true);
+    setError("");
+    try {
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "facebook",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (oauthError) {
+        setError(oauthError.message);
+        setFbLoading(false);
+        return;
+      }
+      // On success Supabase redirects to Facebook. Reset after a generous
+      // timeout in case the redirect is blocked by a popup blocker.
+      setTimeout(() => setFbLoading(false), 5000);
+    } catch {
+      setError("Unable to start Facebook sign-in. Please try again.");
+      setFbLoading(false);
     }
   };
 
@@ -303,6 +336,39 @@ export default function AuthLogin() {
                 Send magic link
               </button>
             </div>
+
+            {/* Social login — Facebook */}
+            {isSupabaseConfigured && (
+              <>
+                <div className="mt-6 pt-5 border-t border-border/40 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border/40" />
+                  <span
+                    className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/50"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Or continue with
+                  </span>
+                  <span className="h-px flex-1 bg-border/40" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleFacebookSignIn}
+                  disabled={fbLoading}
+                  className="mt-4 w-full flex items-center justify-center gap-2 bg-[#1877F2] text-white py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#166FE5] disabled:opacity-50 transition-all min-h-[48px]"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {fbLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Facebook className="h-4 w-4" />
+                      Continue with Facebook
+                    </>
+                  )}
+                </button>
+              </>
+            )}
 
             {isAuth0Configured && (
               <>
