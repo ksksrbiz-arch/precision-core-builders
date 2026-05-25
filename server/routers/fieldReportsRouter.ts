@@ -1,6 +1,7 @@
 import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { logAdminAction } from "../_core/auditLog";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const fieldReportsRouter = router({
@@ -38,7 +39,10 @@ export const fieldReportsRouter = router({
       if (ctx.user.role !== "admin") {
         const clientUserId = (data?.projects as any)?.clients?.user_id;
         if (!clientUserId || clientUserId !== ctx.user.id) {
-          throw new Error("Forbidden");
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to view this field report.",
+          });
         }
       }
       return data;

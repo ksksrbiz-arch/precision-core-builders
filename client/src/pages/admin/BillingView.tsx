@@ -31,7 +31,7 @@ const LS_KEY = "pcb_billing_invoices";
 function loadCachedInvoices(): Invoice[] {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as Invoice[]) : [];
+    return raw ? sanitizeCachedInvoices(JSON.parse(raw) as Invoice[]) : [];
   } catch {
     return [];
   }
@@ -40,7 +40,10 @@ function loadCachedInvoices(): Invoice[] {
 function saveCachedInvoices(list: Invoice[]) {
   try {
     // Keep at most 100 entries to avoid bloating localStorage.
-    localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, 100)));
+    localStorage.setItem(
+      LS_KEY,
+      JSON.stringify(sanitizeCachedInvoices(list).slice(0, 100))
+    );
   } catch {
     // Storage full — silently ignore; in-memory state is still correct.
   }
@@ -91,6 +94,24 @@ function fmtCents(cents: number) {
 }
 function fmtDollars(d: number) {
   return `$${d.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+}
+
+function sanitizeCachedInvoices(list: Invoice[]): Invoice[] {
+  // Do not persist hosted payment or invoice URLs; they grant access to
+  // billing artifacts and should only live in memory for the current session.
+  return list.map(({ invoicePdf, invoiceUrl, paymentLinkUrl, ...invoice }) => ({
+    ...invoice,
+  }));
+}
+
+function safeExternalUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export default function BillingView() {
@@ -166,8 +187,8 @@ export default function BillingView() {
           return merged;
         });
       }
-    } catch {
-      // Network error — silently use cached data
+    } catch (err) {
+      console.warn("[billing] failed to load Stripe invoices", err);
     } finally {
       setStripeLoading(false);
     }
@@ -609,7 +630,9 @@ export default function BillingView() {
         ) : (
           <div className="space-y-3">
             {invoices.map((inv, i) => {
-              const link = inv.paymentLinkUrl ?? inv.invoiceUrl;
+              const link = safeExternalUrl(
+                inv.paymentLinkUrl ?? inv.invoiceUrl
+              );
               return (
                 <div
                   key={inv.invoiceId ?? inv.paymentLinkId ?? i}

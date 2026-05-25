@@ -12,7 +12,7 @@
  *      exists yet — never silently downgrades an existing admin).
  *   4. Return { role } so the client can redirect appropriately.
  *
- * The allowlist defaults to the two hard-coded production admins so the
+ * The allowlist defaults to hard-coded production admins so the
  * site works the moment it's pushed to main. Additional emails may be
  * added via the optional `ADMIN_EMAILS` env var (comma-separated).
  *
@@ -24,30 +24,8 @@
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
+import { getAdminEmailSet } from "./_utils/adminEmails";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
-
-/** Hard-coded production admins. Lower-cased at comparison time. */
-const DEFAULT_ADMIN_EMAILS: ReadonlyArray<string> = [
-  "skdev@1commerce.online",
-  "erictadlock@precisioncorebuilders.com",
-  "eric@precisioncorebuilders.com",
-];
-
-function getAdminEmailSet(): Set<string> {
-  const set = new Set<string>(DEFAULT_ADMIN_EMAILS.map(e => e.toLowerCase()));
-  const primaryAdmin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  if (primaryAdmin) {
-    set.add(primaryAdmin);
-  }
-  const extra = process.env.ADMIN_EMAILS;
-  if (extra) {
-    for (const e of extra.split(",")) {
-      const trimmed = e.trim().toLowerCase();
-      if (trimmed) set.add(trimmed);
-    }
-  }
-  return set;
-}
 
 function getSupabaseAdminClient() {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;

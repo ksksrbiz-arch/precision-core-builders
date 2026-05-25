@@ -91,4 +91,37 @@ describe("auth0-exchange function", () => {
       expect.any(Object)
     );
   });
+
+  it("allows skdev@1commerce.online as a built-in admin", async () => {
+    vi.stubEnv("AUTH0_ISSUER_BASE_URL", "https://dev-tenant.us.auth0.com/");
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: "token-123" }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          email: "skdev@1commerce.online",
+          email_verified: true,
+        }),
+      } as Response);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await handler(
+      mockEvent("POST", {
+        code: "oauth-code",
+        redirectUri: "https://precision-core.netlify.app/auth/callback",
+      }) as unknown as HandlerEvent,
+      {} as HandlerContext
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body as string)).toEqual({
+      token: "session-token",
+      email: "skdev@1commerce.online",
+    });
+  });
 });

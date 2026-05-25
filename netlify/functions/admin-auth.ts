@@ -3,8 +3,8 @@
  * No database or Supabase required.
  *
  * Required env vars (set in Netlify dashboard, server-side only):
- *   ADMIN_EMAIL         — Eric's login email
- *   ADMIN_PASSWORD      — Eric's login password
+ *   ADMIN_EMAIL(S)      — optional extra admin emails
+ *   ADMIN_PASSWORD      — shared fallback admin password
  *   ADMIN_SESSION_TOKEN — a random secret string returned as the session token
  *
  * On success returns { token: ADMIN_SESSION_TOKEN }.
@@ -13,6 +13,7 @@
  */
 import type { Handler } from "@netlify/functions";
 import { timingSafeEqual, createHash } from "crypto";
+import { getAdminEmailSet } from "./_utils/adminEmails";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import {
   checkRateLimit,
@@ -79,26 +80,26 @@ export const handler: Handler = async event => {
     };
   }
 
-  const adminEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
+  const adminEmails = getAdminEmailSet();
   const adminPassword = process.env.ADMIN_PASSWORD ?? "";
   const sessionToken = process.env.ADMIN_SESSION_TOKEN ?? "";
 
-  if (!adminEmail || !adminPassword || !sessionToken) {
-    console.error(
-      "[admin-auth] ADMIN_EMAIL, ADMIN_PASSWORD, or ADMIN_SESSION_TOKEN not set"
-    );
+  if (!adminPassword || !sessionToken) {
+    console.error("[admin-auth] ADMIN_PASSWORD or ADMIN_SESSION_TOKEN not set");
     return {
       statusCode: 503,
       headers,
       body: JSON.stringify({
         error:
-          "Admin credentials not configured. Set ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_SESSION_TOKEN in Netlify environment variables.",
+          "Admin credentials not configured. Set ADMIN_PASSWORD and ADMIN_SESSION_TOKEN in Netlify environment variables.",
       }),
     };
   }
 
   // Use timing-safe comparison to prevent timing-based enumeration attacks
-  const emailOk = safeEqual(email, adminEmail);
+  const emailOk = Array.from(adminEmails).some(adminEmail =>
+    safeEqual(email, adminEmail)
+  );
   const passwordOk = safeEqual(password, adminPassword);
 
   if (!emailOk || !passwordOk) {
