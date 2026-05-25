@@ -147,6 +147,19 @@ const DEFAULT_WIDTH = 240;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 360;
 
+function getInitialSidebarWidth() {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    const parsed = saved ? parseInt(saved, 10) : NaN;
+    if (Number.isFinite(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
+      return parsed;
+    }
+  } catch {
+    // Ignore storage read failures (private browsing / restricted contexts).
+  }
+  return DEFAULT_WIDTH;
+}
+
 // Returns the NAV item that best matches the given location.
 function getCurrentNavItem(location: string) {
   return NAV.find(
@@ -169,14 +182,15 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
-  });
+  const [sidebarWidth, setSidebarWidth] = useState(getInitialSidebarWidth);
   const { loading, user, isAdmin } = useAuth();
 
   useEffect(() => {
-    localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    try {
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    } catch {
+      // Ignore storage write failures.
+    }
   }, [sidebarWidth]);
 
   // Cmd+K / Ctrl+K → navigate to search
