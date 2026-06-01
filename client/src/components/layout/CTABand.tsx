@@ -61,12 +61,7 @@ export function CTABand({
       {!isDark && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-dot-grid opacity-50 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(139,115,85,0.18) 1px, transparent 0)",
-            backgroundSize: "22px 22px",
-          }}
+          className="absolute inset-0 bg-dot-grid-light opacity-60 pointer-events-none"
         />
       )}
 

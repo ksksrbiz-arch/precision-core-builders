@@ -296,6 +296,27 @@
     );
     background-size: 22px 22px;
   }
+  /* Light-surface counterpart — warmer/darker dots for the cream CTA band */
+  .bg-dot-grid-light {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(139, 115, 85, 0.18) 1px,
+      transparent 0
+    );
+    background-size: 22px 22px;
+  }
+
+  /* Gradient gold ring — for small framed surfaces like trust-bar icon tiles.
+   * Apply to a positioned element; the inner panel masks the middle so the
+   * gradient reads as a 1px rim. */
+  .ring-gradient-gold {
+    position: relative;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(135deg, rgba(200, 168, 75, 0.6), rgba(200, 168, 75, 0.12))
+        border-box;
+    border: 1px solid transparent;
+  }
 
   /* Card-lift — applied to cards/buttons. Subtle translate + gold glow on hover.
    * Pairs with existing border classes. Respect prefers-reduced-motion below. */

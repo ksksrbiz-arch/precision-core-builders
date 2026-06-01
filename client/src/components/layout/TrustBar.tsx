@@ -40,21 +40,8 @@ export function TrustBar({ className = "" }: { className?: string }) {
               key={label}
               className="group flex items-center gap-2.5 flex-shrink-0 snap-start"
             >
-              <div
-                className="relative h-9 w-9 flex items-center justify-center flex-shrink-0 rounded-sm transition-all duration-300 group-hover:shadow-[0_0_18px_-4px_rgba(200,168,75,0.55)]"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(200,168,75,0.55), rgba(200,168,75,0.12)) border-box",
-                  border: "1px solid transparent",
-                  backgroundClip: "padding-box, border-box",
-                  backgroundOrigin: "border-box",
-                }}
-              >
-                <span
-                  aria-hidden
-                  className="absolute inset-[1px] rounded-[2px] bg-card/80"
-                />
-                <Icon className="relative h-4 w-4 text-primary" aria-hidden />
+              <div className="ring-gradient-gold h-9 w-9 flex items-center justify-center flex-shrink-0 rounded-sm transition-all duration-300 group-hover:shadow-[0_0_18px_-4px_rgba(200,168,75,0.55)]">
+                <Icon className="h-4 w-4 text-primary" aria-hidden />
               </div>
               <div>
                 <div
