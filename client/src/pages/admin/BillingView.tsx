@@ -10,6 +10,11 @@ import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
+  buildFreePaymentLinks,
+  getFreePaymentConfig,
+  hasAnyFreePaymentMethod,
+} from "@/lib/freePayments";
+import {
   CheckCircle2,
   ClipboardCopy,
   CreditCard,
@@ -21,6 +26,7 @@ import {
   RefreshCw,
   Send,
   X,
+  Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -77,7 +83,14 @@ type Invoice = {
   clientEmail?: string;
   projectName?: string;
   createdAt: string;
-  type: "payment_link" | "invoice";
+  type: "payment_link" | "invoice" | "free_link";
+  /** Populated for "free_link" — every configured payment URL for this invoice. */
+  freeLinks?: Array<{
+    provider: "paypal" | "venmo" | "zelle" | "email";
+    label: string;
+    url: string;
+    isMailto: boolean;
+  }>;
 };
 
 const MILESTONE_TEMPLATES = [
@@ -108,14 +121,27 @@ function safeExternalUrl(value: string | undefined): string | undefined {
   if (!value) return undefined;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" ? url.toString() : undefined;
+    // Allow https links (Stripe / PayPal / Venmo) and mailto: invoice links.
+    if (url.protocol === "https:") return url.toString();
+    if (url.protocol === "mailto:") return url.toString();
+    return undefined;
   } catch {
     return undefined;
   }
 }
 
 export default function BillingView() {
-  const [mode, setMode] = useState<"payment_link" | "invoice">("payment_link");
+  // Default to the free payment-link mode when at least one free handle is
+  // configured (PayPal/Venmo/Zelle) — Eric does not need a Stripe account
+  // to start collecting payments.
+  const freeAvailable = hasAnyFreePaymentMethod();
+  const stripeEnabled = Boolean(
+    (import.meta as { env?: Record<string, string | undefined> }).env
+      ?.VITE_FEATURE_STRIPE === "true"
+  );
+  const [mode, setMode] = useState<"payment_link" | "invoice" | "free_link">(
+    freeAvailable ? "free_link" : "payment_link"
+  );
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -231,6 +257,55 @@ export default function BillingView() {
 
     setLoading(true);
     try {
+      // ─── Free payment-link mode — no server call, no API keys ─────────────
+      if (mode === "free_link") {
+        const links = buildFreePaymentLinks({
+          amountCents,
+          description,
+          clientEmail: clientEmail || undefined,
+          clientName: clientName || undefined,
+          projectName: selectedProjectData?.name,
+        });
+        if (links.length === 0) {
+          throw new Error(
+            "No free payment handles are configured. Set VITE_PAYPAL_ME_USERNAME, VITE_VENMO_USERNAME, VITE_ZELLE_HANDLE, or VITE_INVOICE_FROM_EMAIL in Netlify environment variables."
+          );
+        }
+        const primary = links.find(l => !l.isMailto) ?? links[0];
+        const newInvoice: Invoice = {
+          paymentLinkId: `free-${Date.now()}`,
+          paymentLinkUrl: primary.url,
+          amountCents,
+          description,
+          clientEmail: clientEmail || undefined,
+          projectName: selectedProjectData?.name,
+          createdAt: new Date().toISOString(),
+          type: "free_link",
+          status: "active",
+          freeLinks: links,
+        };
+        setInvoices(prev => {
+          const merged = mergeInvoices([newInvoice], prev);
+          saveCachedInvoices(merged);
+          return merged;
+        });
+        try {
+          await navigator.clipboard.writeText(primary.url);
+        } catch {
+          // Clipboard may be unavailable on mobile / insecure contexts.
+        }
+        addToast({
+          type: "success",
+          title: "Payment link ready",
+          message: `${primary.label} link copied. Paste it into a text message or email.`,
+          duration: 5000,
+        });
+        setAmount("");
+        setDescription("");
+        setShowForm(false);
+        return;
+      }
+
       const payload: Record<string, any> = {
         action:
           mode === "payment_link" ? "create_payment_link" : "create_invoice",
@@ -347,18 +422,43 @@ export default function BillingView() {
           }
         />
 
-        {/* Stripe not configured banner */}
-        {stripeNotConfigured && (
+        {/* Stripe not configured banner (only shown when no free option is available) */}
+        {stripeNotConfigured && !freeAvailable && (
           <div className="bg-amber-400/5 border border-amber-400/30 p-4 mb-5 text-sm">
             <p className="font-semibold text-amber-400 mb-1">
-              ⚠️ Stripe not configured
+              ⚠️ No billing provider configured
             </p>
             <p className="text-muted-foreground text-xs">
-              Add{" "}
+              Either set Stripe keys (
               <code className="bg-muted px-1 py-0.5 text-xs">
                 STRIPE_SECRET_KEY
+              </code>
+              ), or use free PayPal/Venmo/Zelle links by setting{" "}
+              <code className="bg-muted px-1 py-0.5 text-xs">
+                VITE_PAYPAL_ME_USERNAME
+              </code>
+              ,{" "}
+              <code className="bg-muted px-1 py-0.5 text-xs">
+                VITE_VENMO_USERNAME
+              </code>
+              , or{" "}
+              <code className="bg-muted px-1 py-0.5 text-xs">
+                VITE_ZELLE_HANDLE
               </code>{" "}
-              to your Netlify environment variables to enable billing.
+              in Netlify environment variables.
+            </p>
+          </div>
+        )}
+
+        {/* Free billing available banner */}
+        {freeAvailable && (
+          <div className="bg-primary/5 border border-primary/30 p-4 mb-5 text-sm">
+            <p className="font-semibold text-primary mb-1 flex items-center gap-2">
+              <Zap className="h-4 w-4" /> Free payment links active
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Generating PayPal / Venmo / Zelle / email invoice links — no
+              transaction fees, no API keys, no Stripe account required.
             </p>
           </div>
         )}
@@ -421,28 +521,43 @@ export default function BillingView() {
             <div className="flex flex-wrap gap-0 mb-5 border border-border/60 w-fit max-w-full overflow-hidden">
               {(
                 [
-                  ["payment_link", "Payment Link", CreditCard],
-                  ["invoice", "Formal Invoice", FileText],
+                  ...(freeAvailable
+                    ? ([["free_link", "Free Link", Zap]] as const)
+                    : []),
+                  ["payment_link", "Stripe Link", CreditCard],
+                  ["invoice", "Stripe Invoice", FileText],
                 ] as const
-              ).map(([val, label, Icon]) => (
-                <button
-                  key={val}
-                  onClick={() => setMode(val)}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-[11px] font-bold tracking-widest uppercase transition-colors ${
-                    mode === val
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{label}</span>
-                  {/* Show abbreviated label on mobile: first word only, or full label if no space */}
-                  <span className="sm:hidden">
-                    {label.includes(" ") ? label.split(" ")[0] : label}
-                  </span>
-                </button>
-              ))}
+              )
+                .filter(([val]) => {
+                  // Hide Stripe-only modes when Stripe is disabled and a free
+                  // option exists — keeps Eric's UI free of dead buttons.
+                  if (
+                    !stripeEnabled &&
+                    freeAvailable &&
+                    (val === "payment_link" || val === "invoice")
+                  ) {
+                    return false;
+                  }
+                  return true;
+                })
+                .map(([val, label, Icon]) => (
+                  <button
+                    key={val}
+                    onClick={() => setMode(val)}
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-[11px] font-bold tracking-widest uppercase transition-colors ${
+                      mode === val
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className="sm:hidden">
+                      {label.includes(" ") ? label.split(" ")[0] : label}
+                    </span>
+                  </button>
+                ))}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -592,10 +707,16 @@ export default function BillingView() {
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : mode === "invoice" ? (
                   <Send className="h-3.5 w-3.5" />
+                ) : mode === "free_link" ? (
+                  <Zap className="h-3.5 w-3.5" />
                 ) : (
                   <CreditCard className="h-3.5 w-3.5" />
                 )}
-                {mode === "invoice" ? "Send Invoice" : "Create Payment Link"}
+                {mode === "invoice"
+                  ? "Send Invoice"
+                  : mode === "free_link"
+                    ? "Generate Free Link"
+                    : "Create Payment Link"}
               </button>
               <button
                 onClick={() => setShowForm(false)}
