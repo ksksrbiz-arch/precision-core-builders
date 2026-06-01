@@ -5,6 +5,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { SkeletonCard } from "@/components/Skeletons";
+import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
@@ -73,7 +74,7 @@ export default function LedgerView() {
   });
   const utils = trpc.useUtils();
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
-  const { data, isLoading } = trpc.ledger.list.useQuery(
+  const { data, isLoading, isError, refetch } = trpc.ledger.list.useQuery(
     { projectId: projectId!, page, pageSize: 50 },
     { enabled: !!projectId }
   );
@@ -307,6 +308,11 @@ export default function LedgerView() {
           <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
             Loading…
           </div>
+        ) : isError ? (
+          <QueryError
+            message="We couldn't load the ledger. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         ) : !data?.data.length ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />

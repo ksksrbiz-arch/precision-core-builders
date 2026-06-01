@@ -4,6 +4,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
+import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
@@ -25,7 +26,7 @@ export default function EstimatesList() {
   const utils = trpc.useUtils();
   const isMobile = useIsMobile();
 
-  const { data, isLoading } = trpc.estimates.list.useQuery({
+  const { data, isLoading, isError, refetch } = trpc.estimates.list.useQuery({
     page,
     pageSize: 20,
   });
@@ -81,6 +82,11 @@ export default function EstimatesList() {
           <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
             Loading…
           </div>
+        ) : isError ? (
+          <QueryError
+            message="We couldn't load estimates. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         ) : data?.data.length === 0 ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <Calculator className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />

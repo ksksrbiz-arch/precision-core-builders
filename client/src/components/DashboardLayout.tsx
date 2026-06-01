@@ -184,6 +184,7 @@ export default function DashboardLayout({
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(getInitialSidebarWidth);
   const { loading, user, isAdmin } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     try {
@@ -198,12 +199,12 @@ export default function DashboardLayout({
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        window.location.href = "/admin/search";
+        setLocation("/admin/search");
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [setLocation]);
 
   // Apply .admin-shell class to document.body so React portals
   // (Dropdown/Dialog/Popover/Toast — which mount outside the SidebarProvider
