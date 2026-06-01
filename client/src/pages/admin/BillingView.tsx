@@ -268,7 +268,7 @@ export default function BillingView() {
         });
         if (links.length === 0) {
           throw new Error(
-            "No free payment handles are configured. Set VITE_PAYPAL_ME_USERNAME, VITE_VENMO_USERNAME, VITE_ZELLE_HANDLE, or VITE_INVOICE_FROM_EMAIL in Netlify environment variables."
+            "No free payment handles are configured. Set at least one of VITE_PAYPAL_ME_USERNAME, VITE_VENMO_USERNAME, or VITE_ZELLE_HANDLE in Netlify environment variables."
           );
         }
         const primary = links.find(l => !l.isMailto) ?? links[0];
