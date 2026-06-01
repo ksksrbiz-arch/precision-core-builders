@@ -4,6 +4,17 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import AIChatBox from "@/components/AIChatBox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
@@ -199,7 +210,10 @@ function LeadScoringPanel() {
       // Persist successful scores to the prioritization board.
       const entry: SavedLead = {
         ...(data as LeadScore),
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id:
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         scoredAt: Date.now(),
         name: form.name || "Unnamed lead",
         projectType: form.projectType,
@@ -228,15 +242,6 @@ function LeadScoringPanel() {
   const removeSaved = (id: string) => persist(saved.filter(l => l.id !== id));
 
   const clearAllSaved = () => {
-    if (saved.length === 0) return;
-    if (
-      typeof window !== "undefined" &&
-      !window.confirm(
-        `Clear all ${saved.length} saved lead${saved.length === 1 ? "" : "s"} from the prioritization board?`
-      )
-    ) {
-      return;
-    }
     persist([]);
     setExpandedSavedId(null);
   };
@@ -409,14 +414,38 @@ function LeadScoringPanel() {
                 >
                   Prioritization Board · {sortedSaved.length}
                 </p>
-                <button
-                  onClick={clearAllSaved}
-                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Clear all
-                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Clear all
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Clear prioritization board?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes all {sortedSaved.length} saved lead
+                        {sortedSaved.length === 1 ? "" : "s"} from this device.
+                        Lead scoring history elsewhere is not affected.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={clearAllSaved}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Clear all
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
               <ul className="space-y-2">
                 {sortedSaved.map(lead => {
