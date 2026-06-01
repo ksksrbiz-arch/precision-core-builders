@@ -22,6 +22,13 @@ export const ENV = {
   // Billing
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  // Free billing handles (PayPal.me / Venmo / Zelle / mailto invoices).
+  // Set any combination — BillingView will generate payment links for
+  // whichever ones are configured.  No API keys or accounts required
+  // beyond signing up for the consumer service.
+  paypalMeUsername: process.env.PAYPAL_ME_USERNAME ?? "",
+  venmoUsername: process.env.VENMO_USERNAME ?? "",
+  zelleHandle: process.env.ZELLE_HANDLE ?? "",
 
   // Blueprint.am integration
   // Public site URL (used to build OAuth redirect URIs) — prefer SITE_URL,
