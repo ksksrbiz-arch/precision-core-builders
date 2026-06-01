@@ -41,14 +41,31 @@ export function CTABand({
           : "bg-[#F5F1ED] text-foreground border-y border-border/60"
       } ${className}`}
     >
-      {/* Decorative gradient wash */}
+      {/* Decorative gradient wash + dot grid */}
       {isDark && (
+        <>
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-dot-grid opacity-40 pointer-events-none"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-60 pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(ellipse at top left, rgba(200,168,75,0.18), transparent 55%), radial-gradient(ellipse at bottom right, rgba(139,115,85,0.14), transparent 55%)",
+            }}
+          />
+        </>
+      )}
+      {!isDark && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 opacity-40 pointer-events-none"
+          className="absolute inset-0 bg-dot-grid opacity-50 pointer-events-none"
           style={{
             backgroundImage:
-              "radial-gradient(ellipse at top left, rgba(200,168,75,0.15), transparent 50%), radial-gradient(ellipse at bottom right, rgba(139,115,85,0.12), transparent 50%)",
+              "radial-gradient(circle at 1px 1px, rgba(139,115,85,0.18) 1px, transparent 0)",
+            backgroundSize: "22px 22px",
           }}
         />
       )}
@@ -88,14 +105,16 @@ export function CTABand({
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Link
             href={primaryHref}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-7 py-4 font-medium tracking-wide hover:bg-primary/90 transition-colors rounded-sm text-sm uppercase"
+            className="btn-shimmer inline-flex items-center gap-2 bg-primary text-primary-foreground px-7 py-4 font-medium tracking-wide hover:bg-primary/90 transition-colors rounded-sm text-sm uppercase"
             style={{
               fontFamily: "var(--font-condensed)",
               letterSpacing: "0.1em",
             }}
           >
-            {primaryLabel}
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            <span className="inline-flex items-center gap-2">
+              {primaryLabel}
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </span>
           </Link>
           {showPhone && (
             <a

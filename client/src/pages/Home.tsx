@@ -286,7 +286,7 @@ function Hero() {
         >
           Precision Construction.
           <br />
-          <span className="text-primary">Core Values.</span>
+          <span className="text-gradient-gold">Core Values.</span>
         </motion.h1>
 
         <motion.p
@@ -341,6 +341,12 @@ function Hero() {
           <span>Licensed · Bonded · Insured</span>
         </motion.div>
       </motion.div>
+
+      {/* Animated scroll indicator — hidden on small screens to avoid CTA overlap */}
+      <span
+        className="scroll-indicator hidden md:inline-flex z-[2]"
+        aria-hidden
+      />
     </section>
   );
 }
@@ -360,9 +366,12 @@ function StatCell({ value, suffix, label }: (typeof STATS)[number]) {
   const inView = useInView(ref, { once: true, amount: 0.3 });
   const count = useCounter(value, inView);
   return (
-    <div ref={ref} className="py-10 px-6 text-center">
+    <div
+      ref={ref}
+      className="group relative py-10 px-6 text-center transition-colors duration-300 hover:bg-primary/[0.04]"
+    >
       <div
-        className="text-4xl sm:text-5xl font-bold text-primary mb-2 tabular-nums"
+        className="text-4xl sm:text-5xl font-bold text-gradient-gold mb-2 tabular-nums"
         style={{ fontFamily: "var(--font-heading)" }}
         aria-label={`${value}${suffix}`}
       >
@@ -375,6 +384,10 @@ function StatCell({ value, suffix, label }: (typeof STATS)[number]) {
       >
         {label}
       </div>
+      <span
+        aria-hidden
+        className="mx-auto mt-3 block h-[2px] w-6 rounded-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-50 group-hover:opacity-100 group-hover:w-12 transition-all duration-500"
+      />
     </div>
   );
 }
@@ -382,10 +395,11 @@ function StatCell({ value, suffix, label }: (typeof STATS)[number]) {
 function StatsBar() {
   return (
     <section
-      className="border-y border-border/50 bg-card/70"
+      className="relative border-y border-border/50 bg-card/70 overflow-hidden"
       aria-label="Company credentials"
     >
-      <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border/50 md:divide-x-reverse">
+      <div className="glow-gold-top" aria-hidden />
+      <div className="relative max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border/50 md:divide-x-reverse">
         {STATS.map(s => (
           <StatCell key={s.label} {...s} />
         ))}

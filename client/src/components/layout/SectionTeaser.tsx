@@ -109,7 +109,7 @@ export function SectionTeaser({
     >
       <Link
         href={href}
-        className="group block bg-card border border-border/60 rounded-sm overflow-hidden hover:border-primary/60 hover:-translate-y-1 transition-all duration-500 h-full"
+        className="card-lift group block bg-card border border-border/60 rounded-sm overflow-hidden hover:border-primary/60 h-full"
       >
         {image && (
           <div className="relative aspect-[4/3] overflow-hidden bg-muted">

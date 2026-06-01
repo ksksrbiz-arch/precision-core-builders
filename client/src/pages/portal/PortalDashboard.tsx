@@ -115,7 +115,10 @@ export default function PortalDashboard() {
             className="text-2xl sm:text-3xl font-semibold mb-1 break-words"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Welcome, {user.name ?? user.email}
+            Welcome,{" "}
+            <span className="text-gradient-gold">
+              {user.name ?? user.email}
+            </span>
           </h1>
           <p className="text-sm text-muted-foreground font-light mb-8">
             Track your project progress, review reports, and manage selections.
@@ -168,13 +171,13 @@ export default function PortalDashboard() {
                   <p className="text-xs text-muted-foreground font-light">
                     Project Progress
                   </p>
-                  <p className="text-sm font-bold text-primary">
+                  <p className="text-sm font-bold text-gradient-gold">
                     {project.completion_percent ?? 0}%
                   </p>
                 </div>
                 <div className="h-2 bg-input rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-primary rounded-full transition-all duration-700"
+                    className="h-full progress-gold rounded-full transition-all duration-700"
                     style={{ width: `${project.completion_percent ?? 0}%` }}
                   />
                 </div>
@@ -256,7 +259,7 @@ export default function PortalDashboard() {
                 <button
                   key={href}
                   onClick={() => setLocation(href)}
-                  className="bg-card border border-border/60 p-5 text-left hover:border-primary/30 hover:bg-primary/5 transition-all"
+                  className="card-lift bg-card border border-border/60 p-5 text-left hover:border-primary/30 hover:bg-primary/5"
                 >
                   <Icon className="h-6 w-6 text-primary mb-3" />
                   <p className="text-sm font-semibold mb-1">{label}</p>
