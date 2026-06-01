@@ -192,41 +192,51 @@ export default function Contact() {
                     </p>
 
                     <div className="grid sm:grid-cols-2 gap-4">
-                      {[
-                        {
-                          id: "name",
-                          label: "Your Name",
-                          type: "text",
-                          req: true,
-                          placeholder: "Jane Smith",
-                          auto: "name",
-                        },
-                        {
-                          id: "email",
-                          label: "Email",
-                          type: "email",
-                          req: true,
-                          placeholder: "jane@email.com",
-                          auto: "email",
-                        },
-                        {
-                          id: "phone",
-                          label: "Phone",
-                          type: "tel",
-                          req: false,
-                          placeholder: "(541) 555-0100",
-                          auto: "tel",
-                          inputMode: "tel" as const,
-                        },
-                        {
-                          id: "budget",
-                          label: "Project Budget",
-                          type: "text",
-                          req: false,
-                          placeholder: "e.g. $50k–$100k",
-                          auto: "off",
-                        },
-                      ].map(f => (
+                      {(
+                        [
+                          {
+                            id: "name",
+                            label: "Your Name",
+                            type: "text",
+                            req: true,
+                            placeholder: "Jane Smith",
+                            auto: "name",
+                          },
+                          {
+                            id: "email",
+                            label: "Email",
+                            type: "email",
+                            req: true,
+                            placeholder: "jane@email.com",
+                            auto: "email",
+                          },
+                          {
+                            id: "phone",
+                            label: "Phone",
+                            type: "tel",
+                            req: false,
+                            placeholder: "(541) 555-0100",
+                            auto: "tel",
+                            inputMode: "tel",
+                          },
+                          {
+                            id: "budget",
+                            label: "Project Budget",
+                            type: "text",
+                            req: false,
+                            placeholder: "e.g. $50k–$100k",
+                            auto: "off",
+                          },
+                        ] as ReadonlyArray<{
+                          id: string;
+                          label: string;
+                          type: string;
+                          req: boolean;
+                          placeholder: string;
+                          auto: string;
+                          inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+                        }>
+                      ).map(f => (
                         <div key={f.id}>
                           <label
                             htmlFor={f.id}
@@ -246,9 +256,7 @@ export default function Contact() {
                             type={f.type}
                             required={f.req}
                             autoComplete={f.auto}
-                            inputMode={
-                              (f as { inputMode?: "tel" | "email" }).inputMode
-                            }
+                            inputMode={f.inputMode}
                             value={(fields as Record<string, string>)[f.id]}
                             onChange={onChange}
                             className={inputCls}
