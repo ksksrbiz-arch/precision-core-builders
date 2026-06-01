@@ -73,7 +73,7 @@ export default function About() {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="flex-1 pt-[68px]">
+      <main id="main-content" className="flex-1 pt-[68px]">
         {/* Hero */}
         <section className="py-20 sm:py-28 relative" ref={heroRef}>
           <div

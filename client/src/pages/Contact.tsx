@@ -93,7 +93,7 @@ export default function Contact() {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="flex-1 pt-[68px]">
+      <main id="main-content" className="flex-1 pt-[68px]">
         {/* Hero */}
         <section className="py-20 sm:py-28 relative">
           <div
@@ -216,6 +216,7 @@ export default function Contact() {
                           req: false,
                           placeholder: "(541) 555-0100",
                           auto: "tel",
+                          inputMode: "tel" as const,
                         },
                         {
                           id: "budget",
@@ -245,6 +246,9 @@ export default function Contact() {
                             type={f.type}
                             required={f.req}
                             autoComplete={f.auto}
+                            inputMode={
+                              (f as { inputMode?: "tel" | "email" }).inputMode
+                            }
                             value={(fields as Record<string, string>)[f.id]}
                             onChange={onChange}
                             className={inputCls}
@@ -319,6 +323,14 @@ export default function Contact() {
                         </a>
                       </p>
                     )}
+
+                    {/* Polite SR-only status — announces submission progress
+                        without stealing focus or duplicating the error alert. */}
+                    <p className="sr-only" aria-live="polite">
+                      {status === "submitting"
+                        ? "Submitting your inquiry…"
+                        : ""}
+                    </p>
 
                     <button
                       type="submit"

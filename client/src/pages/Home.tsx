@@ -23,7 +23,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Award,
@@ -101,7 +101,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <SiteNav />
       <MobileCTABar />
-      <main>
+      <main id="main-content">
         <Hero />
         <StatsBar />
         <div className="cv-auto">
@@ -163,6 +163,8 @@ const FADE_DURATION = 1200;
 
 function HeroSlideshow() {
   const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // The <link rel="preload"> for slide 0 is already in index.html.
   // This hook handles subsequent slides so they start loading on mount.
@@ -175,17 +177,31 @@ function HeroSlideshow() {
     document.head.appendChild(link);
   }, []);
 
+  // Pause auto-rotation when the tab/document is hidden to save CPU and battery.
   useEffect(() => {
+    const onVis = () => setPaused(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  useEffect(() => {
+    // Respect prefers-reduced-motion: keep the first slide static instead of
+    // auto-rotating. Pagination dots still allow manual selection.
+    if (reduceMotion || paused) return;
     const timer = setTimeout(() => {
       setCurrent(n => (n + 1) % HERO_SLIDES.length);
     }, SLIDE_DURATION);
     return () => clearTimeout(timer);
-  }, [current]);
+  }, [current, paused, reduceMotion]);
 
   return (
     <div
       className="absolute inset-0 overflow-hidden touch-action-pan-y"
       aria-hidden
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
     >
       {/*
        * Keyframe animations are defined in index.css (not an inline <style>)
@@ -213,7 +229,8 @@ function HeroSlideshow() {
               aria-hidden={i === 0 ? undefined : true}
               className="hero-slide-img h-full w-full object-cover"
               style={{
-                animationName: active ? slide.animation : "none",
+                animationName:
+                  active && !reduceMotion ? slide.animation : "none",
                 animationDuration: `${SLIDE_DURATION + FADE_DURATION}ms`,
                 willChange: active ? "transform, opacity" : undefined,
               }}
@@ -232,9 +249,11 @@ function HeroSlideshow() {
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
+            type="button"
             onClick={() => setCurrent(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            className={`transition-all duration-500 rounded-full ${
+            aria-label={`Show slide ${i + 1} of ${HERO_SLIDES.length}`}
+            aria-current={i === current ? "true" : undefined}
+            className={`transition-all duration-500 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 ${
               i === current
                 ? "w-6 h-1.5 bg-primary"
                 : "w-1.5 h-1.5 bg-white/30 hover:bg-white/60"

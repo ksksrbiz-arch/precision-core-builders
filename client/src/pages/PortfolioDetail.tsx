@@ -49,7 +49,10 @@ export default function PortfolioDetail() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <SiteNav />
-        <main className="flex-1 flex items-center justify-center py-24">
+        <main
+          id="main-content"
+          className="flex-1 flex items-center justify-center py-24"
+        >
           <div className="text-center max-w-md px-5">
             <p
               className="text-[11px] uppercase tracking-[0.2em] text-neutral-500 mb-3"
@@ -82,7 +85,7 @@ export default function PortfolioDetail() {
     <div className="min-h-screen flex flex-col bg-background">
       <SiteNav />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {/* HERO */}
         <section className="relative min-h-[65vh] md:min-h-[75vh] flex items-end overflow-hidden">
           <img

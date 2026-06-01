@@ -156,6 +156,14 @@ export function SiteNav() {
       {showDevModal && DEV_MODAL_ENABLED && (
         <DevPasswordModal onClose={() => setShowDevModal(false)} />
       )}
+      {/* Skip-to-content link — visible only when focused via keyboard. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:text-[12px] focus:font-bold focus:tracking-[0.12em] focus:uppercase focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        style={{ fontFamily: "var(--font-condensed)" }}
+      >
+        Skip to content
+      </a>
       <header
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
           scrolled
