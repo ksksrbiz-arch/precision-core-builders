@@ -465,12 +465,12 @@
     padding-left: env(safe-area-inset-left, 0px);
   }
 
-  /* Prevent horizontal overflow at root so fixed elements don't cause scrollbar */
+  /* Prevent horizontal overflow at root without blocking native vertical scroll */
   html,
   body {
     overflow-x: hidden;
-    /* Prevent rubber-band overscroll in PWA standalone */
-    overscroll-behavior: none;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: auto;
   }
 
   /*
@@ -546,6 +546,7 @@
 
 /* ── Pull-to-refresh prevention in standalone PWA ──────────────────────── */
 @media (display-mode: standalone) {
+  html,
   body {
     overscroll-behavior-y: contain;
   }
