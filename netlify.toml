@@ -44,6 +44,17 @@
   TAILWINDCSS_DISABLE_OXIDE = "1"
   NODE_ENV = "production"
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Secrets-scan exclusions. These keys are PUBLIC identifiers, not secrets, so
+  # Netlify's secret scanner produces false positives that fail the deploy:
+  #   • AUTH0_AUDIENCE   — the Auth0 API audience (a public URL/identifier)
+  #   • VITE_AUTH0_DOMAIN — VITE_* vars are intentionally bundled into the client
+  # They legitimately appear in docs, the SPA bundle, sitemap, and config, so we
+  # omit them from scanning. Real secrets (service-role keys, client secrets,
+  # API keys) are NOT listed here and remain scanned.
+  # ─────────────────────────────────────────────────────────────────────────────
+  SECRETS_SCAN_OMIT_KEYS = "AUTH0_AUDIENCE,VITE_AUTH0_DOMAIN"
+
 # ── Custom domain redirect ───────────────────────────────────
 # After Eric sets up a custom domain, uncomment the block below
 # and replace <your-domain> with the actual domain so that the
