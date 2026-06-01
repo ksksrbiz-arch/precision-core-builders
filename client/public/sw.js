@@ -7,9 +7,9 @@
 // Bump these version numbers whenever we ship a client change that users
 // must pick up immediately. On activate, any cache whose name is not in the
 // current list is deleted, purging stale HTML/JS/CSS from returning users.
-const CACHE_NAME = "pcb-v3";
-const STATIC_CACHE = "pcb-static-v3";
-const API_CACHE = "pcb-api-v3";
+const CACHE_NAME = "pcb-v4";
+const STATIC_CACHE = "pcb-static-v4";
+const API_CACHE = "pcb-api-v4";
 
 // Shell files to precache on install
 const PRECACHE_URLS = ["/", "/admin", "/offline.html"];
@@ -24,18 +24,27 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-// Activate — clean old caches
+// Activate — clean old caches and notify clients so the SPA can prompt a refresh
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
         keys
           .filter(key => key !== STATIC_CACHE && key !== API_CACHE)
           .map(key => caches.delete(key))
       );
-    })
+      await self.clients.claim();
+      // Broadcast a controllerchange-style hint to all open windows. The app
+      // listens for `{ type: "SW_UPDATED" }` and surfaces a refresh notice so
+      // users don't end up with a half-old shell and a freshly-cached bundle
+      // (which manifests as "buttons don't respond" after a deploy).
+      const clients = await self.clients.matchAll({ type: "window" });
+      for (const client of clients) {
+        client.postMessage({ type: "SW_UPDATED", cache: CACHE_NAME });
+      }
+    })()
   );
-  self.clients.claim();
 });
 
 // Fetch strategy
@@ -49,11 +58,20 @@ self.addEventListener("fetch", event => {
   // Skip chrome-extension and other non-http
   if (!url.protocol.startsWith("http")) return;
 
-  // API calls — network first, cache fallback
+  // API calls — network first, cache fallback.
+  // Auth endpoints are never cached: stale auth state is the leading cause of
+  // "I tapped Sign In and nothing happened" reports.
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/.netlify/")
   ) {
+    if (
+      url.pathname.startsWith("/api/auth/") ||
+      url.pathname.startsWith("/.netlify/functions/auth")
+    ) {
+      event.respondWith(fetch(request));
+      return;
+    }
     event.respondWith(networkFirstStrategy(request));
     return;
   }
@@ -113,6 +131,8 @@ async function networkFirstStrategy(request) {
 }
 
 async function navigationStrategy(request) {
+  const url = new URL(request.url);
+  const isAdmin = url.pathname.startsWith("/admin");
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -121,13 +141,16 @@ async function navigationStrategy(request) {
     }
     return response;
   } catch {
-    // Try cached version of the page
+    // Try cached version of the requested page first.
     const cached = await caches.match(request);
     if (cached) return cached;
-    // Fall back to cached index (SPA)
-    const index = await caches.match("/");
-    if (index) return index;
-    // Last resort offline page
+    // Never fall back to the public index for an /admin/* navigation: that
+    // silently bounces the user out of the admin shell on flaky connectivity,
+    // which presents as "the admin app stopped working".
+    if (!isAdmin) {
+      const index = await caches.match("/");
+      if (index) return index;
+    }
     const offline = await caches.match("/offline.html");
     return offline || new Response("Offline", { status: 503 });
   }

@@ -29,6 +29,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
+      aria-label="Mobile bottom navigation"
       className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/40"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
