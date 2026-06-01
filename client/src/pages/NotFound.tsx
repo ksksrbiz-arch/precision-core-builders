@@ -22,7 +22,10 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <SiteNav />
-      <main className="flex-1 flex items-center justify-center px-6 pt-[68px]">
+      <main
+        id="main-content"
+        className="flex-1 flex items-center justify-center px-6 pt-[68px]"
+      >
         <div className="text-center max-w-md w-full py-20">
           <p className="text-7xl font-bold text-primary/20 font-[family-name:var(--font-mono)] mb-4">
             404

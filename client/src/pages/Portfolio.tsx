@@ -52,7 +52,7 @@ export default function Portfolio() {
     <div className="min-h-screen flex flex-col bg-background">
       <SiteNav />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {/* Editorial hero */}
         <section className="relative min-h-[60vh] md:min-h-[65vh] flex items-end overflow-hidden">
           {/*
