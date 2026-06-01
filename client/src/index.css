@@ -229,17 +229,186 @@
     text-transform: uppercase;
     font-weight: 600;
   }
-  /* Small gold underline for section headings */
+  /* Small gold underline for section headings — now a soft gradient */
   .heading-bar {
     display: block;
-    width: 48px;
+    width: 56px;
     height: 2px;
-    background: #c8a84b;
+    background: linear-gradient(
+      90deg,
+      rgba(200, 168, 75, 0) 0%,
+      #c8a84b 25%,
+      #e7c870 60%,
+      rgba(200, 168, 75, 0) 100%
+    );
     margin-top: 1rem;
+    box-shadow: 0 0 12px rgba(200, 168, 75, 0.35);
   }
   .heading-bar-center {
     margin-left: auto;
     margin-right: auto;
+  }
+
+  /* Gold gradient text — for hero accent words and key numbers */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #e7c870 0%, #c8a84b 45%, #b08e3a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Ambient gold radial glow — used as a decorative section/page backdrop.
+   * Place inside a positioned parent with overflow-hidden. */
+  .glow-gold {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 60% 50% at 15% 10%,
+        rgba(200, 168, 75, 0.18),
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 50% 45% at 90% 90%,
+        rgba(139, 115, 85, 0.14),
+        transparent 60%
+      );
+  }
+  .glow-gold-top {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 70% 40% at 50% 0%,
+      rgba(200, 168, 75, 0.16),
+      transparent 60%
+    );
+  }
+
+  /* Decorative dot-grid pattern — subtle craft texture on dark surfaces */
+  .bg-dot-grid {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(200, 168, 75, 0.14) 1px,
+      transparent 0
+    );
+    background-size: 22px 22px;
+  }
+  /* Light-surface counterpart — warmer/darker dots for the cream CTA band */
+  .bg-dot-grid-light {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(139, 115, 85, 0.18) 1px,
+      transparent 0
+    );
+    background-size: 22px 22px;
+  }
+
+  /* Gradient gold ring — for small framed surfaces like trust-bar icon tiles.
+   * Apply to a positioned element; the inner panel masks the middle so the
+   * gradient reads as a 1px rim. */
+  .ring-gradient-gold {
+    position: relative;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(135deg, rgba(200, 168, 75, 0.6), rgba(200, 168, 75, 0.12))
+        border-box;
+    border: 1px solid transparent;
+  }
+
+  /* Card-lift — applied to cards/buttons. Subtle translate + gold glow on hover.
+   * Pairs with existing border classes. Respect prefers-reduced-motion below. */
+  .card-lift {
+    transition:
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.3s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 18px 40px -18px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(200, 168, 75, 0.35),
+      0 0 22px -6px rgba(200, 168, 75, 0.25);
+  }
+
+  /* Shimmer sweep — overlays a moving highlight on hover. Apply to a
+   * relative+overflow-hidden element such as a primary CTA button. */
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .btn-shimmer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      120deg,
+      transparent 25%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 75%
+    );
+    transform: translateX(-120%);
+    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .btn-shimmer:hover::before,
+  .btn-shimmer:focus-visible::before {
+    transform: translateX(120%);
+  }
+  .btn-shimmer > * {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Gradient gold progress fill — replaces flat primary fill */
+  .progress-gold {
+    background: linear-gradient(90deg, #b08e3a 0%, #c8a84b 50%, #e7c870 100%);
+    box-shadow:
+      0 0 8px rgba(200, 168, 75, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  /* Soft animated scroll-down indicator chevron */
+  .scroll-indicator {
+    position: absolute;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%);
+    width: 22px;
+    height: 36px;
+    border: 1px solid rgba(237, 230, 217, 0.35);
+    border-radius: 12px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 6px;
+    pointer-events: none;
+  }
+  .scroll-indicator::after {
+    content: "";
+    width: 2px;
+    height: 6px;
+    background: #c8a84b;
+    border-radius: 1px;
+    animation: scroll-dot 1.8s ease-in-out infinite;
+  }
+  @keyframes scroll-dot {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(14px);
+      opacity: 0;
+    }
   }
 
   /* Hero vignette — improves text contrast without darkening mids */
