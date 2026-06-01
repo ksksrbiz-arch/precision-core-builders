@@ -38,6 +38,11 @@ function PortalNav() {
       className="fixed top-0 inset-x-0 z-50 h-16 flex items-center border-b border-border/50 bg-background/95 backdrop-blur-md"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
+      {/* Thin gradient gold rule under the header for a touch of polish */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
+      />
       <div className="container flex items-center justify-between gap-3">
         <a href="/" aria-label="Home" className="flex-shrink-0">
           <img
@@ -153,7 +158,16 @@ interface PortalLayoutProps {
 
 export function PortalLayout({ children, className }: PortalLayoutProps) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
+      {/* Ambient corner glow — subtle warmth on every portal page */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse 55% 40% at 12% 0%, rgba(200,168,75,0.10), transparent 60%), radial-gradient(ellipse 45% 35% at 92% 100%, rgba(139,115,85,0.08), transparent 60%)",
+        }}
+      />
       <PortalNav />
       <main className={`pt-16 pb-12 ${className ?? ""}`}>{children}</main>
     </div>
