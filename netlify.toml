@@ -89,6 +89,43 @@
   to = "/robots.txt"
   status = 200
 
+# Legacy / common-typo URL redirects → canonical paths (301).
+# Must be declared BEFORE the SPA catch-all so they take precedence.
+[[redirects]]
+  from = "/home"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/work"
+  to = "/portfolio"
+  status = 301
+
+[[redirects]]
+  from = "/projects"
+  to = "/portfolio"
+  status = 301
+
+[[redirects]]
+  from = "/team"
+  to = "/about"
+  status = 301
+
+[[redirects]]
+  from = "/quote"
+  to = "/estimator"
+  status = 301
+
+[[redirects]]
+  from = "/estimate"
+  to = "/estimator"
+  status = 301
+
 # Redirect all other traffic to index.html for client-side routing
 [[redirects]]
   from = "/*"

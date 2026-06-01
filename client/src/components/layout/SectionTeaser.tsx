@@ -64,6 +64,7 @@ export function SectionTeaser({
               src={image}
               alt={imageAlt}
               loading="lazy"
+              decoding="async"
               className={`w-full h-full object-cover ${imagePosition} transition-transform duration-[2s] ease-out hover:scale-105`}
             />
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 pointer-events-none" />
@@ -116,6 +117,7 @@ export function SectionTeaser({
               src={image}
               alt={imageAlt}
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
