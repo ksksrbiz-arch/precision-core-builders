@@ -46,9 +46,7 @@ export function AdminPageHeader({
           )}
         </div>
         {actions && (
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto [&_button]:min-h-11 [&_a]:min-h-11">
-            {actions}
-          </div>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">{actions}</div>
         )}
       </div>
     </header>

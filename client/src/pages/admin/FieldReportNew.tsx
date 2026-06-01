@@ -352,7 +352,7 @@ export default function FieldReportNew() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-2xl md:max-w-3xl mx-auto">
         <button
           onClick={() => setLocation("/admin/field-reports")}
           className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground hover:text-primary mb-6 transition-colors"
