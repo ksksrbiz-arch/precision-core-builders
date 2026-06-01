@@ -465,10 +465,21 @@
     padding-left: env(safe-area-inset-left, 0px);
   }
 
-  /* Prevent horizontal overflow at root without blocking native vertical scroll */
+  /*
+   * Prevent horizontal overflow at root without blocking native vertical scroll.
+   *
+   * `overflow-x: hidden` (used previously) turns <html>/<body> into a scroll
+   * container on iOS Safari, which steals the native viewport scroll and causes
+   * touch dead-zones — most noticeably in the middle of the screen on landing
+   * pages. `overflow-x: clip` clips horizontal overflow without establishing a
+   * scroll container, so the viewport remains the natural scroll root. The
+   * `hidden` declaration is kept first as a fallback for the few engines that
+   * don't yet support `clip`.
+   */
   html,
   body {
     overflow-x: hidden;
+    overflow-x: clip;
     overscroll-behavior-x: none;
     overscroll-behavior-y: auto;
   }
