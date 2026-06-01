@@ -246,6 +246,34 @@ That's it. You're building a digital construction company.
 
 ---
 
+## Free-Tier Configuration (No Credit Card Needed)
+
+The platform runs end-to-end on free APIs. To go live in production without
+spending a dollar on API fees, set just two things in the Netlify environment
+variables (Site Settings → Build & deploy → Environment):
+
+| Variable                  | Where to get it                                         | What it powers                                    |
+| ------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
+| `GOOGLE_AI_API_KEY`       | https://aistudio.google.com/app/apikey (no card)        | AI estimator, chat, field-report summaries, voice |
+| `VITE_PAYPAL_ME_USERNAME` | Your PayPal.me handle (https://www.paypal.com/paypalme) | Billing → free PayPal payment links               |
+
+Optionally add `VITE_VENMO_USERNAME`, `VITE_ZELLE_HANDLE`, and
+`VITE_INVOICE_FROM_EMAIL` to offer clients more payment options and to CC
+yourself on invoice emails.
+
+Anything paid (Anthropic, OpenAI Whisper, Stripe, OpenWeatherMap) is now
+**optional**. The platform automatically falls back to:
+
+- **LLM**: Google Gemini 2.0 Flash (free) when `ANTHROPIC_API_KEY` is unset
+- **Voice transcription**: Gemini audio input (free) when `OPENAI_API_KEY` is unset
+- **Weather**: Open-Meteo (free, no key) when `OPENWEATHERMAP_API_KEY` is unset
+- **Billing**: PayPal/Venmo/Zelle/email invoice links when Stripe is unset.
+  Set `VITE_FEATURE_STRIPE=true` only when you want Stripe enabled.
+
+Visit **Admin → Setup Wizard** to see live status for every integration.
+
+---
+
 **Built with precision. For precision. By you.**
 
-_Last update: April 6, 2026 / System Status: Production Ready_
+_Last update: June 2026 — full free-tier production support / System Status: Production Ready_

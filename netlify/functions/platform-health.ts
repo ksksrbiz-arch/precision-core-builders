@@ -297,6 +297,65 @@ async function checkN8n(): Promise<ServiceStatus> {
   }
 }
 
+async function checkGemini(): Promise<ServiceStatus> {
+  const key = process.env.GOOGLE_AI_API_KEY;
+
+  if (!key) {
+    return {
+      id: "google_ai",
+      name: "Google Gemini (Free LLM + Voice)",
+      status: "not_configured",
+      message: "GOOGLE_AI_API_KEY not set",
+    };
+  }
+
+  if (!key.startsWith("AIza")) {
+    return {
+      id: "google_ai",
+      name: "Google Gemini (Free LLM + Voice)",
+      status: "error",
+      message: "Invalid key format (should start with AIza)",
+    };
+  }
+
+  return {
+    id: "google_ai",
+    name: "Google Gemini (Free LLM + Voice)",
+    status: "healthy",
+    message: "Free tier configured (LLM + audio transcription)",
+    details: { keyLength: key.length },
+  };
+}
+
+async function checkFreePayments(): Promise<ServiceStatus> {
+  const paypal = process.env.PAYPAL_ME_USERNAME;
+  const venmo = process.env.VENMO_USERNAME;
+  const zelle = process.env.ZELLE_HANDLE;
+  const configured = [
+    paypal && "PayPal.me",
+    venmo && "Venmo",
+    zelle && "Zelle",
+  ].filter(Boolean) as string[];
+
+  if (configured.length === 0) {
+    return {
+      id: "free_payments",
+      name: "Free Payment Links (PayPal/Venmo/Zelle)",
+      status: "not_configured",
+      message:
+        "No free payment handles set. Configure VITE_PAYPAL_ME_USERNAME, VITE_VENMO_USERNAME, or VITE_ZELLE_HANDLE.",
+    };
+  }
+
+  return {
+    id: "free_payments",
+    name: "Free Payment Links (PayPal/Venmo/Zelle)",
+    status: "healthy",
+    message: `Active: ${configured.join(", ")}`,
+    details: { providers: configured },
+  };
+}
+
 async function checkOpenAI(): Promise<ServiceStatus> {
   const key = process.env.OPENAI_API_KEY;
 
@@ -449,8 +508,10 @@ export const handler: Handler = async event => {
     supabase,
     cloudflareAI,
     anthropicAI,
+    geminiAI,
     weather,
     stripe,
+    freePayments,
     n8n,
     openai,
     dbTables,
@@ -458,8 +519,10 @@ export const handler: Handler = async event => {
     checkSupabase(),
     checkCloudflareAI(),
     checkAnthropicAI(),
+    checkGemini(),
     checkWeather(),
     checkStripe(),
+    checkFreePayments(),
     checkN8n(),
     checkOpenAI(),
     checkDatabaseTables(),
@@ -468,10 +531,12 @@ export const handler: Handler = async event => {
   const services: ServiceStatus[] = [
     supabase,
     dbTables,
+    geminiAI,
     cloudflareAI,
     anthropicAI,
     openai,
     weather,
+    freePayments,
     stripe,
     n8n,
   ];
