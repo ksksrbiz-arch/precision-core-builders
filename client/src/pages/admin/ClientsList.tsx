@@ -94,7 +94,7 @@ export default function ClientsList() {
           actions={
             <button
               onClick={() => setShowNew(true)}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               <Plus className="h-3.5 w-3.5" /> New Client
@@ -112,7 +112,7 @@ export default function ClientsList() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2.5 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+            className="w-full pl-9 pr-4 py-3 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
           />
         </div>
 
@@ -145,7 +145,7 @@ export default function ClientsList() {
                     onChange={e =>
                       setForm(prev => ({ ...prev, [f.key]: e.target.value }))
                     }
-                    className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
+                    className="w-full bg-input border border-border text-sm text-foreground p-3 focus:outline-none focus:border-primary/60"
                   />
                 </div>
               ))}
@@ -172,7 +172,7 @@ export default function ClientsList() {
                   setShowNew(false);
                   resetForm();
                 }}
-                className="px-4 py-2 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                className="px-4 py-3 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 Cancel
@@ -180,7 +180,7 @@ export default function ClientsList() {
               <button
                 onClick={() => createMut.mutate(form)}
                 disabled={!form.name || !form.email || createMut.isPending}
-                className="px-4 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                className="px-4 py-3 min-h-11 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {createMut.isPending ? "Saving..." : "Save Client"}
@@ -214,9 +214,9 @@ export default function ClientsList() {
               return (
                 <div
                   key={client.id}
-                  className="bg-card border border-border/60 p-3 sm:p-4 hover:border-primary/20 transition-colors flex items-center gap-3 sm:gap-4"
+                  className="bg-card border border-border/60 p-4 md:p-5 hover:border-primary/20 transition-colors flex items-center gap-3 sm:gap-4"
                 >
-                  <div className="h-11 w-11 bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <div className="h-12 w-12 bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <span className="text-sm font-bold text-primary">
                       {client.name
                         .split(" ")
@@ -230,7 +230,7 @@ export default function ClientsList() {
                     onClick={() => setLocation(`/admin/clients/${client.id}`)}
                     className="flex-1 min-w-0 text-left"
                   >
-                    <p className="text-sm font-semibold truncate">
+                    <p className="text-sm md:text-base font-semibold truncate">
                       {client.name}
                     </p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
@@ -263,7 +263,7 @@ export default function ClientsList() {
                       <a
                         href={`tel:${client.phone}`}
                         aria-label={`Call ${client.name}`}
-                        className="h-9 w-9 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-accent/50 transition-colors active:scale-95"
+                        className="h-11 w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-accent/50 transition-colors active:scale-95"
                         onClick={e => e.stopPropagation()}
                       >
                         <Phone className="h-4 w-4" />
@@ -273,7 +273,7 @@ export default function ClientsList() {
                       <AlertDialogTrigger asChild>
                         <button
                           aria-label={`Delete ${client.name}`}
-                          className="h-9 w-9 inline-flex items-center justify-center rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors active:scale-95"
+                          className="h-11 w-11 inline-flex items-center justify-center rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors active:scale-95"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -311,7 +311,7 @@ export default function ClientsList() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+              className="flex min-h-11 items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
             >
               <ChevronLeft className="h-3.5 w-3.5" /> Previous
             </button>
@@ -321,7 +321,7 @@ export default function ClientsList() {
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * 20 >= data.total}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+              className="flex min-h-11 items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
             >
               Next <ChevronRight className="h-3.5 w-3.5" />
             </button>
