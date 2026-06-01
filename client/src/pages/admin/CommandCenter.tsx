@@ -4,6 +4,17 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import AIChatBox from "@/components/AIChatBox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
@@ -19,11 +30,13 @@ import {
   Plus,
   Settings,
   Sparkles,
+  Trash2,
   TrendingUp,
   Users,
+  X,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
   BarChart,
@@ -91,6 +104,68 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: "text-red-400 border-red-400/30 bg-red-400/10",
 };
 
+const PRIORITY_WEIGHT: Record<LeadScore["priority"], number> = {
+  urgent: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+type SavedLead = LeadScore & {
+  id: string;
+  scoredAt: number;
+  name: string;
+  projectType: string;
+  budget: string;
+  location: string;
+  timeline: string;
+};
+
+const SAVED_LEADS_KEY = "pcb.admin.leadBoard.v1";
+const SAVED_LEADS_MAX = 20;
+
+function loadSavedLeads(): SavedLead[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(SAVED_LEADS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as SavedLead[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistSavedLeads(leads: SavedLead[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SAVED_LEADS_KEY, JSON.stringify(leads));
+  } catch {
+    // Quota or privacy mode — fail silently; in-memory list still works.
+  }
+}
+
+function sortLeadsByPriority(leads: SavedLead[]): SavedLead[] {
+  return [...leads].sort((a, b) => {
+    const w = PRIORITY_WEIGHT[b.priority] - PRIORITY_WEIGHT[a.priority];
+    if (w !== 0) return w;
+    if (b.score !== a.score) return b.score - a.score;
+    return b.scoredAt - a.scoredAt;
+  });
+}
+
+function formatRelativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
 function LeadScoringPanel() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -103,6 +178,18 @@ function LeadScoringPanel() {
     timeline: "",
     message: "",
   });
+  const [saved, setSaved] = useState<SavedLead[]>([]);
+  const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null);
+
+  // Hydrate persisted leads on mount.
+  useEffect(() => {
+    setSaved(loadSavedLeads());
+  }, []);
+
+  const persist = (next: SavedLead[]) => {
+    setSaved(next);
+    persistSavedLeads(next);
+  };
 
   const scoreALead = async () => {
     setLoading(true);
@@ -120,6 +207,21 @@ function LeadScoringPanel() {
         );
       }
       setResult(data);
+      // Persist successful scores to the prioritization board.
+      const entry: SavedLead = {
+        ...(data as LeadScore),
+        id:
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        scoredAt: Date.now(),
+        name: form.name || "Unnamed lead",
+        projectType: form.projectType,
+        budget: form.budget,
+        location: form.location,
+        timeline: form.timeline,
+      };
+      persist([entry, ...saved].slice(0, SAVED_LEADS_MAX));
     } catch (err) {
       setResult({
         score: 0,
@@ -136,6 +238,15 @@ function LeadScoringPanel() {
       setLoading(false);
     }
   };
+
+  const removeSaved = (id: string) => persist(saved.filter(l => l.id !== id));
+
+  const clearAllSaved = () => {
+    persist([]);
+    setExpandedSavedId(null);
+  };
+
+  const sortedSaved = sortLeadsByPriority(saved);
 
   const f =
     (key: keyof typeof form) =>
@@ -290,6 +401,142 @@ function LeadScoringPanel() {
                   {result.suggestedAction}
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Prioritization board — persisted scored leads */}
+          {sortedSaved.length > 0 && (
+            <div className="mt-6 border-t border-border/40 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p
+                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Prioritization Board · {sortedSaved.length}
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Clear all
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Clear prioritization board?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes all {sortedSaved.length} saved lead
+                        {sortedSaved.length === 1 ? "" : "s"} from this device.
+                        Lead scoring history elsewhere is not affected.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={clearAllSaved}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Clear all
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+              <ul className="space-y-2">
+                {sortedSaved.map(lead => {
+                  const isExpanded = expandedSavedId === lead.id;
+                  return (
+                    <li
+                      key={lead.id}
+                      className="border border-border/60 bg-background/40"
+                    >
+                      <div className="flex items-center gap-3 p-3">
+                        <div
+                          className={`h-8 w-8 shrink-0 flex items-center justify-center text-xs font-bold border ${
+                            lead.score >= 75
+                              ? "text-green-400 border-green-400/40"
+                              : lead.score >= 50
+                                ? "text-primary border-primary/40"
+                                : lead.score >= 25
+                                  ? "text-amber-400 border-amber-400/40"
+                                  : "text-red-400 border-red-400/40"
+                          }`}
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {lead.score}
+                        </div>
+                        <button
+                          onClick={() =>
+                            setExpandedSavedId(isExpanded ? null : lead.id)
+                          }
+                          className="flex-1 min-w-0 text-left"
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold truncate">
+                              {lead.name}
+                            </span>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 border font-bold tracking-widest uppercase ${PRIORITY_COLORS[lead.priority]}`}
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              {lead.priority}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {[lead.projectType, lead.budget, lead.location]
+                              .filter(Boolean)
+                              .join(" · ") || "No details captured"}
+                            {" · "}
+                            <span>{formatRelativeTime(lead.scoredAt)}</span>
+                            {lead.estimatedValue ? (
+                              <>
+                                {" · "}
+                                <span className="text-primary">
+                                  ${lead.estimatedValue.toLocaleString()}
+                                </span>
+                              </>
+                            ) : null}
+                          </p>
+                        </button>
+                        <button
+                          onClick={() => removeSaved(lead.id)}
+                          aria-label={`Remove ${lead.name} from prioritization board`}
+                          className="shrink-0 p-1 text-muted-foreground/60 hover:text-red-400 transition-colors"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-3 pb-3 -mt-1 space-y-2">
+                          <p className="text-xs text-foreground">
+                            {lead.reasoning}
+                          </p>
+                          <div className="border-l-2 border-primary pl-3">
+                            <p
+                              className="text-[10px] font-bold tracking-widest uppercase text-primary mb-0.5"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              Next Action
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {lead.suggestedAction}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-[10px] text-muted-foreground/60 mt-3">
+                Saved locally on this device. Cleared when you clear browser
+                storage.
+              </p>
             </div>
           )}
         </div>
