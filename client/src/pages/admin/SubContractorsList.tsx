@@ -4,6 +4,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
+import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
@@ -59,7 +60,12 @@ export default function SubContractorsList() {
   });
   const utils = trpc.useUtils();
   const isMobile = useIsMobile();
-  const { data: subs, isLoading } = trpc.subContractors.list.useQuery();
+  const {
+    data: subs,
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.subContractors.list.useQuery();
 
   const createMut = useMutationWithToast(
     trpc.subContractors.create.useMutation(),
@@ -228,6 +234,11 @@ export default function SubContractorsList() {
         {/* Sub list */}
         {isLoading ? (
           <SkeletonCard count={4} />
+        ) : isError ? (
+          <QueryError
+            message="We couldn't load sub-contractors. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         ) : !subs?.length ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <HardHat className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />

@@ -4,6 +4,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
+import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
@@ -47,7 +48,7 @@ export default function ClientsList() {
   });
 
   const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.clients.list.useQuery({
+  const { data, isLoading, isError, refetch } = trpc.clients.list.useQuery({
     page,
     pageSize: 20,
     search: search || undefined,
@@ -191,6 +192,11 @@ export default function ClientsList() {
 
         {isLoading ? (
           <SkeletonCard count={5} />
+        ) : isError ? (
+          <QueryError
+            message="We couldn't load your clients. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         ) : data?.data.length === 0 ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <Users className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />

@@ -4,6 +4,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { QueryError } from "@/components/QueryError";
 import { trpc } from "@/lib/trpc";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
@@ -26,11 +27,13 @@ export default function FieldReportsList() {
   const utils = trpc.useUtils();
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
-  const { data, isLoading } = trpc.fieldReports.list.useQuery({
-    page,
-    pageSize: 20,
-    projectId,
-  });
+  const { data, isLoading, isError, refetch } = trpc.fieldReports.list.useQuery(
+    {
+      page,
+      pageSize: 20,
+      projectId,
+    }
+  );
 
   // Live: new reports appear without manual refresh
   useRealtimeTable({
@@ -96,6 +99,11 @@ export default function FieldReportsList() {
           <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
             Loading…
           </div>
+        ) : isError ? (
+          <QueryError
+            message="We couldn't load field reports. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         ) : data?.data.length === 0 ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <BookOpen className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
