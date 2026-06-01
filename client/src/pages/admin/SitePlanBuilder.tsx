@@ -51,6 +51,10 @@ type StampItem = {
   elements: any[];
 };
 
+const MOBILE_BREAKPOINT = 900;
+const DESKTOP_BREAKPOINT = 1280;
+const OPERATIONS_CATEGORY_GRID_CLASS = "grid-cols-[148px_1fr]";
+
 const CONSTRUCTION_STAMPS: StampCategory[] = [
   {
     name: "Structural",
@@ -520,7 +524,7 @@ export default function SitePlanBuilder() {
   const [planName, setPlanName] = useState("Untitled Site Plan");
   const [activePlanId, setActivePlanId] = useState<number | null>(null);
   const [activeStampCategory, setActiveStampCategory] = useState<string | null>(
-    null
+    CONSTRUCTION_STAMPS[0]?.name ?? null
   );
   const [operationsTab, setOperationsTab] = useState<"library" | "plans">(
     "library"
@@ -558,7 +562,7 @@ export default function SitePlanBuilder() {
     if (typeof window === "undefined") return;
     const updateViewportMode = () => {
       const width = window.innerWidth;
-      setIsTablet(width >= 900 && width < 1280);
+      setIsTablet(width >= MOBILE_BREAKPOINT && width < DESKTOP_BREAKPOINT);
     };
     updateViewportMode();
     window.addEventListener("resize", updateViewportMode);
@@ -566,20 +570,12 @@ export default function SitePlanBuilder() {
   }, []);
 
   useEffect(() => {
-    if (!activeStampCategory) {
-      setActiveStampCategory(CONSTRUCTION_STAMPS[0]?.name ?? null);
-    }
-  }, [activeStampCategory]);
-
-  useEffect(() => {
-    if (isDesktop) {
+    if (isDesktop || isTablet) {
       setShowStampPanel(true);
-      return;
-    }
-    if (isMobile) {
+    } else if (isMobile) {
       setShowStampPanel(false);
     }
-  }, [isDesktop, isMobile]);
+  }, [isDesktop, isMobile, isTablet]);
 
   const handleSave = useCallback(async () => {
     if (!excalidrawAPI) return;
@@ -822,6 +818,11 @@ export default function SitePlanBuilder() {
     CONSTRUCTION_STAMPS.find(cat => cat.name === activeStampCategory) ??
     CONSTRUCTION_STAMPS[0];
   const isOperationsVisible = isDesktop || showStampPanel;
+  const operationsPanelClassName = isDesktop
+    ? "absolute right-3 top-3 bottom-3 z-20 w-[360px] bg-card/95 border border-border/60 rounded-xl shadow-xl flex flex-col"
+    : isTablet
+      ? "absolute right-3 top-3 bottom-3 z-30 w-[340px] bg-card/95 border border-border/60 rounded-xl shadow-2xl flex flex-col"
+      : "absolute inset-x-0 bottom-0 z-30 max-h-[72%] bg-card border-t border-border/60 rounded-t-2xl shadow-2xl flex flex-col pb-[max(0.75rem,env(safe-area-inset-bottom))]";
 
   return (
     <DashboardLayout>
@@ -848,7 +849,11 @@ export default function SitePlanBuilder() {
               <HardHat className="h-4 w-4" />
               Operations
             </Button>
-            <Button onClick={handleSave} disabled={saving} className="h-10 gap-2">
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="h-10 gap-2"
+            >
               <Save className="h-4 w-4" />
               {saving ? "Saving..." : "Save"}
             </Button>
@@ -884,17 +889,13 @@ export default function SitePlanBuilder() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportExcalidraw}>
                   <Download className="mr-2 h-4 w-4" />
-                  Export .excalidraw
+                  Export Excalidraw
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Canvas</DropdownMenuLabel>
                 <DropdownMenuItem onClick={handleToggleGrid}>
                   <Grid3X3 className="mr-2 h-4 w-4" />
                   Toggle grid
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share with client
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -990,15 +991,7 @@ export default function SitePlanBuilder() {
           )}
 
           {isOperationsVisible && (
-            <aside
-              className={
-                isDesktop
-                  ? "absolute right-3 top-3 bottom-3 z-20 w-[360px] bg-card/95 border border-border/60 rounded-xl shadow-xl flex flex-col"
-                  : isTablet
-                    ? "absolute right-3 top-3 bottom-3 z-30 w-[340px] bg-card/95 border border-border/60 rounded-xl shadow-2xl flex flex-col"
-                    : "absolute inset-x-0 bottom-0 z-30 max-h-[72%] bg-card border-t border-border/60 rounded-t-2xl shadow-2xl flex flex-col pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-              }
-            >
+            <aside className={operationsPanelClassName}>
               <div className="px-3 pt-3 pb-2 border-b border-border/50 flex items-center justify-between gap-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <HardHat className="h-3.5 w-3.5 text-amber-500" />
@@ -1039,48 +1032,83 @@ export default function SitePlanBuilder() {
               </div>
 
               {operationsTab === "library" ? (
-                <div
-                  className={
-                    isMobile
-                      ? "flex-1 overflow-y-auto p-2 space-y-1"
-                      : "flex-1 min-h-0 grid grid-cols-[148px_1fr]"
-                  }
-                >
-                  <div className="overflow-y-auto p-2 space-y-1 border-r border-border/40">
+                isMobile ? (
+                  <div className="flex-1 overflow-y-auto p-2 space-y-1">
                     {CONSTRUCTION_STAMPS.map(cat => (
-                      <button
-                        key={cat.name}
-                        onClick={() => setActiveStampCategory(cat.name)}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
-                          activeCategory?.name === cat.name
-                            ? "bg-primary/12 text-primary border border-primary/30"
-                            : "hover:bg-muted/60 text-foreground/80 border border-transparent"
-                        }`}
-                        aria-pressed={activeCategory?.name === cat.name}
-                      >
-                        <span>{cat.icon}</span>
-                        <span className="font-medium truncate">{cat.name}</span>
-                      </button>
+                      <div key={cat.name}>
+                        <button
+                          onClick={() => setActiveStampCategory(cat.name)}
+                          className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
+                            activeCategory?.name === cat.name
+                              ? "bg-primary/12 text-primary border border-primary/30"
+                              : "hover:bg-muted/60 text-foreground/80 border border-transparent"
+                          }`}
+                          aria-pressed={activeCategory?.name === cat.name}
+                        >
+                          <span>{cat.icon}</span>
+                          <span className="font-medium">{cat.name}</span>
+                        </button>
+                        {activeCategory?.name === cat.name && (
+                          <div className="mt-1 space-y-1 pl-1">
+                            {cat.items.map(stamp => (
+                              <button
+                                key={stamp.label}
+                                onClick={() => {
+                                  addStampToCanvas(stamp);
+                                  setShowStampPanel(false);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-sm hover:bg-muted/80 transition-colors text-foreground/80 hover:text-foreground active:bg-muted border border-transparent hover:border-border/40"
+                                aria-label={`Add ${stamp.label}`}
+                              >
+                                <span className="text-base">{stamp.emoji}</span>
+                                <span className="truncate">{stamp.label}</span>
+                                <Plus className="h-3.5 w-3.5 ml-auto" />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
-                  <div className="overflow-y-auto p-2 space-y-1.5">
-                    {activeCategory?.items.map(stamp => (
-                      <button
-                        key={stamp.label}
-                        onClick={() => {
-                          addStampToCanvas(stamp);
-                          if (isMobile) setShowStampPanel(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-sm hover:bg-muted/80 transition-colors text-foreground/80 hover:text-foreground active:bg-muted border border-transparent hover:border-border/40"
-                        aria-label={`Add ${stamp.label}`}
-                      >
-                        <span className="text-base">{stamp.emoji}</span>
-                        <span className="truncate">{stamp.label}</span>
-                        <Plus className="h-3.5 w-3.5 ml-auto" />
-                      </button>
-                    ))}
+                ) : (
+                  <div
+                    className={`flex-1 min-h-0 grid ${OPERATIONS_CATEGORY_GRID_CLASS}`}
+                  >
+                    <div className="overflow-y-auto p-2 space-y-1 border-r border-border/40">
+                      {CONSTRUCTION_STAMPS.map(cat => (
+                        <button
+                          key={cat.name}
+                          onClick={() => setActiveStampCategory(cat.name)}
+                          className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
+                            activeCategory?.name === cat.name
+                              ? "bg-primary/12 text-primary border border-primary/30"
+                              : "hover:bg-muted/60 text-foreground/80 border border-transparent"
+                          }`}
+                          aria-pressed={activeCategory?.name === cat.name}
+                        >
+                          <span>{cat.icon}</span>
+                          <span className="font-medium truncate">
+                            {cat.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="overflow-y-auto p-2 space-y-1.5">
+                      {activeCategory?.items.map(stamp => (
+                        <button
+                          key={stamp.label}
+                          onClick={() => addStampToCanvas(stamp)}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-sm hover:bg-muted/80 transition-colors text-foreground/80 hover:text-foreground active:bg-muted border border-transparent hover:border-border/40"
+                          aria-label={`Add ${stamp.label}`}
+                        >
+                          <span className="text-base">{stamp.emoji}</span>
+                          <span className="truncate">{stamp.label}</span>
+                          <Plus className="h-3.5 w-3.5 ml-auto" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )
               ) : (
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
                   {(savedPlans ?? []).length === 0 && (
@@ -1110,12 +1138,13 @@ export default function SitePlanBuilder() {
                           {plan.name}
                         </p>
                         <p className="text-[11px] text-muted-foreground">
-                          Updated {new Date(plan.updated_at).toLocaleDateString()}
+                          Updated{" "}
+                          {new Date(plan.updated_at).toLocaleDateString()}
                         </p>
                       </button>
                       <button
                         onClick={() => handleDeletePlan(plan.id)}
-                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-2 text-muted-foreground hover:text-destructive transition-all mr-1 flex-shrink-0 rounded"
+                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 p-2 text-muted-foreground hover:text-destructive hover:bg-muted/80 transition-all mr-1 flex-shrink-0 rounded"
                         title="Delete plan"
                         aria-label={`Delete ${plan.name}`}
                       >
