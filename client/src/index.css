@@ -304,10 +304,17 @@
     overscroll-behavior: none;
   }
 
-  /* Prevent text selection on interactive elements (feels more native) */
-  button,
-  a,
-  [role="button"] {
+  /*
+   * Prevent text selection on interactive elements where it makes the UI feel
+   * less native (sidebar nav, bottom nav). Applied via scoped selectors instead
+   * of a blanket `button, a, [role="button"]` rule because the blanket version
+   * has been observed to drop click synthesis on iOS Safari < 17 in standalone
+   * PWA mode. Add `.no-select` to any other control that needs it.
+   */
+  nav button,
+  nav a,
+  nav [role="button"],
+  .no-select {
     -webkit-user-select: none;
     user-select: none;
   }
@@ -340,9 +347,16 @@
       font-size: max(16px, 1em);
     }
 
-    /* Bottom padding for mobile nav bar */
-    main {
-      padding-bottom: 5.5rem !important;
+    /*
+     * Bottom padding for mobile nav bar — scoped to pages that actually render
+     * the bottom nav (the admin shell). Adding the matching aria-label on the
+     * nav element triggers the :has() selector; the legacy global `main { … }`
+     * rule was applied even on public pages and could mis-stack against fixed
+     * overlays. Browsers without :has() fall through and only lose 5.5rem of
+     * extra bottom padding on the admin shell (acceptable).
+     */
+    body:has(nav[aria-label="Mobile bottom navigation"]) main {
+      padding-bottom: 5.5rem;
     }
 
     /*
@@ -420,6 +434,9 @@
 @layer utilities {
   .touch-action-pan-y {
     touch-action: pan-y;
+  }
+  .touch-action-pan-x {
+    touch-action: pan-x;
   }
   .touch-action-none {
     touch-action: none;

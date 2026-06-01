@@ -322,7 +322,10 @@ function DashboardLayoutContent({
   }, [isCollapsed]);
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
+    // Use Pointer Events so the same handler works for mouse, touch, and pen.
+    // Resizer is only mounted on desktop (see render guard below), but defensive
+    // handlers here also tolerate touch in case devtools/responsive mode triggers them.
+    const onMove = (e: PointerEvent) => {
       if (!isResizing) return;
       const left = sidebarRef.current?.getBoundingClientRect().left ?? 0;
       const w = e.clientX - left;
@@ -330,14 +333,16 @@ function DashboardLayoutContent({
     };
     const onUp = () => setIsResizing(false);
     if (isResizing) {
-      document.addEventListener("mousemove", onMove);
-      document.addEventListener("mouseup", onUp);
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onUp);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
     }
     return () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -501,10 +506,10 @@ function DashboardLayoutContent({
           </SidebarFooter>
         </Sidebar>
 
-        {!isCollapsed && (
+        {!isMobile && !isCollapsed && (
           <div
             className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors z-50"
-            onMouseDown={() => setIsResizing(true)}
+            onPointerDown={() => setIsResizing(true)}
           />
         )}
       </div>
@@ -513,7 +518,7 @@ function DashboardLayoutContent({
         <AdminGuidePrompt />
         {!isMobile && (
           <div className="flex border-b border-border/40 h-14 items-center px-4 sm:px-6 bg-background/90 backdrop-blur-xl sticky top-0 z-30 gap-3">
-            <SidebarTrigger className="h-9 w-9 rounded flex-shrink-0" />
+            <SidebarTrigger className="!size-9 rounded flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p
                 className="text-sm font-semibold text-foreground truncate leading-tight"
@@ -562,11 +567,11 @@ function DashboardLayoutContent({
             className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-2"
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
           >
-            <SidebarTrigger className="h-10 w-10 rounded flex-shrink-0" />
+            <SidebarTrigger className="!size-11 rounded flex-shrink-0" />
             <a
               href="/"
               aria-label="Precision Core Builders — Home"
-              className="flex items-center flex-shrink-0"
+              className="flex items-center justify-center flex-shrink-0 min-h-[44px] min-w-[44px]"
             >
               <img
                 src={ASSETS.logo}
@@ -601,7 +606,7 @@ function DashboardLayoutContent({
             </button>
           </div>
         )}
-        <main className="flex-1 p-4 pb-24 sm:p-6">{children}</main>
+        <div className="flex-1 p-4 pb-24 sm:p-6">{children}</div>
       </SidebarInset>
     </>
   );
