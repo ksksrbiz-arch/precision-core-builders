@@ -161,6 +161,7 @@ export default function ServicesPage() {
                       alt={service.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       loading={i < 4 ? "eager" : "lazy"}
+                      decoding="async"
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
                   </div>

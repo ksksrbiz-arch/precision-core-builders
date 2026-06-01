@@ -338,6 +338,10 @@ export function SiteFooter() {
               src={ASSETS.logo}
               alt="Precision Core Builders"
               className="h-9 w-auto mb-4"
+              width="180"
+              height="36"
+              loading="lazy"
+              decoding="async"
             />
             <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">
               Precision Construction, Core Values. Serving Eugene, Oregon and

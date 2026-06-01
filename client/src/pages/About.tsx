@@ -270,6 +270,7 @@ export default function About() {
                       alt={`${member.name} — ${member.role}`}
                       className="w-full h-full object-cover object-top group-hover:scale-[1.03] transition-transform duration-700"
                       loading="lazy"
+                      decoding="async"
                     />
                     <div
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"

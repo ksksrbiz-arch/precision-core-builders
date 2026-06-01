@@ -9,6 +9,7 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
+import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Phone } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -44,6 +45,7 @@ export type ServicePageProps = {
 type FormStatus = "idle" | "submitting" | "success" | "error";
 
 export function ServicePage(p: ServicePageProps) {
+  useSEO({ title: p.metaTitle, description: p.metaDescription });
   const [status, setStatus] = useState<FormStatus>("idle");
   const [fields, setFields] = useState({
     name: "",
@@ -81,11 +83,50 @@ export function ServicePage(p: ServicePageProps) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")}-inquiry`;
 
+  // JSON-LD: Service offering + FAQPage for rich-result eligibility.
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: p.title,
+    description: p.metaDescription,
+    provider: {
+      "@type": "GeneralContractor",
+      name: "Precision Core Builders",
+      telephone: SITE.phone,
+      areaServed: p.serviceAreas,
+    },
+    areaServed: p.serviceAreas.map(name => ({ "@type": "Place", name })),
+  };
+  const faqJsonLd =
+    p.faqs.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: p.faqs.map(({ q, a }) => ({
+            "@type": "Question",
+            name: q,
+            acceptedAnswer: { "@type": "Answer", text: a },
+          })),
+        }
+      : null;
+
   return (
     <>
       {/* Dynamic SEO head */}
       <title>{p.metaTitle}</title>
       <meta name="description" content={p.metaDescription} />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
 
       <SiteNav />
       <MobileCTABar />
@@ -97,6 +138,8 @@ export function ServicePage(p: ServicePageProps) {
             src={p.heroImage}
             alt={p.heroImageAlt}
             className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            decoding="sync"
             fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/10" />
