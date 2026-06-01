@@ -741,7 +741,7 @@ function SuperSplatTeaser() {
                 src={config.demoUrl}
                 className="w-full h-full"
                 loading="lazy"
-                sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                 allowFullScreen
               />
             </div>
