@@ -352,10 +352,10 @@ export default function FieldReportNew() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl md:max-w-3xl mx-auto">
         <button
           onClick={() => setLocation("/admin/field-reports")}
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary mb-6 transition-colors"
+          className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground hover:text-primary mb-6 transition-colors"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Field Reports
@@ -382,7 +382,7 @@ export default function FieldReportNew() {
                   <button
                     key={p.id}
                     onClick={() => setProjectId(p.id)}
-                    className={`w-full text-left p-4 border transition-colors ${
+                    className={`w-full text-left p-4 md:p-5 border transition-colors ${
                       projectId === p.id
                         ? "border-primary bg-primary/5 text-foreground"
                         : "border-border/60 text-muted-foreground hover:border-primary/40"
@@ -398,7 +398,7 @@ export default function FieldReportNew() {
             <button
               onClick={() => projectId && setStep("record")}
               disabled={!projectId}
-              className="w-full py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+              className="w-full py-3 min-h-11 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               Continue to Recording →
@@ -502,7 +502,7 @@ export default function FieldReportNew() {
                       setLiveTranscript("");
                       setRecordingTime(0);
                     }}
-                    className={`px-5 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors active:scale-95 ${
+                    className={`px-5 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors active:scale-95 ${
                       isMobile ? "py-4 flex-1" : "py-3"
                     }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
@@ -511,7 +511,7 @@ export default function FieldReportNew() {
                   </button>
                   <button
                     onClick={processAudio}
-                    className={`flex items-center gap-2 px-6 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors active:scale-95 ${
+                    className={`flex min-h-11 items-center gap-2 px-6 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors active:scale-95 ${
                       isMobile ? "py-4 flex-1 justify-center" : "py-3"
                     }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
@@ -528,7 +528,7 @@ export default function FieldReportNew() {
                       setAudioBlob(null);
                       setRecordingTime(0);
                     }}
-                    className={`px-5 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors active:scale-95 ${
+                    className={`px-5 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors active:scale-95 ${
                       isMobile ? "py-4 flex-1" : "py-3"
                     }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
@@ -537,7 +537,7 @@ export default function FieldReportNew() {
                   </button>
                   <button
                     onClick={processAudio}
-                    className={`flex items-center gap-2 px-6 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors active:scale-95 ${
+                    className={`flex min-h-11 items-center gap-2 px-6 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors active:scale-95 ${
                       isMobile ? "py-4 flex-1 justify-center" : "py-3"
                     }`}
                     style={{ fontFamily: "var(--font-condensed)" }}
@@ -612,7 +612,7 @@ export default function FieldReportNew() {
             <div className="flex gap-3">
               <button
                 onClick={() => setLocation(`/admin/field-reports/${report.id}`)}
-                className="flex-1 py-3 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                className="flex-1 py-3 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 Save as Draft
@@ -620,7 +620,7 @@ export default function FieldReportNew() {
               <button
                 onClick={publishReport}
                 disabled={publishMutation.isPending}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                className="flex-1 flex min-h-11 items-center justify-center gap-2 py-3 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {publishMutation.isPending ? (
@@ -650,7 +650,7 @@ export default function FieldReportNew() {
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setLocation("/admin/field-reports")}
-                className="px-5 py-2.5 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                className="px-5 py-3 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 All Reports
@@ -662,7 +662,7 @@ export default function FieldReportNew() {
                   setReport(null);
                   setRecordingTime(0);
                 }}
-                className="px-5 py-2.5 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                className="px-5 py-3 min-h-11 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 + New Report

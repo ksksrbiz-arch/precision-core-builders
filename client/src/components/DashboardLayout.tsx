@@ -143,7 +143,7 @@ const QUICK_ACTIONS = [
 ];
 
 const SIDEBAR_WIDTH_KEY = "pcb-sidebar-width";
-const DEFAULT_WIDTH = 240;
+const DEFAULT_WIDTH = 264;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 360;
 
@@ -392,11 +392,11 @@ function DashboardLayoutContent({
                   <button
                     key={action.path}
                     onClick={() => setLocation(action.path)}
-                    className="h-8 rounded border border-border/50 bg-background/60 hover:border-primary/40 hover:bg-primary/5 transition-colors flex items-center justify-center"
+                    className="h-10 rounded border border-border/50 bg-background/60 hover:border-primary/40 hover:bg-primary/5 transition-colors flex items-center justify-center"
                     title={action.label}
                     aria-label={action.label}
                   >
-                    <action.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <action.icon className="h-4 w-4 text-muted-foreground" />
                   </button>
                 ))}
               </div>
@@ -419,7 +419,7 @@ function DashboardLayoutContent({
                             isActive={isActive}
                             onClick={() => setLocation(item.path)}
                             tooltip={item.label}
-                            className="h-9 pr-8"
+                            className="h-11 pr-8 text-sm"
                           >
                             <item.icon
                               className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`}
@@ -517,8 +517,8 @@ function DashboardLayoutContent({
       <SidebarInset>
         <AdminGuidePrompt />
         {!isMobile && (
-          <div className="flex border-b border-border/40 h-14 items-center px-4 sm:px-6 bg-background/90 backdrop-blur-xl sticky top-0 z-30 gap-3">
-            <SidebarTrigger className="!size-9 rounded flex-shrink-0" />
+          <div className="flex border-b border-border/40 h-16 items-center px-4 sm:px-6 bg-background/90 backdrop-blur-xl sticky top-0 z-30 gap-3">
+            <SidebarTrigger className="!size-11 rounded flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p
                 className="text-sm font-semibold text-foreground truncate leading-tight"
@@ -537,7 +537,7 @@ function DashboardLayoutContent({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 hidden lg:inline-flex"
+              className="h-11 hidden lg:inline-flex"
               onClick={() => setLocation("/admin/projects/new")}
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -546,7 +546,7 @@ function DashboardLayoutContent({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 hidden md:inline-flex"
+              className="h-11 hidden md:inline-flex"
               onClick={() => setLocation("/admin/field-reports/new")}
             >
               <BookOpen className="mr-1.5 h-3.5 w-3.5" />
@@ -554,7 +554,7 @@ function DashboardLayoutContent({
             </Button>
             <Button
               size="sm"
-              className="h-9"
+              className="h-11"
               onClick={() => setLocation("/admin/search")}
             >
               <Search className="mr-1.5 h-3.5 w-3.5" />
@@ -606,7 +606,7 @@ function DashboardLayoutContent({
             </button>
           </div>
         )}
-        <div className="flex-1 p-4 pb-24 sm:p-6">{children}</div>
+        <div className="flex-1 p-4 pb-24 sm:p-6 md:p-8">{children}</div>
       </SidebarInset>
     </>
   );
