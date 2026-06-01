@@ -1,6 +1,6 @@
 import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 900;
 
 export function useIsMobile() {
   // Resolve synchronously on first render so mobile devices don't flash the

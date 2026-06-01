@@ -34,7 +34,7 @@ export default function ProjectsList() {
           actions={
             <button
               onClick={() => setLocation("/admin/projects/new")}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               <Plus className="h-3.5 w-3.5" /> New Project
@@ -54,7 +54,7 @@ export default function ProjectsList() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-9 pr-4 py-2.5 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+              className="w-full pl-9 pr-4 py-3 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
             />
           </div>
           <select
@@ -63,7 +63,7 @@ export default function ProjectsList() {
               setStatus(e.target.value || undefined);
               setPage(1);
             }}
-            className="bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60"
+            className="bg-input border border-border text-sm text-foreground px-3 py-3 focus:outline-none focus:border-primary/60"
           >
             <option value="">All Statuses</option>
             <option value="lead">Lead</option>
@@ -99,11 +99,11 @@ export default function ProjectsList() {
               <button
                 key={p.id}
                 onClick={() => setLocation(`/admin/projects/${p.id}`)}
-                className="w-full text-left bg-card border border-border/60 p-4 active:bg-primary/5 transition-colors"
+                className="w-full text-left bg-card border border-border/60 p-4 md:p-5 active:bg-primary/5 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
+                    <p className="text-sm md:text-base font-semibold text-foreground truncate">
                       {p.name}
                     </p>
                     {p.city && (
@@ -179,7 +179,7 @@ export default function ProjectsList() {
                 <button
                   disabled={page === 1}
                   onClick={() => setPage(p => p - 1)}
-                  className="text-xs px-4 py-2.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors active:scale-95"
+                  className="text-xs px-4 py-3 min-h-11 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors active:scale-95"
                 >
                   ← Prev
                 </button>
@@ -190,7 +190,7 @@ export default function ProjectsList() {
                 <button
                   disabled={page * 20 >= (data?.total ?? 0)}
                   onClick={() => setPage(p => p + 1)}
-                  className="text-xs px-4 py-2.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors active:scale-95"
+                  className="text-xs px-4 py-3 min-h-11 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors active:scale-95"
                 >
                   Next →
                 </button>
@@ -229,7 +229,7 @@ export default function ProjectsList() {
                       onClick={() => setLocation(`/admin/projects/${p.id}`)}
                       className="border-b border-border/30 hover:bg-primary/5 cursor-pointer transition-colors"
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <p className="font-medium text-foreground">{p.name}</p>
                         {p.city && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
@@ -238,19 +238,19 @@ export default function ProjectsList() {
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="px-4 py-4 text-muted-foreground">
                         {(p as any).clients?.name ?? "—"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <StatusBadge status={p.status} />
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="px-4 py-4 text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
                           {fmt(p.estimated_budget)}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-1.5 bg-input rounded-full overflow-hidden">
                             <div
@@ -265,7 +265,7 @@ export default function ProjectsList() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-4 text-right">
                         <span className="text-xs text-primary hover:underline">
                           View →
                         </span>
@@ -286,14 +286,14 @@ export default function ProjectsList() {
                   <button
                     disabled={page === 1}
                     onClick={() => setPage(p => p - 1)}
-                    className="text-xs px-3 py-1.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
+                    className="text-xs px-4 py-3 min-h-11 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
                   >
                     ← Prev
                   </button>
                   <button
                     disabled={page * 20 >= (data?.total ?? 0)}
                     onClick={() => setPage(p => p + 1)}
-                    className="text-xs px-3 py-1.5 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
+                    className="text-xs px-4 py-3 min-h-11 border border-border/60 disabled:opacity-40 hover:border-primary/40 transition-colors"
                   >
                     Next →
                   </button>

@@ -51,16 +51,16 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <div className="bg-card border border-border/60 p-5">
+    <div className="bg-card border border-border/60 p-5 md:p-6">
       <div className="flex items-start justify-between mb-4">
         <p
-          className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground"
+          className="text-[10px] md:text-xs font-semibold tracking-[0.18em] uppercase text-muted-foreground"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
           {label}
         </p>
-        <div className="h-8 w-8 border border-primary/30 flex items-center justify-center">
-          <Icon className="h-4 w-4 text-primary" />
+        <div className="h-8 w-8 md:h-10 md:w-10 border border-primary/30 flex items-center justify-center">
+          <Icon className="h-4 w-4 md:h-5 md:w-5 text-primary" />
         </div>
       </div>
       <p
@@ -150,7 +150,7 @@ function LeadScoringPanel() {
     <div className="bg-card border border-border/60">
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between p-5"
+        className="w-full flex items-center justify-between p-5 md:p-6 min-h-14"
       >
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />
@@ -197,7 +197,7 @@ function LeadScoringPanel() {
                 value={(form as any)[key]}
                 onChange={f(key as keyof typeof form)}
                 placeholder={placeholder}
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
+                className="px-3 py-3 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
               />
             ))}
             <textarea
@@ -205,14 +205,14 @@ function LeadScoringPanel() {
               onChange={f("message")}
               placeholder="Lead message or project description…"
               rows={2}
-              className="sm:col-span-2 px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors"
+              className="sm:col-span-2 px-3 py-3 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors"
             />
           </div>
 
           <button
             onClick={scoreALead}
             disabled={loading || !form.name}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
             {loading ? (
@@ -400,14 +400,14 @@ export default function CommandCenter() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setLocation("/admin/field-reports/new")}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               <Plus className="h-3.5 w-3.5" /> Field Report
             </button>
             <button
               onClick={() => setLocation("/admin/projects")}
-              className="flex items-center gap-2 border border-border/60 text-muted-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
+              className="flex items-center gap-2 border border-border/60 text-muted-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               <ClipboardList className="h-3.5 w-3.5" /> New Project
@@ -490,7 +490,7 @@ export default function CommandCenter() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           <StatCard
             icon={ClipboardList}
             label="Total Projects"
