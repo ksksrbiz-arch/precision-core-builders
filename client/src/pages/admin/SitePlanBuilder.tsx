@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -521,11 +522,16 @@ export default function SitePlanBuilder() {
   const [activeStampCategory, setActiveStampCategory] = useState<string | null>(
     null
   );
+  const [operationsTab, setOperationsTab] = useState<"library" | "plans">(
+    "library"
+  );
   const [showStampPanel, setShowStampPanel] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
   const isMobile = useIsMobile();
+  const isDesktop = !isMobile && !isTablet;
 
   const { data: savedPlans } = trpc.sitePlans.list.useQuery({});
   const createPlan = trpc.sitePlans.create.useMutation();
@@ -547,6 +553,33 @@ export default function SitePlanBuilder() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateViewportMode = () => {
+      const width = window.innerWidth;
+      setIsTablet(width >= 900 && width < 1280);
+    };
+    updateViewportMode();
+    window.addEventListener("resize", updateViewportMode);
+    return () => window.removeEventListener("resize", updateViewportMode);
+  }, []);
+
+  useEffect(() => {
+    if (!activeStampCategory) {
+      setActiveStampCategory(CONSTRUCTION_STAMPS[0]?.name ?? null);
+    }
+  }, [activeStampCategory]);
+
+  useEffect(() => {
+    if (isDesktop) {
+      setShowStampPanel(true);
+      return;
+    }
+    if (isMobile) {
+      setShowStampPanel(false);
+    }
+  }, [isDesktop, isMobile]);
 
   const handleSave = useCallback(async () => {
     if (!excalidrawAPI) return;
@@ -684,6 +717,28 @@ export default function SitePlanBuilder() {
     [deletePlan, activePlanId, utils, addToast]
   );
 
+  const handleCreatePlan = useCallback(() => {
+    setActivePlanId(null);
+    setPlanName("Untitled Site Plan");
+    if (excalidrawAPI) {
+      excalidrawAPI.updateScene({ elements: [] });
+    }
+    if (isMobile) setShowStampPanel(false);
+  }, [excalidrawAPI, isMobile]);
+
+  const handleToggleGrid = useCallback(() => {
+    if (!excalidrawAPI) return;
+    const current = excalidrawAPI.getAppState();
+    excalidrawAPI.updateScene({
+      appState: { gridSize: current.gridSize ? null : 20 },
+    });
+  }, [excalidrawAPI]);
+
+  const handleToggleOperations = useCallback(() => {
+    if (isDesktop) return;
+    setShowStampPanel(prev => !prev);
+  }, [isDesktop]);
+
   const handleExportPNG = useCallback(async () => {
     if (!excalidrawAPI) return;
     try {
@@ -726,6 +781,21 @@ export default function SitePlanBuilder() {
     }
   }, [excalidrawAPI, planName]);
 
+  const handleExportExcalidraw = useCallback(() => {
+    if (!excalidrawAPI) return;
+    const data = JSON.stringify({
+      elements: excalidrawAPI.getSceneElements(),
+      appState: excalidrawAPI.getAppState(),
+    });
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${planName.replace(/\s+/g, "-").toLowerCase()}.excalidraw`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [excalidrawAPI, planName]);
+
   const addStampToCanvas = useCallback(
     (stamp: StampItem) => {
       if (!excalidrawAPI) return;
@@ -748,284 +818,93 @@ export default function SitePlanBuilder() {
     [excalidrawAPI]
   );
 
+  const activeCategory =
+    CONSTRUCTION_STAMPS.find(cat => cat.name === activeStampCategory) ??
+    CONSTRUCTION_STAMPS[0];
+  const isOperationsVisible = isDesktop || showStampPanel;
+
   return (
     <DashboardLayout>
-      {/*
-        Mobile height: 100dvh minus sticky header (3.5rem) + bottom nav (4rem) + main padding (2rem) + gap buffer (0.5rem) = 10rem total.
-        Desktop: original 2rem subtraction (for main padding only; no bottom nav or sticky topbar).
-      */}
-      <div className="flex flex-col h-[calc(100dvh-10rem)] sm:h-[calc(100vh-2rem)] gap-2 sm:gap-3">
-        {/* ── Top toolbar ──────────────────────────────────────────── */}
-        {/* Mobile: two rows (name + scrollable buttons) */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-1">
-          {/* Row 1: Plan name */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="flex items-center gap-2 bg-card/80 backdrop-blur border border-border/50 rounded-lg px-3 py-1.5 flex-1 min-w-0">
-              <Pencil className="h-4 w-4 text-amber-500 shrink-0" />
-              <Input
-                value={planName}
-                onChange={e => setPlanName(e.target.value)}
-                className="border-0 bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 w-full sm:w-[200px] md:w-[280px]"
-              />
-            </div>
+      <div className="flex flex-col gap-2 sm:gap-3 h-[calc(100dvh-10rem)] sm:h-[calc(100vh-2rem)]">
+        <div className="flex flex-col gap-2 px-1">
+          <div className="flex items-center gap-2 bg-card/80 backdrop-blur border border-border/50 rounded-lg px-3 py-2">
+            <Pencil className="h-4 w-4 text-amber-500 shrink-0" />
+            <Input
+              value={planName}
+              onChange={e => setPlanName(e.target.value)}
+              aria-label="Site plan name"
+              className="border-0 bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 w-full"
+            />
           </div>
 
-          {/* Action buttons — scrollable row on mobile, inline on desktop */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0 shrink-0">
-            {/* Stamp Library Toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={showStampPanel ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowStampPanel(!showStampPanel)}
-                  className="gap-1.5 shrink-0"
-                >
-                  <Stamp className="h-4 w-4" />
-                  <span className="hidden md:inline">Stamps</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Construction element library</TooltipContent>
-            </Tooltip>
-
-            {/* Grid Toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => {
-                    if (excalidrawAPI) {
-                      const current = excalidrawAPI.getAppState();
-                      excalidrawAPI.updateScene({
-                        appState: { gridSize: current.gridSize ? null : 20 },
-                      });
-                    }
-                  }}
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Toggle grid</TooltipContent>
-            </Tooltip>
-
-            <div className="w-px h-6 bg-border/50 mx-1 shrink-0" />
-
-            {/* Save */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <Button
+              variant={isOperationsVisible ? "default" : "outline"}
+              onClick={handleToggleOperations}
+              disabled={isDesktop}
+              aria-pressed={isOperationsVisible}
+              className="h-10 gap-2"
+            >
+              <HardHat className="h-4 w-4" />
+              Operations
+            </Button>
+            <Button onClick={handleSave} disabled={saving} className="h-10 gap-2">
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : "Save"}
+            </Button>
             <Button
               variant="outline"
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-              className="gap-1.5 shrink-0"
+              onClick={handleCreatePlan}
+              className="h-10 gap-2"
+              aria-label="Create new site plan"
             >
-              <Save className="h-4 w-4" />
-              <span className="hidden md:inline">
-                {saving ? "Saving..." : "Save"}
-              </span>
+              <Plus className="h-4 w-4" />
+              New
             </Button>
-
-            {/* Export dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-1.5 shrink-0"
+                  className="h-10 gap-2 justify-between"
+                  aria-label="More site plan actions"
                 >
-                  <Download className="h-4 w-4" />
-                  <span className="hidden md:inline">Export</span>
-                  <ChevronDown className="h-3 w-3" />
+                  More
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Export</DropdownMenuLabel>
                 <DropdownMenuItem onClick={handleExportPNG}>
-                  <FileImage className="h-4 w-4 mr-2" /> Export as PNG
+                  <FileImage className="mr-2 h-4 w-4" />
+                  Export PNG
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportSVG}>
-                  <Layers className="h-4 w-4 mr-2" /> Export as SVG
+                  <Layers className="mr-2 h-4 w-4" />
+                  Export SVG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportExcalidraw}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export .excalidraw
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (excalidrawAPI) {
-                      const data = JSON.stringify({
-                        elements: excalidrawAPI.getSceneElements(),
-                        appState: excalidrawAPI.getAppState(),
-                      });
-                      const blob = new Blob([data], {
-                        type: "application/json",
-                      });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${planName.replace(/\s+/g, "-").toLowerCase()}.excalidraw`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }
-                  }}
-                >
-                  <Download className="h-4 w-4 mr-2" /> Export as .excalidraw
+                <DropdownMenuLabel>Canvas</DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleToggleGrid}>
+                  <Grid3X3 className="mr-2 h-4 w-4" />
+                  Toggle grid
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share with client
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Share — hide on very small screens to avoid overflow */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="hidden sm:flex shrink-0"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Share with client</TooltipContent>
-            </Tooltip>
           </div>
         </div>
 
-        {/* ── Main content ─────────────────────────────────────────── */}
-        <div className="flex gap-3 flex-1 min-h-0 relative">
-          {/* Stamp Library Panel — sidebar on desktop, bottom sheet overlay on mobile */}
-          {showStampPanel && (
-            <div
-              className={
-                isMobile
-                  ? // 65% gives enough room to see stamps + saved plans without covering the whole canvas
-                    "absolute inset-x-0 bottom-0 z-20 max-h-[65%] bg-card border-t border-border/50 rounded-t-2xl overflow-hidden flex flex-col shadow-2xl"
-                  : "w-56 shrink-0 bg-card/80 backdrop-blur border border-border/50 rounded-xl overflow-hidden flex flex-col"
-              }
-            >
-              <div className="p-3 border-b border-border/50 flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <HardHat className="h-3.5 w-3.5 text-amber-500" />
-                  Construction Library
-                </h3>
-                {isMobile && (
-                  <button
-                    onClick={() => setShowStampPanel(false)}
-                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Close panel"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                {CONSTRUCTION_STAMPS.map(cat => (
-                  <div key={cat.name}>
-                    <button
-                      onClick={() =>
-                        setActiveStampCategory(
-                          activeStampCategory === cat.name ? null : cat.name
-                        )
-                      }
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors ${
-                        activeStampCategory === cat.name
-                          ? "bg-primary/10 text-primary"
-                          : "hover:bg-muted/50 text-foreground/80"
-                      }`}
-                    >
-                      <span>{cat.icon}</span>
-                      <span className="font-medium">{cat.name}</span>
-                      <ChevronDown
-                        className={`h-3 w-3 ml-auto transition-transform ${
-                          activeStampCategory === cat.name ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-                    {activeStampCategory === cat.name && (
-                      <div className="ml-2 mt-1 space-y-0.5">
-                        {cat.items.map(stamp => (
-                          <button
-                            key={stamp.label}
-                            onClick={() => {
-                              addStampToCanvas(stamp);
-                              if (isMobile) setShowStampPanel(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs hover:bg-muted/80 transition-colors text-foreground/70 hover:text-foreground active:bg-muted"
-                          >
-                            <span className="text-base">{stamp.emoji}</span>
-                            <span>{stamp.label}</span>
-                            <Plus className="h-3 w-3 ml-auto opacity-0 group-hover:opacity-100" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Saved Plans */}
-              <div className="border-t border-border/50 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <FolderOpen className="h-3.5 w-3.5" />
-                  Saved Plans
-                </h4>
-                <div className="space-y-1">
-                  {(savedPlans ?? []).length === 0 && (
-                    <p className="text-[10px] text-muted-foreground/60 px-2 py-1">
-                      No saved plans yet.
-                    </p>
-                  )}
-                  {(savedPlans ?? []).map(plan => (
-                    <div
-                      key={plan.id}
-                      className={`group flex items-center gap-1 rounded-md hover:bg-muted/50 transition-colors ${
-                        activePlanId === plan.id ? "bg-primary/10" : ""
-                      }`}
-                    >
-                      <button
-                        className="flex-1 text-left px-2 py-1.5 min-w-0"
-                        onClick={() => {
-                          handleLoadPlan(plan.id, plan.name);
-                          if (isMobile) setShowStampPanel(false);
-                        }}
-                      >
-                        <p
-                          className={`text-xs font-medium truncate ${activePlanId === plan.id ? "text-primary" : ""}`}
-                        >
-                          {plan.name}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {new Date(plan.updated_at).toLocaleDateString()}
-                        </p>
-                      </button>
-                      <button
-                        onClick={() => handleDeletePlan(plan.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-destructive transition-all mr-1 flex-shrink-0"
-                        title="Delete plan"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {/* New plan button */}
-                  <button
-                    onClick={() => {
-                      setActivePlanId(null);
-                      setPlanName("Untitled Site Plan");
-                      if (excalidrawAPI) {
-                        excalidrawAPI.updateScene({ elements: [] });
-                      }
-                      if (isMobile) setShowStampPanel(false);
-                    }}
-                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors mt-1 border border-dashed border-border/50"
-                  >
-                    <Plus className="h-3 w-3" /> New Plan
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Excalidraw Canvas */}
+        <div className="flex-1 min-h-0 relative">
           <div
             ref={containerRef}
-            className="flex-1 min-h-0 rounded-xl overflow-hidden border border-border/50 bg-card/40"
+            className="h-full rounded-xl overflow-hidden border border-border/50 bg-card/40"
           >
             {Excalidraw ? (
               <Excalidraw
@@ -1042,7 +921,6 @@ export default function SitePlanBuilder() {
                     currentItemRoughness: 1,
                   },
                   elements: [
-                    // Starter template: a basic room outline
                     {
                       type: "rectangle",
                       x: 200,
@@ -1085,7 +963,7 @@ export default function SitePlanBuilder() {
                 UIOptions={{
                   canvasActions: {
                     loadScene: true,
-                    export: false, // We handle export ourselves
+                    export: false,
                     saveToActiveFile: false,
                   },
                 }}
@@ -1101,29 +979,179 @@ export default function SitePlanBuilder() {
               </div>
             )}
           </div>
+
+          {isOperationsVisible && !isDesktop && (
+            <button
+              type="button"
+              className="absolute inset-0 z-20 bg-background/40 backdrop-blur-[1px]"
+              aria-label="Close operations panel backdrop"
+              onClick={() => setShowStampPanel(false)}
+            />
+          )}
+
+          {isOperationsVisible && (
+            <aside
+              className={
+                isDesktop
+                  ? "absolute right-3 top-3 bottom-3 z-20 w-[360px] bg-card/95 border border-border/60 rounded-xl shadow-xl flex flex-col"
+                  : isTablet
+                    ? "absolute right-3 top-3 bottom-3 z-30 w-[340px] bg-card/95 border border-border/60 rounded-xl shadow-2xl flex flex-col"
+                    : "absolute inset-x-0 bottom-0 z-30 max-h-[72%] bg-card border-t border-border/60 rounded-t-2xl shadow-2xl flex flex-col pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+              }
+            >
+              <div className="px-3 pt-3 pb-2 border-b border-border/50 flex items-center justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <HardHat className="h-3.5 w-3.5 text-amber-500" />
+                  Operations
+                </h3>
+                {!isDesktop && (
+                  <button
+                    onClick={() => setShowStampPanel(false)}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    aria-label="Close operations panel"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="px-3 py-2 border-b border-border/50 flex gap-2">
+                <Button
+                  variant={operationsTab === "library" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 h-9"
+                  onClick={() => setOperationsTab("library")}
+                  aria-pressed={operationsTab === "library"}
+                >
+                  <Stamp className="h-4 w-4 mr-1.5" />
+                  Library
+                </Button>
+                <Button
+                  variant={operationsTab === "plans" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 h-9"
+                  onClick={() => setOperationsTab("plans")}
+                  aria-pressed={operationsTab === "plans"}
+                >
+                  <FolderOpen className="h-4 w-4 mr-1.5" />
+                  Saved
+                </Button>
+              </div>
+
+              {operationsTab === "library" ? (
+                <div
+                  className={
+                    isMobile
+                      ? "flex-1 overflow-y-auto p-2 space-y-1"
+                      : "flex-1 min-h-0 grid grid-cols-[148px_1fr]"
+                  }
+                >
+                  <div className="overflow-y-auto p-2 space-y-1 border-r border-border/40">
+                    {CONSTRUCTION_STAMPS.map(cat => (
+                      <button
+                        key={cat.name}
+                        onClick={() => setActiveStampCategory(cat.name)}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
+                          activeCategory?.name === cat.name
+                            ? "bg-primary/12 text-primary border border-primary/30"
+                            : "hover:bg-muted/60 text-foreground/80 border border-transparent"
+                        }`}
+                        aria-pressed={activeCategory?.name === cat.name}
+                      >
+                        <span>{cat.icon}</span>
+                        <span className="font-medium truncate">{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="overflow-y-auto p-2 space-y-1.5">
+                    {activeCategory?.items.map(stamp => (
+                      <button
+                        key={stamp.label}
+                        onClick={() => {
+                          addStampToCanvas(stamp);
+                          if (isMobile) setShowStampPanel(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-sm hover:bg-muted/80 transition-colors text-foreground/80 hover:text-foreground active:bg-muted border border-transparent hover:border-border/40"
+                        aria-label={`Add ${stamp.label}`}
+                      >
+                        <span className="text-base">{stamp.emoji}</span>
+                        <span className="truncate">{stamp.label}</span>
+                        <Plus className="h-3.5 w-3.5 ml-auto" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  {(savedPlans ?? []).length === 0 && (
+                    <p className="text-xs text-muted-foreground px-2 py-1">
+                      No saved plans yet.
+                    </p>
+                  )}
+                  {(savedPlans ?? []).map(plan => (
+                    <div
+                      key={plan.id}
+                      className={`group flex items-center gap-1 rounded-md border transition-colors ${
+                        activePlanId === plan.id
+                          ? "bg-primary/10 border-primary/30"
+                          : "bg-muted/20 border-border/40 hover:bg-muted/50"
+                      }`}
+                    >
+                      <button
+                        className="flex-1 text-left px-3 py-2 min-w-0"
+                        onClick={() => {
+                          handleLoadPlan(plan.id, plan.name);
+                          if (isMobile) setShowStampPanel(false);
+                        }}
+                      >
+                        <p
+                          className={`text-sm font-medium truncate ${activePlanId === plan.id ? "text-primary" : ""}`}
+                        >
+                          {plan.name}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Updated {new Date(plan.updated_at).toLocaleDateString()}
+                        </p>
+                      </button>
+                      <button
+                        onClick={() => handleDeletePlan(plan.id)}
+                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-2 text-muted-foreground hover:text-destructive transition-all mr-1 flex-shrink-0 rounded"
+                        title="Delete plan"
+                        aria-label={`Delete ${plan.name}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleCreatePlan}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors mt-1 border border-dashed border-border/60"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New Plan
+                  </button>
+                </div>
+              )}
+            </aside>
+          )}
         </div>
 
-        {/* ── Bottom status bar ─────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-3 py-1.5 bg-card/60 backdrop-blur border border-border/30 rounded-lg text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-between px-3 py-2 bg-card/60 backdrop-blur border border-border/30 rounded-lg text-[11px] sm:text-xs text-muted-foreground">
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="flex items-center gap-1">
               <Ruler className="h-3 w-3" />
-              <span className="hidden sm:inline">Grid: 20px</span>
+              <span>Grid: 20px</span>
             </span>
-            <span className="hidden sm:flex items-center gap-1">
-              <Zap className="h-3 w-3 text-amber-500" /> Hand-drawn mode
-            </span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span>
-              {excalidrawAPI
-                ? `${excalidrawAPI.getSceneElements?.()?.length || 0} elements`
-                : "—"}
-            </span>
-            <span className="text-amber-500/80 hidden sm:inline">
-              Precision Core Builders
+            <span className="hidden md:flex items-center gap-1">
+              <Zap className="h-3 w-3 text-amber-500" />
+              Hand-drawn mode
             </span>
           </div>
+          <span>
+            {excalidrawAPI
+              ? `${excalidrawAPI.getSceneElements?.()?.length || 0} elements`
+              : "—"}
+          </span>
         </div>
       </div>
     </DashboardLayout>
