@@ -6,16 +6,29 @@ page loads but shows no data, actions fail, and protected calls return
 "unauthorized". This directory contains everything needed to provision the
 database end-to-end.
 
+## How it gets applied (Supabase Branching)
+
+This repo is connected to Supabase via the GitHub integration, which
+automatically runs any migrations in **`supabase/migrations/`**:
+
+- On a **pull request**, the migrations are applied to that PR's ephemeral
+  **preview branch** (a schema-only copy — no production data).
+- On **merge to `main`**, the migrations are applied to the **production**
+  project.
+
+So the schema is provisioned automatically — no manual SQL step is required
+for the normal flow.
+
 ## Files
 
-| File               | Purpose                                                                                                                                                          |
-| :----------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setup.sql`        | **Consolidated, idempotent** setup — enums, 19 tables, FKs, indexes, RLS policies, and the admin-role allowlist + auth-sync trigger. Safe to run multiple times. |
-| `schema.ts`        | Drizzle ORM schema (source of truth for the table definitions).                                                                                                  |
-| `rls-policies.sql` | Standalone RLS policies (already folded into `setup.sql`).                                                                                                       |
-| `migrations/`      | Incremental Drizzle migrations. `0000_full_baseline.sql` is the base.                                                                                            |
+| File                                             | Purpose                                                                                                                                                             |
+| :----------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `migrations/<ts>_init_precision_core_schema.sql` | **Canonical** migration applied by Supabase Branching — enums, 19 tables, FKs, indexes, RLS policies, and the admin-role allowlist + auth-sync trigger. Idempotent. |
+| `setup.sql`                                      | Manual fallback — same SQL as the migration, for pasting into the SQL Editor for disaster recovery or a project not wired to branching.                             |
+| `schema.ts`                                      | Drizzle ORM schema (source of truth for the table definitions).                                                                                                     |
+| `rls-policies.sql`                               | Standalone RLS policies (also folded into the migration / `setup.sql`).                                                                                             |
 
-## One-time setup
+## Manual fallback (only if not using branching)
 
 1. Open the Supabase project → **SQL Editor**.
 2. Paste the entire contents of `setup.sql` and **Run**.
