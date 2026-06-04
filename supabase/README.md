@@ -8,12 +8,12 @@ database end-to-end.
 
 ## Files
 
-| File | Purpose |
-| :--- | :--- |
-| `setup.sql` | **Consolidated, idempotent** setup — enums, 19 tables, FKs, indexes, RLS policies, and the admin-role allowlist + auth-sync trigger. Safe to run multiple times. |
-| `schema.ts` | Drizzle ORM schema (source of truth for the table definitions). |
-| `rls-policies.sql` | Standalone RLS policies (already folded into `setup.sql`). |
-| `migrations/` | Incremental Drizzle migrations. `0000_full_baseline.sql` is the base. |
+| File               | Purpose                                                                                                                                                          |
+| :----------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup.sql`        | **Consolidated, idempotent** setup — enums, 19 tables, FKs, indexes, RLS policies, and the admin-role allowlist + auth-sync trigger. Safe to run multiple times. |
+| `schema.ts`        | Drizzle ORM schema (source of truth for the table definitions).                                                                                                  |
+| `rls-policies.sql` | Standalone RLS policies (already folded into `setup.sql`).                                                                                                       |
+| `migrations/`      | Incremental Drizzle migrations. `0000_full_baseline.sql` is the base.                                                                                            |
 
 ## One-time setup
 
@@ -38,19 +38,19 @@ database end-to-end.
 The serverless functions (`netlify/functions/trpc.ts`, `server/db.ts`) need
 these set in the Netlify dashboard (Site settings → Environment variables):
 
-| Variable | Used for |
-| :--- | :--- |
-| `SUPABASE_URL` | Supabase project URL (e.g. `https://<ref>.supabase.co`) |
+| Variable                    | Used for                                                                  |
+| :-------------------------- | :------------------------------------------------------------------------ |
+| `SUPABASE_URL`              | Supabase project URL (e.g. `https://<ref>.supabase.co`)                   |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin DB access (bypasses RLS). **Never expose client-side.** |
-| `VITE_SUPABASE_URL` | Client-side Supabase URL (same as above) |
-| `VITE_SUPABASE_ANON_KEY` | Client-side anon key for browser auth |
+| `VITE_SUPABASE_URL`         | Client-side Supabase URL (same as above)                                  |
+| `VITE_SUPABASE_ANON_KEY`    | Client-side anon key for browser auth                                     |
 
 Optional, depending on which features Eric uses:
 
-| Variable | Feature |
-| :--- | :--- |
-| `ANTHROPIC_API_KEY` | AI chat, search, vision studio, estimator, report generation |
-| `OPENWEATHER_API_KEY` | Weather-responsive scheduling |
+| Variable              | Feature                                                        |
+| :-------------------- | :------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`   | AI chat, search, vision studio, estimator, report generation   |
+| `OPENWEATHER_API_KEY` | Weather-responsive scheduling                                  |
 | `ADMIN_SESSION_TOKEN` | Optional break-glass admin token (header auth without a login) |
 
 After setting variables, trigger a redeploy so the functions pick them up.
@@ -62,5 +62,3 @@ After setting variables, trigger a redeploy so the functions pick them up.
 2. Create a client, then a project — the lists should populate.
 3. If a page is still blank, check the function logs in Netlify and the
    Supabase **Logs → API** view for RLS or missing-table errors.
-</content>
-</invoke>
