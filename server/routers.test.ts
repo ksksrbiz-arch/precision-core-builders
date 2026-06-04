@@ -401,6 +401,38 @@ describe("Sub-Contractors Router", () => {
       })
     ).rejects.toThrow();
   });
+
+  it("subContractors.sendBriefing requires a positive projectId", async () => {
+    const caller = appRouter.createCaller(
+      createMockContext("admin-1", "admin")
+    );
+
+    // Zero/negative projectId is rejected so the UI cannot dispatch
+    // a briefing without picking a real project (regression test for
+    // hardcoded projectId:1 bug fixed in June 2026).
+    await expect(
+      caller.subContractors.sendBriefing({
+        subContractorId: 5,
+        projectId: 0,
+        scheduleDetails: "See schedule",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("subContractors.sendBriefing accepts a valid projectId", async () => {
+    const caller = appRouter.createCaller(
+      createMockContext("admin-1", "admin")
+    );
+
+    // With the mocked db it just needs to resolve without a Zod error.
+    await expect(
+      caller.subContractors.sendBriefing({
+        subContractorId: 5,
+        projectId: 42,
+        scheduleDetails: "Mon-Wed 7am framing",
+      })
+    ).resolves.toBeDefined();
+  });
 });
 
 // ─── Finish Selections Router Tests ────────────────────────
