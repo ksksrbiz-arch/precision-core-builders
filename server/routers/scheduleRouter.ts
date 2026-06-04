@@ -201,7 +201,7 @@ export const scheduleRouter = router({
       for (const { id, order } of input.updates) {
         await db
           .from("schedule_items")
-          .update({ order })
+          .update({ sort_order: order })
           .eq("id", id)
           .eq("project_id", input.projectId);
       }

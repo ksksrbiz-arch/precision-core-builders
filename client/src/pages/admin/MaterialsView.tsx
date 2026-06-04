@@ -70,7 +70,16 @@ export default function MaterialsView() {
     pageSize: 100,
   });
   const utils = trpc.useUtils();
-  const appendLedger = trpc.ledger.append.useMutation();
+  const appendLedger = trpc.ledger.append.useMutation({
+    onError: err => {
+      addToast({
+        type: "error",
+        title: "Audit Log Failed",
+        message: `PO generated but ledger entry failed: ${err.message}`,
+        duration: 8000,
+      });
+    },
+  });
 
   // Live updates: deliveries marked received from another device show up here.
   useRealtimeTable({

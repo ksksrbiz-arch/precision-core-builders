@@ -88,13 +88,18 @@ function KPICard({
 
 export default function Analytics() {
   const [, setLocation] = useLocation();
-  const { data: stats } = trpc.projects.stats.useQuery();
-  const { data: allProjects } = trpc.projects.list.useQuery({ pageSize: 100 });
-  const { data: weeklyReports } = trpc.fieldReports.weeklyStats.useQuery();
-  const { data: shortages } = trpc.materials.list.useQuery({
-    shortagesOnly: true,
-    pageSize: 100,
-  });
+  const { data: stats, isError: statsError } = trpc.projects.stats.useQuery();
+  const { data: allProjects, isError: projectsError } =
+    trpc.projects.list.useQuery({ pageSize: 100 });
+  const { data: weeklyReports, isError: reportsError } =
+    trpc.fieldReports.weeklyStats.useQuery();
+  const { data: shortages, isError: shortagesError } =
+    trpc.materials.list.useQuery({
+      shortagesOnly: true,
+      pageSize: 100,
+    });
+  const anyError =
+    statsError || projectsError || reportsError || shortagesError;
 
   const totalEstimated = stats?.totalEstimated ?? 0;
   const totalActual = stats?.totalActual ?? 0;
@@ -159,6 +164,22 @@ export default function Analytics() {
             Profitability, pipeline, and operational trends across all projects.
           </p>
         </div>
+
+        {anyError && (
+          <div className="border border-destructive/40 bg-destructive/5 p-4 mb-6 flex items-start justify-between gap-4">
+            <p className="text-xs text-destructive">
+              Some analytics data could not be loaded. Numbers below may be
+              incomplete.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-[11px] font-bold tracking-widest uppercase text-destructive hover:underline shrink-0"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Reload
+            </button>
+          </div>
+        )}
 
         {/* Portfolio KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

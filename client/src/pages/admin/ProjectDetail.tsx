@@ -50,6 +50,7 @@ export default function ProjectDetail() {
     getInitialTab(search)
   );
   const [editingOverview, setEditingOverview] = useState(false);
+  const [draftProgress, setDraftProgress] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{
     name: string;
     description: string;
@@ -68,7 +69,12 @@ export default function ProjectDetail() {
   } | null>(null);
 
   const projectId = parseInt(id ?? "0");
-  const { data: project, isLoading } = trpc.projects.getById.useQuery({
+  const {
+    data: project,
+    isLoading,
+    isError: isProjectError,
+    refetch: refetchProject,
+  } = trpc.projects.getById.useQuery({
     id: projectId,
   });
   const { data: reports } = trpc.fieldReports.list.useQuery(
@@ -226,6 +232,33 @@ export default function ProjectDetail() {
         <div className="p-8 text-muted-foreground text-sm">Loading…</div>
       </DashboardLayout>
     );
+  if (isProjectError)
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto p-8 text-center">
+          <p className="text-sm text-destructive mb-3">
+            Could not load this project. This may be a temporary network or
+            authentication issue.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => refetchProject()}
+              className="text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => setLocation("/admin/projects")}
+              className="text-xs font-bold tracking-widest uppercase border border-border text-muted-foreground px-4 py-2 hover:text-foreground transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Back to Projects
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
   if (!project)
     return (
       <DashboardLayout>
@@ -310,13 +343,15 @@ export default function ProjectDetail() {
               Project Completion
             </p>
             <span className="text-lg font-bold text-primary">
-              {project.completion_percent ?? 0}%
+              {draftProgress ?? project.completion_percent ?? 0}%
             </span>
           </div>
           <div className="h-2 bg-input rounded-full overflow-hidden mb-3">
             <div
               className="h-full bg-primary rounded-full transition-all duration-500"
-              style={{ width: `${project.completion_percent ?? 0}%` }}
+              style={{
+                width: `${draftProgress ?? project.completion_percent ?? 0}%`,
+              }}
             />
           </div>
           <input
@@ -324,13 +359,38 @@ export default function ProjectDetail() {
             min="0"
             max="100"
             step="5"
-            value={project.completion_percent ?? 0}
-            onChange={e =>
-              updateProgress.mutate({
-                id: projectId,
-                completionPercent: parseInt(e.target.value),
-              })
-            }
+            value={draftProgress ?? project.completion_percent ?? 0}
+            onChange={e => setDraftProgress(parseInt(e.target.value))}
+            onMouseUp={e => {
+              const next = parseInt((e.target as HTMLInputElement).value);
+              if (next !== (project.completion_percent ?? 0)) {
+                updateProgress.mutate({
+                  id: projectId,
+                  completionPercent: next,
+                });
+              }
+              setDraftProgress(null);
+            }}
+            onTouchEnd={e => {
+              const next = parseInt((e.target as HTMLInputElement).value);
+              if (next !== (project.completion_percent ?? 0)) {
+                updateProgress.mutate({
+                  id: projectId,
+                  completionPercent: next,
+                });
+              }
+              setDraftProgress(null);
+            }}
+            onKeyUp={e => {
+              const next = parseInt((e.target as HTMLInputElement).value);
+              if (next !== (project.completion_percent ?? 0)) {
+                updateProgress.mutate({
+                  id: projectId,
+                  completionPercent: next,
+                });
+              }
+              setDraftProgress(null);
+            }}
             className="w-full accent-primary"
           />
         </div>

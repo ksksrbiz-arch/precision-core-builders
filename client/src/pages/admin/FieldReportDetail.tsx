@@ -21,7 +21,12 @@ export default function FieldReportDetail() {
   const [, setLocation] = useLocation();
   const reportId = parseInt(id ?? "0");
 
-  const { data: report, isLoading } = trpc.fieldReports.getById.useQuery(
+  const {
+    data: report,
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.fieldReports.getById.useQuery(
     { id: reportId },
     { enabled: !!reportId && !isNaN(reportId) }
   );
@@ -61,6 +66,34 @@ export default function FieldReportDetail() {
       <DashboardLayout>
         <div className="max-w-4xl mx-auto p-12 text-center text-muted-foreground text-sm">
           Loading…
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto p-12 text-center">
+          <p className="text-sm text-destructive mb-3">
+            Could not load this report. Network or authorization issue.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => refetch()}
+              className="text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => setLocation("/admin/field-reports")}
+              className="text-xs font-bold tracking-widest uppercase border border-border text-muted-foreground px-4 py-2 hover:text-foreground transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Back to Field Reports
+            </button>
+          </div>
         </div>
       </DashboardLayout>
     );
