@@ -249,8 +249,10 @@ const clearDemoData: ActionHandler = async () => {
 const checkDatabaseIntegrity: ActionHandler = async () => {
   const supabase = getSupabase();
 
-  const checks: Record<string, { exists: boolean; count: number; error?: string }> =
-    {};
+  const checks: Record<
+    string,
+    { exists: boolean; count: number; error?: string }
+  > = {};
   const tables = [
     "profiles",
     "projects",
