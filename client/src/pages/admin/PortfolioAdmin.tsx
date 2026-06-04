@@ -5,6 +5,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -69,6 +70,7 @@ export default function PortfolioAdmin() {
   } | null>(null);
   const [brokenCovers, setBrokenCovers] = useState<Record<number, boolean>>({});
   const [coverPreviewBroken, setCoverPreviewBroken] = useState(false);
+  const { addToast } = useToast();
 
   useEffect(() => {
     setCoverPreviewBroken(false);
@@ -151,6 +153,40 @@ export default function PortfolioAdmin() {
   };
 
   const handleSave = () => {
+    // Validate gallery URLs client-side so the server's z.string().url()
+    // rejection doesn't silently drop the entire mutation with a generic
+    // "Create Failed" toast.
+    const galleryUrls = form.galleryImageUrls
+      ? form.galleryImageUrls
+          .split(",")
+          .map((u: string) => u.trim())
+          .filter(Boolean)
+      : [];
+    const invalidUrls: string[] = [];
+    for (const u of galleryUrls) {
+      try {
+        new URL(u);
+      } catch {
+        invalidUrls.push(u);
+      }
+    }
+    if (form.coverImageUrl) {
+      try {
+        new URL(form.coverImageUrl);
+      } catch {
+        invalidUrls.push(form.coverImageUrl);
+      }
+    }
+    if (invalidUrls.length > 0) {
+      addToast({
+        type: "error",
+        title: "Invalid Image URL",
+        message: `Use full URLs (https://…). Bad: ${invalidUrls.slice(0, 2).join(", ")}${invalidUrls.length > 2 ? "…" : ""}`,
+        duration: 8000,
+      });
+      return;
+    }
+
     const payload = {
       title: form.title,
       slug:

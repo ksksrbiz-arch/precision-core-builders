@@ -653,7 +653,7 @@ export default function CommandCenter() {
               <Plus className="h-3.5 w-3.5" /> Field Report
             </button>
             <button
-              onClick={() => setLocation("/admin/projects")}
+              onClick={() => setLocation("/admin/projects/new")}
               className="flex items-center gap-2 border border-border/60 text-muted-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >

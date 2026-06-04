@@ -128,9 +128,7 @@ export default function FieldReportsList() {
                 <button
                   key={report.id}
                   onClick={() =>
-                    setLocation(
-                      `/admin/projects/${report.project_id}?tab=reports`
-                    )
+                    setLocation(`/admin/field-reports/${report.id}`)
                   }
                   className="w-full text-left bg-card border border-border/60 p-5 md:p-6 hover:border-primary/30 hover:bg-primary/[0.02] transition-all"
                 >

@@ -49,6 +49,16 @@ const TRADES = [
 
 export default function SubContractorsList() {
   const [showNew, setShowNew] = useState(false);
+  const [briefingTarget, setBriefingTarget] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [briefingProjectId, setBriefingProjectId] = useState<number | null>(
+    null
+  );
+  const [briefingSchedule, setBriefingSchedule] = useState("See schedule");
+  const [briefingAccess, setBriefingAccess] = useState("");
+  const [briefingSafety, setBriefingSafety] = useState("");
   const [form, setForm] = useState({
     name: "",
     company: "",
@@ -66,6 +76,10 @@ export default function SubContractorsList() {
     isError,
     refetch,
   } = trpc.subContractors.list.useQuery();
+  const { data: projectsData } = trpc.projects.list.useQuery({ pageSize: 100 });
+  const activeProjects = (projectsData?.data ?? []).filter(
+    (p: any) => p.status !== "complete" && p.status !== "archived"
+  );
 
   const createMut = useMutationWithToast(
     trpc.subContractors.create.useMutation(),
@@ -107,6 +121,13 @@ export default function SubContractorsList() {
       success: "Briefing Sent",
       error: "Send Failed",
       errorMessage: "Failed to send briefing. Please try again.",
+      onSuccess: () => {
+        setBriefingTarget(null);
+        setBriefingProjectId(null);
+        setBriefingSchedule("See schedule");
+        setBriefingAccess("");
+        setBriefingSafety("");
+      },
     }
   );
 
@@ -343,11 +364,7 @@ export default function SubContractorsList() {
                 <div className="flex items-center gap-2 pt-3 border-t border-border/40">
                   <button
                     onClick={() =>
-                      briefMut.mutate({
-                        subContractorId: sub.id,
-                        projectId: 1,
-                        scheduleDetails: "See schedule",
-                      })
+                      setBriefingTarget({ id: sub.id, name: sub.name })
                     }
                     disabled={briefMut.isPending}
                     className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-primary hover:text-primary/70 disabled:opacity-50 transition-colors"
@@ -383,6 +400,140 @@ export default function SubContractorsList() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Briefing dialog: requires an explicit project so we don't ship
+            the wrong client/address/scope to subs (was hardcoded to project #1). */}
+        {briefingTarget && (
+          <div
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setBriefingTarget(null)}
+          >
+            <div
+              className="bg-card border border-primary/30 p-6 w-full max-w-md space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div>
+                <p
+                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary mb-1"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Send Briefing
+                </p>
+                <h3
+                  className="text-base font-semibold"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {briefingTarget.name}
+                </h3>
+              </div>
+              <div>
+                <label
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Project *
+                </label>
+                <select
+                  value={briefingProjectId ?? ""}
+                  onChange={e =>
+                    setBriefingProjectId(
+                      e.target.value ? parseInt(e.target.value) : null
+                    )
+                  }
+                  className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
+                >
+                  <option value="">Select a project…</option>
+                  {activeProjects.map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                      {p.address ? ` — ${p.address}` : ""}
+                    </option>
+                  ))}
+                </select>
+                {activeProjects.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    No active projects. Create one before sending a briefing.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Schedule Details *
+                </label>
+                <input
+                  type="text"
+                  value={briefingSchedule}
+                  onChange={e => setBriefingSchedule(e.target.value)}
+                  placeholder="e.g. Mon-Wed 7am-3pm framing"
+                  className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
+                />
+              </div>
+              <div>
+                <label
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Site Access Code
+                </label>
+                <input
+                  type="text"
+                  value={briefingAccess}
+                  onChange={e => setBriefingAccess(e.target.value)}
+                  placeholder="Optional"
+                  className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
+                />
+              </div>
+              <div>
+                <label
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Safety Notes
+                </label>
+                <textarea
+                  value={briefingSafety}
+                  onChange={e => setBriefingSafety(e.target.value)}
+                  placeholder="Optional"
+                  rows={2}
+                  className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60 resize-none"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setBriefingTarget(null)}
+                  className="px-4 py-2 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!briefingProjectId || !briefingSchedule.trim()) return;
+                    briefMut.mutate({
+                      subContractorId: briefingTarget.id,
+                      projectId: briefingProjectId,
+                      scheduleDetails: briefingSchedule.trim(),
+                      siteAccessCode: briefingAccess.trim() || undefined,
+                      safetyNotes: briefingSafety.trim() || undefined,
+                    });
+                  }}
+                  disabled={
+                    !briefingProjectId ||
+                    !briefingSchedule.trim() ||
+                    briefMut.isPending
+                  }
+                  className="px-4 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {briefMut.isPending ? "Sending…" : "Send Briefing"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
