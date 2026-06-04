@@ -144,6 +144,14 @@ export default function ProjectDetail() {
     }
   );
 
+  const commitProgress = (raw: string) => {
+    const next = parseInt(raw);
+    if (Number.isFinite(next) && next !== (project?.completion_percent ?? 0)) {
+      updateProgress.mutate({ id: projectId, completionPercent: next });
+    }
+    setDraftProgress(null);
+  };
+
   const updateProject = useMutationWithToast(
     trpc.projects.update.useMutation(),
     {
@@ -361,36 +369,9 @@ export default function ProjectDetail() {
             step="5"
             value={draftProgress ?? project.completion_percent ?? 0}
             onChange={e => setDraftProgress(parseInt(e.target.value))}
-            onMouseUp={e => {
-              const next = parseInt((e.target as HTMLInputElement).value);
-              if (next !== (project.completion_percent ?? 0)) {
-                updateProgress.mutate({
-                  id: projectId,
-                  completionPercent: next,
-                });
-              }
-              setDraftProgress(null);
-            }}
-            onTouchEnd={e => {
-              const next = parseInt((e.target as HTMLInputElement).value);
-              if (next !== (project.completion_percent ?? 0)) {
-                updateProgress.mutate({
-                  id: projectId,
-                  completionPercent: next,
-                });
-              }
-              setDraftProgress(null);
-            }}
-            onKeyUp={e => {
-              const next = parseInt((e.target as HTMLInputElement).value);
-              if (next !== (project.completion_percent ?? 0)) {
-                updateProgress.mutate({
-                  id: projectId,
-                  completionPercent: next,
-                });
-              }
-              setDraftProgress(null);
-            }}
+            onMouseUp={e => commitProgress(e.currentTarget.value)}
+            onTouchEnd={e => commitProgress(e.currentTarget.value)}
+            onKeyUp={e => commitProgress(e.currentTarget.value)}
             className="w-full accent-primary"
           />
         </div>
