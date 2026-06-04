@@ -154,6 +154,33 @@ describe("platform-health function", () => {
   });
 });
 
+// ─── Platform Actions Function Tests ─────────────────────────
+
+describe("platform-actions function", () => {
+  it("requires adminToken for access", async () => {
+    const { handler } = await import("../platform-actions");
+    const event = mockEvent("POST", { action: "get-stats" });
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("returns normalized action errors", async () => {
+    const { handler } = await import("../platform-actions");
+    const event = mockEvent("POST", {
+      action: "get-stats",
+      adminToken: "pcb-bootstrap-2026",
+    });
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(500);
+    const body = JSON.parse(response.body);
+    expect(body.success).toBe(false);
+    expect(body.message).toContain("Supabase not configured");
+    expect(body.message).not.toMatch(/^Error:/);
+  });
+});
+
 // ─── CORS and Security Tests ────────────────────────────────
 
 describe("CORS and Security Headers", () => {

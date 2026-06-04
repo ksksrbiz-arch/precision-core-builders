@@ -32,6 +32,36 @@ type ActionHandler = (
   params?: Record<string, unknown>
 ) => Promise<Omit<ActionResult, "action" | "durationMs">>;
 
+type SupabaseActionError = {
+  message: string;
+  code?: string;
+};
+
+type TableCheckResult = {
+  exists: boolean;
+  count: number;
+  error?: string;
+};
+
+const NO_ROWS_SUPABASE_ERROR_CODE = "PGRST116";
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
+function throwIfActionError(
+  action: string,
+  operation: string,
+  error: SupabaseActionError | null
+) {
+  if (error) {
+    throw new Error(
+      `${action}: ${operation} failed${error.code ? ` (${error.code})` : ""}: ${error.message}`
+    );
+  }
+}
+
 function getSupabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,11 +75,12 @@ const seedDemoData: ActionHandler = async () => {
   const supabase = getSupabase();
 
   // Check if demo data already exists
-  const { data: existing } = await supabase
+  const { data: existing, error: existingErr } = await supabase
     .from("projects")
     .select("id")
     .eq("name", "Demo: Miller Residence Remodel")
     .limit(1);
+  throwIfActionError("seed-demo-data", "project lookup", existingErr);
 
   if (existing && existing.length > 0) {
     return {
@@ -154,10 +185,11 @@ const clearDemoData: ActionHandler = async () => {
   const supabase = getSupabase();
 
   // Find demo project
-  const { data: projects } = await supabase
+  const { data: projects, error: projectsErr } = await supabase
     .from("projects")
     .select("id, client_id")
     .like("name", "Demo:%");
+  throwIfActionError("clear-demo-data", "project lookup", projectsErr);
 
   if (!projects || projects.length === 0) {
     return {
@@ -172,14 +204,42 @@ const clearDemoData: ActionHandler = async () => {
   ];
 
   // Delete in order (respecting foreign keys)
-  await supabase.from("field_reports").delete().in("project_id", projectIds);
-  await supabase.from("materials").delete().in("project_id", projectIds);
-  await supabase.from("invoices").delete().in("project_id", projectIds);
-  await supabase.from("projects").delete().in("id", projectIds);
+  const { error: fieldReportsDeleteErr } = await supabase
+    .from("field_reports")
+    .delete()
+    .in("project_id", projectIds);
+  throwIfActionError(
+    "clear-demo-data",
+    "field report cleanup",
+    fieldReportsDeleteErr
+  );
+  const { error: materialsDeleteErr } = await supabase
+    .from("materials")
+    .delete()
+    .in("project_id", projectIds);
+  throwIfActionError(
+    "clear-demo-data",
+    "materials cleanup",
+    materialsDeleteErr
+  );
+  const { error: invoicesDeleteErr } = await supabase
+    .from("invoices")
+    .delete()
+    .in("project_id", projectIds);
+  throwIfActionError("clear-demo-data", "invoice cleanup", invoicesDeleteErr);
+  const { error: projectsDeleteErr } = await supabase
+    .from("projects")
+    .delete()
+    .in("id", projectIds);
+  throwIfActionError("clear-demo-data", "project cleanup", projectsDeleteErr);
 
   // Delete demo clients
   if (clientIds.length > 0) {
-    await supabase.from("clients").delete().in("id", clientIds);
+    const { error: clientsDeleteErr } = await supabase
+      .from("clients")
+      .delete()
+      .in("id", clientIds);
+    throwIfActionError("clear-demo-data", "client cleanup", clientsDeleteErr);
   }
 
   return {
@@ -197,7 +257,7 @@ const clearDemoData: ActionHandler = async () => {
 const checkDatabaseIntegrity: ActionHandler = async () => {
   const supabase = getSupabase();
 
-  const checks: Record<string, { exists: boolean; count: number }> = {};
+  const checks: Record<string, TableCheckResult> = {};
   const tables = [
     "profiles",
     "projects",
@@ -209,13 +269,14 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
   ];
 
   for (const table of tables) {
-    const { data, error, count } = await supabase
+    const { error, count } = await supabase
       .from(table)
       .select("id", { count: "exact", head: true });
 
     checks[table] = {
-      exists: !error || error.code === "PGRST116",
+      exists: !error || error.code === NO_ROWS_SUPABASE_ERROR_CODE,
       count: count ?? 0,
+      ...(error ? { error: error.message } : {}),
     };
   }
 
@@ -332,6 +393,10 @@ const getPlatformStats: ActionHandler = async () => {
     supabase.from("field_reports").select("id", { count: "exact" }),
     supabase.from("invoices").select("id, status, amount", { count: "exact" }),
   ]);
+  throwIfActionError("get-stats", "projects query", projects.error);
+  throwIfActionError("get-stats", "clients query", clients.error);
+  throwIfActionError("get-stats", "field reports query", reports.error);
+  throwIfActionError("get-stats", "invoices query", invoices.error);
 
   const activeProjects =
     projects.data?.filter(p => p.status === "in_progress").length ?? 0;
@@ -374,11 +439,12 @@ const createAdminProfile: ActionHandler = async params => {
   if (!email) throw new Error("Email is required");
 
   // Check if profile exists
-  const { data: existing } = await supabase
+  const { data: existing, error: existingErr } = await supabase
     .from("profiles")
     .select("id")
     .eq("email", email)
     .limit(1);
+  throwIfActionError("create-admin", "profile lookup", existingErr);
 
   if (existing && existing.length > 0) {
     return {
@@ -545,7 +611,7 @@ export const handler: Handler = async event => {
   }
 
   const action = body.action;
-  if (!action || !ACTIONS[action]) {
+  if (typeof action !== "string" || !ACTIONS[action]) {
     return {
       statusCode: 400,
       headers,
@@ -574,7 +640,7 @@ export const handler: Handler = async event => {
     const response: ActionResult = {
       success: false,
       action,
-      message: String(err),
+      message: getErrorMessage(err),
       durationMs: Date.now() - start,
     };
 
