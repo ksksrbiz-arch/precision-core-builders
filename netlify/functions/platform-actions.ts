@@ -37,6 +37,14 @@ type SupabaseActionError = {
   code?: string;
 };
 
+type TableCheckResult = {
+  exists: boolean;
+  count: number;
+  error?: string;
+};
+
+const NO_ROWS_SUPABASE_ERROR_CODE = "PGRST116";
+
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   return String(err);
@@ -249,10 +257,7 @@ const clearDemoData: ActionHandler = async () => {
 const checkDatabaseIntegrity: ActionHandler = async () => {
   const supabase = getSupabase();
 
-  const checks: Record<
-    string,
-    { exists: boolean; count: number; error?: string }
-  > = {};
+  const checks: Record<string, TableCheckResult> = {};
   const tables = [
     "profiles",
     "projects",
@@ -269,7 +274,7 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
       .select("id", { count: "exact", head: true });
 
     checks[table] = {
-      exists: !error || error.code === "PGRST116",
+      exists: !error || error.code === NO_ROWS_SUPABASE_ERROR_CODE,
       count: count ?? 0,
       ...(error ? { error: error.message } : {}),
     };
