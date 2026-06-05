@@ -7,7 +7,17 @@ import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
-import { ArrowRight, Phone } from "lucide-react";
+import {
+  ArrowRight,
+  Phone,
+  Search,
+  Handshake,
+  ShieldCheck,
+  Clock,
+  Hammer,
+  type LucideIcon,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 const fadeUp: import("framer-motion").Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -18,9 +28,18 @@ const fadeUp: import("framer-motion").Variants = {
   },
 };
 
-const FAQS = [
+type FaqSection = {
+  category: string;
+  icon: LucideIcon;
+  accent: string;
+  items: { q: string; a: string }[];
+};
+
+const FAQS: FaqSection[] = [
   {
     category: "Working With Us",
+    icon: Handshake,
+    accent: "var(--primary)",
     items: [
       {
         q: "How do I get started?",
@@ -46,6 +65,8 @@ const FAQS = [
   },
   {
     category: "Permits & Compliance",
+    icon: ShieldCheck,
+    accent: "var(--success, #6B8E23)",
     items: [
       {
         q: "Do you handle building permits in Eugene and Lane County?",
@@ -63,6 +84,8 @@ const FAQS = [
   },
   {
     category: "Timing & Costs",
+    icon: Clock,
+    accent: "var(--warning, #D4A574)",
     items: [
       {
         q: "How far out are you scheduling?",
@@ -84,6 +107,8 @@ const FAQS = [
   },
   {
     category: "Project Types",
+    icon: Hammer,
+    accent: "var(--accent, #8B7355)",
     items: [
       {
         q: "What types of projects do you specialize in?",
@@ -101,6 +126,14 @@ const FAQS = [
   },
 ];
 
+/** Stable, URL-safe id from arbitrary text (for section + item anchors). */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export default function FAQ() {
   useSEO({
     title: "FAQ — Licensing, Permits & Process",
@@ -109,7 +142,9 @@ export default function FAQ() {
     canonical: "https://precision-core.netlify.app/faq",
   });
 
-  // Build FAQPage JSON-LD from the FAQ data
+  const [query, setQuery] = useState("");
+
+  // Build FAQPage JSON-LD from ALL FAQ data — never the filtered subset.
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -121,6 +156,40 @@ export default function FAQ() {
       }))
     ),
   };
+
+  // Filter sections + items by the live search query.
+  const normalized = query.trim().toLowerCase();
+  const filteredSections = useMemo(() => {
+    if (!normalized) return FAQS;
+    return FAQS.map(section => ({
+      ...section,
+      items: section.items.filter(
+        ({ q, a }) =>
+          q.toLowerCase().includes(normalized) ||
+          a.toLowerCase().includes(normalized)
+      ),
+    })).filter(section => section.items.length > 0);
+  }, [normalized]);
+
+  const matchCount = filteredSections.reduce((n, s) => n + s.items.length, 0);
+  const hasResults = filteredSections.length > 0;
+
+  // Deep link: scroll to the element matching the URL hash on load.
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const el = document.getElementById(hash);
+    if (!el) return;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    // If the target is a collapsible item, open it for the visitor.
+    if (el instanceof HTMLDetailsElement) el.open = true;
+    el.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }, []);
 
   return (
     <>
@@ -149,7 +218,7 @@ export default function FAQ() {
                 <br />
                 <em className="text-primary italic">all the time.</em>
               </h1>
-              <p className="text-muted-foreground text-lg font-light leading-relaxed">
+              <p className="text-muted-foreground text-lg font-light leading-relaxed mb-8">
                 Straight answers about working with Precision Core Builders —
                 licensing, permits, costs, and process. Still have a question?{" "}
                 <a
@@ -158,6 +227,38 @@ export default function FAQ() {
                 >
                   {SITE.phone}
                 </a>
+              </p>
+
+              {/* Live search / filter */}
+              <div className="relative">
+                <label htmlFor="faq-search" className="sr-only">
+                  Search frequently asked questions
+                </label>
+                <Search
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+                  aria-hidden
+                />
+                <input
+                  id="faq-search"
+                  type="search"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Search questions — permits, costs, scheduling…"
+                  aria-describedby="faq-search-status"
+                  className="w-full bg-card border border-border/60 pl-12 pr-4 py-3.5 text-sm sm:text-base text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-colors min-h-[52px]"
+                />
+              </div>
+              <p
+                id="faq-search-status"
+                role="status"
+                aria-live="polite"
+                className="sr-only"
+              >
+                {normalized
+                  ? `${matchCount} matching question${
+                      matchCount === 1 ? "" : "s"
+                    }`
+                  : ""}
               </p>
             </motion.div>
           </div>
@@ -168,47 +269,91 @@ export default function FAQ() {
         {/* FAQ sections */}
         <section className="py-20 sm:py-28">
           <div className="container max-w-4xl">
-            <div className="space-y-16">
-              {FAQS.map((section, si) => (
-                <div key={section.category}>
-                  <h2
-                    className="text-2xl sm:text-3xl font-semibold mb-8 pb-4 border-b border-border/50"
-                    style={{ fontFamily: "var(--font-heading)" }}
-                  >
-                    {section.category}
-                  </h2>
-                  <div className="space-y-3">
-                    {section.items.map(({ q, a }, i) => (
-                      <motion.details
-                        key={q}
-                        initial={{ opacity: 0, y: 12 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: i * 0.06 }}
-                        className="group border border-border/60 bg-card"
+            {hasResults ? (
+              <div className="space-y-16">
+                {filteredSections.map(section => {
+                  const sectionId = `faq-${slugify(section.category)}`;
+                  const Icon = section.icon;
+                  return (
+                    <div key={section.category} id={sectionId}>
+                      <h2
+                        className="flex items-center gap-3 text-2xl sm:text-3xl font-semibold mb-8 pb-4 border-b border-border/50"
+                        style={{ fontFamily: "var(--font-heading)" }}
                       >
-                        <summary className="flex items-center justify-between gap-4 p-5 sm:p-6 cursor-pointer list-none min-h-[56px]">
-                          <span className="text-sm sm:text-base font-semibold text-foreground leading-snug">
-                            {q}
-                          </span>
-                          <span
-                            className="text-primary flex-shrink-0 text-xl leading-none group-open:rotate-45 transition-transform duration-200"
-                            aria-hidden
-                          >
-                            +
-                          </span>
-                        </summary>
-                        <div className="px-5 sm:px-6 pb-5 sm:pb-6 border-t border-border/30 pt-4">
-                          <p className="text-sm text-muted-foreground font-light leading-relaxed">
-                            {a}
-                          </p>
-                        </div>
-                      </motion.details>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                        <span
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md"
+                          style={{
+                            color: section.accent,
+                            backgroundColor: `color-mix(in srgb, ${section.accent} 12%, transparent)`,
+                          }}
+                          aria-hidden
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        {section.category}
+                      </h2>
+                      <div className="space-y-3">
+                        {section.items.map(({ q, a }, i) => {
+                          const itemId = `${sectionId}-${slugify(q)}`;
+                          return (
+                            <motion.details
+                              key={q}
+                              id={itemId}
+                              initial={{ opacity: 0, y: 12 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: i * 0.06 }}
+                              className="group border border-border/60 border-l-2 bg-card"
+                              style={{ borderLeftColor: section.accent }}
+                            >
+                              <summary className="flex items-center justify-between gap-4 p-5 sm:p-6 cursor-pointer list-none min-h-[56px]">
+                                <span className="text-sm sm:text-base font-semibold text-foreground leading-snug">
+                                  {q}
+                                </span>
+                                <span
+                                  className="text-primary flex-shrink-0 text-xl leading-none group-open:rotate-45 transition-transform duration-200"
+                                  aria-hidden
+                                >
+                                  +
+                                </span>
+                              </summary>
+                              <div className="px-5 sm:px-6 pb-5 sm:pb-6 border-t border-border/30 pt-4">
+                                <p className="text-sm text-muted-foreground font-light leading-relaxed">
+                                  {a}
+                                </p>
+                              </div>
+                            </motion.details>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="border border-border/60 bg-card p-10 sm:p-14 text-center">
+                <Search
+                  className="mx-auto mb-4 h-8 w-8 text-muted-foreground/60"
+                  aria-hidden
+                />
+                <h2
+                  className="text-xl font-semibold mb-2"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  No questions match “{query.trim()}”
+                </h2>
+                <p className="text-muted-foreground font-light mb-6">
+                  Try a different keyword, or just ask us directly.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="text-primary text-sm font-semibold hover:underline"
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
 
             {/* CTA */}
             <div className="mt-16 bg-card border border-border/60 p-8 sm:p-10 text-center">
