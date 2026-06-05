@@ -34,6 +34,7 @@ import {
   Home as HomeIcon,
   KeyRound,
   Paintbrush,
+  Phone,
   PhoneCall,
   Quote,
   Ruler,
@@ -353,6 +354,20 @@ function Hero() {
             See Our Work
           </Link>
         </motion.div>
+
+        <motion.p
+          variants={fadeUp}
+          className="mt-5 text-sm text-white/70"
+        >
+          Prefer to talk?{" "}
+          <a
+            href={SITE.phoneHref}
+            className="inline-flex items-center gap-1.5 font-medium text-white border-b border-primary/50 hover:border-primary hover:text-primary transition-colors"
+          >
+            <Phone className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+            {SITE.phone}
+          </a>
+        </motion.p>
 
         <motion.div
           variants={fadeUp}
@@ -953,6 +968,43 @@ function TestimonialTeaser() {
           >
             {FEATURED_TESTIMONIAL.project} · {FEATURED_TESTIMONIAL.location}
           </div>
+        </motion.div>
+
+        <motion.div
+          variants={fadeUp}
+          className="mt-12 inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-border/50 pt-8"
+        >
+          <span className="flex items-center gap-2">
+            <span className="flex gap-0.5" aria-hidden="true">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+              ))}
+            </span>
+            <span className="text-sm font-semibold text-foreground">
+              5.0 rating
+            </span>
+          </span>
+          <span
+            className="hidden sm:block w-px h-4 bg-border"
+            aria-hidden="true"
+          />
+          <span className="text-sm text-muted-foreground">
+            50+ happy customers ·{" "}
+            <span className="text-foreground font-medium">0 call-backs</span>
+          </span>
+          <span
+            className="hidden sm:block w-px h-4 bg-border"
+            aria-hidden="true"
+          />
+          <a
+            href={SITE.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-primary font-medium border-b border-primary/40 hover:border-primary transition-colors"
+          >
+            Read more reviews
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </a>
         </motion.div>
       </motion.div>
     </section>
