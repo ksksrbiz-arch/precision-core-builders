@@ -1,14 +1,49 @@
 import { Button } from "@/components/ui/button";
 import { SiteFooter, SiteNav } from "@/components/layout/SiteShell";
 import { useSEO } from "@/hooks/useSEO";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useLocation } from "wouter";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calculator,
+  Hammer,
+  Image,
+  Phone,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
-const POPULAR = [
-  { label: "Our Work", href: "/portfolio" },
-  { label: "Services", href: "/services" },
-  { label: "About Eric", href: "/about" },
-  { label: "Contact", href: "/contact" },
+type QuickLink = {
+  label: string;
+  description: string;
+  href: string;
+  icon: LucideIcon;
+};
+
+const QUICK_LINKS: QuickLink[] = [
+  {
+    label: "Our Work",
+    description: "Browse completed builds and remodels.",
+    href: "/portfolio",
+    icon: Image,
+  },
+  {
+    label: "Services",
+    description: "New construction, remodels, restoration.",
+    href: "/services",
+    icon: Hammer,
+  },
+  {
+    label: "Estimator",
+    description: "Get a ballpark for your project.",
+    href: "/estimator",
+    icon: Calculator,
+  },
+  {
+    label: "Contact",
+    description: "Talk with Eric about your next build.",
+    href: "/contact",
+    icon: Phone,
+  },
 ];
 
 export default function NotFound() {
@@ -24,43 +59,75 @@ export default function NotFound() {
       <SiteNav />
       <main
         id="main-content"
-        className="flex-1 flex items-center justify-center px-6 pt-[68px]"
+        className="relative flex-1 flex items-center justify-center px-6 pt-[68px] overflow-hidden"
       >
-        <div className="text-center max-w-md w-full py-20">
-          <p className="text-7xl font-bold text-primary/20 font-[family-name:var(--font-mono)] mb-4">
+        <div className="glow-gold-top" aria-hidden="true" />
+        <div className="relative text-center max-w-2xl w-full py-20 sm:py-28">
+          <p className="eyebrow text-primary/70 mb-5">Error 404</p>
+          <p
+            className="display-hero text-gradient-gold mb-6"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
             404
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight mb-3">
-            Page Not Found
+          <h1
+            className="display-section mb-4"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            This corner&apos;s still framed out.
           </h1>
-          <p className="text-muted-foreground mb-8 leading-relaxed">
-            The page you&apos;re looking for doesn&apos;t exist or has been
-            moved.
+          <span
+            className="heading-bar heading-bar-center mb-6"
+            aria-hidden="true"
+          />
+          <p className="text-muted-foreground mb-10 leading-relaxed max-w-md mx-auto">
+            The page you&apos;re after isn&apos;t on the blueprint &mdash; it
+            may have moved or never broke ground. Let&apos;s get you back to
+            solid footing.
           </p>
-          <Button onClick={() => setLocation("/")} size="lg" className="mb-10">
+          <Button
+            onClick={() => setLocation("/")}
+            size="lg"
+            className="mb-14 card-lift"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Home
           </Button>
           <div>
-            <p
-              className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/60 mb-4 font-semibold"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Popular Pages
+            <p className="eyebrow text-muted-foreground/60 mb-5">
+              Where to next
             </p>
-            <ul className="grid grid-cols-2 gap-2 text-left">
-              {POPULAR.map(link => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="flex items-center justify-between gap-2 border border-border/60 bg-card px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors min-h-[44px]"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    {link.label}
-                    <ArrowRight className="h-3 w-3" />
-                  </a>
-                </li>
-              ))}
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+              {QUICK_LINKS.map(link => {
+                const Icon = link.icon;
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="card-lift ring-gradient-gold group flex items-center gap-4 px-5 py-4 min-h-[64px] hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-border/60 text-primary transition-colors group-hover:border-primary/50">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span
+                          className="block text-sm font-semibold tracking-wider uppercase text-foreground"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {link.label}
+                        </span>
+                        <span className="block text-xs text-muted-foreground leading-snug mt-0.5">
+                          {link.description}
+                        </span>
+                      </span>
+                      <ArrowRight
+                        className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
