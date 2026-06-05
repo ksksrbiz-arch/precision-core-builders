@@ -38,6 +38,7 @@ import {
   PhoneCall,
   Quote,
   Ruler,
+  ShieldCheck,
   Star,
   TreePine,
   Trees,
@@ -102,8 +103,57 @@ export default function Home() {
       "Master carpenters serving Eugene, Oregon and Lane County. 20+ years of experience in residential construction, remodels, restoration, custom cabinets, and more. CCB #246527.",
   });
 
+  // LocalBusiness (GeneralContractor) + breadcrumb structured data for SEO.
+  const businessJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "GeneralContractor",
+    "@id": `${SITE.website}/#business`,
+    name: SITE.name,
+    description:
+      "Master carpenters serving Eugene, Oregon and Lane County — " +
+      "residential construction, remodels, restoration, custom cabinets, " +
+      "and outdoor living. CCB #246527.",
+    url: SITE.website,
+    telephone: SITE.phone,
+    email: SITE.email,
+    image: `${SITE.website}/logo.svg`,
+    foundingDate: "2004",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Eugene",
+      addressRegion: "OR",
+      addressCountry: "US",
+    },
+    areaServed: [
+      { "@type": "City", name: "Eugene, Oregon" },
+      { "@type": "AdministrativeArea", name: "Lane County, Oregon" },
+    ],
+    sameAs: [SITE.facebook],
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE.website,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(businessJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <SiteNav />
       <MobileCTABar />
       <main id="main-content">
@@ -253,7 +303,7 @@ function HeroSlideshow() {
         );
       })}
 
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 rounded-full bg-black/25 backdrop-blur-sm px-3 py-2 ring-1 ring-white/10">
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
@@ -261,10 +311,10 @@ function HeroSlideshow() {
             onClick={() => setCurrent(i)}
             aria-label={`Show slide ${i + 1} of ${HERO_SLIDES.length}`}
             aria-current={i === current ? "true" : undefined}
-            className={`transition-all duration-500 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 ${
+            className={`transition-all duration-500 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 ${
               i === current
                 ? "w-6 h-1.5 bg-primary"
-                : "w-1.5 h-1.5 bg-white/30 hover:bg-white/60"
+                : "w-1.5 h-1.5 bg-white/60 hover:bg-white/90"
             }`}
           />
         ))}
@@ -366,18 +416,30 @@ function Hero() {
           </a>
         </motion.p>
 
-        <motion.div
+        <motion.ul
           variants={fadeUp}
-          className="mt-12 md:mt-16 flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-white/50"
-          style={{ fontFamily: "var(--font-condensed)" }}
+          className="mt-10 md:mt-14 flex flex-wrap items-center gap-2.5 sm:gap-3"
+          aria-label="Credentials"
         >
-          <span className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-primary" aria-hidden="true" />
-            {SITE.license}
-          </span>
-          <span className="hidden sm:block w-px h-4 bg-white/20" aria-hidden />
-          <span>Licensed · Bonded · Insured</span>
-        </motion.div>
+          {[
+            { label: "Licensed", Icon: ShieldCheck },
+            { label: "Bonded", Icon: ShieldCheck },
+            { label: "Insured", Icon: ShieldCheck },
+            { label: SITE.license, Icon: Award },
+          ].map(({ label, Icon }) => (
+            <li
+              key={label}
+              className="ring-gradient-gold inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 bg-black/30 backdrop-blur-sm text-[11px] sm:text-xs tracking-[0.16em] uppercase text-white font-medium"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              <Icon
+                className="w-3.5 h-3.5 text-primary shrink-0"
+                aria-hidden="true"
+              />
+              {label}
+            </li>
+          ))}
+        </motion.ul>
       </motion.div>
 
       {/* Animated scroll indicator — hidden on small screens to avoid CTA overlap */}
