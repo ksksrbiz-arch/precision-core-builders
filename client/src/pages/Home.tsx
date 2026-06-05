@@ -355,10 +355,7 @@ function Hero() {
           </Link>
         </motion.div>
 
-        <motion.p
-          variants={fadeUp}
-          className="mt-5 text-sm text-white/70"
-        >
+        <motion.p variants={fadeUp} className="mt-5 text-sm text-white/70">
           Prefer to talk?{" "}
           <a
             href={SITE.phoneHref}
