@@ -649,6 +649,17 @@
   html.js-ready {
     scroll-behavior: smooth;
   }
+
+  /*
+   * Offset anchored scroll targets below the fixed 68px header so hash links
+   * (FAQ deep links, skip-to-content, in-page jumps) land in view instead of
+   * underneath the nav. Extra breathing room keeps headings from kissing the
+   * header edge on mobile.
+   */
+  :target,
+  [id] {
+    scroll-margin-top: 84px;
+  }
 }
 
 /* ── Accessibility: prefers-reduced-motion ───────────────────────────────── */

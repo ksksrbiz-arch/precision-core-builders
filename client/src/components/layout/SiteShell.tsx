@@ -4,7 +4,7 @@
  */
 import { DEV_BYPASS_KEY } from "@/_core/hooks/useAuth";
 import { ASSETS, SITE } from "@/const";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   Facebook,
@@ -131,6 +131,33 @@ export function SiteNav() {
     return () => window.removeEventListener("scroll", h);
   }, []);
 
+  // Lock background scroll while the mobile drawer is open so the page behind
+  // the menu doesn't scroll under the user's finger.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  // Close the drawer on Escape and when the viewport grows to desktop width.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => mq.matches && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    mq.addEventListener("change", onChange);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      mq.removeEventListener("change", onChange);
+    };
+  }, [open]);
+
   function handleLogoTap(e: React.MouseEvent) {
     // When the dev modal isn't enabled (e.g. prod with no VITE_DEV_PASSWORD),
     // act as a normal home link instead of swallowing the click.
@@ -236,48 +263,53 @@ export function SiteNav() {
         </div>
 
         {/* Mobile drawer */}
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
-          >
-            <nav
-              className="container py-5 flex flex-col gap-0"
-              aria-label="Mobile navigation"
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              key="mobile-drawer"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:hidden bg-card/98 backdrop-blur-md border-t border-border"
             >
-              {NAV_LINKS.map(n => (
-                <a
-                  key={n.label}
-                  href={n.href}
-                  onClick={() => setOpen(false)}
-                  className="py-4 text-[13px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors min-h-[48px] flex items-center"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {n.label}
-                </a>
-              ))}
-              <div className="pt-5 pb-2 flex flex-col gap-3">
-                <a
-                  href={SITE.phoneHref}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 border border-primary/50 text-primary py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <Phone className="h-4 w-4" /> {SITE.phone}
-                </a>
-                <a
-                  href="/contact"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Get Free Estimate <ArrowRight className="h-4 w-4" />
-                </a>
-              </div>
-            </nav>
-          </motion.div>
-        )}
+              <nav
+                className="container py-5 flex flex-col gap-0"
+                aria-label="Mobile navigation"
+              >
+                {NAV_LINKS.map(n => (
+                  <a
+                    key={n.label}
+                    href={n.href}
+                    onClick={() => setOpen(false)}
+                    className="py-4 text-[13px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors min-h-[48px] flex items-center"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    {n.label}
+                  </a>
+                ))}
+                <div className="pt-5 pb-2 flex flex-col gap-3">
+                  <a
+                    href={SITE.phoneHref}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-center gap-2 border border-primary/50 text-primary py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Phone className="h-4 w-4" /> {SITE.phone}
+                  </a>
+                  <a
+                    href="/contact"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Get Free Estimate <ArrowRight className="h-4 w-4" />
+                  </a>
+                </div>
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
     </>
   );

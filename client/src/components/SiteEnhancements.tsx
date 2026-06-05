@@ -99,9 +99,12 @@ export function BackToTop() {
           : "opacity-0 translate-y-4 pointer-events-none"
       }`}
       style={{
+        // On public mobile the sticky Call/Estimate bar (~56px) occupies the
+        // bottom edge, so lift the button above it; admin uses the taller
+        // bottom-nav offset.
         bottom: isMobile
           ? `calc(var(--pcb-back-to-top-mobile-offset, ${
-              isAdminMobile ? "5.5rem" : "1rem"
+              isAdminMobile ? "5.5rem" : "4.75rem"
             }) + env(safe-area-inset-bottom, 0px))`
           : undefined,
       }}
