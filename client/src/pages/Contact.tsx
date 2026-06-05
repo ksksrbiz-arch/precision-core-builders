@@ -34,6 +34,15 @@ const fadeUp = {
 
 type Status = "idle" | "submitting" | "success" | "error";
 
+const BUDGET_OPTIONS = [
+  "Under $10k",
+  "$10–25k",
+  "$25–50k",
+  "$50–100k",
+  "$100k+",
+  "Not sure",
+] as const;
+
 const inputCls =
   "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors";
 
@@ -165,10 +174,22 @@ export default function Contact() {
                     </p>
                     <a
                       href={SITE.phoneHref}
-                      className="inline-flex items-center gap-2 text-primary text-sm hover:underline"
+                      className="inline-flex items-center gap-2 text-primary text-sm hover:underline min-h-[44px]"
                     >
                       <Phone className="h-4 w-4" /> Call directly: {SITE.phone}
                     </a>
+                    <div className="mt-8 pt-6 border-t border-border/50">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-3 font-semibold">
+                        While you wait
+                      </p>
+                      <a
+                        href="/portfolio"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors min-h-[44px]"
+                      >
+                        Browse our recent work
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </div>
                   </motion.div>
                 ) : (
                   <form
@@ -219,14 +240,6 @@ export default function Contact() {
                             auto: "tel",
                             inputMode: "tel",
                           },
-                          {
-                            id: "budget",
-                            label: "Project Budget",
-                            type: "text",
-                            req: false,
-                            placeholder: "e.g. $50k–$100k",
-                            auto: "off",
-                          },
                         ] as ReadonlyArray<{
                           id: string;
                           label: string;
@@ -264,6 +277,53 @@ export default function Contact() {
                           />
                         </div>
                       ))}
+                    </div>
+
+                    <div>
+                      <span
+                        id="budget-label"
+                        className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Project Budget
+                      </span>
+                      {/* Hidden field carries the selected value into the
+                          Netlify form submission (FormData picks it up). */}
+                      <input
+                        type="hidden"
+                        name="budget"
+                        value={fields.budget}
+                      />
+                      <div
+                        role="radiogroup"
+                        aria-labelledby="budget-label"
+                        className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                      >
+                        {BUDGET_OPTIONS.map(opt => {
+                          const selected = fields.budget === opt;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              onClick={() =>
+                                setFields(p => ({
+                                  ...p,
+                                  budget: selected ? "" : opt,
+                                }))
+                              }
+                              className={`min-h-[44px] px-3 py-2 text-xs font-medium border transition-colors focus:outline-none focus:ring-1 focus:ring-primary/40 ${
+                                selected
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border bg-input text-foreground hover:border-primary/40"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <div>
@@ -315,10 +375,10 @@ export default function Contact() {
                         id="message"
                         name="message"
                         required
-                        rows={5}
+                        rows={4}
                         value={fields.message}
                         onChange={onChange}
-                        className={`${inputCls} resize-none`}
+                        className={`${inputCls} resize-none min-h-[112px] sm:min-h-[140px]`}
                         placeholder="Tell us about your project — location, timeline, scope, anything that helps us understand what you need…"
                       />
                     </div>
