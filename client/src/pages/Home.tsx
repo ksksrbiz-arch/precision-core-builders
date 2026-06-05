@@ -27,10 +27,14 @@ import { motion, useInView, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Award,
+  ClipboardCheck,
   ExternalLink,
   Hammer,
+  HardHat,
   Home as HomeIcon,
+  KeyRound,
   Paintbrush,
+  PhoneCall,
   Quote,
   Ruler,
   Star,
@@ -109,6 +113,9 @@ export default function Home() {
         </div>
         <div className="cv-auto">
           <ServicesTeaser />
+        </div>
+        <div className="cv-auto">
+          <ProcessSection />
         </div>
         <MidpageCTA />
         <div className="cv-auto">
@@ -578,6 +585,101 @@ function ServicesTeaser() {
             ))}
           </div>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROCESS — "How We Work" 4-step narrative. Bridges Services → CTA
+   so visitors understand what working with us actually looks like
+   before they commit to an estimate. Reduces conversion friction.
+══════════════════════════════════════════════════════════════ */
+const PROCESS_STEPS = [
+  {
+    Icon: PhoneCall,
+    step: "01",
+    title: "Talk it through",
+    body: "Call or request an estimate online. We listen first — your goals, timeline, and budget — before we quote a thing.",
+  },
+  {
+    Icon: ClipboardCheck,
+    step: "02",
+    title: "On-site estimate",
+    body: "We visit the site in person and put together a clear, itemized estimate. No guesses, no surprise line items later.",
+  },
+  {
+    Icon: HardHat,
+    step: "03",
+    title: "We build it",
+    body: "One crew, start to finish. Eric is on site daily — clean work, steady progress, and updates you can actually follow.",
+  },
+  {
+    Icon: KeyRound,
+    step: "04",
+    title: "Walk-through & handoff",
+    body: "We finish the punch list together and don't call it done until you do. Built to last, backed by zero call-backs.",
+  },
+] as const;
+
+function ProcessSection() {
+  return (
+    <section
+      id="process"
+      className="py-24 md:py-32 bg-background"
+      aria-labelledby="process-heading"
+    >
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <Reveal className="max-w-2xl mb-14 md:mb-16">
+          <div className="eyebrow text-primary mb-3 md:mb-4">How We Work</div>
+          <h2
+            id="process-heading"
+            className="display-section font-semibold text-foreground"
+          >
+            Four steps. No surprises.
+          </h2>
+          <span className="heading-bar" aria-hidden />
+          <p className="text-muted-foreground text-lg leading-relaxed mt-6">
+            We've kept the process simple on purpose — the same way we've run
+            every job for 20+ years. Here's exactly what to expect.
+          </p>
+        </Reveal>
+
+        <motion.ol
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={stagger}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8"
+        >
+          {PROCESS_STEPS.map(({ Icon, step, title, body }) => (
+            <motion.li
+              key={step}
+              variants={fadeUp}
+              className="group relative bg-card border border-border/60 rounded-sm p-6 md:p-7 transition-colors duration-300 hover:border-primary/60"
+            >
+              <span
+                aria-hidden
+                className="absolute top-5 right-6 text-5xl font-bold text-primary/10 tabular-nums transition-colors duration-300 group-hover:text-primary/20"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {step}
+              </span>
+              <div className="ring-gradient-gold h-11 w-11 flex items-center justify-center rounded-sm mb-5">
+                <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
+              <h3
+                className="text-xl font-semibold text-foreground mb-2.5 leading-snug"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {title}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {body}
+              </p>
+            </motion.li>
+          ))}
+        </motion.ol>
       </div>
     </section>
   );
