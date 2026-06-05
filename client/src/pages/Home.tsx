@@ -224,6 +224,31 @@ function HeroSlideshow() {
   const [paused, setPaused] = useState(false);
   const reduceMotion = useReducedMotion();
 
+  // Wrap-around slide navigation, shared by dots and swipe gestures.
+  const goTo = (i: number) =>
+    setCurrent(
+      ((i % HERO_SLIDES.length) + HERO_SLIDES.length) % HERO_SLIDES.length
+    );
+
+  // Touch swipe: track the start point and switch slides on a deliberate
+  // horizontal flick. The container keeps `touch-action: pan-y`, so vertical
+  // scrolling is never blocked — we only act on mostly-horizontal gestures.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+      goTo(current + (dx < 0 ? 1 : -1));
+    }
+  };
+
   // The <link rel="preload"> for slide 0 is already in index.html.
   // This hook handles subsequent slides so they start loading on mount.
   useEffect(() => {
@@ -260,6 +285,8 @@ function HeroSlideshow() {
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       {/*
        * Keyframe animations are defined in index.css (not an inline <style>)
@@ -303,20 +330,24 @@ function HeroSlideshow() {
         );
       })}
 
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 rounded-full bg-black/25 backdrop-blur-sm px-3 py-2 ring-1 ring-white/10">
+      <div className="absolute bottom-9 left-1/2 -translate-x-1/2 flex items-center gap-0.5 z-10 rounded-full bg-black/25 backdrop-blur-sm px-1.5 ring-1 ring-white/10">
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
             type="button"
-            onClick={() => setCurrent(i)}
+            onClick={() => goTo(i)}
             aria-label={`Show slide ${i + 1} of ${HERO_SLIDES.length}`}
             aria-current={i === current ? "true" : undefined}
-            className={`transition-all duration-500 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 ${
-              i === current
-                ? "w-6 h-1.5 bg-primary"
-                : "w-1.5 h-1.5 bg-white/60 hover:bg-white/90"
-            }`}
-          />
+            className="group flex items-center justify-center p-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50"
+          >
+            <span
+              className={`block transition-all duration-500 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.6)] ${
+                i === current
+                  ? "w-6 h-1.5 bg-primary"
+                  : "w-1.5 h-1.5 bg-white/60 group-hover:bg-white/90"
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>
@@ -326,7 +357,7 @@ function HeroSlideshow() {
 function Hero() {
   return (
     <section
-      className="relative min-h-[70vh] md:min-h-[85vh] lg:min-h-[100svh] flex items-center overflow-hidden"
+      className="relative min-h-[70svh] md:min-h-[85svh] lg:min-h-[100svh] flex items-center overflow-hidden"
       aria-labelledby="hero-heading"
     >
       <HeroSlideshow />
