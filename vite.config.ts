@@ -35,7 +35,7 @@ export default defineConfig({
           // Charting stack: heavy and only used on a few routes.
           if (
             /[\\/]node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor|internmap)[\\/]/.test(
-              id,
+              id
             )
           ) {
             return "charts";
