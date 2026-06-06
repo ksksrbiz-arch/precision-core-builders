@@ -57,8 +57,36 @@ export default function Portfolio() {
   // Use real hero photo as page backdrop
   const heroImage = photoUrl("signature-home-01.jpg");
 
+  // CollectionPage + ItemList JSON-LD — built from the full catalog (never the
+  // filtered subset) so search engines index every project regardless of UI
+  // state. Mirrors the FAQPage schema pattern used elsewhere on the site.
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Portfolio — Precision Core Builders",
+    description:
+      "Custom homes, full restorations, kitchens, baths, decks, and " +
+      "structures built by Precision Core Builders in Eugene and Lane " +
+      "County, Oregon.",
+    url: "https://precision-core.netlify.app/portfolio",
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: PROJECTS.length,
+      itemListElement: PROJECTS.map((project, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: project.title,
+        url: `https://precision-core.netlify.app/portfolio/${project.slug}`,
+      })),
+    },
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
       <SiteNav />
 
       <main id="main-content" className="flex-1">
