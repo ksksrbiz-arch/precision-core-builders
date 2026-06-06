@@ -5,6 +5,14 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
@@ -261,18 +269,27 @@ export default function SubContractorsList() {
             onRetry={() => refetch()}
           />
         ) : !subs?.length ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <HardHat className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm mb-3">
-              No sub-contractors added
-            </p>
-            <button
-              onClick={() => setShowNew(true)}
-              className="text-primary text-sm underline"
-            >
-              Add your first sub
-            </button>
-          </div>
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <HardHat />
+              </EmptyMedia>
+              <EmptyTitle>No sub-contractors yet</EmptyTitle>
+              <EmptyDescription>
+                Build your trade roster to track licenses and dispatch briefings
+                in a few taps.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setShowNew(true)}
+                className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Your First Sub
+              </button>
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
             {subs.map((sub: any) => (
@@ -375,7 +392,10 @@ export default function SubContractorsList() {
                   <div className="flex-1" />
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <button className="text-muted-foreground/30 hover:text-destructive transition-colors">
+                      <button
+                        aria-label={`Remove ${sub.name}`}
+                        className="text-muted-foreground/30 hover:text-destructive transition-colors"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </AlertDialogTrigger>
