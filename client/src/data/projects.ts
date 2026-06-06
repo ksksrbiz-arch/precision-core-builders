@@ -50,6 +50,12 @@ export interface Project {
   photos: ProjectPhoto[];
   /** Optional tag — used for special editorial treatment (e.g. the builders' own home) */
   tag?: "Our Home" | "Signature Work";
+  /** Year completed, e.g. "2023". Surfaced in the detail-page facts bar when set. */
+  year?: string;
+  /** Human-readable build duration, e.g. "6 weeks". Surfaced when set. */
+  duration?: string;
+  /** Approximate size, e.g. "1,200 sq ft" or "320 lin ft". Surfaced when set. */
+  size?: string;
 }
 
 export const PROJECTS: Project[] = [
