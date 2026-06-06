@@ -3,7 +3,8 @@
  * Respects prefers-reduced-motion by using opacity-only fallback.
  */
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
+import { ArrowRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/useMobile";
 
 export function ScrollProgressBar() {
@@ -124,6 +125,63 @@ export function BackToTop() {
         <path d="M18 15l-6-6-6 6" />
       </svg>
     </button>
+  );
+}
+
+/**
+ * StickyEstimateCTA — desktop-only floating "Get a Free Estimate" pill that
+ * slides in after the user scrolls past the hero. Keeps the primary conversion
+ * action one click away on long marketing pages. Hidden on mobile (the bottom
+ * Call/Estimate bar covers that), on app routes (admin/portal/auth), and on the
+ * estimator/contact pages themselves where the CTA would be redundant.
+ */
+export function StickyEstimateCTA() {
+  const [visible, setVisible] = useState(false);
+  const rafRef = useRef<number | null>(null);
+  const [location] = useLocation();
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const update = () => {
+      setVisible(window.scrollY > 700);
+      rafRef.current = null;
+    };
+    const onScroll = () => {
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(update);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  const hiddenRoute =
+    location.startsWith("/admin") ||
+    location.startsWith("/portal") ||
+    location.startsWith("/auth") ||
+    location === "/dev-login" ||
+    location === "/estimator" ||
+    location === "/contact";
+
+  if (isMobile || hiddenRoute) return null;
+
+  return (
+    <Link
+      href="/estimator"
+      aria-label="Get a free estimate"
+      className={`fixed bottom-8 right-20 z-40 hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[11px] font-bold tracking-[0.12em] uppercase shadow-lg shadow-primary/25 rounded-sm transition-all duration-300 hover:bg-primary/90 hover:gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none ${
+        visible
+          ? "opacity-100 translate-y-0 pointer-events-auto"
+          : "opacity-0 translate-y-4 pointer-events-none"
+      }`}
+      style={{ fontFamily: "var(--font-condensed)" }}
+    >
+      Get a Free Estimate
+      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+    </Link>
   );
 }
 
