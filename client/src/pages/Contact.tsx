@@ -513,6 +513,56 @@ export default function Contact() {
             </div>
           </div>
         </section>
+
+        {/* Areas we serve */}
+        <section className="py-16 sm:py-24 border-t border-border/50">
+          <div className="container max-w-5xl">
+            <div className="text-center mb-10">
+              <span
+                className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Areas We Serve
+              </span>
+              <h2
+                className="text-3xl sm:text-4xl font-semibold leading-tight mb-4"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                Proudly building across{" "}
+                <em className="text-primary italic">Lane County.</em>
+              </h2>
+              <p className="text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">
+                Locally owned and on-site. We bring our crews to Eugene and the
+                surrounding communities — if you don&apos;t see your town, just
+                ask.
+              </p>
+            </div>
+
+            <ul className="flex flex-wrap justify-center gap-3">
+              {[
+                "Eugene",
+                "Springfield",
+                "Coburg",
+                "Creswell",
+                "Cottage Grove",
+                "Junction City",
+                "Florence",
+                "Surrounding Lane County, OR",
+              ].map(town => (
+                <li
+                  key={town}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-card border border-border/60 text-sm font-medium text-foreground transition-colors hover:border-primary/40"
+                >
+                  <MapPin
+                    className="h-3.5 w-3.5 text-primary flex-shrink-0"
+                    aria-hidden
+                  />
+                  {town}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
       </main>
 
       <SiteFooter />
