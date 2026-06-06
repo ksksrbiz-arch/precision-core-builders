@@ -3,6 +3,7 @@ import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import { trpc } from "@/lib/trpc";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Plus, Search, MapPin, DollarSign, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -12,6 +13,7 @@ import { StatusBadge } from "./CommandCenter";
 export default function ProjectsList() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const isMobile = useIsMobile();
@@ -19,7 +21,7 @@ export default function ProjectsList() {
   const { data, isLoading, isError, refetch } = trpc.projects.list.useQuery({
     page,
     pageSize: 20,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     status: (status as any) || undefined,
   });
 

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
@@ -149,6 +150,7 @@ export default function NotificationsView() {
   const [form, setForm] = useState<SendFormState>(DEFAULT_FORM);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState<
     "pending" | "sent" | "read" | "failed" | undefined
   >(undefined);
@@ -177,7 +179,7 @@ export default function NotificationsView() {
   } = trpc.notifications.adminList.useQuery({
     page,
     pageSize: FEED_PAGE_SIZE,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     status: statusFilter,
     channel: channelFilter,
   });

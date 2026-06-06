@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useDebounce } from "@/hooks/useDebounce";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -35,6 +36,7 @@ import { useLocation } from "wouter";
 export default function ClientsList() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [page, setPage] = useState(1);
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({
@@ -51,7 +53,7 @@ export default function ClientsList() {
   const { data, isLoading, isError, refetch } = trpc.clients.list.useQuery({
     page,
     pageSize: 20,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
   });
 
   const resetForm = () =>
