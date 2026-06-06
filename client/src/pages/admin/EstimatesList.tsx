@@ -3,7 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
-import { SkeletonCard } from "@/components/Skeletons";
+import { SkeletonCard, SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -79,9 +79,13 @@ export default function EstimatesList() {
         />
 
         {isLoading ? (
-          <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
-            Loading…
-          </div>
+          isMobile ? (
+            <SkeletonCard count={5} />
+          ) : (
+            <div className="bg-card border border-border/60 p-4 md:p-6">
+              <SkeletonTable rows={6} cols={6} />
+            </div>
+          )
         ) : isError ? (
           <QueryError
             message="We couldn't load estimates. Check your connection and try again."

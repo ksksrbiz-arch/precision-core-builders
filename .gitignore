@@ -45,3 +45,6 @@ supabase/.temp/
 
 # Netlify
 .netlify/
+
+# Claude Code agent scratch (worktrees, transient state)
+.claude/worktrees/
