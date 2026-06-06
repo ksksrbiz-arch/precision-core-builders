@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Calculator,
+  Compass,
   Hammer,
   Image,
   Phone,
@@ -18,6 +19,89 @@ type QuickLink = {
   href: string;
   icon: LucideIcon;
 };
+
+// All real public routes, used to suggest the closest match for a
+// mistyped URL. Keep in sync with the router in App.tsx.
+const KNOWN_ROUTES = [
+  "/",
+  "/about",
+  "/services",
+  "/portfolio",
+  "/faq",
+  "/contact",
+  "/estimator",
+  "/services/residential",
+  "/services/remodels",
+  "/services/new-construction",
+  "/services/restoration",
+  "/services/outdoor",
+  "/services/painting",
+  "/services/roofing",
+  "/services/cabinets",
+] as const;
+
+// Standard Levenshtein edit distance between two strings.
+function editDistance(a: string, b: string): number {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const prev = new Array<number>(cols);
+  const curr = new Array<number>(cols);
+  for (let j = 0; j < cols; j += 1) {
+    prev[j] = j;
+  }
+  for (let i = 1; i < rows; i += 1) {
+    curr[0] = i;
+    for (let j = 1; j < cols; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    for (let j = 0; j < cols; j += 1) {
+      prev[j] = curr[j];
+    }
+  }
+  return prev[cols - 1];
+}
+
+// Normalize a path: lowercase, strip query/hash and trailing slash.
+function normalizePath(path: string): string {
+  const clean = path.split(/[?#]/)[0].toLowerCase();
+  if (clean.length > 1 && clean.endsWith("/")) {
+    return clean.replace(/\/+$/, "");
+  }
+  return clean;
+}
+
+// Find the closest known route to the current path, if any is a
+// reasonably close match (small edit distance or a shared first
+// segment). Returns null when nothing is close enough.
+function suggestRoute(rawPath: string): string | null {
+  const path = normalizePath(rawPath);
+  if (!path || path === "/") {
+    return null;
+  }
+
+  let best: string | null = null;
+  let bestDistance = Infinity;
+  const pathSegment = path.split("/")[1] ?? "";
+
+  for (const route of KNOWN_ROUTES) {
+    if (route === "/") {
+      continue;
+    }
+    const distance = editDistance(path, route);
+    const sharesSegment =
+      pathSegment.length > 0 && route.split("/")[1] === pathSegment;
+    // Accept a match if it's a near-miss typo, or shares the first
+    // path segment (e.g. /services/foo -> a real /services/* route).
+    const close = distance <= 4 || sharesSegment;
+    if (close && distance < bestDistance) {
+      best = route;
+      bestDistance = distance;
+    }
+  }
+
+  return best;
+}
 
 const QUICK_LINKS: QuickLink[] = [
   {
@@ -47,7 +131,8 @@ const QUICK_LINKS: QuickLink[] = [
 ];
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const suggestion = suggestRoute(location);
   useSEO({
     title: "Page Not Found",
     description:
@@ -85,6 +170,22 @@ export default function NotFound() {
             may have moved or never broke ground. Let&apos;s get you back to
             solid footing.
           </p>
+          {suggestion ? (
+            <p className="text-muted-foreground mb-10 flex flex-wrap items-center justify-center gap-2">
+              <Compass
+                className="h-4 w-4 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              <span>Did you mean</span>
+              <Link
+                href={suggestion}
+                className="text-gradient-gold font-semibold underline decoration-primary/40 underline-offset-4 transition-colors hover:decoration-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              >
+                {suggestion}
+              </Link>
+              <span>?</span>
+            </p>
+          ) : null}
           <Button
             onClick={() => setLocation("/")}
             size="lg"
