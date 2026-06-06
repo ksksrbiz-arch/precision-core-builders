@@ -10,7 +10,18 @@ import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
-import { ArrowRight, Phone } from "lucide-react";
+import {
+  ArrowRight,
+  Hammer,
+  Home,
+  Paintbrush,
+  Phone,
+  Ruler,
+  ShieldCheck,
+  Trees,
+  Umbrella,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -21,57 +32,107 @@ const fadeUp = {
   },
 };
 
-const SERVICES = [
+type Service = {
+  title: string;
+  desc: string;
+  photo: string;
+  href: string;
+  icon: LucideIcon;
+  tag?: string;
+  pairedWith?: string[];
+};
+
+type Category = {
+  label: string;
+  blurb: string;
+  services: Service[];
+};
+
+const CATEGORIES: Category[] = [
   {
-    title: "Residential Construction",
-    desc: "With over 20 years of hands-on experience, our lead carpenters have honed their skills across every dimension of residential construction — from foundations to final finish.",
-    photo: ASSETS.services.residential,
-    href: "/services/residential",
-    tag: "Most Popular",
+    label: "Residential",
+    blurb: "Whole-home builds, updates, and the rooms you live in most.",
+    services: [
+      {
+        title: "Residential Construction",
+        desc: "With over 20 years of hands-on experience, our lead carpenters have honed their skills across every dimension of residential construction — from foundations to final finish.",
+        photo: ASSETS.services.residential,
+        href: "/services/residential",
+        icon: Home,
+        tag: "Most Popular",
+        pairedWith: ["Custom Cabinets", "Painting"],
+      },
+      {
+        title: "Remodels & Renovations",
+        desc: "We transform outdated spaces into modern, functional areas for both residential and small business clients, working closely with you from vision to reality.",
+        photo: ASSETS.services.remodels,
+        href: "/services/remodels",
+        icon: Hammer,
+        pairedWith: ["Custom Cabinets", "Painting"],
+      },
+      {
+        title: "New Construction",
+        desc: "From conceptualization to completion, we manage every phase of new construction with the expertise and confidence that only comes from decades on the job.",
+        photo: ASSETS.services.newConstruction,
+        href: "/services/new-construction",
+        icon: Ruler,
+        pairedWith: ["Roofing", "Outdoor Spaces"],
+      },
+      {
+        title: "Custom Cabinets",
+        desc: "Built-ins, kitchen cabinetry, bathroom vanities, and custom millwork — designed for your space, built to endure, finished to impress.",
+        photo: ASSETS.services.cabinets,
+        href: "/services/cabinets",
+        icon: Ruler,
+        pairedWith: ["Remodels & Renovations", "Painting"],
+      },
+    ],
   },
   {
-    title: "Remodels & Renovations",
-    desc: "We transform outdated spaces into modern, functional areas for both residential and small business clients, working closely with you from vision to reality.",
-    photo: ASSETS.services.remodels,
-    href: "/services/remodels",
+    label: "Outdoor & Exterior",
+    blurb: "Everything that protects and extends your home outside.",
+    services: [
+      {
+        title: "Outdoor Spaces",
+        desc: "Decks, patios, fencing, pergolas, and site work — we extend your living space outdoors with the same standard of craftsmanship we bring inside.",
+        photo: ASSETS.services.outdoor,
+        href: "/services/outdoor",
+        icon: Trees,
+        pairedWith: ["New Construction", "Painting"],
+      },
+      {
+        title: "Painting",
+        desc: "Interior and exterior painting done right — proper prep, quality materials, clean lines, and a finish that holds up to Oregon's climate for years.",
+        photo: ASSETS.services.painting,
+        href: "/services/painting",
+        icon: Paintbrush,
+        pairedWith: ["Remodels & Renovations", "Restoration"],
+      },
+      {
+        title: "Roofing",
+        desc: "Roof replacements, repairs, and inspections handled by people who understand Oregon weather. We protect your home from the top down.",
+        photo: ASSETS.services.roofing,
+        href: "/services/roofing",
+        icon: Umbrella,
+        pairedWith: ["Restoration", "New Construction"],
+      },
+    ],
   },
   {
-    title: "New Construction",
-    desc: "From conceptualization to completion, we manage every phase of new construction with the expertise and confidence that only comes from decades on the job.",
-    photo: ASSETS.services.newConstruction,
-    href: "/services/new-construction",
+    label: "Specialized",
+    blurb: "Restoring, repairing, and protecting what already stands.",
+    services: [
+      {
+        title: "Restoration",
+        desc: "We breathe new life into damaged, aged, or deteriorated structures — preserving what makes a home special while bringing it back to its full potential.",
+        photo: ASSETS.services.restoration,
+        href: "/services/restoration",
+        icon: ShieldCheck,
+        pairedWith: ["Roofing", "Painting"],
+      },
+    ],
   },
-  {
-    title: "Restoration",
-    desc: "We breathe new life into damaged, aged, or deteriorated structures — preserving what makes a home special while bringing it back to its full potential.",
-    photo: ASSETS.services.restoration,
-    href: "/services/restoration",
-  },
-  {
-    title: "Outdoor Spaces",
-    desc: "Decks, patios, fencing, pergolas, and site work — we extend your living space outdoors with the same standard of craftsmanship we bring inside.",
-    photo: ASSETS.services.outdoor,
-    href: "/services/outdoor",
-  },
-  {
-    title: "Painting",
-    desc: "Interior and exterior painting done right — proper prep, quality materials, clean lines, and a finish that holds up to Oregon's climate for years.",
-    photo: ASSETS.services.painting,
-    href: "/services/painting",
-  },
-  {
-    title: "Roofing",
-    desc: "Roof replacements, repairs, and inspections handled by people who understand Oregon weather. We protect your home from the top down.",
-    photo: ASSETS.services.roofing,
-    href: "/services/roofing",
-  },
-  {
-    title: "Custom Cabinets",
-    desc: "Built-ins, kitchen cabinetry, bathroom vanities, and custom millwork — designed for your space, built to endure, finished to impress.",
-    photo: ASSETS.services.cabinets,
-    href: "/services/cabinets",
-  },
-] as const;
+];
 
 export default function ServicesPage() {
   useSEO({
@@ -136,65 +197,127 @@ export default function ServicesPage() {
 
         <TrustBar />
 
-        {/* Services grid */}
+        {/* Services by category */}
         <section className="py-16 sm:py-24">
           <div className="container">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-5 max-w-5xl mx-auto">
-              {SERVICES.map((service, i) => (
-                <motion.a
-                  key={service.href}
-                  href={service.href}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-40px" }}
-                  transition={{
-                    delay: i * 0.07,
-                    duration: 0.6,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="group relative bg-card border border-border/60 overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-black/20 transition-all duration-300 flex"
-                >
-                  {/* Photo */}
-                  <div className="relative w-32 sm:w-40 flex-shrink-0 overflow-hidden">
-                    <img
-                      src={service.photo}
-                      alt={service.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      loading={i < 4 ? "eager" : "lazy"}
-                      decoding="async"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 p-5 sm:p-6">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h2
-                        className="text-base font-semibold group-hover:text-primary transition-colors duration-200 leading-snug"
-                        style={{ fontFamily: "var(--font-heading)" }}
-                      >
-                        {service.title}
-                      </h2>
-                      {"tag" in service && (
-                        <span
-                          className="text-[8px] px-1.5 py-0.5 bg-primary/20 text-primary font-bold tracking-widest uppercase flex-shrink-0"
-                          style={{ fontFamily: "var(--font-condensed)" }}
-                        >
-                          {service.tag}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">
-                      {service.desc}
-                    </p>
+            <div className="max-w-5xl mx-auto space-y-16">
+              {CATEGORIES.map(category => (
+                <div key={category.label}>
+                  {/* Category heading */}
+                  <div className="flex items-baseline gap-3 mb-2">
+                    <h2
+                      className="text-2xl sm:text-3xl font-semibold"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {category.label}
+                    </h2>
                     <span
-                      className="inline-flex items-center gap-1.5 text-[10px] text-primary font-bold tracking-widest uppercase group-hover:gap-2.5 transition-all duration-200"
+                      className="text-[11px] px-2 py-0.5 bg-primary/15 text-primary font-bold tracking-widest uppercase"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      Learn More <ArrowRight className="h-3 w-3" />
+                      {category.services.length}{" "}
+                      {category.services.length === 1 ? "service" : "services"}
                     </span>
                   </div>
-                </motion.a>
+                  <p className="text-sm text-muted-foreground font-light mb-6">
+                    {category.blurb}
+                  </p>
+
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    {category.services.map((service, i) => {
+                      const Icon = service.icon;
+                      return (
+                        <motion.a
+                          key={service.href}
+                          href={service.href}
+                          initial={{ opacity: 0, y: 24 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: "-40px" }}
+                          transition={{
+                            delay: i * 0.07,
+                            duration: 0.6,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                          className="group relative bg-card border border-border/60 overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-black/20 transition-all duration-300 flex"
+                        >
+                          {/* Photo */}
+                          <div className="relative w-32 sm:w-40 flex-shrink-0 overflow-hidden">
+                            <img
+                              src={service.photo}
+                              alt={service.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
+                            {/* Icon callout */}
+                            <div className="absolute bottom-2 left-2 flex h-9 w-9 items-center justify-center bg-background/85 text-primary ring-1 ring-primary/30 backdrop-blur-sm">
+                              <Icon className="h-4 w-4" aria-hidden />
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 p-5 sm:p-6">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h3
+                                className="text-base font-semibold group-hover:text-primary transition-colors duration-200 leading-snug"
+                                style={{ fontFamily: "var(--font-heading)" }}
+                              >
+                                {service.title}
+                              </h3>
+                              {service.tag && (
+                                <span
+                                  className="text-[8px] px-1.5 py-0.5 bg-primary/20 text-primary font-bold tracking-widest uppercase flex-shrink-0"
+                                  style={{
+                                    fontFamily: "var(--font-condensed)",
+                                  }}
+                                >
+                                  {service.tag}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">
+                              {service.desc}
+                            </p>
+
+                            {service.pairedWith &&
+                              service.pairedWith.length > 0 && (
+                                <div className="mb-4">
+                                  <span
+                                    className="block text-[9px] text-muted-foreground/70 font-semibold tracking-widest uppercase mb-1.5"
+                                    style={{
+                                      fontFamily: "var(--font-condensed)",
+                                    }}
+                                  >
+                                    Often paired with
+                                  </span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {service.pairedWith.map(paired => (
+                                      <span
+                                        key={paired}
+                                        className="text-[10px] px-2 py-0.5 bg-muted/60 text-muted-foreground"
+                                      >
+                                        {paired}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                            <span
+                              className="inline-flex items-center gap-1.5 text-[10px] text-primary font-bold tracking-widest uppercase group-hover:gap-2.5 transition-all duration-200"
+                              style={{
+                                fontFamily: "var(--font-condensed)",
+                              }}
+                            >
+                              Learn More <ArrowRight className="h-3 w-3" />
+                            </span>
+                          </div>
+                        </motion.a>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -209,11 +332,11 @@ export default function ServicesPage() {
                   className="text-2xl sm:text-3xl font-semibold mb-1"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Not sure which service you need?
+                  Ready to start? Let's scope your project.
                 </h2>
                 <p className="text-muted-foreground font-light text-sm">
-                  Call Eric — free consultation, honest advice, no sales
-                  pressure.
+                  Tell Eric what you're planning — get a clear, no-pressure
+                  estimate and a straight answer on next steps.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">

@@ -23,7 +23,7 @@ import {
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
-import { ArrowRight, Phone } from "lucide-react";
+import { ArrowRight, PackageOpen, Phone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Filter = "All" | ProjectCategory;
@@ -44,6 +44,15 @@ export default function Portfolio() {
       filter === "All" ? PROJECTS : PROJECTS.filter(p => p.category === filter),
     [filter]
   );
+
+  // Project count per filter — drives the count badge on each tab.
+  const counts = useMemo(() => {
+    const map = { All: PROJECTS.length } as Record<Filter, number>;
+    for (const cat of CATEGORIES) {
+      map[cat] = PROJECTS.filter(p => p.category === cat).length;
+    }
+    return map;
+  }, []);
 
   // Use real hero photo as page backdrop
   const heroImage = photoUrl("signature-home-01.jpg");
@@ -97,15 +106,36 @@ export default function Portfolio() {
         <TrustBar />
 
         {/* Filter rail — horizontal-scroll on mobile, wrap on desktop */}
-        <FilterRail filter={filter} setFilter={setFilter} />
+        <FilterRail filter={filter} setFilter={setFilter} counts={counts} />
 
         {/* Project grid */}
         <section className="py-10 md:py-20 bg-background">
           <div className="container mx-auto px-5 md:px-8">
             {visibleProjects.length === 0 ? (
-              <p className="text-center text-muted-foreground py-20">
-                No projects in this category yet — check back soon.
-              </p>
+              <div className="flex flex-col items-center text-center py-20 md:py-28">
+                <PackageOpen
+                  className="h-10 w-10 text-primary/70"
+                  aria-hidden
+                />
+                <p className="eyebrow mt-5 text-muted-foreground">
+                  Nothing here yet
+                </p>
+                <h2 className="display-section font-heading mt-2">
+                  No projects in this category yet
+                </h2>
+                <p className="mt-3 max-w-md text-sm md:text-base text-foreground/70">
+                  New work is added as it wraps. Browse all projects or reach
+                  out about yours.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFilter("All")}
+                  className="mt-6 inline-flex items-center gap-2 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.14em] bg-primary text-primary-foreground hover:gap-3 transition-all min-h-[44px]"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  View all projects <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
                 {visibleProjects.map((project, i) => (
@@ -162,9 +192,11 @@ export default function Portfolio() {
 function FilterRail({
   filter,
   setFilter,
+  counts,
 }: {
   filter: Filter;
   setFilter: (f: Filter) => void;
+  counts: Record<Filter, number>;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +233,9 @@ function FilterRail({
                 role="tab"
                 onClick={() => setFilter(f)}
                 aria-pressed={active}
+                aria-label={`${f} — ${counts[f]} project${
+                  counts[f] === 1 ? "" : "s"
+                }`}
                 data-active={active}
                 className={[
                   "snap-start whitespace-nowrap px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-medium border transition-colors min-h-[44px] flex items-center",
@@ -211,6 +246,17 @@ function FilterRail({
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {f}
+                <span
+                  className={[
+                    "ml-2 tabular-nums text-[10px] leading-none px-1.5 py-0.5 rounded-full border",
+                    active
+                      ? "border-primary-foreground/30 bg-primary-foreground/15"
+                      : "border-border/60 bg-foreground/5 text-foreground/60",
+                  ].join(" ")}
+                  aria-hidden
+                >
+                  {counts[f]}
+                </span>
               </button>
             );
           })}

@@ -11,7 +11,16 @@ import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion, useInView } from "framer-motion";
-import { ArrowRight, CheckCircle2, MapPin, Phone, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  Award,
+  Eye,
+  Hammer,
+  Handshake,
+  MapPin,
+  Phone,
+  Shield,
+} from "lucide-react";
 import { useRef } from "react";
 
 const fadeUp = {
@@ -44,15 +53,49 @@ const TEAM = [
 const VALUES = [
   {
     title: "Trust",
+    icon: Handshake,
+    stat: "Zero call-backs",
     body: "You know where your project stands at every stage. We document every decision, every cost, and every milestone — no surprises, no runaround.",
   },
   {
     title: "Respect",
+    icon: Eye,
+    stat: "50+ happy customers",
     body: "Your home is your most important investment. We treat every project with the same care we'd give our own — because your standards deserve nothing less.",
   },
   {
     title: "Diligence",
+    icon: Hammer,
+    stat: "Built to Oregon code & beyond",
     body: "We show up on time, work clean, and don't cut corners. Every phase is completed to Oregon code standards and beyond, every single time.",
+  },
+];
+
+const MILESTONES = [
+  {
+    year: "2004",
+    title: "Precision Core Builders founded",
+    body: "The Tadlock brothers set out to raise the standard for construction in Eugene and Lane County.",
+  },
+  {
+    year: "20+ yrs",
+    title: "Two decades of carpentry",
+    body: "From framing to finish, Eric and Mitch have honed hands-on craftsmanship across hundreds of builds and remodels.",
+  },
+  {
+    year: "50+",
+    title: "Happy customers",
+    body: "Homeowners across Lane County trust us — earned one project, one referral at a time.",
+  },
+  {
+    year: "0",
+    title: "Call-backs",
+    body: "We get it right the first time. A perfect record we protect on every job.",
+  },
+  {
+    year: SITE.license,
+    title: "Oregon licensed & insured",
+    body: "Fully licensed, bonded, and insured — your project is protected from day one.",
   },
 ];
 
@@ -198,36 +241,117 @@ export default function About() {
                 variants={stagger}
                 className="space-y-4"
               >
-                {VALUES.map((v, i) => (
-                  <motion.div
-                    key={v.title}
-                    variants={fadeUp}
-                    transition={{ delay: i * 0.1 }}
-                    className="group flex gap-5 p-6 bg-card border border-border/60 hover:border-primary/30 transition-colors duration-300"
-                  >
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="h-8 w-8 flex items-center justify-center border border-primary/40 group-hover:border-primary group-hover:bg-primary/5 transition-colors duration-300">
-                        <CheckCircle2
-                          className="h-4 w-4 text-primary"
-                          aria-hidden
-                        />
+                {VALUES.map((v, i) => {
+                  const Icon = v.icon;
+                  return (
+                    <motion.div
+                      key={v.title}
+                      variants={fadeUp}
+                      transition={{ delay: i * 0.1 }}
+                      className="card-lift group flex gap-5 p-7 bg-card border border-border/60 hover:border-primary/40 transition-colors duration-300"
+                    >
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="ring-gradient-gold h-12 w-12 flex items-center justify-center rounded-sm transition-all duration-300 group-hover:shadow-[0_0_20px_-4px_rgba(200,168,75,0.55)]">
+                          <Icon className="h-6 w-6 text-primary" aria-hidden />
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <h3
-                        className="text-base font-bold tracking-[0.06em] uppercase mb-2"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        {v.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                        {v.body}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div>
+                        <h3
+                          className="text-lg font-bold tracking-[0.06em] uppercase mb-1.5"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {v.title}
+                        </h3>
+                        <p
+                          className="text-[11px] font-semibold tracking-[0.16em] uppercase text-primary mb-3"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {v.stat}
+                        </p>
+                        <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                          {v.body}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        {/* Company Timeline */}
+        <section className="py-20 sm:py-28 cv-auto">
+          <div className="container">
+            <div className="text-center mb-14">
+              <span
+                className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Our Story
+              </span>
+              <h2
+                className="text-4xl sm:text-5xl font-semibold"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                Two decades of{" "}
+                <em className="text-primary italic">proven craft.</em>
+              </h2>
+              <span className="heading-bar mx-auto mt-5" aria-hidden />
+            </div>
+
+            <ol className="relative max-w-3xl mx-auto">
+              {/* Vertical spine */}
+              <span
+                className="absolute left-[19px] sm:left-1/2 top-2 bottom-2 w-px bg-border/70 sm:-translate-x-1/2"
+                aria-hidden
+              />
+              {MILESTONES.map((m, i) => (
+                <motion.li
+                  key={m.title}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{
+                    delay: i * 0.08,
+                    duration: 0.6,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className={`relative pl-14 pb-10 last:pb-0 sm:w-1/2 sm:pl-0 sm:pb-12 ${
+                    i % 2 === 0
+                      ? "sm:pr-12 sm:text-right"
+                      : "sm:ml-auto sm:pl-12"
+                  }`}
+                >
+                  {/* Node */}
+                  <span
+                    className={`ring-gradient-gold absolute top-0 left-0 flex h-10 w-10 items-center justify-center rounded-full bg-background sm:left-auto ${
+                      i % 2 === 0
+                        ? "sm:right-0 sm:translate-x-1/2"
+                        : "sm:left-0 sm:-translate-x-1/2"
+                    }`}
+                    aria-hidden
+                  >
+                    <Award className="h-4 w-4 text-primary" />
+                  </span>
+                  <div
+                    className="text-2xl font-bold tracking-tight text-primary mb-1"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    {m.year}
+                  </div>
+                  <h3
+                    className="text-base font-bold tracking-[0.04em] uppercase mb-1.5"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    {m.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                    {m.body}
+                  </p>
+                </motion.li>
+              ))}
+            </ol>
           </div>
         </section>
 

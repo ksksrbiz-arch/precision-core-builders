@@ -77,9 +77,12 @@ describe("crypto helpers", () => {
 
   it("decryptSecret rejects tampered payloads", () => {
     const enc = encryptSecret("hello");
-    // Flip one character of the base64 payload.
-    const tampered =
-      enc.slice(0, -2) + (enc.endsWith("A") ? "B" : "A") + enc.slice(-1);
+    // Flip the second-to-last base64 character to a guaranteed-different
+    // value so the payload always changes (avoids a flaky no-op when the
+    // char already equals the replacement).
+    const i = enc.length - 2;
+    const replacement = enc[i] === "A" ? "B" : "A";
+    const tampered = enc.slice(0, i) + replacement + enc.slice(i + 1);
     expect(() => decryptSecret(tampered)).toThrow();
   });
 

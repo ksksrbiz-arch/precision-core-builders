@@ -28,12 +28,18 @@ import { motion, useInView, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Award,
+  ClipboardCheck,
   ExternalLink,
   Hammer,
+  HardHat,
   Home as HomeIcon,
+  KeyRound,
   Paintbrush,
+  Phone,
+  PhoneCall,
   Quote,
   Ruler,
+  ShieldCheck,
   Star,
   TreePine,
   Trees,
@@ -98,8 +104,57 @@ export default function Home() {
       "Master carpenters serving Eugene, Oregon and Lane County. 20+ years of experience in residential construction, remodels, restoration, custom cabinets, and more. CCB #246527.",
   });
 
+  // LocalBusiness (GeneralContractor) + breadcrumb structured data for SEO.
+  const businessJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "GeneralContractor",
+    "@id": `${SITE.website}/#business`,
+    name: SITE.name,
+    description:
+      "Master carpenters serving Eugene, Oregon and Lane County — " +
+      "residential construction, remodels, restoration, custom cabinets, " +
+      "and outdoor living. CCB #246527.",
+    url: SITE.website,
+    telephone: SITE.phone,
+    email: SITE.email,
+    image: `${SITE.website}/logo.svg`,
+    foundingDate: "2004",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Eugene",
+      addressRegion: "OR",
+      addressCountry: "US",
+    },
+    areaServed: [
+      { "@type": "City", name: "Eugene, Oregon" },
+      { "@type": "AdministrativeArea", name: "Lane County, Oregon" },
+    ],
+    sameAs: [SITE.facebook],
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE.website,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(businessJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <SiteNav />
       <MobileCTABar />
       <main id="main-content">
@@ -110,6 +165,9 @@ export default function Home() {
         </div>
         <div className="cv-auto">
           <ServicesTeaser />
+        </div>
+        <div className="cv-auto">
+          <ProcessSection />
         </div>
         <MidpageCTA />
         <div className="cv-auto">
@@ -167,6 +225,31 @@ function HeroSlideshow() {
   const [paused, setPaused] = useState(false);
   const reduceMotion = useReducedMotion();
 
+  // Wrap-around slide navigation, shared by dots and swipe gestures.
+  const goTo = (i: number) =>
+    setCurrent(
+      ((i % HERO_SLIDES.length) + HERO_SLIDES.length) % HERO_SLIDES.length
+    );
+
+  // Touch swipe: track the start point and switch slides on a deliberate
+  // horizontal flick. The container keeps `touch-action: pan-y`, so vertical
+  // scrolling is never blocked — we only act on mostly-horizontal gestures.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+      goTo(current + (dx < 0 ? 1 : -1));
+    }
+  };
+
   // The <link rel="preload"> for slide 0 is already in index.html.
   // This hook handles subsequent slides so they start loading on mount.
   useEffect(() => {
@@ -203,6 +286,8 @@ function HeroSlideshow() {
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       {/*
        * Keyframe animations are defined in index.css (not an inline <style>)
@@ -251,20 +336,24 @@ function HeroSlideshow() {
         );
       })}
 
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+      <div className="absolute bottom-9 left-1/2 -translate-x-1/2 flex items-center gap-0.5 z-10 rounded-full bg-black/25 backdrop-blur-sm px-1.5 ring-1 ring-white/10">
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
             type="button"
-            onClick={() => setCurrent(i)}
+            onClick={() => goTo(i)}
             aria-label={`Show slide ${i + 1} of ${HERO_SLIDES.length}`}
             aria-current={i === current ? "true" : undefined}
-            className={`transition-all duration-500 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 ${
-              i === current
-                ? "w-6 h-1.5 bg-primary"
-                : "w-1.5 h-1.5 bg-white/30 hover:bg-white/60"
-            }`}
-          />
+            className="group flex items-center justify-center p-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50"
+          >
+            <span
+              className={`block transition-all duration-500 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.6)] ${
+                i === current
+                  ? "w-6 h-1.5 bg-primary"
+                  : "w-1.5 h-1.5 bg-white/60 group-hover:bg-white/90"
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>
@@ -274,7 +363,7 @@ function HeroSlideshow() {
 function Hero() {
   return (
     <section
-      className="relative min-h-[70vh] md:min-h-[85vh] lg:min-h-[100svh] flex items-center overflow-hidden"
+      className="relative min-h-[70svh] md:min-h-[85svh] lg:min-h-[100svh] flex items-center overflow-hidden"
       aria-labelledby="hero-heading"
     >
       <HeroSlideshow />
@@ -353,18 +442,41 @@ function Hero() {
           </Link>
         </motion.div>
 
-        <motion.div
+        <motion.p variants={fadeUp} className="mt-5 text-sm text-white/70">
+          Prefer to talk?{" "}
+          <a
+            href={SITE.phoneHref}
+            className="inline-flex items-center gap-1.5 font-medium text-white border-b border-primary/50 hover:border-primary hover:text-primary transition-colors"
+          >
+            <Phone className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+            {SITE.phone}
+          </a>
+        </motion.p>
+
+        <motion.ul
           variants={fadeUp}
-          className="mt-12 md:mt-16 flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-white/50"
-          style={{ fontFamily: "var(--font-condensed)" }}
+          className="mt-10 md:mt-14 flex flex-wrap items-center gap-2.5 sm:gap-3"
+          aria-label="Credentials"
         >
-          <span className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-primary" aria-hidden="true" />
-            {SITE.license}
-          </span>
-          <span className="hidden sm:block w-px h-4 bg-white/20" aria-hidden />
-          <span>Licensed · Bonded · Insured</span>
-        </motion.div>
+          {[
+            { label: "Licensed", Icon: ShieldCheck },
+            { label: "Bonded", Icon: ShieldCheck },
+            { label: "Insured", Icon: ShieldCheck },
+            { label: SITE.license, Icon: Award },
+          ].map(({ label, Icon }) => (
+            <li
+              key={label}
+              className="ring-gradient-gold inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 bg-black/30 backdrop-blur-sm text-[11px] sm:text-xs tracking-[0.16em] uppercase text-white font-medium"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              <Icon
+                className="w-3.5 h-3.5 text-primary shrink-0"
+                aria-hidden="true"
+              />
+              {label}
+            </li>
+          ))}
+        </motion.ul>
       </motion.div>
 
       {/* Animated scroll indicator — hidden on small screens to avoid CTA overlap */}
@@ -584,6 +696,101 @@ function ServicesTeaser() {
             ))}
           </div>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROCESS — "How We Work" 4-step narrative. Bridges Services → CTA
+   so visitors understand what working with us actually looks like
+   before they commit to an estimate. Reduces conversion friction.
+══════════════════════════════════════════════════════════════ */
+const PROCESS_STEPS = [
+  {
+    Icon: PhoneCall,
+    step: "01",
+    title: "Talk it through",
+    body: "Call or request an estimate online. We listen first — your goals, timeline, and budget — before we quote a thing.",
+  },
+  {
+    Icon: ClipboardCheck,
+    step: "02",
+    title: "On-site estimate",
+    body: "We visit the site in person and put together a clear, itemized estimate. No guesses, no surprise line items later.",
+  },
+  {
+    Icon: HardHat,
+    step: "03",
+    title: "We build it",
+    body: "One crew, start to finish. Eric is on site daily — clean work, steady progress, and updates you can actually follow.",
+  },
+  {
+    Icon: KeyRound,
+    step: "04",
+    title: "Walk-through & handoff",
+    body: "We finish the punch list together and don't call it done until you do. Built to last, backed by zero call-backs.",
+  },
+] as const;
+
+function ProcessSection() {
+  return (
+    <section
+      id="process"
+      className="py-24 md:py-32 bg-background"
+      aria-labelledby="process-heading"
+    >
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <Reveal className="max-w-2xl mb-14 md:mb-16">
+          <div className="eyebrow text-primary mb-3 md:mb-4">How We Work</div>
+          <h2
+            id="process-heading"
+            className="display-section font-semibold text-foreground"
+          >
+            Four steps. No surprises.
+          </h2>
+          <span className="heading-bar" aria-hidden />
+          <p className="text-muted-foreground text-lg leading-relaxed mt-6">
+            We've kept the process simple on purpose — the same way we've run
+            every job for 20+ years. Here's exactly what to expect.
+          </p>
+        </Reveal>
+
+        <motion.ol
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={stagger}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8"
+        >
+          {PROCESS_STEPS.map(({ Icon, step, title, body }) => (
+            <motion.li
+              key={step}
+              variants={fadeUp}
+              className="group relative bg-card border border-border/60 rounded-sm p-6 md:p-7 transition-colors duration-300 hover:border-primary/60"
+            >
+              <span
+                aria-hidden
+                className="absolute top-5 right-6 text-5xl font-bold text-primary/10 tabular-nums transition-colors duration-300 group-hover:text-primary/20"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {step}
+              </span>
+              <div className="ring-gradient-gold h-11 w-11 flex items-center justify-center rounded-sm mb-5">
+                <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
+              <h3
+                className="text-xl font-semibold text-foreground mb-2.5 leading-snug"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {title}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {body}
+              </p>
+            </motion.li>
+          ))}
+        </motion.ol>
       </div>
     </section>
   );
@@ -857,6 +1064,43 @@ function TestimonialTeaser() {
           >
             {FEATURED_TESTIMONIAL.project} · {FEATURED_TESTIMONIAL.location}
           </div>
+        </motion.div>
+
+        <motion.div
+          variants={fadeUp}
+          className="mt-12 inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-border/50 pt-8"
+        >
+          <span className="flex items-center gap-2">
+            <span className="flex gap-0.5" aria-hidden="true">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+              ))}
+            </span>
+            <span className="text-sm font-semibold text-foreground">
+              5.0 rating
+            </span>
+          </span>
+          <span
+            className="hidden sm:block w-px h-4 bg-border"
+            aria-hidden="true"
+          />
+          <span className="text-sm text-muted-foreground">
+            50+ happy customers ·{" "}
+            <span className="text-foreground font-medium">0 call-backs</span>
+          </span>
+          <span
+            className="hidden sm:block w-px h-4 bg-border"
+            aria-hidden="true"
+          />
+          <a
+            href={SITE.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-primary font-medium border-b border-primary/40 hover:border-primary transition-colors"
+          >
+            Read more reviews
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </a>
         </motion.div>
       </motion.div>
     </section>
