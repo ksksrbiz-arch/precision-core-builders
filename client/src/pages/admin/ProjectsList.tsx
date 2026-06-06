@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -78,8 +79,8 @@ export default function ProjectsList() {
         </div>
 
         {isLoading ? (
-          <div className="bg-card border border-border/60 p-8 text-center text-muted-foreground text-sm">
-            Loading…
+          <div className="bg-card border border-border/60 p-4 md:p-6">
+            <SkeletonTable rows={6} cols={isMobile ? 2 : 6} />
           </div>
         ) : isError ? (
           <QueryError

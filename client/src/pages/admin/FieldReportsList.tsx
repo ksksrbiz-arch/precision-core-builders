@@ -5,6 +5,15 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
+import { SkeletonCard } from "@/components/Skeletons";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { trpc } from "@/lib/trpc";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
@@ -96,27 +105,35 @@ export default function FieldReportsList() {
 
         {/* Reports */}
         {isLoading ? (
-          <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
-            Loading…
-          </div>
+          <SkeletonCard count={4} />
         ) : isError ? (
           <QueryError
             message="We couldn't load field reports. Check your connection and try again."
             onRetry={() => refetch()}
           />
         ) : data?.data.length === 0 ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <BookOpen className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm mb-3">
-              No field reports yet
-            </p>
-            <button
-              onClick={() => setLocation("/admin/field-reports/new")}
-              className="text-primary text-sm underline"
-            >
-              Record your first voice memo
-            </button>
-          </div>
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <BookOpen />
+              </EmptyMedia>
+              <EmptyTitle>No field reports yet</EmptyTitle>
+              <EmptyDescription>
+                {projectId
+                  ? "No reports for this project. Try another project or record a new memo."
+                  : "Capture your first daily update with a voice memo and it will show up here."}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/admin/field-reports/new")}
+                className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Record First Report
+              </button>
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="space-y-3">
             {data?.data.map((report: any) => {
