@@ -4,7 +4,17 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
-import { SkeletonCard } from "@/components/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -15,7 +25,6 @@ import {
   CheckCircle2,
   Download,
   FileText,
-  Loader2,
   Package,
   PackageX,
   Plus,
@@ -63,6 +72,7 @@ export default function MaterialsView() {
   const {
     data: materials,
     isLoading,
+    isError,
     refetch,
   } = trpc.materials.list.useQuery({
     projectId: selectedProject ?? undefined,
@@ -233,7 +243,7 @@ export default function MaterialsView() {
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {generatingPO ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Spinner className="h-3.5 w-3.5" />
                 ) : (
                   <FileText className="h-3.5 w-3.5" />
                 )}
@@ -340,7 +350,10 @@ export default function MaterialsView() {
               >
                 Add Material
               </p>
-              <button onClick={() => setShowAddForm(false)}>
+              <button
+                onClick={() => setShowAddForm(false)}
+                aria-label="Close add material form"
+              >
                 <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
               </button>
             </div>
@@ -430,10 +443,21 @@ export default function MaterialsView() {
 
         {/* PO Error */}
         {poError && (
-          <div className="bg-red-400/5 border border-red-400/30 p-4 mb-5 text-sm text-red-400 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            PO generation error: {poError}
-          </div>
+          <Alert variant="destructive" className="mb-5">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Purchase order generation failed</AlertTitle>
+            <AlertDescription>
+              <p>{poError}</p>
+              <button
+                onClick={generatePO}
+                disabled={generatingPO || !selectedProject}
+                className="mt-1 flex items-center gap-2 text-[11px] border border-border/60 text-muted-foreground px-3 py-1.5 tracking-wider uppercase hover:border-primary/40 hover:text-primary disabled:opacity-50 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <RefreshCw className="h-3 w-3" /> Retry
+              </button>
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Generated Purchase Orders */}
@@ -593,31 +617,64 @@ export default function MaterialsView() {
 
         {/* Materials table */}
         {isLoading && (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">
-              Loading materials…
-            </span>
+          <div className="border border-border/60 p-4 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-4 w-4 rounded-sm shrink-0" />
+                <Skeleton className="h-4 flex-1" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))}
           </div>
         )}
 
-        {!isLoading && filtered.length === 0 && (
-          <div className="py-16 text-center">
-            <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light">
-              No materials found
-            </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="mt-4 text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              + Add First Material
-            </button>
-          </div>
+        {!isLoading && isError && (
+          <Alert variant="destructive" className="my-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Couldn't load materials</AlertTitle>
+            <AlertDescription>
+              <p>
+                Something went wrong while loading the inventory. Please try
+                again.
+              </p>
+              <button
+                onClick={() => refetch()}
+                className="mt-1 flex items-center gap-2 text-[11px] border border-border/60 text-muted-foreground px-3 py-1.5 tracking-wider uppercase hover:border-primary/40 hover:text-primary transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <RefreshCw className="h-3 w-3" /> Retry
+              </button>
+            </AlertDescription>
+          </Alert>
         )}
 
-        {!isLoading && filtered.length > 0 && (
+        {!isLoading && !isError && filtered.length === 0 && (
+          <Empty className="py-16">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Package />
+              </EmptyMedia>
+              <EmptyTitle>No materials found</EmptyTitle>
+              <EmptyDescription>
+                {searchQuery || showShortagesOnly || selectedProject
+                  ? "No materials match the current filters. Try clearing them or add a new material."
+                  : "Track inventory, shortages, and vendor pricing by adding your first material."}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                + Add First Material
+              </button>
+            </EmptyContent>
+          </Empty>
+        )}
+
+        {!isLoading && !isError && filtered.length > 0 && (
           <div className="border border-border/60 overflow-hidden">
             {isMobile ? (
               <div className="space-y-3 p-3">

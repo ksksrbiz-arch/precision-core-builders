@@ -8,6 +8,14 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { useToast } from "@/components/ToastProvider";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
 import { trpc } from "@/lib/trpc";
 import {
   buildFreePaymentLinks,
@@ -21,7 +29,6 @@ import {
   DollarSign,
   ExternalLink,
   FileText,
-  Loader2,
   Plus,
   RefreshCw,
   Send,
@@ -406,6 +413,7 @@ export default function BillingView() {
                 className="flex min-h-11 items-center gap-2 border border-border/60 text-muted-foreground px-3 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
                 title="Reload invoices from Stripe"
+                aria-label="Reload invoices from Stripe"
               >
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${stripeLoading ? "animate-spin" : ""}`}
@@ -512,7 +520,10 @@ export default function BillingView() {
               >
                 Create New Invoice
               </p>
-              <button onClick={() => setShowForm(false)}>
+              <button
+                onClick={() => setShowForm(false)}
+                aria-label="Close invoice form"
+              >
                 <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
               </button>
             </div>
@@ -704,7 +715,7 @@ export default function BillingView() {
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 {loading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Spinner className="h-3.5 w-3.5" />
                 ) : mode === "invoice" ? (
                   <Send className="h-3.5 w-3.5" />
                 ) : mode === "free_link" ? (
@@ -731,23 +742,25 @@ export default function BillingView() {
 
         {/* Invoice list */}
         {stripeLoading && invoices.length === 0 ? (
-          <div className="py-20 text-center">
-            <Loader2 className="h-8 w-8 text-primary/40 animate-spin mx-auto mb-3" />
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Spinner className="h-8 w-8 text-primary/60" />
             <p className="text-sm text-muted-foreground font-light">
               Loading invoices…
             </p>
           </div>
         ) : invoices.length === 0 ? (
-          <div className="py-20 text-center">
-            <CreditCard className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light mb-1">
-              No invoices yet
-            </p>
-            <p className="text-xs text-muted-foreground/60">
-              Create milestone invoices to send clients payment links or formal
-              Stripe invoices.
-            </p>
-          </div>
+          <Empty className="py-20">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <CreditCard />
+              </EmptyMedia>
+              <EmptyTitle>No invoices yet</EmptyTitle>
+              <EmptyDescription>
+                Create milestone invoices to send clients payment links or
+                formal Stripe invoices.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="space-y-3">
             {invoices.map((inv, i) => {
@@ -828,6 +841,7 @@ export default function BillingView() {
                       }}
                       className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors shrink-0"
                       title="Copy link"
+                      aria-label="Copy payment link"
                     >
                       <ClipboardCopy className="h-3.5 w-3.5" />
                     </button>
@@ -840,6 +854,7 @@ export default function BillingView() {
                       rel="noopener noreferrer"
                       className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors shrink-0"
                       title="Open in Stripe"
+                      aria-label="Open payment link in Stripe"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
