@@ -10,7 +10,14 @@ import {
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, CheckCircle2, DollarSign } from "lucide-react";
+import {
+  ArrowRight,
+  Loader2,
+  CheckCircle2,
+  DollarSign,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
 import { useState } from "react";
 
 const PROJECT_TYPES = [
@@ -36,6 +43,34 @@ const MATERIALS_OPTIONS = [
   "Smart home integration",
   "Premium appliances",
 ];
+
+// Rough timeline ranges (in weeks) by project type, used only as a ballpark
+// on the results screen. Adjusted by finish level below. These are client-side
+// heuristics — the on-site visit produces the real schedule.
+const TIMELINE_WEEKS: Record<string, [number, number]> = {
+  "new-home": [20, 36],
+  "full-remodel": [10, 20],
+  kitchen: [4, 8],
+  bathroom: [3, 6],
+  addition: [8, 16],
+  adu: [12, 24],
+  outdoor: [2, 6],
+  roofing: [1, 3],
+  restoration: [4, 12],
+  cabinets: [3, 8],
+};
+
+function estimateTimeline(
+  projectType: string,
+  complexity: "low" | "medium" | "high"
+): string | null {
+  const base = TIMELINE_WEEKS[projectType];
+  if (!base) return null;
+  const factor = complexity === "high" ? 1.25 : complexity === "low" ? 0.85 : 1;
+  const low = Math.max(1, Math.round(base[0] * factor));
+  const high = Math.max(low + 1, Math.round(base[1] * factor));
+  return `${low}–${high} weeks`;
+}
 
 type Step = 1 | 2 | 3 | 4;
 type EstimateResult = {
@@ -442,21 +477,97 @@ export default function Estimator() {
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border/40">
-                  {[
-                    { label: "Labor", value: result.laborCost },
-                    { label: "Materials", value: result.materialsCost },
-                    { label: "Permits", value: result.permitsCost },
-                    { label: "Contingency", value: result.contingency },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">{label}</span>
-                      <span className="text-foreground font-medium">
-                        {fmt(value)}
-                      </span>
+                {(() => {
+                  const parts = [
+                    {
+                      label: "Labor",
+                      value: result.laborCost,
+                      color: "#c8a84b",
+                    },
+                    {
+                      label: "Materials",
+                      value: result.materialsCost,
+                      color: "#a89060",
+                    },
+                    {
+                      label: "Permits",
+                      value: result.permitsCost,
+                      color: "#7a9e4c",
+                    },
+                    {
+                      label: "Contingency",
+                      value: result.contingency,
+                      color: "#d4a574",
+                    },
+                  ];
+                  const total = parts.reduce((sum, p) => sum + p.value, 0) || 1;
+                  const timeline = estimateTimeline(projectType, complexity);
+                  return (
+                    <div className="pt-4 border-t border-border/40">
+                      <p
+                        className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-2.5"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Where it goes
+                      </p>
+                      {/* Stacked proportion bar */}
+                      <div
+                        className="flex h-2.5 w-full overflow-hidden rounded-full bg-border/40"
+                        role="img"
+                        aria-label={parts
+                          .map(
+                            p =>
+                              `${p.label} ${Math.round(
+                                (p.value / total) * 100
+                              )} percent`
+                          )
+                          .join(", ")}
+                      >
+                        {parts.map(p => (
+                          <div
+                            key={p.label}
+                            style={{
+                              width: `${(p.value / total) * 100}%`,
+                              backgroundColor: p.color,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      {/* Legend */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-4">
+                        {parts.map(p => (
+                          <div
+                            key={p.label}
+                            className="flex items-center justify-between text-xs"
+                          >
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <span
+                                aria-hidden
+                                className="h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                                style={{ backgroundColor: p.color }}
+                              />
+                              {p.label}
+                            </span>
+                            <span className="text-foreground font-medium tabular-nums">
+                              {fmt(p.value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      {timeline && (
+                        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40 text-sm">
+                          <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="text-muted-foreground">
+                            Typical timeline:
+                          </span>
+                          <span className="text-foreground font-semibold">
+                            {timeline}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </div>
 
               {/* AI reasoning */}
@@ -473,6 +584,18 @@ export default function Estimator() {
                 <p className="text-[10px] text-muted-foreground/50 mt-3 font-light">
                   Based on current Eugene, OR market data. Actual costs may
                   vary. Free on-site estimate available.
+                </p>
+              </div>
+
+              {/* Prominent disclaimer — set expectations before the ask */}
+              <div className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/10 p-4 rounded-sm">
+                <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-foreground/90 leading-relaxed">
+                  <span className="font-semibold">
+                    This is a ballpark, not a quote.
+                  </span>{" "}
+                  Real pricing depends on site conditions, finishes, and scope.
+                  Eric confirms every number with a free on-site visit.
                 </p>
               </div>
 
