@@ -19,7 +19,19 @@ import { getProject, PROJECTS, photoUrl } from "@/data/projects";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, MapPin, Phone, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  MapPin,
+  Phone,
+  Check,
+  Calendar,
+  Clock,
+  Ruler,
+  Layers,
+  Tag,
+  MoveHorizontal,
+} from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { useMemo } from "react";
 
@@ -153,6 +165,53 @@ export default function PortfolioDetail() {
           </div>
         </section>
 
+        {/* PROJECT FACTS BAR — real data; optional year/duration/size when set */}
+        {(() => {
+          const facts = [
+            { Icon: Tag, label: "Project Type", value: project.category },
+            { Icon: MapPin, label: "Location", value: project.location },
+            { Icon: Calendar, label: "Completed", value: project.year },
+            { Icon: Clock, label: "Duration", value: project.duration },
+            { Icon: Ruler, label: "Size", value: project.size },
+            {
+              Icon: Layers,
+              label: "Scope",
+              value: `${project.scope.length} work items`,
+            },
+          ].filter(f => Boolean(f.value));
+
+          return (
+            <section className="border-b border-border/40 bg-card/40">
+              <div className="container mx-auto px-5 md:px-8">
+                <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y divide-border/40 sm:divide-y-0 sm:divide-x">
+                  {facts.map(({ Icon, label, value }) => (
+                    <div
+                      key={label}
+                      className="flex items-start gap-3 py-5 sm:px-5 first:pl-0"
+                    >
+                      <Icon
+                        className="h-4 w-4 text-[#C8A84B] mt-0.5 shrink-0"
+                        aria-hidden
+                      />
+                      <div className="min-w-0">
+                        <dt
+                          className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground/70 mb-1"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {label}
+                        </dt>
+                        <dd className="text-sm font-medium text-foreground leading-snug">
+                          {value}
+                        </dd>
+                      </div>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </section>
+          );
+        })()}
+
         {/* BEFORE / AFTER SLIDER (if present) */}
         {project.beforeAfter && (
           <section className="py-14 md:py-20 bg-card/30">
@@ -173,6 +232,13 @@ export default function PortfolioDetail() {
                     className="heading-bar heading-bar-center"
                     aria-hidden
                   />
+                  <p className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    <MoveHorizontal
+                      className="h-4 w-4 text-[#C8A84B]"
+                      aria-hidden
+                    />
+                    Drag to compare
+                  </p>
                 </motion.div>
                 <BeforeAfterSlider
                   before={photoUrl(project.beforeAfter.before)}
