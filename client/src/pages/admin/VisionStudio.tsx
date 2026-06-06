@@ -42,6 +42,9 @@ interface AnalysisResult {
   imagePreview: string;
 }
 
+// Media types accepted by Claude Vision / Gemini Vision.
+const SUPPORTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
 const MODES: {
   id: AnalysisMode;
   label: string;
@@ -89,6 +92,7 @@ const MODES: {
 export default function VisionStudioAdmin() {
   const { accessToken } = useAuth();
   const [image, setImage] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<string>("image/jpeg");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mode, setMode] = useState<AnalysisMode>("general");
   const [customPrompt, setCustomPrompt] = useState("");
@@ -105,6 +109,12 @@ export default function VisionStudioAdmin() {
       setError("Please upload an image file.");
       return;
     }
+    if (!SUPPORTED_TYPES.includes(file.type)) {
+      setError(
+        "Unsupported format. Use JPEG, PNG, WebP, or GIF (HEIC photos must be converted first)."
+      );
+      return;
+    }
     if (file.size > 20 * 1024 * 1024) {
       setError("Image must be under 20MB.");
       return;
@@ -116,6 +126,7 @@ export default function VisionStudioAdmin() {
       const dataUrl = e.target?.result as string;
       setImagePreview(dataUrl);
       setImage(dataUrl.split(",")[1]);
+      setMediaType(file.type);
     };
     reader.readAsDataURL(file);
   }, []);
@@ -138,7 +149,7 @@ export default function VisionStudioAdmin() {
       const payload: Record<string, string> = {
         image,
         mode,
-        mediaType: "image/jpeg",
+        mediaType,
       };
       if (customPrompt.trim()) payload.customPrompt = customPrompt.trim();
 
@@ -175,6 +186,7 @@ export default function VisionStudioAdmin() {
   const clearImage = () => {
     setImage(null);
     setImagePreview(null);
+    setMediaType("image/jpeg");
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
