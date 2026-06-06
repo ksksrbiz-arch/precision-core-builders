@@ -25,6 +25,7 @@ export default defineConfig({
       "netlify/functions/__tests__/auth-sync-role.test.ts",
       "netlify/functions/__tests__/onboarding-*.test.ts",
       "netlify/functions/__tests__/stripe-*.test.ts",
+      "netlify/functions/__tests__/vision-studio.test.ts",
       "client/src/pages/OnboardingWizard.test.ts",
       "client/src/components/RouteGuards.test.tsx",
     ],
