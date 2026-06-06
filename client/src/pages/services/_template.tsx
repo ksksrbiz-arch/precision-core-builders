@@ -9,6 +9,7 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
+import { PROJECTS, photoUrl, type ProjectCategory } from "@/data/projects";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Phone } from "lucide-react";
@@ -40,6 +41,8 @@ export type ServicePageProps = {
   serviceAreas: string[];
   faqs: { q: string; a: string }[];
   relatedServices: { label: string; href: string }[];
+  /** Portfolio categories whose projects illustrate this service. */
+  projectCategories?: ProjectCategory[];
 };
 
 type FormStatus = "idle" | "submitting" | "success" | "error";
@@ -77,6 +80,13 @@ export function ServicePage(p: ServicePageProps) {
 
   const input =
     "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors";
+
+  // Portfolio projects that illustrate this service (max 3).
+  const relatedProjects = p.projectCategories
+    ? PROJECTS.filter(proj =>
+        p.projectCategories!.includes(proj.category)
+      ).slice(0, 3)
+    : [];
 
   const formName = `${p.title
     .toLowerCase()
@@ -305,6 +315,54 @@ export function ServicePage(p: ServicePageProps) {
                     </details>
                   ))}
                 </div>
+
+                {/* Related projects from the portfolio */}
+                {relatedProjects.length > 0 && (
+                  <div className="mb-12">
+                    <h2
+                      className="text-2xl sm:text-3xl font-semibold mb-6"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Related Projects
+                    </h2>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      {relatedProjects.map(proj => (
+                        <a
+                          key={proj.slug}
+                          href={`/portfolio/${proj.slug}`}
+                          className="group block overflow-hidden border border-border/60 bg-card hover:border-primary/50 transition-colors"
+                        >
+                          <div className="aspect-[4/3] overflow-hidden bg-muted">
+                            <img
+                              src={photoUrl(proj.hero)}
+                              alt={proj.title}
+                              loading="lazy"
+                              decoding="async"
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          </div>
+                          <div className="p-4">
+                            <p
+                              className="text-[10px] tracking-[0.18em] uppercase text-primary mb-1"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              {proj.category}
+                            </p>
+                            <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors">
+                              {proj.title}
+                            </h3>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                    <a
+                      href="/portfolio"
+                      className="inline-flex items-center gap-2 mt-5 text-sm text-primary font-medium border-b border-primary/40 hover:border-primary pb-0.5"
+                    >
+                      View full portfolio <ArrowRight className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                )}
 
                 {/* Related services */}
                 <h2
