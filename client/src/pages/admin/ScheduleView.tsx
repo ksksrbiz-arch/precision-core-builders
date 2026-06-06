@@ -5,6 +5,17 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { GanttChart } from "@/components/GanttChart";
 import { SkeletonCard } from "@/components/Skeletons";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -17,7 +28,6 @@ import {
   Circle,
   Clock,
   CloudRain,
-  Loader2,
   Plus,
   RefreshCw,
   Sun,
@@ -202,6 +212,7 @@ export default function ScheduleView() {
   const {
     data: scheduleItems,
     isLoading: scheduleLoading,
+    isError: scheduleError,
     refetch,
   } = trpc.schedule.list.useQuery(
     { projectId: selectedProject! },
@@ -384,6 +395,7 @@ export default function ScheduleView() {
               <button
                 onClick={() => setShowAddTask(false)}
                 className="text-muted-foreground hover:text-foreground"
+                aria-label="Close add task form"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -483,16 +495,27 @@ export default function ScheduleView() {
         {/* Weather bar */}
         {weatherLoading && (
           <div className="bg-card border border-border/60 p-8 mb-5 flex items-center justify-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <Spinner className="h-5 w-5 text-primary" />
             <span className="text-sm text-muted-foreground">
               Fetching Eugene OR forecast…
             </span>
           </div>
         )}
-        {weatherError && (
-          <div className="bg-card border border-red-400/30 p-4 mb-5 text-sm text-red-400">
-            ⚠️ Weather error: {weatherError}
-          </div>
+        {weatherError && !weatherLoading && (
+          <Alert variant="destructive" className="mb-5">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Couldn’t load the forecast</AlertTitle>
+            <AlertDescription>
+              <p>{weatherError}</p>
+              <button
+                onClick={() => fetchWeather(selectedProject ?? undefined)}
+                className="mt-2 border border-border/60 px-3 py-1.5 text-[11px] font-bold tracking-widest uppercase text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Retry
+              </button>
+            </AlertDescription>
+          </Alert>
         )}
         {weather && !weatherLoading && <WeatherBar weather={weather} />}
 
@@ -583,38 +606,85 @@ export default function ScheduleView() {
 
         {/* Schedule items */}
         {scheduleLoading && (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">
-              Loading schedule…
-            </span>
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-card border border-border/60 p-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-6 w-20 shrink-0" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {!scheduleLoading && !selectedProject && (
-          <div className="py-16 text-center">
-            <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light">
-              Select a project to view its schedule
-            </p>
-          </div>
+        {!scheduleLoading && scheduleError && selectedProject && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Couldn’t load the schedule</AlertTitle>
+            <AlertDescription>
+              <p>
+                Something went wrong while loading this project’s schedule
+                items.
+              </p>
+              <button
+                onClick={() => refetch()}
+                className="mt-2 border border-border/60 px-3 py-1.5 text-[11px] font-bold tracking-widest uppercase text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Retry
+              </button>
+            </AlertDescription>
+          </Alert>
         )}
 
-        {!scheduleLoading && selectedProject && filtered.length === 0 && (
-          <div className="py-16 text-center">
-            <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light">
-              No schedule items found
-            </p>
-            <button
-              onClick={() => setLocation(`/admin/projects/${selectedProject}`)}
-              className="mt-4 text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              + Add in Project Detail
-            </button>
-          </div>
+        {!scheduleLoading && !scheduleError && !selectedProject && (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Calendar />
+              </EmptyMedia>
+              <EmptyTitle>No project selected</EmptyTitle>
+              <EmptyDescription>
+                Select a project above to view its weather-aware schedule.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
+
+        {!scheduleLoading &&
+          !scheduleError &&
+          selectedProject &&
+          filtered.length === 0 && (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Calendar />
+                </EmptyMedia>
+                <EmptyTitle>No schedule items found</EmptyTitle>
+                <EmptyDescription>
+                  {filterStatus === "all"
+                    ? "This project doesn’t have any schedule tasks yet."
+                    : "No tasks match the selected status filter."}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <button
+                  onClick={() =>
+                    setLocation(`/admin/projects/${selectedProject}`)
+                  }
+                  className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  + Add in Project Detail
+                </button>
+              </EmptyContent>
+            </Empty>
+          )}
 
         <div className="space-y-2">
           {filtered.map(item => {
