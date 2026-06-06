@@ -13,6 +13,7 @@ import {
   ScrollProgressBar,
   BackToTop,
   SkipToContent,
+  StickyEstimateCTA,
 } from "./components/SiteEnhancements";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AdminRoute, ProtectedRoute } from "./components/RouteGuards";
@@ -278,6 +279,7 @@ export default function App() {
             </div>
             <MobileBottomNav />
             <BackToTop />
+            <StickyEstimateCTA />
             <PWAInstallPrompt />
             <IOSInstallHint />
           </TooltipProvider>
