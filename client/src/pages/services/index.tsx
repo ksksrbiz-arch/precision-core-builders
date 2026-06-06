@@ -42,6 +42,11 @@ export function Residential() {
       }
       heroImage={ASSETS.services.residential}
       heroImageAlt="Residential construction Eugene Oregon — Precision Core Builders"
+      projectCategories={[
+        "Custom Homes",
+        "The Tadlock Residence",
+        "Interior Remodels",
+      ]}
       metaTitle="Residential Contractor Eugene OR | Precision Core Builders | CCB #246527"
       metaDescription="Licensed residential contractor in Eugene, Oregon (CCB #246527). Custom homes, renovations, and residential construction by Eric Tadlock with 20+ years experience. Free estimates."
       intro={withBudget(
@@ -106,6 +111,7 @@ export function Remodels() {
       }
       heroImage={ASSETS.services.remodels}
       heroImageAlt="Kitchen and bathroom remodel Eugene Oregon"
+      projectCategories={["Interior Remodels", "Bath & Kitchen"]}
       metaTitle="Home Remodeling Contractor Eugene OR | Precision Core Builders | CCB #246527"
       metaDescription="Expert home remodeling in Eugene, Oregon. Kitchen remodels, bathroom renovations, whole-home updates. Licensed contractor CCB #246527 with 20+ years experience. Free estimates."
       intro={withBudget(
@@ -170,6 +176,7 @@ export function NewConstruction() {
       }
       heroImage={ASSETS.services.newConstruction}
       heroImageAlt="New home construction Eugene Oregon"
+      projectCategories={["Custom Homes", "The Tadlock Residence"]}
       metaTitle="Custom Home Builder Eugene OR | New Construction | Precision Core Builders CCB #246527"
       metaDescription="Custom home builder in Eugene, Oregon. Ground-up new construction by licensed contractor CCB #246527 with 20+ years of experience. From permits to final walkthrough. Free estimates."
       intro={withBudget(
@@ -234,6 +241,7 @@ export function Restoration() {
       }
       heroImage={ASSETS.services.restoration}
       heroImageAlt="Home restoration project Eugene Oregon — before and after"
+      projectCategories={["Exterior & Restoration"]}
       metaTitle="Home Restoration Contractor Eugene OR | Precision Core Builders | CCB #246527"
       metaDescription="Professional home restoration in Eugene, Oregon. Water damage, fire damage, structural restoration, and historic home preservation. Licensed CCB #246527. Free estimates."
       intro={withBudget(
@@ -294,6 +302,7 @@ export function Outdoor() {
       }
       heroImage={ASSETS.services.outdoor}
       heroImageAlt="Custom deck and outdoor living space Eugene Oregon"
+      projectCategories={["Decks & Outdoor", "Fencing & Structures"]}
       metaTitle="Deck Builder & Outdoor Contractor Eugene OR | Precision Core Builders | CCB #246527"
       metaDescription="Custom decks, patios, pergolas, and outdoor living spaces in Eugene, Oregon. Licensed contractor CCB #246527. Designed and built to handle Oregon's climate. Free estimates."
       intro={withBudget(
@@ -354,6 +363,7 @@ export function Painting() {
       }
       heroImage={ASSETS.services.painting}
       heroImageAlt="Professional interior and exterior painting Eugene Oregon"
+      projectCategories={["Exterior & Restoration", "Interior Remodels"]}
       metaTitle="Painting Contractor Eugene OR | Interior & Exterior | Precision Core Builders CCB #246527"
       metaDescription="Professional interior and exterior painting in Eugene, Oregon. Proper prep, quality materials, clean results that last. Licensed contractor CCB #246527. Free estimates."
       intro={withBudget(
@@ -414,6 +424,7 @@ export function Roofing() {
       }
       heroImage={ASSETS.services.roofing}
       heroImageAlt="Roof replacement and roofing services Eugene Oregon"
+      projectCategories={["Exterior & Restoration"]}
       metaTitle="Roofing Contractor Eugene OR | Roof Replacement & Repair | Precision Core Builders CCB #246527"
       metaDescription="Expert roofing services in Eugene, Oregon. Roof replacements, repairs, and inspections. Licensed contractor CCB #246527. Built for Oregon's climate. Free estimates."
       intro={withBudget(
@@ -474,6 +485,7 @@ export function Cabinets() {
       }
       heroImage={ASSETS.services.cabinets}
       heroImageAlt="Custom cabinetry and millwork Eugene Oregon"
+      projectCategories={["Bath & Kitchen", "Interior Remodels"]}
       metaTitle="Custom Cabinet Builder Eugene OR | Built-Ins & Millwork | Precision Core Builders CCB #246527"
       metaDescription="Custom cabinetry, built-ins, and finish millwork in Eugene, Oregon. Designed for your space, built by hand. Licensed contractor CCB #246527 with 20+ years carpentry experience. Free estimates."
       intro={withBudget(
