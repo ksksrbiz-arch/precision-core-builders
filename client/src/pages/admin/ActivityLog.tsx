@@ -6,6 +6,15 @@
  * Provides filtering by action type, date range, and free-text search.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -502,44 +511,57 @@ export default function ActivityLog() {
           {/* Log rows */}
           <div className="max-h-[520px] overflow-y-auto overscroll-contain font-mono">
             {loading && (
-              <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground/40 text-sm">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Loading audit log…
+              <div className="p-4 space-y-3" aria-busy="true">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-1.5 w-1.5 rounded-full" />
+                    <Skeleton className="h-3 w-[128px]" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-3 flex-1" />
+                    <Skeleton className="h-3 w-[120px]" />
+                  </div>
+                ))}
               </div>
             )}
 
             {error && !loading && (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                <AlertTriangle className="h-8 w-8 text-destructive/50" />
-                <div>
-                  <p className="text-sm font-medium text-destructive/80">
-                    Failed to load
-                  </p>
-                  <p className="text-xs text-muted-foreground/50 mt-1 max-w-xs">
-                    {error}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/30 mt-2">
-                    Supabase may not be configured. Connect it in the Netlify
-                    dashboard to enable log persistence.
-                  </p>
-                </div>
+              <div className="p-6">
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Failed to load activity log</AlertTitle>
+                  <AlertDescription>
+                    <p>{error}</p>
+                    <p className="text-muted-foreground/70">
+                      Supabase may not be configured. Connect it in the Netlify
+                      dashboard to enable log persistence.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={fetchEntries}
+                      className="mt-1 inline-flex items-center gap-1.5 text-primary text-xs font-medium hover:underline"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Try again
+                    </button>
+                  </AlertDescription>
+                </Alert>
               </div>
             )}
 
             {!loading && !error && filtered.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                <Activity className="h-8 w-8 text-muted-foreground/20" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground/50">
-                    No events yet
-                  </p>
-                  <p className="text-xs text-muted-foreground/30 mt-1">
+              <Empty className="border-0">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Activity className="h-6 w-6 text-muted-foreground/60" />
+                  </EmptyMedia>
+                  <EmptyTitle>No events yet</EmptyTitle>
+                  <EmptyDescription>
                     {search || levelFilter !== "all"
-                      ? "Try clearing your filters."
+                      ? "No events match your current filters. Try clearing your search or level filter."
                       : "Audit events will appear here as admin actions are performed."}
-                  </p>
-                </div>
-              </div>
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             )}
 
             <AnimatePresence initial={false}>
