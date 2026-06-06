@@ -21,6 +21,7 @@ import { SectionTeaser } from "@/components/layout/SectionTeaser";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { Reveal } from "@/components/ui/Reveal";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
+import { netlifySrcSet } from "@/lib/netlifyImage";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion, useInView, useReducedMotion } from "framer-motion";
@@ -225,6 +226,11 @@ function HeroSlideshow() {
           >
             <img
               src={slide.url}
+              // Slide 0 is the LCP image and is already <link rel=preload>-ed
+              // as the original file, so leave it untouched; route the rest
+              // through the Netlify Image CDN for smaller AVIF/WebP variants.
+              srcSet={i === 0 ? undefined : netlifySrcSet(slide.url)}
+              sizes={i === 0 ? undefined : "100vw"}
               alt={i === 0 ? slide.alt : ""}
               aria-hidden={i === 0 ? undefined : true}
               className="hero-slide-img h-full w-full object-cover"

@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { netlifySrcSet } from "@/lib/netlifyImage";
 
 interface Props {
   src: string;
@@ -36,6 +37,7 @@ export function ResponsiveImage({
     >
       <img
         src={src}
+        srcSet={netlifySrcSet(src)}
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         decoding={priority ? "sync" : "async"}
