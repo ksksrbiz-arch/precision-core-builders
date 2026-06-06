@@ -8,6 +8,7 @@ interface SEOOptions {
   title: string;
   description?: string;
   canonical?: string;
+  image?: string;
 }
 
 const SITE_NAME = "Precision Core Builders";
@@ -36,7 +37,7 @@ function getOrCreateLink(selector: string, rel: string): HTMLLinkElement {
   return el;
 }
 
-export function useSEO({ title, description, canonical }: SEOOptions) {
+export function useSEO({ title, description, canonical, image }: SEOOptions) {
   useEffect(() => {
     const fullTitle = `${title} | ${SITE_NAME}`;
 
@@ -53,6 +54,22 @@ export function useSEO({ title, description, canonical }: SEOOptions) {
       metaDesc.content = description;
     }
 
+    // OG type (default website)
+    const ogType = getOrCreateMeta(
+      'meta[property="og:type"]',
+      "property",
+      "og:type"
+    );
+    ogType.content = "website";
+
+    // Twitter card
+    const twitterCard = getOrCreateMeta(
+      'meta[name="twitter:card"]',
+      "name",
+      "twitter:card"
+    );
+    twitterCard.content = "summary_large_image";
+
     // OG title
     const ogTitle = getOrCreateMeta(
       'meta[property="og:title"]',
@@ -61,7 +78,15 @@ export function useSEO({ title, description, canonical }: SEOOptions) {
     );
     ogTitle.content = fullTitle;
 
-    // OG description
+    // Twitter title
+    const twitterTitle = getOrCreateMeta(
+      'meta[name="twitter:title"]',
+      "name",
+      "twitter:title"
+    );
+    twitterTitle.content = fullTitle;
+
+    // OG / Twitter description
     if (description) {
       const ogDesc = getOrCreateMeta(
         'meta[property="og:description"]',
@@ -69,17 +94,49 @@ export function useSEO({ title, description, canonical }: SEOOptions) {
         "og:description"
       );
       ogDesc.content = description;
+
+      const twitterDesc = getOrCreateMeta(
+        'meta[name="twitter:description"]',
+        "name",
+        "twitter:description"
+      );
+      twitterDesc.content = description;
     }
 
-    // Canonical
+    // Canonical + og:url
     if (canonical) {
       const canonicalEl = getOrCreateLink('link[rel="canonical"]', "canonical");
       canonicalEl.href = canonical;
+
+      const ogUrl = getOrCreateMeta(
+        'meta[property="og:url"]',
+        "property",
+        "og:url"
+      );
+      ogUrl.content = canonical;
+    }
+
+    // OG / Twitter image (only when explicitly provided; otherwise keep the
+    // static homepage image from index.html)
+    if (image) {
+      const ogImage = getOrCreateMeta(
+        'meta[property="og:image"]',
+        "property",
+        "og:image"
+      );
+      ogImage.content = image;
+
+      const twitterImage = getOrCreateMeta(
+        'meta[name="twitter:image"]',
+        "name",
+        "twitter:image"
+      );
+      twitterImage.content = image;
     }
 
     // Reset to default on unmount
     return () => {
       document.title = `${SITE_NAME} | Precision Construction, Core Values | Eugene, OR`;
     };
-  }, [title, description, canonical]);
+  }, [title, description, canonical, image]);
 }
