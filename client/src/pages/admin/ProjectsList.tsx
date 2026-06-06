@@ -1,7 +1,9 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
+import { SkeletonCard } from "@/components/Skeletons";
 import { trpc } from "@/lib/trpc";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Plus, Search, MapPin, DollarSign, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -11,6 +13,7 @@ import { StatusBadge } from "./CommandCenter";
 export default function ProjectsList() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const isMobile = useIsMobile();
@@ -18,7 +21,7 @@ export default function ProjectsList() {
   const { data, isLoading, isError, refetch } = trpc.projects.list.useQuery({
     page,
     pageSize: 20,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     status: (status as any) || undefined,
   });
 
@@ -78,9 +81,7 @@ export default function ProjectsList() {
         </div>
 
         {isLoading ? (
-          <div className="bg-card border border-border/60 p-8 text-center text-muted-foreground text-sm">
-            Loading…
-          </div>
+          <SkeletonCard count={5} />
         ) : isError ? (
           <QueryError
             message="We couldn't load your projects. Check your connection and try again."
