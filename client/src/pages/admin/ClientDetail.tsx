@@ -4,7 +4,18 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertCircle,
   ArrowLeft,
   Calendar,
   DollarSign,
@@ -14,6 +25,7 @@ import {
   Phone,
   Save,
   Tag,
+  UserX,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -103,8 +115,25 @@ export default function ClientDetail() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto p-12 text-center text-muted-foreground text-sm">
-          Loading…
+        <div className="max-w-4xl mx-auto">
+          <Skeleton className="h-4 w-28 mb-6" />
+          <div className="bg-card border border-border/60 p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <Skeleton className="h-14 w-14 shrink-0" />
+              <div className="flex-1 space-y-3">
+                <Skeleton className="h-7 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+            <div className="mt-5 pt-4 border-t border-border/40">
+              <Skeleton className="h-3 w-40" />
+            </div>
+          </div>
+          <Skeleton className="h-3 w-24 mb-3" />
+          <div className="space-y-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -113,11 +142,15 @@ export default function ClientDetail() {
   if (isError) {
     return (
       <DashboardLayout>
-        <div className="max-w-md mx-auto p-12 text-center">
-          <p className="text-sm text-destructive mb-3">
-            Could not load this client. Network or authorization issue.
-          </p>
-          <div className="flex gap-2 justify-center">
+        <div className="max-w-md mx-auto p-12">
+          <Alert variant="destructive">
+            <AlertCircle />
+            <AlertTitle>Could not load this client</AlertTitle>
+            <AlertDescription>
+              A network or authorization issue occurred. Please try again.
+            </AlertDescription>
+          </Alert>
+          <div className="flex gap-2 justify-center mt-4">
             <button
               onClick={() => refetch()}
               className="text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
@@ -141,8 +174,27 @@ export default function ClientDetail() {
   if (!client) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto p-12 text-center">
-          <p className="text-muted-foreground text-sm">Client not found.</p>
+        <div className="max-w-md mx-auto p-12">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <UserX />
+              </EmptyMedia>
+              <EmptyTitle>Client not found</EmptyTitle>
+              <EmptyDescription>
+                This client may have been removed or the link is incorrect.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/admin/clients")}
+                className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Back to Clients
+              </button>
+            </EmptyContent>
+          </Empty>
         </div>
       </DashboardLayout>
     );
@@ -175,6 +227,7 @@ export default function ClientDetail() {
                 </p>
                 <button
                   onClick={cancelEdit}
+                  aria-label="Cancel editing"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X className="h-4 w-4" />
@@ -263,6 +316,7 @@ export default function ClientDetail() {
                     </h1>
                     <button
                       onClick={startEdit}
+                      aria-label="Edit client"
                       className="text-muted-foreground/50 hover:text-primary transition-colors"
                       title="Edit client"
                     >
