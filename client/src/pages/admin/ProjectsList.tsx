@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
-import { SkeletonCard } from "@/components/Skeletons";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -81,7 +81,9 @@ export default function ProjectsList() {
         </div>
 
         {isLoading ? (
-          <SkeletonCard count={5} />
+          <div className="bg-card border border-border/60 p-4 md:p-6">
+            <SkeletonTable rows={6} cols={isMobile ? 2 : 6} />
+          </div>
         ) : isError ? (
           <QueryError
             message="We couldn't load your projects. Check your connection and try again."

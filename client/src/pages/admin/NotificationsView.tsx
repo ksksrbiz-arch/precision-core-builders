@@ -3,6 +3,15 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -162,14 +171,18 @@ export default function NotificationsView() {
 
   const { data: clients } = trpc.clients.list.useQuery({ pageSize: 100 });
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
-  const { data: feed, isLoading: feedLoading } =
-    trpc.notifications.adminList.useQuery({
-      page,
-      pageSize: FEED_PAGE_SIZE,
-      search: debouncedSearch || undefined,
-      status: statusFilter,
-      channel: channelFilter,
-    });
+  const {
+    data: feed,
+    isLoading: feedLoading,
+    isError: feedError,
+    refetch: refetchFeed,
+  } = trpc.notifications.adminList.useQuery({
+    page,
+    pageSize: FEED_PAGE_SIZE,
+    search: debouncedSearch || undefined,
+    status: statusFilter,
+    channel: channelFilter,
+  });
 
   const set = (key: keyof SendFormState, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -321,6 +334,7 @@ export default function NotificationsView() {
                 setForm(DEFAULT_FORM);
               }}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Close compose panel"
             >
               <X className="h-4 w-4" />
             </button>
@@ -677,16 +691,55 @@ export default function NotificationsView() {
 
           <div className="space-y-3">
             {feedLoading ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">
-                Loading recent notifications…
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="border border-border/60 bg-background/20 p-4"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Skeleton className="h-8 w-8 shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                    <Skeleton className="mt-3 h-3 w-full" />
+                    <Skeleton className="mt-2 h-3 w-2/3" />
+                  </div>
+                ))}
               </div>
+            ) : feedError ? (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Couldn’t load notifications</AlertTitle>
+                <AlertDescription>
+                  <p>
+                    Something went wrong while loading the notification log.
+                  </p>
+                  <button
+                    onClick={() => refetchFeed()}
+                    className="mt-2 border border-border/60 px-3 py-1.5 text-[11px] font-bold tracking-widest uppercase text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Retry
+                  </button>
+                </AlertDescription>
+              </Alert>
             ) : visibleNotifications.length === 0 ? (
-              <div className="border border-dashed border-border/60 bg-background/30 p-10 text-center">
-                <Inbox className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No notifications match the current filters.
-                </p>
-              </div>
+              <Empty className="border border-dashed border-border/60 bg-background/30">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Inbox />
+                  </EmptyMedia>
+                  <EmptyTitle>No notifications found</EmptyTitle>
+                  <EmptyDescription>
+                    No notifications match the current filters. Try adjusting
+                    your search, status, or channel, or compose a new
+                    notification.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : (
               visibleNotifications.map(item => {
                 const channel = item.channel as Channel;

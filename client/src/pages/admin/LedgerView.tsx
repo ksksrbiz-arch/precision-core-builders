@@ -4,8 +4,16 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
-import { SkeletonCard } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
@@ -298,15 +306,30 @@ export default function LedgerView() {
 
         {/* Ledger entries — timeline style */}
         {!projectId ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <Shield className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm">
-              Select a project to view its decision ledger.
-            </p>
-          </div>
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Shield className="h-6 w-6 text-muted-foreground/60" />
+              </EmptyMedia>
+              <EmptyTitle>No project selected</EmptyTitle>
+              <EmptyDescription>
+                Select a project above to view its decision ledger.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : isLoading ? (
-          <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
-            Loading…
+          <div className="space-y-4" aria-busy="true">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-card border border-border/60 p-4 space-y-2"
+              >
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            ))}
           </div>
         ) : isError ? (
           <QueryError
@@ -314,18 +337,26 @@ export default function LedgerView() {
             onRetry={() => refetch()}
           />
         ) : !data?.data.length ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm mb-3">
-              No ledger entries yet
-            </p>
-            <button
-              onClick={() => setShowNew(true)}
-              className="text-primary text-sm underline"
-            >
-              Add the first entry
-            </button>
-          </div>
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileText className="h-6 w-6 text-muted-foreground/60" />
+              </EmptyMedia>
+              <EmptyTitle>No ledger entries yet</EmptyTitle>
+              <EmptyDescription>
+                Decisions, permits, inspections, and cost changes will appear
+                here once recorded.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setShowNew(true)}
+                className="text-primary text-sm underline"
+              >
+                Add the first entry
+              </button>
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="relative">
             {/* Vertical line */}

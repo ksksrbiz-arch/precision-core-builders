@@ -4,12 +4,23 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertCircle,
   ArrowLeft,
   CheckCircle2,
   Eye,
   EyeOff,
+  FileX,
   Mic,
   Package,
   Wrench,
@@ -64,8 +75,20 @@ export default function FieldReportDetail() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto p-12 text-center text-muted-foreground text-sm">
-          Loading…
+        <div className="max-w-4xl mx-auto">
+          <Skeleton className="h-4 w-40 mb-6" />
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-9 w-40 shrink-0" />
+          </div>
+          <Skeleton className="h-24 w-full mb-5" />
+          <div className="grid sm:grid-cols-2 gap-4 mb-5">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -74,11 +97,15 @@ export default function FieldReportDetail() {
   if (isError) {
     return (
       <DashboardLayout>
-        <div className="max-w-md mx-auto p-12 text-center">
-          <p className="text-sm text-destructive mb-3">
-            Could not load this report. Network or authorization issue.
-          </p>
-          <div className="flex gap-2 justify-center">
+        <div className="max-w-md mx-auto p-12">
+          <Alert variant="destructive">
+            <AlertCircle />
+            <AlertTitle>Could not load this report</AlertTitle>
+            <AlertDescription>
+              A network or authorization issue occurred. Please try again.
+            </AlertDescription>
+          </Alert>
+          <div className="flex gap-2 justify-center mt-4">
             <button
               onClick={() => refetch()}
               className="text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
@@ -102,14 +129,28 @@ export default function FieldReportDetail() {
   if (!report) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto p-12 text-center">
-          <p className="text-muted-foreground text-sm">Report not found.</p>
-          <button
-            onClick={() => setLocation("/admin/field-reports")}
-            className="text-primary text-sm underline mt-2"
-          >
-            Back to Field Reports
-          </button>
+        <div className="max-w-md mx-auto p-12">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileX />
+              </EmptyMedia>
+              <EmptyTitle>Report not found</EmptyTitle>
+              <EmptyDescription>
+                This field report may have been removed or the link is
+                incorrect.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/admin/field-reports")}
+                className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Back to Field Reports
+              </button>
+            </EmptyContent>
+          </Empty>
         </div>
       </DashboardLayout>
     );

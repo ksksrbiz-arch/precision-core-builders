@@ -38,6 +38,19 @@ type AnalysisMode =
   | "general"
   | "estimate";
 
+type SupportedMediaType =
+  | "image/jpeg"
+  | "image/png"
+  | "image/gif"
+  | "image/webp";
+
+const SUPPORTED_MEDIA_TYPES: SupportedMediaType[] = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
+
 const MODE_PROMPTS: Record<AnalysisMode, string> = {
   progress:
     "Analyze this construction site photo for project progress. Estimate completion percentage for each visible trade/phase. Note what work appears recently completed vs. in-progress vs. not yet started.",
@@ -123,6 +136,16 @@ export const handler: Handler = async event => {
       };
     }
 
+    if (!SUPPORTED_MEDIA_TYPES.includes(mediaType as SupportedMediaType)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          error: `Unsupported media type "${mediaType}". Supported: ${SUPPORTED_MEDIA_TYPES.join(", ")}.`,
+        }),
+      };
+    }
+
     if (!ENV.anthropicApiKey && !ENV.googleAiApiKey) {
       return {
         statusCode: 500,
@@ -154,11 +177,7 @@ export const handler: Handler = async event => {
                 type: "image",
                 source: {
                   type: "base64",
-                  media_type: mediaType as
-                    | "image/jpeg"
-                    | "image/png"
-                    | "image/gif"
-                    | "image/webp",
+                  media_type: mediaType as SupportedMediaType,
                   data: image,
                 },
               },
