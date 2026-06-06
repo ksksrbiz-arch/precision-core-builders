@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
 
 const NAV_LINKS = [
   { label: "About", href: "/about" },
@@ -124,6 +125,12 @@ export function SiteNav() {
   const [tapCount, setTapCount] = useState(0);
   const [showDevModal, setShowDevModal] = useState(false);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [location] = useLocation();
+
+  // A nav link is "active" on its exact page or any nested route beneath it
+  // (e.g. /services/cabinets highlights "Services").
+  const isActive = (href: string) =>
+    location === href || location.startsWith(`${href}/`);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40);
@@ -221,16 +228,28 @@ export function SiteNav() {
             className="hidden lg:flex items-center gap-7"
             aria-label="Primary navigation"
           >
-            {NAV_LINKS.map(n => (
-              <a
-                key={n.label}
-                href={n.href}
-                className="text-[12px] font-semibold tracking-[0.08em] uppercase text-muted-foreground hover:text-primary transition-colors duration-200"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                {n.label}
-              </a>
-            ))}
+            {NAV_LINKS.map(n => {
+              const active = isActive(n.href);
+              return (
+                <a
+                  key={n.label}
+                  href={n.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative text-[12px] font-semibold tracking-[0.08em] uppercase transition-colors duration-200 hover:text-primary ${
+                    active ? "text-primary" : "text-muted-foreground"
+                  }`}
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {n.label}
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="absolute -bottom-1.5 left-0 right-0 mx-auto h-[2px] w-4 rounded-full bg-primary"
+                    />
+                  )}
+                </a>
+              );
+            })}
           </nav>
 
           <div className="flex items-center gap-3">
@@ -277,17 +296,29 @@ export function SiteNav() {
                 className="container py-5 flex flex-col gap-0"
                 aria-label="Mobile navigation"
               >
-                {NAV_LINKS.map(n => (
-                  <a
-                    key={n.label}
-                    href={n.href}
-                    onClick={() => setOpen(false)}
-                    className="py-4 text-[13px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary border-b border-border/40 transition-colors min-h-[48px] flex items-center"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    {n.label}
-                  </a>
-                ))}
+                {NAV_LINKS.map(n => {
+                  const active = isActive(n.href);
+                  return (
+                    <a
+                      key={n.label}
+                      href={n.href}
+                      onClick={() => setOpen(false)}
+                      aria-current={active ? "page" : undefined}
+                      className={`py-4 text-[13px] font-bold tracking-widest uppercase border-b border-border/40 transition-colors min-h-[48px] flex items-center gap-3 hover:text-primary ${
+                        active ? "text-primary" : "text-muted-foreground"
+                      }`}
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      {active && (
+                        <span
+                          aria-hidden
+                          className="h-4 w-[2px] rounded-full bg-primary"
+                        />
+                      )}
+                      {n.label}
+                    </a>
+                  );
+                })}
                 <div className="pt-5 pb-2 flex flex-col gap-3">
                   <a
                     href={SITE.phoneHref}
