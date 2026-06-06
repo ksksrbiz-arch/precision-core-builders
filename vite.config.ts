@@ -18,10 +18,38 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     sourcemap: false, // Disable sourcemaps in production for security
-    // NOTE: Do NOT add custom manualChunks here. It has black-screened prod twice
-    // (Apr 16 and Apr 21) due to cross-chunk export reference issues. Default Vite
-    // chunking is safe; custom chunking requires full headless Chrome verification
-    // before push. See PCB deploy-safety memory.
+    // NOTE: Custom manualChunks previously black-screened prod twice (Apr 16 and
+    // Apr 21) due to cross-chunk export reference / init-order issues — those were
+    // caused by splitting React out from its consumers AND by funneling all of
+    // node_modules into one eager "vendor" chunk (which defeats Vite's automatic
+    // per-route code splitting). To stay safe we ONLY carve out self-contained
+    // leaf libraries (recharts/d3 charting, framer-motion) that have no module-init
+    // coupling with React, and we let Vite handle React and everything else with
+    // its default safe chunking. Do NOT add a catch-all `return "vendor"` here.
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) {
+            return undefined;
+          }
+          // Charting stack: heavy and only used on a few routes.
+          if (
+            /[\\/]node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor|internmap)[\\/]/.test(
+              id
+            )
+          ) {
+            return "charts";
+          }
+          // Animation library: large and self-contained.
+          if (/[\\/]node_modules[\\/]framer-motion[\\/]/.test(id)) {
+            return "motion";
+          }
+          // Everything else: defer to Vite's default chunking, which preserves
+          // safe import ordering and lazy-route splitting.
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     host: true,
