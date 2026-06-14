@@ -53,7 +53,9 @@ type NotificationFeedItem = {
   sent_at: string | null;
   read_at: string | null;
   failure_reason: string | null;
-  projects: Array<{ name: string }> | null;
+  // Supabase returns a to-one embedded relation as a single object, but the
+  // generated types sometimes widen it to an array — accept both.
+  projects: { name: string } | Array<{ name: string }> | null;
   recipient: { id: number; name: string; email: string } | null;
 };
 
@@ -743,7 +745,10 @@ export default function NotificationsView() {
             ) : (
               visibleNotifications.map(item => {
                 const channel = item.channel as Channel;
-                const projectName = item.projects?.[0]?.name ?? "No project";
+                const projectName =
+                  (Array.isArray(item.projects)
+                    ? item.projects[0]?.name
+                    : item.projects?.name) ?? "No project";
                 const failed = item.status === "failed";
 
                 return (

@@ -1,6 +1,7 @@
 /**
- * MaterialsView — Materials inventory, shortage tracking, and AI PO generation.
- * Calls /api/material-procurement to generate Purchase Orders for shortages.
+ * MaterialsView — Materials inventory, shortage tracking, and PO generation.
+ * Calls /api/material-procurement to generate vendor-grouped Purchase Orders
+ * for shortages.
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
@@ -163,7 +164,7 @@ export default function MaterialsView() {
           projectId: selectedProject,
           entryType: "decision",
           title: `Purchase Orders Generated (${data.purchaseOrders.length} PO${data.purchaseOrders.length > 1 ? "s" : ""})`,
-          description: `AI-generated purchase orders for material shortages. ${vendorSummary}`,
+          description: `Purchase orders generated for material shortages. ${vendorSummary}`,
           visibleToClient: false,
         });
 
@@ -226,7 +227,7 @@ export default function MaterialsView() {
         <AdminPageHeader
           title="Materials"
           guideId="materials"
-          description="Inventory tracking, shortage alerts, and AI-generated purchase orders."
+          description="Inventory tracking, shortage alerts, and vendor purchase orders."
           actions={
             <>
               <button

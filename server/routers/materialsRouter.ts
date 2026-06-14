@@ -2,6 +2,22 @@ import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
+/**
+ * A material is "short" when more is needed than has been ordered. We persist
+ * this as the indexed `is_shortage` column (used by the shortages-only filter
+ * and the dashboard stat) and keep it current on every write — previously it
+ * was only ever set to true by PO generation / checkShortages and never
+ * cleared, so the flag drifted out of sync with reality.
+ */
+function computeIsShortage(
+  needed: number | string | null | undefined,
+  ordered: number | string | null | undefined
+): boolean {
+  const n = needed == null ? null : Number(needed);
+  if (n == null || Number.isNaN(n)) return false;
+  return (ordered == null ? 0 : Number(ordered)) < n;
+}
+
 const MaterialInput = z.object({
   projectId: z.number().int().positive().optional(),
   name: z.string().min(1).max(300),
@@ -71,6 +87,10 @@ export const materialsRouter = router({
         received_at: input.receivedAt,
         phase_needed: input.phaseNeeded,
         notes: input.notes,
+        is_shortage: computeIsShortage(
+          input.quantityNeeded,
+          input.quantityOrdered ?? 0
+        ),
       })
       .select()
       .single();
@@ -103,10 +123,28 @@ export const materialsRouter = router({
         phaseNeeded,
         ...rest
       } = input;
+
+      // Recompute the shortage flag when either quantity changes. Fetch the
+      // current row so we can fill in whichever side wasn't provided.
+      let shortagePatch: { is_shortage?: boolean } = {};
+      if (quantityNeeded !== undefined || quantityOrdered !== undefined) {
+        const { data: current } = await db
+          .from("materials")
+          .select("quantity_needed, quantity_ordered")
+          .eq("id", id)
+          .single();
+        const finalNeeded = quantityNeeded ?? current?.quantity_needed;
+        const finalOrdered = quantityOrdered ?? current?.quantity_ordered ?? 0;
+        shortagePatch = {
+          is_shortage: computeIsShortage(finalNeeded, finalOrdered),
+        };
+      }
+
       const { data, error } = await db
         .from("materials")
         .update({
           ...rest,
+          ...shortagePatch,
           ...(projectId !== undefined && { project_id: projectId }),
           ...(quantityNeeded !== undefined && {
             quantity_needed: quantityNeeded,
@@ -148,13 +186,23 @@ export const materialsRouter = router({
         .from("materials")
         .select("*")
         .eq("project_id", input.projectId);
-      const shortages = (materials ?? []).filter(
-        m => m.quantity_needed && m.quantity_ordered < m.quantity_needed
+      const all = materials ?? [];
+      const shortages = all.filter(m =>
+        computeIsShortage(m.quantity_needed, m.quantity_ordered)
       );
-      // Mark shortages
-      for (const m of shortages) {
-        await db.from("materials").update({ is_shortage: true }).eq("id", m.id);
-      }
+      // Reconcile the flag for every material so resolved shortages are also
+      // cleared (not just newly-detected ones marked true).
+      const shortageIds = new Set(shortages.map(m => m.id));
+      await Promise.all(
+        all
+          .filter(m => Boolean(m.is_shortage) !== shortageIds.has(m.id))
+          .map(m =>
+            db
+              .from("materials")
+              .update({ is_shortage: shortageIds.has(m.id) })
+              .eq("id", m.id)
+          )
+      );
       return { shortages: shortages.length, items: shortages };
     }),
 

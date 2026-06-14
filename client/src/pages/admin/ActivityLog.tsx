@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
+import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
@@ -231,20 +232,16 @@ export default function ActivityLog() {
   const [autoScroll, setAutoScroll] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const utils = trpc.useUtils();
 
   // ── Fetch historical audit entries ──────────────────────────────────────
+  // Read through the ledger.auditLog adminProcedure (role-checked server-side)
+  // rather than querying Supabase directly from the browser.
   const fetchEntries = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: dbError } = await supabase
-        .from("ledger_entries")
-        .select("id,title,description,project_id,created_at")
-        .like("title", "[AUDIT]%")
-        .order("created_at", { ascending: false })
-        .limit(PAGE_SIZE);
-
-      if (dbError) throw dbError;
+      const data = await utils.ledger.auditLog.fetch({ limit: PAGE_SIZE });
 
       const parsed = (data ?? []).map(r =>
         parseAuditEntry(r as Record<string, unknown>)
@@ -258,7 +255,7 @@ export default function ActivityLog() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [utils]);
 
   useEffect(() => {
     fetchEntries();
