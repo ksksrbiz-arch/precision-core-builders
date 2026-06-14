@@ -682,3 +682,37 @@ export const blueprintArtifacts = pgTable("blueprint_artifacts", {
 
 export type BlueprintArtifact = typeof blueprintArtifacts.$inferSelect;
 export type InsertBlueprintArtifact = typeof blueprintArtifacts.$inferInsert;
+
+// ─── Leads ────────────────────────────────────────────────────────────────────
+// Persisted AI-scored lead prioritization board (Command Center). Replaces the
+// previous localStorage-only board so scored leads survive across devices and
+// sessions.
+
+export const leads = pgTable(
+  "leads",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 200 }).notNull(),
+    projectType: varchar("project_type", { length: 120 }),
+    budget: varchar("budget", { length: 120 }),
+    location: varchar("location", { length: 200 }),
+    timeline: varchar("timeline", { length: 120 }),
+    message: text("message"),
+    score: integer("score").notNull().default(0),
+    priority: leadPriorityEnum("priority").notNull().default("low"),
+    reasoning: text("reasoning"),
+    suggestedAction: text("suggested_action"),
+    estimatedValue: decimal("estimated_value", { precision: 12, scale: 2 }),
+    scoredBy: uuid("scored_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_leads_priority").on(t.priority),
+    index("idx_leads_created").on(t.createdAt),
+  ]
+);
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;

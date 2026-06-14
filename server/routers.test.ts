@@ -96,6 +96,7 @@ describe("App Router Structure", () => {
     expect(routers).toContain("materials");
     expect(routers).toContain("estimates");
     expect(routers).toContain("ledger");
+    expect(routers).toContain("leads");
     expect(routers).toContain("portfolio");
     expect(routers).toContain("subContractors");
     expect(routers).toContain("finishSelections");
@@ -126,6 +127,26 @@ describe("Auth Router", () => {
     expect(result).toHaveProperty("id");
     expect(result).toHaveProperty("email");
     expect(result).toHaveProperty("role");
+  });
+});
+
+// ─── Leads Router Tests ─────────────────────────────────────
+
+describe("Leads Router", () => {
+  it("leads.list requires admin role", async () => {
+    const userCaller = appRouter.createCaller(
+      createMockContext("user-123", "user")
+    );
+    await expect(userCaller.leads.list({})).rejects.toThrow(/forbidden/i);
+  });
+
+  it("leads.create requires admin role", async () => {
+    const userCaller = appRouter.createCaller(
+      createMockContext("user-123", "user")
+    );
+    await expect(
+      userCaller.leads.create({ name: "Test", score: 50, priority: "high" })
+    ).rejects.toThrow(/forbidden/i);
   });
 });
 
