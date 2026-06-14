@@ -79,7 +79,11 @@ export const handler: Handler = async event => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ text: result.text, model: result.model }),
+      body: JSON.stringify({
+        text: result.text,
+        model: result.model,
+        provider: result.provider,
+      }),
     };
   } catch (err) {
     console.error("[ai-chat]", err);

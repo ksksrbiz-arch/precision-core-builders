@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
+import { fmtDate, fmtDateTime } from "@/lib/utils";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
@@ -647,7 +648,7 @@ export default function ProjectDetail() {
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">
-                      {new Date(r.report_date).toLocaleDateString()}
+                      {fmtDate(r.report_date)}
                     </p>
                     <span
                       className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase ${
@@ -784,7 +785,7 @@ export default function ProjectDetail() {
                     {e.description}
                   </p>
                   <p className="text-[10px] text-muted-foreground/50 mt-2">
-                    {new Date(e.created_at).toLocaleString()}
+                    {fmtDateTime(e.created_at)}
                   </p>
                 </div>
               ))

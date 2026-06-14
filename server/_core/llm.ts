@@ -1,11 +1,23 @@
 /**
- * LLM client — Claude (Anthropic) primary, Google Gemini 1.5 Flash free fallback.
- * All AI features (field reports, estimator, lead scoring, chat) call invokeLLM().
+ * LLM client — free-first, multi-provider with automatic fallback.
  *
- * Priority order:
- *  1. Anthropic Claude (claude-sonnet-4-6) — best quality, requires ANTHROPIC_API_KEY
- *  2. Google Gemini 1.5 Flash — free tier, requires GOOGLE_AI_API_KEY
- *     Get a free key (no credit card): https://aistudio.google.com/app/apikey
+ * All AI features (field reports, estimator, lead scoring, chat, search) call
+ * invokeLLM(). Providers are tried in priority order; if one is unconfigured,
+ * rate-limited, or errors, the next is attempted automatically. This keeps the
+ * platform resilient and cheap: free tiers are exhausted before paid Claude.
+ *
+ * Default priority (free-first, paid fallback):
+ *   1. Groq          — free, ultra-fast LPU.  GROQ_API_KEY
+ *                      https://console.groq.com/keys
+ *   2. Google Gemini — free tier (no credit card).  GOOGLE_AI_API_KEY
+ *                      https://aistudio.google.com/app/apikey
+ *   3. OpenRouter    — free (:free) models + paid routing.  OPENROUTER_API_KEY
+ *                      https://openrouter.ai/keys
+ *   4. Anthropic     — paid, highest quality.  ANTHROPIC_API_KEY
+ *
+ * Override the order with LLM_PROVIDER_ORDER (e.g. "anthropic,groq,gemini").
+ * Override any model with GROQ_MODEL / GEMINI_MODEL / OPENROUTER_MODEL /
+ * ANTHROPIC_MODEL.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "./env";
@@ -25,9 +37,14 @@ export type LLMInvokeParams = {
   jsonMode?: boolean;
 };
 
+export type LLMProvider = "groq" | "gemini" | "openrouter" | "anthropic";
+
 export type LLMResult = {
   text: string;
+  /** The concrete model id that produced the response. */
   model: string;
+  /** Which provider served the request (for usage tracking / governance). */
+  provider: LLMProvider;
   usage?: {
     promptTokens: number;
     completionTokens: number;
@@ -35,54 +52,205 @@ export type LLMResult = {
   };
 };
 
-const ANTHROPIC_MODEL = "claude-sonnet-4-6";
-const GEMINI_MODEL = "gemini-2.0-flash";
+type ResolvedParams = LLMInvokeParams & {
+  system: string;
+  conversationMsgs: LLMMessage[];
+};
+
+// ─── Configuration ──────────────────────────────────────────────────────────
+
+const DEFAULT_ORDER: LLMProvider[] = [
+  "groq",
+  "gemini",
+  "openrouter",
+  "anthropic",
+];
+
+const DEFAULT_MODELS: Record<LLMProvider, string> = {
+  groq: "llama-3.3-70b-versatile",
+  gemini: "gemini-2.0-flash",
+  openrouter: "meta-llama/llama-3.3-70b-instruct:free",
+  anthropic: "claude-sonnet-4-6",
+};
+
 const GEMINI_API_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
+const GROQ_API_BASE = "https://api.groq.com/openai/v1";
+const OPENROUTER_API_BASE = "https://openrouter.ai/api/v1";
 
-// ─── Anthropic (Claude) ──────────────────────────────────────────────────────
+const MAX_ATTEMPTS_PER_PROVIDER = 2;
+const RETRY_BASE_DELAY_MS = 400;
 
-async function invokeAnthropic(
-  params: LLMInvokeParams & { system: string; conversationMsgs: LLMMessage[] }
+function apiKeyFor(provider: LLMProvider): string {
+  switch (provider) {
+    case "groq":
+      return ENV.groqApiKey;
+    case "gemini":
+      return ENV.googleAiApiKey;
+    case "openrouter":
+      return ENV.openrouterApiKey;
+    case "anthropic":
+      return ENV.anthropicApiKey;
+  }
+}
+
+function modelFor(provider: LLMProvider): string {
+  const override = {
+    groq: ENV.groqModel,
+    gemini: ENV.geminiModel,
+    openrouter: ENV.openrouterModel,
+    anthropic: ENV.anthropicModel,
+  }[provider];
+  return override || DEFAULT_MODELS[provider];
+}
+
+/**
+ * Resolve the ordered list of providers to attempt: the configured order
+ * (or default free-first), filtered to those that actually have an API key.
+ * Exported for testing.
+ */
+export function resolveProviderOrder(): LLMProvider[] {
+  const known = new Set<LLMProvider>(DEFAULT_ORDER);
+  let order: LLMProvider[];
+
+  if (ENV.llmProviderOrder.trim()) {
+    const requested = ENV.llmProviderOrder
+      .split(",")
+      .map(s => s.trim().toLowerCase())
+      .filter((s): s is LLMProvider => known.has(s as LLMProvider));
+    // Append any default providers not explicitly listed so a typo or partial
+    // list never silently drops a configured fallback.
+    order = [
+      ...requested,
+      ...DEFAULT_ORDER.filter(p => !requested.includes(p)),
+    ];
+  } else {
+    order = [...DEFAULT_ORDER];
+  }
+
+  return order.filter(p => apiKeyFor(p).length > 0);
+}
+
+/** True when at least one provider is configured. */
+export function isLLMConfigured(): boolean {
+  return resolveProviderOrder().length > 0;
+}
+
+// ─── Retry helper ─────────────────────────────────────────────────────────
+
+class ProviderError extends Error {
+  constructor(
+    message: string,
+    readonly retryable: boolean
+  ) {
+    super(message);
+    this.name = "ProviderError";
+  }
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function withRetries<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_PROVIDER; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const retryable = err instanceof ProviderError ? err.retryable : false;
+      if (!retryable || attempt === MAX_ATTEMPTS_PER_PROVIDER - 1) throw err;
+      await sleep(RETRY_BASE_DELAY_MS * 2 ** attempt);
+    }
+  }
+  throw lastErr;
+}
+
+// ─── OpenAI-compatible providers (Groq, OpenRouter) ──────────────────────────
+
+type OpenAIChatResponse = {
+  choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+  model?: string;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
+  error?: { message?: string };
+};
+
+async function invokeOpenAICompatible(
+  provider: "groq" | "openrouter",
+  baseUrl: string,
+  params: ResolvedParams
 ): Promise<LLMResult> {
-  const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
   const {
     system,
     conversationMsgs,
     maxTokens = 4096,
     temperature = 0.3,
   } = params;
+  const model = modelFor(provider);
 
-  const sdkMessages: Anthropic.MessageParam[] = conversationMsgs.map(m => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
+  const messages: Array<{ role: string; content: string }> = [];
+  if (system) messages.push({ role: "system", content: system });
+  for (const m of conversationMsgs) {
+    messages.push({ role: m.role, content: m.content });
+  }
 
-  const response = await client.messages.create({
-    model: ANTHROPIC_MODEL,
-    max_tokens: maxTokens,
-    temperature,
-    ...(system ? { system } : {}),
-    messages: sdkMessages,
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKeyFor(provider)}`,
+  };
+  // OpenRouter attribution headers (optional but recommended).
+  if (provider === "openrouter") {
+    if (ENV.siteUrl) headers["HTTP-Referer"] = ENV.siteUrl;
+    headers["X-Title"] = "Precision Core Builders";
+  }
+
+  const res = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model,
+      messages,
+      max_tokens: maxTokens,
+      temperature,
+    }),
   });
 
-  const text = response.content
-    .filter(block => block.type === "text")
-    .map(block => (block as Anthropic.TextBlock).text)
-    .join("");
+  const data = (await res.json().catch(() => ({}))) as OpenAIChatResponse;
+
+  if (!res.ok || data.error) {
+    throw new ProviderError(
+      `${provider} error: ${data.error?.message ?? res.statusText}`,
+      isRetryableStatus(res.status)
+    );
+  }
+
+  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!text) {
+    throw new ProviderError(`${provider} returned an empty response`, true);
+  }
 
   return {
     text,
-    model: response.model,
-    usage: {
-      promptTokens: response.usage.input_tokens,
-      completionTokens: response.usage.output_tokens,
-      totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-    },
+    model: data.model ?? model,
+    provider,
+    usage: data.usage
+      ? {
+          promptTokens: data.usage.prompt_tokens ?? 0,
+          completionTokens: data.usage.completion_tokens ?? 0,
+          totalTokens: data.usage.total_tokens ?? 0,
+        }
+      : undefined,
   };
 }
 
-// ─── Google Gemini (free tier fallback) ────────────────────────────────────
+// ─── Google Gemini ──────────────────────────────────────────────────────────
 
 type GeminiContent = {
   role: "user" | "model";
@@ -102,15 +270,14 @@ type GeminiResponse = {
   error?: { message?: string; status?: string };
 };
 
-async function invokeGemini(
-  params: LLMInvokeParams & { system: string; conversationMsgs: LLMMessage[] }
-): Promise<LLMResult> {
+async function invokeGemini(params: ResolvedParams): Promise<LLMResult> {
   const {
     system,
     conversationMsgs,
     maxTokens = 4096,
     temperature = 0.3,
   } = params;
+  const model = modelFor("gemini");
 
   // Build Gemini contents array (no "system" role — prepend to first user msg)
   const contents: GeminiContent[] = [];
@@ -129,28 +296,30 @@ async function invokeGemini(
 
   // Gemini requires alternating user/model turns; ensure starts with user
   if (contents.length === 0 || contents[0].role !== "user") {
-    if (!system) throw new Error("invokeLLM: no messages and no system prompt");
+    if (!system)
+      throw new ProviderError(
+        "gemini: no messages and no system prompt",
+        false
+      );
     contents.unshift({ role: "user", parts: [{ text: system }] });
   }
 
-  const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${ENV.googleAiApiKey}`;
+  const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKeyFor("gemini")}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents,
-      generationConfig: {
-        maxOutputTokens: maxTokens,
-        temperature,
-      },
+      generationConfig: { maxOutputTokens: maxTokens, temperature },
     }),
   });
 
-  const data = (await res.json()) as GeminiResponse;
+  const data = (await res.json().catch(() => ({}))) as GeminiResponse;
 
   if (!res.ok || data.error) {
-    throw new Error(
-      `Gemini API error: ${data.error?.message ?? res.statusText}`
+    throw new ProviderError(
+      `gemini error: ${data.error?.message ?? res.statusText}`,
+      isRetryableStatus(res.status)
     );
   }
 
@@ -159,10 +328,14 @@ async function invokeGemini(
       ?.flatMap(c => c.content?.parts ?? [])
       .map(p => p.text ?? "")
       .join("") ?? "";
+  if (!text) {
+    throw new ProviderError("gemini returned an empty response", true);
+  }
 
   return {
     text,
-    model: GEMINI_MODEL,
+    model,
+    provider: "gemini",
     usage: data.usageMetadata
       ? {
           promptTokens: data.usageMetadata.promptTokenCount ?? 0,
@@ -173,12 +346,84 @@ async function invokeGemini(
   };
 }
 
+// ─── Anthropic (Claude) ──────────────────────────────────────────────────────
+
+async function invokeAnthropic(params: ResolvedParams): Promise<LLMResult> {
+  const {
+    system,
+    conversationMsgs,
+    maxTokens = 4096,
+    temperature = 0.3,
+  } = params;
+  const model = modelFor("anthropic");
+  const client = new Anthropic({ apiKey: apiKeyFor("anthropic") });
+
+  const sdkMessages: Anthropic.MessageParam[] = conversationMsgs.map(m => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
+
+  let response: Anthropic.Message;
+  try {
+    response = await client.messages.create({
+      model,
+      max_tokens: maxTokens,
+      temperature,
+      ...(system ? { system } : {}),
+      messages: sdkMessages,
+    });
+  } catch (err) {
+    const status =
+      err instanceof Anthropic.APIError && typeof err.status === "number"
+        ? err.status
+        : 0;
+    throw new ProviderError(
+      `anthropic error: ${err instanceof Error ? err.message : String(err)}`,
+      status === 0 ? true : isRetryableStatus(status)
+    );
+  }
+
+  const text = response.content
+    .filter(block => block.type === "text")
+    .map(block => (block as Anthropic.TextBlock).text)
+    .join("");
+
+  return {
+    text,
+    model: response.model,
+    provider: "anthropic",
+    usage: {
+      promptTokens: response.usage.input_tokens,
+      completionTokens: response.usage.output_tokens,
+      totalTokens: response.usage.input_tokens + response.usage.output_tokens,
+    },
+  };
+}
+
+// ─── Dispatch ─────────────────────────────────────────────────────────────
+
+function callProvider(
+  provider: LLMProvider,
+  params: ResolvedParams
+): Promise<LLMResult> {
+  switch (provider) {
+    case "groq":
+      return invokeOpenAICompatible("groq", GROQ_API_BASE, params);
+    case "openrouter":
+      return invokeOpenAICompatible("openrouter", OPENROUTER_API_BASE, params);
+    case "gemini":
+      return invokeGemini(params);
+    case "anthropic":
+      return invokeAnthropic(params);
+  }
+}
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 /**
- * Invoke the best available LLM.
- * Tries Anthropic Claude first; falls back to Google Gemini (free tier).
- * Throws if neither API key is configured.
+ * Invoke the best available LLM, trying providers in free-first priority order
+ * and falling back automatically on missing keys, rate limits, or errors.
+ * Throws only if no provider is configured or all configured providers fail.
  */
 export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   const { messages, jsonMode = false } = params;
@@ -196,17 +441,28 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   ].filter(Boolean);
   const system = systemParts.join("\n\n");
 
-  const enriched = { ...params, system, conversationMsgs };
+  const resolved: ResolvedParams = { ...params, system, conversationMsgs };
+  const order = resolveProviderOrder();
 
-  if (ENV.anthropicApiKey) {
-    return invokeAnthropic(enriched);
+  if (order.length === 0) {
+    throw new Error(
+      "No LLM API key configured. Set a free key — GROQ_API_KEY " +
+        "(https://console.groq.com/keys) or GOOGLE_AI_API_KEY " +
+        "(https://aistudio.google.com/app/apikey) — or ANTHROPIC_API_KEY / " +
+        "OPENROUTER_API_KEY in your Netlify environment variables."
+    );
   }
 
-  if (ENV.googleAiApiKey) {
-    return invokeGemini(enriched);
+  const errors: string[] = [];
+  for (const provider of order) {
+    try {
+      return await withRetries(() => callProvider(provider, resolved));
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
   }
 
   throw new Error(
-    "No LLM API key configured. Set ANTHROPIC_API_KEY (paid) or GOOGLE_AI_API_KEY (free at https://aistudio.google.com/app/apikey) in Netlify environment variables."
+    `All LLM providers failed (${order.join(", ")}): ${errors.join(" | ")}`
   );
 }

@@ -8,6 +8,7 @@
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
+import { resolveProviderOrder } from "../../server/_core/llm";
 
 // Timing-safe comparison
 function timingSafeEqual(a: string, b: string): boolean {
@@ -327,6 +328,89 @@ async function checkGemini(): Promise<ServiceStatus> {
   };
 }
 
+async function checkGroq(): Promise<ServiceStatus> {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) {
+    return {
+      id: "groq",
+      name: "Groq (Free, Fast LLM)",
+      status: "not_configured",
+      message:
+        "GROQ_API_KEY not set. Free key (no card): https://console.groq.com/keys",
+    };
+  }
+  if (!key.startsWith("gsk_")) {
+    return {
+      id: "groq",
+      name: "Groq (Free, Fast LLM)",
+      status: "error",
+      message: "Invalid key format (should start with gsk_)",
+    };
+  }
+  return {
+    id: "groq",
+    name: "Groq (Free, Fast LLM)",
+    status: "healthy",
+    message: "Free tier configured (ultra-fast inference)",
+    details: { keyLength: key.length },
+  };
+}
+
+async function checkOpenRouter(): Promise<ServiceStatus> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) {
+    return {
+      id: "openrouter",
+      name: "OpenRouter (Multi-Model Routing)",
+      status: "not_configured",
+      message:
+        "OPENROUTER_API_KEY not set. Get one: https://openrouter.ai/keys",
+    };
+  }
+  if (!key.startsWith("sk-or-")) {
+    return {
+      id: "openrouter",
+      name: "OpenRouter (Multi-Model Routing)",
+      status: "error",
+      message: "Invalid key format (should start with sk-or-)",
+    };
+  }
+  return {
+    id: "openrouter",
+    name: "OpenRouter (Multi-Model Routing)",
+    status: "healthy",
+    message: "Configured (400+ models, free + paid)",
+    details: { keyLength: key.length },
+  };
+}
+
+/**
+ * Summarizes the active LLM fallback chain so the owner can see, at a glance,
+ * which providers will actually be used and in what order.
+ */
+async function checkLLMRouting(): Promise<ServiceStatus> {
+  const order = resolveProviderOrder();
+  if (order.length === 0) {
+    return {
+      id: "llm_routing",
+      name: "AI Routing (Free-First Fallback)",
+      status: "not_configured",
+      message:
+        "No LLM provider configured. Set GROQ_API_KEY or GOOGLE_AI_API_KEY (both free).",
+    };
+  }
+  const usingFreeFirst = ["groq", "gemini", "openrouter"].includes(order[0]);
+  return {
+    id: "llm_routing",
+    name: "AI Routing (Free-First Fallback)",
+    status: "healthy",
+    message: `Active order: ${order.join(" → ")}${
+      usingFreeFirst ? " (free-first)" : ""
+    }`,
+    details: { order, primary: order[0] },
+  };
+}
+
 async function checkFreePayments(): Promise<ServiceStatus> {
   const paypal = process.env.PAYPAL_ME_USERNAME;
   const venmo = process.env.VENMO_USERNAME;
@@ -508,6 +592,9 @@ export const handler: Handler = async event => {
     cloudflareAI,
     anthropicAI,
     geminiAI,
+    groqAI,
+    openrouterAI,
+    llmRouting,
     weather,
     stripe,
     freePayments,
@@ -519,6 +606,9 @@ export const handler: Handler = async event => {
     checkCloudflareAI(),
     checkAnthropicAI(),
     checkGemini(),
+    checkGroq(),
+    checkOpenRouter(),
+    checkLLMRouting(),
     checkWeather(),
     checkStripe(),
     checkFreePayments(),
@@ -530,7 +620,10 @@ export const handler: Handler = async event => {
   const services: ServiceStatus[] = [
     supabase,
     dbTables,
+    llmRouting,
+    groqAI,
     geminiAI,
+    openrouterAI,
     cloudflareAI,
     anthropicAI,
     openai,
@@ -552,7 +645,7 @@ export const handler: Handler = async event => {
       ? "error"
       : degraded > 0
         ? "degraded"
-        : notConfigured > 2
+        : notConfigured > 4
           ? "setup_required"
           : "healthy";
 
