@@ -93,6 +93,15 @@ RLS policies are defined in `drizzle/rls-policies.sql` and must be applied to th
 - **Materials, sub-contractors, billing events** are admin-only.
 - The **service-role key** (server-side only) bypasses RLS — it must never be exposed to client code.
 
+> **Post-migration audit (required).** After applying any migration, run
+> `drizzle/anon-policy-audit.sql` in the Supabase SQL editor. It must return
+> **zero** anonymous-role policies and **zero** RLS-disabled tables. The app
+> never relies on `anon`-role access — public data (the portfolio) is served
+> via tRPC `publicProcedure`s using the service-role key server-side, and
+> admins act as the `authenticated` role. A generic policy template once added
+> an `anon` INSERT policy to `leads`; this audit catches any recurrence. Drop
+> offenders with `DROP POLICY IF EXISTS "<name>" ON <table>;`.
+
 ### 3.4 Ledger Immutability
 
 The Core Values ledger (`ledger_entries`) is append-only. Because the
