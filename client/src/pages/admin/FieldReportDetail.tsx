@@ -4,6 +4,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
+import { fmtDate as fmtDateSafe, fmtDateTime } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   Empty,
@@ -180,7 +181,7 @@ export default function FieldReportDetail() {
   const materialShortages = parseList(report.material_shortages);
   const photoUrls = parseList(report.photo_urls);
   const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", {
+    fmtDateSafe(d, {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -421,7 +422,7 @@ export default function FieldReportDetail() {
         {/* Meta footer */}
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground/50 pb-8">
           <span>Report ID: #{report.id}</span>
-          <span>Created: {new Date(report.created_at).toLocaleString()}</span>
+          <span>Created: {fmtDateTime(report.created_at)}</span>
           {report.published_at && (
             <span>
               Published: {new Date(report.published_at).toLocaleString()}
