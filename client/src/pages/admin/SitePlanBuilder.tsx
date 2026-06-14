@@ -1,3 +1,4 @@
+import "@excalidraw/excalidraw/index.css";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
