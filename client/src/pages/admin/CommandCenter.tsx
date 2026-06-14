@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -36,7 +37,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import {
   BarChart,
@@ -112,7 +113,7 @@ const PRIORITY_WEIGHT: Record<LeadScore["priority"], number> = {
 };
 
 type SavedLead = LeadScore & {
-  id: string;
+  id: number;
   scoredAt: number;
   name: string;
   projectType: string;
@@ -121,28 +122,38 @@ type SavedLead = LeadScore & {
   timeline: string;
 };
 
-const SAVED_LEADS_KEY = "pcb.admin.leadBoard.v1";
-const SAVED_LEADS_MAX = 20;
+const SAVED_LEADS_MAX = 50;
 
-function loadSavedLeads(): SavedLead[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(SAVED_LEADS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as SavedLead[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function persistSavedLeads(leads: SavedLead[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(SAVED_LEADS_KEY, JSON.stringify(leads));
-  } catch {
-    // Quota or privacy mode — fail silently; in-memory list still works.
-  }
+/** Map a persisted leads-table row into the board's SavedLead shape. */
+function rowToSavedLead(r: {
+  id: number;
+  name: string;
+  project_type: string | null;
+  budget: string | null;
+  location: string | null;
+  timeline: string | null;
+  score: number;
+  priority: LeadScore["priority"];
+  reasoning: string | null;
+  suggested_action: string | null;
+  estimated_value: string | number | null;
+  created_at: string;
+}): SavedLead {
+  return {
+    id: r.id,
+    score: r.score,
+    priority: r.priority,
+    reasoning: r.reasoning ?? "",
+    suggestedAction: r.suggested_action ?? "",
+    estimatedValue:
+      r.estimated_value != null ? Number(r.estimated_value) : null,
+    scoredAt: new Date(r.created_at).getTime(),
+    name: r.name,
+    projectType: r.project_type ?? "",
+    budget: r.budget ?? "",
+    location: r.location ?? "",
+    timeline: r.timeline ?? "",
+  };
 }
 
 function sortLeadsByPriority(leads: SavedLead[]): SavedLead[] {
@@ -178,18 +189,34 @@ function LeadScoringPanel() {
     timeline: "",
     message: "",
   });
-  const [saved, setSaved] = useState<SavedLead[]>([]);
-  const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null);
+  const [expandedSavedId, setExpandedSavedId] = useState<number | null>(null);
 
-  // Hydrate persisted leads on mount.
-  useEffect(() => {
-    setSaved(loadSavedLeads());
-  }, []);
+  // Persisted lead board (admin-only). Degrades gracefully: if the query fails
+  // (e.g. the leads table hasn't been migrated yet) the board just shows empty
+  // and lead scoring still works.
+  const utils = trpc.useUtils();
+  const leadsQuery = trpc.leads.list.useQuery(
+    { limit: SAVED_LEADS_MAX },
+    { retry: false }
+  );
+  const saved: SavedLead[] = (leadsQuery.data ?? []).map(rowToSavedLead);
 
-  const persist = (next: SavedLead[]) => {
-    setSaved(next);
-    persistSavedLeads(next);
-  };
+  const createLead = useMutationWithToast(trpc.leads.create.useMutation(), {
+    success: "Lead saved",
+    successMessage: "Added to the prioritization board.",
+    error: "Could not save lead",
+    invalidate: () => utils.leads.list.invalidate(),
+  });
+  const deleteLead = useMutationWithToast(trpc.leads.delete.useMutation(), {
+    success: "Lead removed",
+    error: "Could not remove lead",
+    invalidate: () => utils.leads.list.invalidate(),
+  });
+  const clearLeads = useMutationWithToast(trpc.leads.clear.useMutation(), {
+    success: "Board cleared",
+    error: "Could not clear board",
+    invalidate: () => utils.leads.list.invalidate(),
+  });
 
   const scoreALead = async () => {
     setLoading(true);
@@ -207,21 +234,21 @@ function LeadScoringPanel() {
         );
       }
       setResult(data);
-      // Persist successful scores to the prioritization board.
-      const entry: SavedLead = {
-        ...(data as LeadScore),
-        id:
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        scoredAt: Date.now(),
+      // Persist the scored lead to the shared prioritization board.
+      const score = data as LeadScore;
+      createLead.mutate({
         name: form.name || "Unnamed lead",
-        projectType: form.projectType,
-        budget: form.budget,
-        location: form.location,
-        timeline: form.timeline,
-      };
-      persist([entry, ...saved].slice(0, SAVED_LEADS_MAX));
+        projectType: form.projectType || undefined,
+        budget: form.budget || undefined,
+        location: form.location || undefined,
+        timeline: form.timeline || undefined,
+        message: form.message || undefined,
+        score: score.score,
+        priority: score.priority,
+        reasoning: score.reasoning || undefined,
+        suggestedAction: score.suggestedAction || undefined,
+        estimatedValue: score.estimatedValue,
+      });
     } catch (err) {
       setResult({
         score: 0,
@@ -239,10 +266,10 @@ function LeadScoringPanel() {
     }
   };
 
-  const removeSaved = (id: string) => persist(saved.filter(l => l.id !== id));
+  const removeSaved = (id: number) => deleteLead.mutate({ id });
 
   const clearAllSaved = () => {
-    persist([]);
+    clearLeads.mutate(undefined);
     setExpandedSavedId(null);
   };
 
@@ -430,9 +457,9 @@ function LeadScoringPanel() {
                         Clear prioritization board?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This removes all {sortedSaved.length} saved lead
-                        {sortedSaved.length === 1 ? "" : "s"} from this device.
-                        Lead scoring history elsewhere is not affected.
+                        This permanently removes all {sortedSaved.length} saved
+                        lead{sortedSaved.length === 1 ? "" : "s"} from the
+                        prioritization board for everyone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -534,8 +561,7 @@ function LeadScoringPanel() {
                 })}
               </ul>
               <p className="text-[10px] text-muted-foreground/60 mt-3">
-                Saved locally on this device. Cleared when you clear browser
-                storage.
+                Saved to your workspace — available on every device.
               </p>
             </div>
           )}
