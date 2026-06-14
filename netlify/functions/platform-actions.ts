@@ -597,12 +597,22 @@ export const handler: Handler = async event => {
     };
   }
 
-  // Auth check - allow bootstrap token for initial setup
+  // Auth check — fail closed. These actions are destructive (clear/seed demo
+  // data, create-admin), so require an explicitly configured admin token and
+  // never fall back to a hardcoded constant baked into source.
   const expectedToken = process.env.SETUP_ADMIN_TOKEN;
-  const bootstrapToken = "pcb-bootstrap-2026"; // Fallback for initial setup
-  const validToken = expectedToken || bootstrapToken;
+  if (!expectedToken) {
+    return {
+      statusCode: 503,
+      headers,
+      body: JSON.stringify({
+        error:
+          "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before running platform actions.",
+      }),
+    };
+  }
 
-  if (!body.adminToken || !timingSafeEqual(body.adminToken, validToken)) {
+  if (!body.adminToken || !timingSafeEqual(body.adminToken, expectedToken)) {
     return {
       statusCode: 401,
       headers,

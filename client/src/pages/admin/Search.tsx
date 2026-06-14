@@ -2,6 +2,7 @@
  * Admin — LLM-Powered Operational Search
  * Natural-language search across projects, clients, reports, materials, schedule.
  */
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -67,6 +68,7 @@ export default function SearchView() {
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [, setLocation] = useLocation();
+  const { accessToken } = useAuth();
 
   const runSearch = async (q: string) => {
     if (!q.trim()) return;
@@ -76,7 +78,10 @@ export default function SearchView() {
     try {
       const res = await fetch("/api/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ query: q }),
       });
       const data = await res.json();

@@ -479,23 +479,22 @@ export const handler: Handler = async event => {
     : undefined;
   const adminToken = bearerToken ?? event.queryStringParameters?.adminToken;
   const expectedToken = process.env.SETUP_ADMIN_TOKEN;
-  const bootstrapToken = "pcb-bootstrap-2026"; // Fallback for initial setup
 
-  if (!expectedToken && !adminToken) {
+  // Fail closed: require an explicitly configured admin token. No hardcoded
+  // bootstrap fallback — a known constant in source would let anyone read
+  // platform internals. Mirror setup-env.ts, which already returns 503 here.
+  if (!expectedToken) {
     return {
       statusCode: 503,
       headers,
       body: JSON.stringify({
         error:
-          "SETUP_ADMIN_TOKEN not configured. Use bootstrap token for initial setup.",
-        hint: "Send 'Authorization: Bearer pcb-bootstrap-2026' header for first-time setup",
+          "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before using the Setup Wizard.",
       }),
     };
   }
 
-  // Accept either the configured token or bootstrap token
-  const validToken = expectedToken || bootstrapToken;
-  if (!adminToken || !timingSafeEqual(adminToken, validToken)) {
+  if (!adminToken || !timingSafeEqual(adminToken, expectedToken)) {
     return {
       statusCode: 401,
       headers,
