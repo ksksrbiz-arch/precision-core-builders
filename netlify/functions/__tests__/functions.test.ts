@@ -104,6 +104,28 @@ describe("ai-chat function", () => {
   });
 });
 
+// ─── AI Ops Co-pilot Function Tests ─────────────────────────
+
+describe("ai-copilot function", () => {
+  it("returns 405 for non-POST requests", async () => {
+    const { handler } = await import("../ai-copilot");
+    const event = mockEvent("GET");
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(405);
+  });
+
+  it("requires authentication (401 without a token)", async () => {
+    const { handler } = await import("../ai-copilot");
+    const event = mockEvent("POST", {
+      messages: [{ role: "user", content: "status?" }],
+    });
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
 // ─── Lead Score Function Tests ──────────────────────────────
 
 describe("lead-score function", () => {
