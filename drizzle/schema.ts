@@ -716,3 +716,34 @@ export const leads = pgTable(
 
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
+
+// ─── AI Usage (cost / governance tracking) ────────────────────────────────────
+// One row per LLM call across all AI features. Powers the usage dashboard and
+// free-vs-paid spend visibility. Written best-effort by invokeLLM().
+
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    id: serial("id").primaryKey(),
+    /** Calling feature, e.g. "ai-chat", "ai-copilot", "estimate-project". */
+    feature: varchar("feature", { length: 60 }).notNull(),
+    /** Provider that served the request: groq | gemini | openrouter | anthropic. */
+    provider: varchar("provider", { length: 20 }).notNull(),
+    model: varchar("model", { length: 120 }),
+    promptTokens: integer("prompt_tokens").default(0).notNull(),
+    completionTokens: integer("completion_tokens").default(0).notNull(),
+    totalTokens: integer("total_tokens").default(0).notNull(),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_ai_usage_created").on(t.createdAt),
+    index("idx_ai_usage_provider").on(t.provider),
+    index("idx_ai_usage_feature").on(t.feature),
+  ]
+);
+
+export type AiUsage = typeof aiUsage.$inferSelect;
+export type InsertAiUsage = typeof aiUsage.$inferInsert;

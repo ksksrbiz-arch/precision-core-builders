@@ -3,6 +3,7 @@
  * Phase 5: Owner Command Center analytics expansion.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import AiUsagePanel from "@/components/AiUsagePanel";
 import { trpc } from "@/lib/trpc";
 import { motion } from "framer-motion";
 import {
@@ -458,6 +459,9 @@ export default function Analytics() {
             </div>
           </div>
         )}
+
+        {/* AI usage / cost governance */}
+        <AiUsagePanel />
       </div>
     </DashboardLayout>
   );

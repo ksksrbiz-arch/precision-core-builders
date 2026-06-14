@@ -137,6 +137,7 @@ export const handler: Handler = async event => {
 
     // ── 2. Generate structured report with Claude/Gemini ──────────────────────
     const llmResult = await invokeLLM({
+      feature: "voice-to-report",
       messages: [
         { role: "system", content: FIELD_REPORT_SYSTEM_PROMPT },
         {

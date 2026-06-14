@@ -126,6 +126,26 @@ describe("ai-copilot function", () => {
   });
 });
 
+// ─── AI Usage Function Tests ────────────────────────────────
+
+describe("ai-usage function", () => {
+  it("returns 405 for non-GET requests", async () => {
+    const { handler } = await import("../ai-usage");
+    const event = mockEvent("POST", {});
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(405);
+  });
+
+  it("requires admin authentication (401 without a token)", async () => {
+    const { handler } = await import("../ai-usage");
+    const event = mockEvent("GET");
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
 // ─── Lead Score Function Tests ──────────────────────────────
 
 describe("lead-score function", () => {

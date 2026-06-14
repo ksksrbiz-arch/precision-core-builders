@@ -88,6 +88,8 @@ export const handler: Handler = async event => {
     const snapshot = await buildOpsSnapshot();
 
     const result = await invokeLLM({
+      feature: "ai-copilot",
+      userId: auth.user.id,
       messages: [
         { role: "system", content: `${SYSTEM_PROMPT}\n\n${snapshot.text}` },
         ...messages,

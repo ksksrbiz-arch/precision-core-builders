@@ -21,6 +21,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "./env";
+import { logAiUsage } from "./aiUsage";
 
 export type LLMRole = "system" | "user" | "assistant";
 
@@ -35,6 +36,10 @@ export type LLMInvokeParams = {
   temperature?: number;
   /** When true, instructs the model to respond only in JSON. */
   jsonMode?: boolean;
+  /** Calling feature label, recorded for usage/cost tracking (e.g. "ai-chat"). */
+  feature?: string;
+  /** Optional user id to attribute the call to in usage logs. */
+  userId?: string | null;
 };
 
 export type LLMProvider = "groq" | "gemini" | "openrouter" | "anthropic";
@@ -456,7 +461,18 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   const errors: string[] = [];
   for (const provider of order) {
     try {
-      return await withRetries(() => callProvider(provider, resolved));
+      const result = await withRetries(() => callProvider(provider, resolved));
+      // Best-effort usage logging (never blocks or throws on failure).
+      await logAiUsage({
+        feature: params.feature ?? "unknown",
+        provider: result.provider,
+        model: result.model,
+        promptTokens: result.usage?.promptTokens,
+        completionTokens: result.usage?.completionTokens,
+        totalTokens: result.usage?.totalTokens,
+        userId: params.userId ?? null,
+      });
+      return result;
     } catch (err) {
       errors.push(err instanceof Error ? err.message : String(err));
     }

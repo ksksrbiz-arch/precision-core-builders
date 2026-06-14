@@ -90,6 +90,7 @@ export const handler = schedule("0 13 * * *", async () => {
   let briefing: string;
   try {
     const result = await invokeLLM({
+      feature: "daily-briefing",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
