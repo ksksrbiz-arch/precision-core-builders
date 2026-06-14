@@ -4,6 +4,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import AIChatBox from "@/components/AIChatBox";
+import OpsCopilot from "@/components/OpsCopilot";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,7 @@ import {
   AlertTriangle,
   BarChart3,
   Bot,
+  Brain,
   ChevronDown,
   ChevronUp,
   ClipboardList,
@@ -1116,6 +1118,20 @@ export default function CommandCenter() {
             </div>
           </div>
         )}
+
+        {/* AI Ops Co-pilot — answers over live operational data */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Brain className="h-4 w-4 text-primary" />
+            <p
+              className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Ops Co-pilot · Live Data
+            </p>
+          </div>
+          <OpsCopilot />
+        </div>
 
         {/* AI Chat */}
         <div className="mb-2">
