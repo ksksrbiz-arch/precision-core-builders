@@ -220,6 +220,7 @@ export const handler: Handler = async event => {
     };
     try {
       const raw = await invokeLLM({
+        feature: "search",
         messages: [
           { role: "system", content: SEARCH_INTENT_PROMPT },
           { role: "user", content: query },

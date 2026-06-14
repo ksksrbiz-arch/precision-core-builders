@@ -118,6 +118,7 @@ export const handler: Handler = async event => {
       .join("\n");
 
     const result = await invokeLLM({
+      feature: "estimate-project",
       messages: [
         { role: "system", content: ESTIMATOR_SYSTEM_PROMPT },
         { role: "user", content: userPrompt },

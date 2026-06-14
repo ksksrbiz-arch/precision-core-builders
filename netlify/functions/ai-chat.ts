@@ -74,6 +74,7 @@ export const handler: Handler = async event => {
       messages: fullMessages,
       maxTokens: 600,
       temperature: 0.4,
+      feature: "ai-chat",
     });
 
     return {

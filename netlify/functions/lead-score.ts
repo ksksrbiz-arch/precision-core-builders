@@ -82,6 +82,7 @@ export const handler: Handler = async event => {
     ].join("\n");
 
     const result = await invokeLLM({
+      feature: "lead-score",
       messages: [
         { role: "system", content: LEAD_SCORE_SYSTEM_PROMPT },
         { role: "user", content: prompt },
