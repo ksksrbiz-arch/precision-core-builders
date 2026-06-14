@@ -6,6 +6,9 @@
 import type { Handler } from "@netlify/functions";
 import { invokeLLM } from "../../server/_core/llm";
 import { db } from "../../server/db";
+import { verifyAuth } from "./_utils/authGuard";
+import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
+import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 
 const SEARCH_INTENT_PROMPT = `You are a search assistant for Precision Core Builders, a construction management platform.
 Given a natural-language query, extract the search intent and return JSON:
@@ -32,13 +35,6 @@ function sanitizeKeyword(raw: string): string {
     .slice(0, 50)
     .trim();
 }
-
-const headers = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-};
 
 interface SearchResult {
   type: string;
@@ -162,10 +158,48 @@ async function searchSchedule(keywords: string[]): Promise<SearchResult[]> {
 }
 
 export const handler: Handler = async event => {
+  const origin = event.headers["origin"];
+  const headers = corsHeaders(origin);
+
   if (event.httpMethod === "OPTIONS")
     return { statusCode: 204, headers, body: "" };
+
+  const originBlock = checkOrigin(origin);
+  if (originBlock) return originBlock;
+
   if (event.httpMethod !== "POST")
-    return { statusCode: 405, headers, body: "" };
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
+
+  // Operational search reads private business data (clients, budgets, field
+  // reports, vendor pricing) via the service-role DB — require an authenticated
+  // user. Without this guard the endpoint leaks the entire dataset.
+  const authResult = await verifyAuth(event.headers);
+  if (!authResult.ok) {
+    return {
+      statusCode: authResult.statusCode,
+      headers,
+      body: JSON.stringify({ error: authResult.message }),
+    };
+  }
+
+  // Rate limit: 30 searches per minute per authenticated user.
+  const rl = checkRateLimit(`search:${authResult.user.id}`, {
+    maxRequests: 30,
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...headers, ...rateLimitHeaders(rl) },
+      body: JSON.stringify({
+        error: "Search limit reached. Please wait a moment and try again.",
+      }),
+    };
+  }
 
   try {
     const { query } = JSON.parse(event.body ?? "{}") as { query?: string };

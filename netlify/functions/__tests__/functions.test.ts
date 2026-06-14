@@ -2,7 +2,7 @@
  * Tests for Netlify Functions
  * Integration tests for serverless API endpoints
  */
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // ─── Helper: Mock Netlify Event ─────────────────────────────
 
@@ -144,6 +144,15 @@ describe("supersplat-config function", () => {
 // ─── Platform Health Function Tests ─────────────────────────
 
 describe("platform-health function", () => {
+  const ORIGINAL_TOKEN = process.env.SETUP_ADMIN_TOKEN;
+  beforeAll(() => {
+    process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+  });
+  afterAll(() => {
+    if (ORIGINAL_TOKEN === undefined) delete process.env.SETUP_ADMIN_TOKEN;
+    else process.env.SETUP_ADMIN_TOKEN = ORIGINAL_TOKEN;
+  });
+
   it("requires adminToken for access", async () => {
     const { handler } = await import("../platform-health");
     const event = mockEvent("GET");
@@ -152,11 +161,33 @@ describe("platform-health function", () => {
 
     expect(response.statusCode).toBe(401);
   });
+
+  it("fails closed with 503 when SETUP_ADMIN_TOKEN is not configured", async () => {
+    delete process.env.SETUP_ADMIN_TOKEN;
+    const { handler } = await import("../platform-health");
+    // Even presenting the old hardcoded bootstrap value must not authenticate.
+    const event = {
+      ...mockEvent("GET"),
+      headers: { authorization: "Bearer pcb-bootstrap-2026" },
+    };
+    const response = await handler(event as any, {} as any);
+    expect(response.statusCode).toBe(503);
+    process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+  });
 });
 
 // ─── Platform Actions Function Tests ─────────────────────────
 
 describe("platform-actions function", () => {
+  const ORIGINAL_TOKEN = process.env.SETUP_ADMIN_TOKEN;
+  beforeAll(() => {
+    process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+  });
+  afterAll(() => {
+    if (ORIGINAL_TOKEN === undefined) delete process.env.SETUP_ADMIN_TOKEN;
+    else process.env.SETUP_ADMIN_TOKEN = ORIGINAL_TOKEN;
+  });
+
   it("requires adminToken for access", async () => {
     const { handler } = await import("../platform-actions");
     const event = mockEvent("POST", { action: "get-stats" });
@@ -165,11 +196,24 @@ describe("platform-actions function", () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it("fails closed with 503 when SETUP_ADMIN_TOKEN is not configured", async () => {
+    delete process.env.SETUP_ADMIN_TOKEN;
+    const { handler } = await import("../platform-actions");
+    // The removed hardcoded bootstrap token must no longer grant access.
+    const event = mockEvent("POST", {
+      action: "get-stats",
+      adminToken: "pcb-bootstrap-2026",
+    });
+    const response = await handler(event as any, {} as any);
+    expect(response.statusCode).toBe(503);
+    process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+  });
+
   it("returns normalized action errors", async () => {
     const { handler } = await import("../platform-actions");
     const event = mockEvent("POST", {
       action: "get-stats",
-      adminToken: "pcb-bootstrap-2026",
+      adminToken: "test-admin-token",
     });
     const response = await handler(event as any, {} as any);
 

@@ -22,6 +22,7 @@ export default defineConfig({
       "server/**/*.test.ts",
       "server/**/*.spec.ts",
       "netlify/functions/__tests__/auth0-*.test.ts",
+      "netlify/functions/__tests__/functions.test.ts",
       "netlify/functions/__tests__/auth-sync-role.test.ts",
       "netlify/functions/__tests__/onboarding-*.test.ts",
       "netlify/functions/__tests__/stripe-*.test.ts",

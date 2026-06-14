@@ -9,11 +9,17 @@ import {
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import { verifyAuth } from "./_utils/authGuard";
 
-const db = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+// Lazily construct the Supabase client so importing this module never throws
+// when env vars are absent (e.g. in tests or before setup). Returns null when
+// not configured; callers skip persistence in that case.
+function getDb() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 const ESTIMATOR_SYSTEM_PROMPT = `You are an expert construction cost estimator specializing in Eugene, Oregon residential construction.
 Current Eugene, OR construction cost benchmarks (2024-2025):
@@ -125,7 +131,8 @@ export const handler: Handler = async event => {
 
     // Save to estimates table if projectId or clientId provided
     let savedEstimate = null;
-    if (input.projectId || input.clientId) {
+    const db = getDb();
+    if (db && (input.projectId || input.clientId)) {
       const { data } = await db
         .from("estimates")
         .insert({

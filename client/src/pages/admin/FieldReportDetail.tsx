@@ -158,6 +158,27 @@ export default function FieldReportDetail() {
 
   const projectName = (report as any).projects?.name ?? "Unknown Project";
   const isPublished = report.published_to_client;
+
+  // These columns are stored as JSON strings (see fieldReportsRouter — they are
+  // JSON.stringify'd on write and getById returns them raw). Parse to arrays
+  // before rendering; calling .map() on the raw string would crash the page.
+  const parseList = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v as string[];
+    if (typeof v === "string") {
+      try {
+        const parsed = JSON.parse(v);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+  const tasksCompleted = parseList(report.tasks_completed);
+  const materialsUsed = parseList(report.materials_used);
+  const issuesFlagged = parseList(report.issues_flagged);
+  const materialShortages = parseList(report.material_shortages);
+  const photoUrls = parseList(report.photo_urls);
   const fmtDate = (d: string) =>
     new Date(d).toLocaleDateString("en-US", {
       weekday: "long",
@@ -258,7 +279,7 @@ export default function FieldReportDetail() {
         {/* Structured sections */}
         <div className="grid sm:grid-cols-2 gap-4 mb-5">
           {/* Tasks Completed */}
-          {report.tasks_completed && report.tasks_completed.length > 0 && (
+          {tasksCompleted.length > 0 && (
             <div className="bg-card border border-border/60 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle2 className="h-4 w-4 text-green-400" />
@@ -270,7 +291,7 @@ export default function FieldReportDetail() {
                 </p>
               </div>
               <ul className="space-y-1.5">
-                {report.tasks_completed.map((task: string, i: number) => (
+                {tasksCompleted.map((task: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-400 mt-1.5 shrink-0" />
                     <span className="text-sm text-foreground">{task}</span>
@@ -281,7 +302,7 @@ export default function FieldReportDetail() {
           )}
 
           {/* Materials Used */}
-          {report.materials_used && report.materials_used.length > 0 && (
+          {materialsUsed.length > 0 && (
             <div className="bg-card border border-border/60 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Package className="h-4 w-4 text-primary" />
@@ -293,7 +314,7 @@ export default function FieldReportDetail() {
                 </p>
               </div>
               <ul className="space-y-1.5">
-                {report.materials_used.map((mat: string, i: number) => (
+                {materialsUsed.map((mat: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                     <span className="text-sm text-foreground">{mat}</span>
@@ -304,7 +325,7 @@ export default function FieldReportDetail() {
           )}
 
           {/* Issues Flagged */}
-          {report.issues_flagged && report.issues_flagged.length > 0 && (
+          {issuesFlagged.length > 0 && (
             <div className="bg-card border border-yellow-400/30 bg-yellow-400/5 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Wrench className="h-4 w-4 text-yellow-400" />
@@ -316,7 +337,7 @@ export default function FieldReportDetail() {
                 </p>
               </div>
               <ul className="space-y-1.5">
-                {report.issues_flagged.map((issue: string, i: number) => (
+                {issuesFlagged.map((issue: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-yellow-400 mt-1.5 shrink-0" />
                     <span className="text-sm text-foreground">{issue}</span>
@@ -327,28 +348,27 @@ export default function FieldReportDetail() {
           )}
 
           {/* Material Shortages */}
-          {report.material_shortages &&
-            report.material_shortages.length > 0 && (
-              <div className="bg-card border border-red-400/30 bg-red-400/5 p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="h-4 w-4 text-red-400" />
-                  <p
-                    className="text-[9px] font-bold tracking-[0.2em] uppercase text-red-400/80"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    Material Shortages
-                  </p>
-                </div>
-                <ul className="space-y-1.5">
-                  {report.material_shortages.map((s: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
-                      <span className="text-sm text-foreground">{s}</span>
-                    </li>
-                  ))}
-                </ul>
+          {materialShortages.length > 0 && (
+            <div className="bg-card border border-red-400/30 bg-red-400/5 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertCircle className="h-4 w-4 text-red-400" />
+                <p
+                  className="text-[9px] font-bold tracking-[0.2em] uppercase text-red-400/80"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Material Shortages
+                </p>
               </div>
-            )}
+              <ul className="space-y-1.5">
+                {materialShortages.map((s: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
+                    <span className="text-sm text-foreground">{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Raw Transcription */}
@@ -367,16 +387,16 @@ export default function FieldReportDetail() {
         )}
 
         {/* Photo URLs */}
-        {report.photo_urls && report.photo_urls.length > 0 && (
+        {photoUrls.length > 0 && (
           <div className="bg-card border border-border/60 p-5 mb-5">
             <p
               className="text-[9px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-3"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Photos ({report.photo_urls.length})
+              Photos ({photoUrls.length})
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {report.photo_urls.map((url: string, i: number) => (
+              {photoUrls.map((url: string, i: number) => (
                 <a
                   key={i}
                   href={url}

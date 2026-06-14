@@ -51,12 +51,12 @@ import { useCallback, useEffect, useState } from "react";
 const IS_DEV = import.meta.env.VITE_DEV_MODE === "true";
 const DEV_EMAIL = DEV_MOCK_USER.email;
 const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD as string | undefined;
-// Bootstrap token accepted by platform-health for initial/dev setup.
-// Can be overridden via VITE_HEALTH_TOKEN env var; falls back to the
-// well-known bootstrap value that is already public in platform-health.ts.
+// Token used by the dev-only health panel to call platform-health.
+// platform-health now fails closed and only accepts the configured
+// SETUP_ADMIN_TOKEN — set VITE_HEALTH_TOKEN to that value locally to use
+// this panel. There is intentionally no hardcoded fallback.
 const HEALTH_TOKEN =
-  (import.meta.env.VITE_HEALTH_TOKEN as string | undefined) ??
-  "pcb-bootstrap-2026";
+  (import.meta.env.VITE_HEALTH_TOKEN as string | undefined) ?? "";
 
 // Partial features count as this fraction toward overall progress.
 const PARTIAL_FEATURE_WEIGHT = 0.5;
