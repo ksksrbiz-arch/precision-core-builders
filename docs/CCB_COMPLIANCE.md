@@ -93,6 +93,23 @@ RLS policies are defined in `drizzle/rls-policies.sql` and must be applied to th
 - **Materials, sub-contractors, billing events** are admin-only.
 - The **service-role key** (server-side only) bypasses RLS — it must never be exposed to client code.
 
+### 3.4 Ledger Immutability
+
+The Core Values ledger (`ledger_entries`) is append-only. Because the
+server uses the service-role key (which bypasses RLS), append-only is
+enforced at the **database layer** by triggers defined in
+`drizzle/ledger-immutability.sql`, which must be applied to the Supabase
+project once (Supabase SQL editor or `psql`). The triggers:
+
+- **Block** any `UPDATE` that changes a recorded entry's content, and any
+  direct `DELETE` of an entry whose project still exists.
+- **Allow** the legitimate FK-maintenance flows: `ON DELETE CASCADE` when a
+  project is removed, and `ON DELETE SET NULL` of `author_id` when a user is
+  removed.
+
+This makes recorded decisions and cost adjustments tamper-evident even if the
+API layer or service-role key were misused.
+
 ---
 
 ## 4. API Security
