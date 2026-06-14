@@ -50,6 +50,27 @@ export const ledgerRouter = router({
       return data ?? [];
     }),
 
+  // Admin-only audit feed: ledger entries whose title is tagged "[AUDIT]".
+  // The Activity Log page previously read these straight from the browser
+  // Supabase client (RLS-only); this routes the read through an explicit
+  // adminProcedure role check instead.
+  auditLog: adminProcedure
+    .input(
+      z
+        .object({ limit: z.number().int().min(1).max(200).optional() })
+        .optional()
+    )
+    .query(async ({ input }) => {
+      const { data, error } = await db
+        .from("ledger_entries")
+        .select("id,title,description,project_id,created_at")
+        .like("title", "[AUDIT]%")
+        .order("created_at", { ascending: false })
+        .limit(input?.limit ?? 100);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    }),
+
   // Append-only — no update/delete
   append: adminProcedure
     .input(

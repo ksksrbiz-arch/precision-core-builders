@@ -7,6 +7,7 @@
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
+import { invokeLLM } from "../../server/_core/llm";
 
 // Timing-safe comparison
 function timingSafeEqual(a: string, b: string): boolean {
@@ -297,53 +298,29 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
 // ─── Action: Test AI Endpoint ────────────────────────────────────────────────
 
 const testAIEndpoint: ActionHandler = async () => {
-  const token = process.env.CF_API_TOKEN;
-  const accountId = process.env.CF_ACCOUNT_ID;
-
-  if (!token || !accountId) {
-    throw new Error("Cloudflare AI not configured");
-  }
-
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  // Exercise the same LLM router the app actually uses (Anthropic Claude
+  // primary, Google Gemini free-tier fallback) rather than a deprecated
+  // provider — otherwise this check can report failure while the real AI
+  // features work fine. invokeLLM throws a clear error when no key is set.
+  const result = await invokeLLM({
+    messages: [
+      {
+        role: "system",
+        content: "You are a construction assistant. Respond briefly.",
       },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: "system",
-            content: "You are a construction assistant. Respond briefly.",
-          },
-          {
-            role: "user",
-            content: "Say 'AI system operational' and nothing else.",
-          },
-        ],
-        max_tokens: 50,
-        temperature: 0.1,
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`AI API error: ${res.status} - ${text.slice(0, 100)}`);
-  }
-
-  const data = (await res.json()) as {
-    result?: { response?: string };
-    response?: string;
-  };
-  const response = data.result?.response || data.response || "";
+      {
+        role: "user",
+        content: "Say 'AI system operational' and nothing else.",
+      },
+    ],
+    maxTokens: 50,
+    temperature: 0.1,
+  });
 
   return {
     success: true,
-    message: "AI endpoint responding",
-    data: { response: response.slice(0, 100) },
+    message: `AI endpoint responding (${result.model})`,
+    data: { response: result.text.slice(0, 100), model: result.model },
   };
 };
 

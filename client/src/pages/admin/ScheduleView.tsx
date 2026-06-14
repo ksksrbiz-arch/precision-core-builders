@@ -255,7 +255,9 @@ export default function ScheduleView() {
     success: "Task Created",
     successMessage: "Schedule task added.",
     error: "Create Failed",
-    invalidate: () => trpc.useUtils().schedule.list.invalidate(),
+    // Note: the list is refreshed via refetch() in onSuccess below. (A previous
+    // `invalidate` here called trpc.useUtils() inside a callback — a Rules-of-
+    // Hooks violation — and was redundant with the refetch.)
     onSuccess: (_data: any) => {
       setShowAddTask(false);
       setNewTask({

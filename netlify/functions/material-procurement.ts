@@ -1,6 +1,5 @@
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
-import { invokeLLM } from "../../server/_core/llm";
 import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
 
 function getDb() {
@@ -55,7 +54,7 @@ export const handler: Handler = async event => {
       m => m.quantity_needed && (m.quantity_ordered ?? 0) < m.quantity_needed
     );
 
-    // Generate PO draft with Gemini
+    // Build purchase-order drafts by grouping shortages per vendor.
     const purchaseOrders = [];
     if (shortages.length > 0) {
       const vendorGroups = new Map<string, typeof shortages>();
