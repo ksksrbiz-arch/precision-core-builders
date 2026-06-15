@@ -6,6 +6,7 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { SITE } from "@/const";
 import { PortalLayout } from "@/components/layout/PortalLayout";
+import PortalAssistant from "@/components/PortalAssistant";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -330,6 +331,17 @@ export default function PortalDashboard() {
                 </div>
               </div>
             )}
+
+            {/* Project Assistant */}
+            <div>
+              <p
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-3"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Ask About Your Project
+              </p>
+              <PortalAssistant />
+            </div>
 
             {/* Contact Eric */}
             <div className="bg-card border border-border/60 p-5">

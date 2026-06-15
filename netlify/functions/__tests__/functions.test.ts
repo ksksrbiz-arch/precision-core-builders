@@ -126,6 +126,28 @@ describe("ai-copilot function", () => {
   });
 });
 
+// ─── Portal Assistant Function Tests ────────────────────────
+
+describe("portal-assistant function", () => {
+  it("returns 405 for non-POST requests", async () => {
+    const { handler } = await import("../portal-assistant");
+    const event = mockEvent("GET");
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(405);
+  });
+
+  it("requires authentication (401 without a token)", async () => {
+    const { handler } = await import("../portal-assistant");
+    const event = mockEvent("POST", {
+      messages: [{ role: "user", content: "status?" }],
+    });
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
 // ─── AI Usage Function Tests ────────────────────────────────
 
 describe("ai-usage function", () => {
