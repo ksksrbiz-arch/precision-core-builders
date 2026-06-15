@@ -12,6 +12,7 @@ import { schedule } from "@netlify/functions";
 import { invokeLLM, isLLMConfigured } from "../../server/_core/llm";
 import { buildOpsSnapshot } from "../../server/_core/opsSnapshot";
 import { getEugeneForecast } from "../../server/_core/weather";
+import { sendEmail, sendSms } from "../../server/_core/delivery";
 import { db } from "../../server/db";
 
 const SYSTEM_PROMPT = `You are the Ops Co-pilot for Precision Core Builders (owner Eric Tadlock, Eugene OR). Write Eric's morning briefing from the OPERATIONAL DATA SNAPSHOT and WEATHER FORECAST provided.
@@ -143,5 +144,20 @@ export const handler = schedule("0 13 * * *", async () => {
   }
 
   console.log(`[daily-briefing] delivered ${delivered}/${recipients.length}`);
+
+  // Optional external delivery (email + SMS). Both no-op when unconfigured and
+  // only fire if at least one in-app briefing was newly delivered today.
+  if (delivered > 0) {
+    const [email, sms] = await Promise.all([
+      sendEmail({ subject, text: briefing }),
+      sendSms({ body: `${subject}\n\n${briefing}` }),
+    ]);
+    if (email.ok) console.log("[daily-briefing] emailed");
+    if (email.error)
+      console.error("[daily-briefing] email failed:", email.error);
+    if (sms.ok) console.log("[daily-briefing] texted");
+    if (sms.error) console.error("[daily-briefing] sms failed:", sms.error);
+  }
+
   return { statusCode: 200 };
 });

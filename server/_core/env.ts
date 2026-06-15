@@ -33,6 +33,18 @@ export const ENV = {
   openWeatherApiKey: process.env.OPENWEATHERMAP_API_KEY ?? "",
   n8nWebhookUrl: process.env.N8N_WEBHOOK_URL ?? "",
 
+  // Notification delivery (all optional — features no-op when unset).
+  // Email via Resend (free tier): https://resend.com → API Keys
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  briefingEmailFrom:
+    process.env.BRIEFING_EMAIL_FROM ?? "briefing@precisioncorebuilders.com",
+  briefingEmailTo: process.env.BRIEFING_EMAIL_TO ?? "",
+  // SMS via Twilio: https://console.twilio.com
+  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID ?? "",
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
+  twilioFrom: process.env.TWILIO_FROM ?? "",
+  briefingSmsTo: process.env.BRIEFING_SMS_TO ?? "",
+
   // Billing
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",

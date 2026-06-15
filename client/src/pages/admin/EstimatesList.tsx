@@ -8,6 +8,7 @@ import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
+import { generateEstimatePdf } from "@/lib/estimatePdf";
 import {
   Calculator,
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
   ChevronRight,
   Clock,
   DollarSign,
+  FileDown,
   Send,
 } from "lucide-react";
 import { useState } from "react";
@@ -192,30 +194,35 @@ export default function EstimatesList() {
                     )}
                   </div>
 
-                  {(!isSent || (isSent && !isApproved)) && (
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      {!isSent && (
-                        <button
-                          onClick={() => sendMut.mutate({ id: est.id })}
-                          disabled={sendMut.isPending}
-                          className="w-full rounded border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-primary transition-colors hover:bg-primary/15 disabled:opacity-50"
-                          style={{ fontFamily: "var(--font-condensed)" }}
-                        >
-                          Send Estimate
-                        </button>
-                      )}
-                      {isSent && !isApproved && (
-                        <button
-                          onClick={() => approveMut.mutate({ id: est.id })}
-                          disabled={approveMut.isPending}
-                          className="w-full rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-green-400 transition-colors hover:bg-green-400/15 disabled:opacity-50"
-                          style={{ fontFamily: "var(--font-condensed)" }}
-                        >
-                          Approve Estimate
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      onClick={() => generateEstimatePdf(est)}
+                      className="flex w-full items-center justify-center gap-1.5 rounded border border-border/60 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <FileDown className="h-3.5 w-3.5" /> PDF
+                    </button>
+                    {!isSent && (
+                      <button
+                        onClick={() => sendMut.mutate({ id: est.id })}
+                        disabled={sendMut.isPending}
+                        className="w-full rounded border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-primary transition-colors hover:bg-primary/15 disabled:opacity-50"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Send Estimate
+                      </button>
+                    )}
+                    {isSent && !isApproved && (
+                      <button
+                        onClick={() => approveMut.mutate({ id: est.id })}
+                        disabled={approveMut.isPending}
+                        className="w-full rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-green-400 transition-colors hover:bg-green-400/15 disabled:opacity-50"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        Approve Estimate
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -318,7 +325,15 @@ export default function EstimatesList() {
                           {fmtDate(est.created_at)}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-2">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => generateEstimatePdf(est)}
+                              className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                              title="Download PDF"
+                            >
+                              <FileDown className="h-3 w-3" /> PDF
+                            </button>
                             {!isSent && (
                               <button
                                 onClick={() => sendMut.mutate({ id: est.id })}
