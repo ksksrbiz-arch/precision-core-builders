@@ -5,6 +5,14 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { trpc } from "@/lib/trpc";
@@ -200,16 +208,27 @@ export default function ClientsList() {
             onRetry={() => refetch()}
           />
         ) : data?.data.length === 0 ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <Users className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm mb-3">No clients yet</p>
-            <button
-              onClick={() => setShowNew(true)}
-              className="text-primary text-sm underline"
-            >
-              Add your first client
-            </button>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Users />
+              </EmptyMedia>
+              <EmptyTitle>No clients yet</EmptyTitle>
+              <EmptyDescription>
+                Add your first client to link projects, estimates, and portal
+                access.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setShowNew(true)}
+                className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                + Add your first client
+              </button>
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="space-y-2">
             {data?.data.map((client: any) => {

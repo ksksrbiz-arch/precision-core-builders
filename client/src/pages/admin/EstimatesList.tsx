@@ -10,6 +10,14 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import { generateEstimatePdf } from "@/lib/estimatePdf";
 import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import {
   Calculator,
   CheckCircle2,
   ChevronLeft,
@@ -94,18 +102,27 @@ export default function EstimatesList() {
             onRetry={() => refetch()}
           />
         ) : data?.data.length === 0 ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <Calculator className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm mb-3">
-              No estimates created yet
-            </p>
-            <button
-              onClick={() => setLocation("/estimator")}
-              className="text-primary text-sm underline"
-            >
-              Run your first estimate
-            </button>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Calculator />
+              </EmptyMedia>
+              <EmptyTitle>No estimates yet</EmptyTitle>
+              <EmptyDescription>
+                Run the AI estimator to generate your first tiered cost
+                estimate.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/estimator")}
+                className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                + Run your first estimate
+              </button>
+            </EmptyContent>
+          </Empty>
         ) : isMobile ? (
           <div className="space-y-3">
             {data?.data.map((est: any) => {

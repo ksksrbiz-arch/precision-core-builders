@@ -5,6 +5,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import AIChatBox from "@/components/AIChatBox";
 import OpsCopilot from "@/components/OpsCopilot";
+import { QueryError } from "@/components/QueryError";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -580,7 +581,11 @@ export default function CommandCenter() {
   const [realtimeFlash, setRealtimeFlash] = useState(false);
 
   const utils = trpc.useUtils();
-  const { data: stats, refetch: refetchStats } = trpc.projects.stats.useQuery();
+  const {
+    data: stats,
+    isError: statsError,
+    refetch: refetchStats,
+  } = trpc.projects.stats.useQuery();
   const { data: recentProjects, refetch: refetchProjects } =
     trpc.projects.list.useQuery({ pageSize: 5 });
   const { data: recentReports } = trpc.fieldReports.list.useQuery({
@@ -765,6 +770,14 @@ export default function CommandCenter() {
         )}
 
         {/* KPI Cards */}
+        {statsError && (
+          <div className="mb-6">
+            <QueryError
+              message="Couldn't load dashboard metrics."
+              onRetry={() => refetchStats()}
+            />
+          </div>
+        )}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           <StatCard
             icon={ClipboardList}
