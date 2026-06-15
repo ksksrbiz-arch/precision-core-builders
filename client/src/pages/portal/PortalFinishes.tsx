@@ -5,6 +5,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { PortalLayout } from "@/components/layout/PortalLayout";
+import PortalAssistant from "@/components/PortalAssistant";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check, DollarSign, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
@@ -238,6 +239,19 @@ export default function PortalFinishes() {
             ))}
           </div>
         )}
+
+        {/* Finishes assistant */}
+        <div className="mt-6">
+          <PortalAssistant
+            title="Finishes Assistant"
+            quickPrompts={[
+              "What finishes have I selected?",
+              "Which selections affect my budget?",
+              "What still needs my approval?",
+              "Summarize my selections by room",
+            ]}
+          />
+        </div>
       </div>
     </PortalLayout>
   );
