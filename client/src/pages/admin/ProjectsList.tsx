@@ -2,10 +2,25 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Plus, Search, MapPin, DollarSign, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  Search,
+  MapPin,
+  DollarSign,
+  ChevronRight,
+  ClipboardList,
+} from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { StatusBadge } from "./CommandCenter";
@@ -90,17 +105,27 @@ export default function ProjectsList() {
             onRetry={() => refetch()}
           />
         ) : data?.data.length === 0 ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <p className="text-muted-foreground text-sm mb-4">
-              No projects found
-            </p>
-            <button
-              onClick={() => setLocation("/admin/projects/new")}
-              className="text-primary text-sm underline"
-            >
-              Create your first project
-            </button>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <ClipboardList />
+              </EmptyMedia>
+              <EmptyTitle>No projects yet</EmptyTitle>
+              <EmptyDescription>
+                Create your first project to start tracking budgets, schedule,
+                and field reports.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/admin/projects/new")}
+                className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                + Create your first project
+              </button>
+            </EmptyContent>
+          </Empty>
         ) : isMobile ? (
           /* ── Mobile: tappable project cards ──────────────────────────────── */
           <div className="space-y-3">
