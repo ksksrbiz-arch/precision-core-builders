@@ -148,6 +148,50 @@ describe("portal-assistant function", () => {
   });
 });
 
+// ─── Portal Message Function Tests ──────────────────────────
+
+describe("portal-message function", () => {
+  it("returns 405 for non-POST requests", async () => {
+    const { handler } = await import("../portal-message");
+    const event = mockEvent("GET");
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(405);
+  });
+
+  it("requires authentication (401 without a token)", async () => {
+    const { handler } = await import("../portal-message");
+    const event = mockEvent("POST", { message: "hello" });
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+// ─── Submission-Created (auto lead scoring) Tests ───────────
+
+describe("submission-created function", () => {
+  it("ignores submissions with no payload", async () => {
+    const { handler } = await import("../submission-created");
+    const event = mockEvent("POST", {});
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatch(/ignored/);
+  });
+
+  it("skips forms other than the project inquiry", async () => {
+    const { handler } = await import("../submission-created");
+    const event = mockEvent("POST", {
+      payload: { form_name: "newsletter", data: { name: "x" } },
+    });
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatch(/skipped/);
+  });
+});
+
 // ─── AI Usage Function Tests ────────────────────────────────
 
 describe("ai-usage function", () => {

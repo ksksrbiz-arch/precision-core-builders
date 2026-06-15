@@ -6,7 +6,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { ArrowUp, MessageCircle, Sparkles, User } from "lucide-react";
+import { ArrowUp, MessageCircle, Send, Sparkles, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type Message = {
@@ -15,12 +15,19 @@ type Message = {
   content: string;
 };
 
-const QUICK_PROMPTS = [
+const DEFAULT_PROMPTS = [
   "What's the status of my project?",
   "What's happening next?",
   "What was completed recently?",
   "Show my finish selections",
 ];
+
+type PortalAssistantProps = {
+  /** Header label. */
+  title?: string;
+  /** Page-aware starter prompts. */
+  quickPrompts?: string[];
+};
 
 function errorFor(status: number, fallback?: string): string {
   if (status === 429)
@@ -32,12 +39,58 @@ function errorFor(status: number, fallback?: string): string {
   );
 }
 
-export default function PortalAssistant() {
+export default function PortalAssistant({
+  title = "Project Assistant",
+  quickPrompts = DEFAULT_PROMPTS,
+}: PortalAssistantProps = {}) {
   const { accessToken } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeText, setComposeText] = useState("");
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const messageEric = async () => {
+    const text = composeText.trim();
+    if (!text || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/portal-message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
+      const confirmation: Message = {
+        id: `s-${Date.now()}`,
+        role: "assistant",
+        content: res.ok
+          ? "✅ Your message has been sent to Eric. He'll follow up with you directly."
+          : `⚠️ ${data.error ?? "Couldn't send your message. Please try again or call us."}`,
+      };
+      setMessages(prev => [...prev, confirmation]);
+      if (res.ok) {
+        setComposeText("");
+        setComposeOpen(false);
+      }
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `s-${Date.now()}`,
+          role: "assistant",
+          content: "⚠️ Connection error. Please try again or call us.",
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -108,7 +161,7 @@ export default function PortalAssistant() {
           className="text-xs font-bold tracking-widest uppercase"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
-          Project Assistant
+          {title}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -129,7 +182,7 @@ export default function PortalAssistant() {
               your finish selections.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {QUICK_PROMPTS.map(p => (
+              {quickPrompts.map(p => (
                 <button
                   key={p}
                   onClick={() => send(p)}
@@ -174,6 +227,52 @@ export default function PortalAssistant() {
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
+
+      {/* Message Eric handoff */}
+      {composeOpen ? (
+        <div className="px-3 py-3 border-t border-border/40 space-y-2 bg-muted/20">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Message Eric directly
+          </p>
+          <textarea
+            value={composeText}
+            onChange={e => setComposeText(e.target.value)}
+            placeholder="Ask about invoices, a change request, scheduling a call…"
+            rows={3}
+            disabled={sending}
+            className="w-full resize-none bg-background border border-input px-3 py-2 text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setComposeOpen(false);
+                setComposeText("");
+              }}
+              disabled={sending}
+              className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5"
+            >
+              Cancel
+            </button>
+            <Button
+              size="sm"
+              onClick={messageEric}
+              disabled={!composeText.trim() || sending}
+              className="h-8 gap-1.5"
+            >
+              <Send className="h-3.5 w-3.5" />
+              {sending ? "Sending…" : "Send to Eric"}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setComposeOpen(true)}
+          className="px-4 py-2 border-t border-border/40 text-left text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors flex items-center gap-1.5"
+        >
+          <Send className="h-3 w-3" />
+          Need something else? Message Eric directly →
+        </button>
+      )}
 
       <div className="px-3 py-3 border-t border-border/40 flex gap-2">
         <input

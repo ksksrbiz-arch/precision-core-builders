@@ -6,6 +6,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { PortalLayout } from "@/components/layout/PortalLayout";
+import PortalAssistant from "@/components/PortalAssistant";
 import { motion } from "framer-motion";
 import { ArrowLeft, BookOpen, Calendar, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
@@ -184,6 +185,19 @@ export default function PortalReports() {
             })}
           </div>
         )}
+
+        {/* Reports assistant */}
+        <div className="mt-6">
+          <PortalAssistant
+            title="Reports Assistant"
+            quickPrompts={[
+              "Summarize my recent updates",
+              "Were any issues flagged?",
+              "What was completed this week?",
+              "What's the latest on my project?",
+            ]}
+          />
+        </div>
       </div>
     </PortalLayout>
   );
