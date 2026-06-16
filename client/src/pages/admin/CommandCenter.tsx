@@ -5,6 +5,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import AIChatBox from "@/components/AIChatBox";
 import OpsCopilot from "@/components/OpsCopilot";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
 import {
   AlertDialog,
@@ -17,7 +18,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
@@ -640,18 +640,17 @@ export default function CommandCenter() {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-7">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1
-                className="text-2xl font-semibold"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Command Center
-              </h1>
-              <GuideHelpButton guideId="command-center" />
-              {/* Realtime indicator */}
-              <div className="flex items-center gap-1.5 ml-1">
+        <AdminPageHeader
+          title="Command Center"
+          guideId="command-center"
+          description={new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+          })}
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 mr-1">
                 <div
                   className={`h-1.5 w-1.5 rounded-full transition-colors ${
                     realtimeFlash
@@ -668,32 +667,23 @@ export default function CommandCenter() {
                   {isLive ? "Live" : "Offline"}
                 </span>
               </div>
+              <button
+                onClick={() => setLocation("/admin/field-reports/new")}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Field Report
+              </button>
+              <button
+                onClick={() => setLocation("/admin/projects/new")}
+                className="flex items-center gap-2 border border-border/60 text-muted-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <ClipboardList className="h-3.5 w-3.5" /> New Project
+              </button>
             </div>
-            <p className="text-sm text-muted-foreground font-light mt-0.5">
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setLocation("/admin/field-reports/new")}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              <Plus className="h-3.5 w-3.5" /> Field Report
-            </button>
-            <button
-              onClick={() => setLocation("/admin/projects/new")}
-              className="flex items-center gap-2 border border-border/60 text-muted-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              <ClipboardList className="h-3.5 w-3.5" /> New Project
-            </button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Getting Started — shown only when platform has no projects yet */}
         {stats?.total === 0 && (
