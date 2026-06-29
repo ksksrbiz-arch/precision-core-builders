@@ -17,6 +17,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { trpc } from "@/lib/trpc";
+import { formatNumber, fmtDate } from "@/lib/formatters";
 import {
   buildFreePaymentLinks,
   getFreePaymentConfig,
@@ -110,10 +111,10 @@ const MILESTONE_TEMPLATES = [
 ];
 
 function fmtCents(cents: number) {
-  return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+  return `$${formatNumber(cents / 100, { minimumFractionDigits: 2 })}`;
 }
 function fmtDollars(d: number) {
-  return `$${d.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+  return `$${formatNumber(d, { minimumFractionDigits: 2 })}`;
 }
 
 function sanitizeCachedInvoices(list: Invoice[]): Invoice[] {
@@ -795,7 +796,7 @@ export default function BillingView() {
                         </span>
                       )}
                       <span className="text-[9px] text-muted-foreground/60">
-                        {new Date(inv.createdAt).toLocaleDateString()}
+                        {fmtDate(inv.createdAt)}
                       </span>
                     </div>
                   </div>
