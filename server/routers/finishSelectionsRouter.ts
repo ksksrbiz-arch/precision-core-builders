@@ -1,5 +1,13 @@
-import { db } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import {
+  adminApproveFinishSelection,
+  clientApproveFinishSelection,
+  createFinishSelection,
+  deleteFinishSelection,
+  insertClientSelection,
+  listFinishSelectionBudgetFields,
+  listFinishSelections,
+} from "../_data/finishSelectionsRepo";
 import { z } from "zod";
 
 const SelectionInput = z.object({
@@ -23,92 +31,28 @@ const SelectionInput = z.object({
 export const finishSelectionsRouter = router({
   list: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
-    .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("finish_selections")
-        .select("*")
-        .eq("project_id", input.projectId)
-        .order("room")
-        .order("category");
-      if (error) throw new Error(error.message);
-      return data ?? [];
-    }),
+    .query(async ({ input }) => listFinishSelections(input.projectId)),
 
-  create: adminProcedure.input(SelectionInput).mutation(async ({ input }) => {
-    const { data, error } = await db
-      .from("finish_selections")
-      .insert({
-        project_id: input.projectId,
-        client_id: input.clientId,
-        room: input.room,
-        category: input.category,
-        item_name: input.itemName,
-        brand: input.brand,
-        sku: input.sku,
-        color_name: input.colorName,
-        image_url: input.imageUrl,
-        unit_price: input.unitPrice,
-        quantity: input.quantity,
-        total_cost: input.totalCost,
-        allowance: input.allowance,
-        budget_delta: input.budgetDelta,
-        notes: input.notes,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data;
-  }),
+  create: adminProcedure
+    .input(SelectionInput)
+    .mutation(async ({ input }) => createFinishSelection(input)),
 
   clientApprove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("finish_selections")
-        .update({
-          client_approved: true,
-          client_approved_at: new Date().toISOString(),
-        })
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+    .mutation(async ({ input }) => clientApproveFinishSelection(input.id)),
 
   adminApprove: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("finish_selections")
-        .update({ eric_approved: true })
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+    .mutation(async ({ input }) => adminApproveFinishSelection(input.id)),
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
-      const { error } = await db
-        .from("finish_selections")
-        .delete()
-        .eq("id", input.id);
-      if (error) throw new Error(error.message);
-      return { success: true };
-    }),
+    .mutation(async ({ input }) => deleteFinishSelection(input.id)),
 
   calcBudgetImpact: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("finish_selections")
-        .select("budget_delta,client_approved,eric_approved,room,category")
-        .eq("project_id", input.projectId);
-      if (error) throw new Error(error.message);
-      const items = data ?? [];
+      const items = await listFinishSelectionBudgetFields(input.projectId);
       const totalDelta = items.reduce(
         (sum, s) => sum + Number(s.budget_delta ?? 0),
         0
@@ -136,19 +80,12 @@ export const finishSelectionsRouter = router({
         budgetImpact: z.number().optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("finish_selections")
-        .insert({
-          project_id: input.projectId,
-          item_name: input.selection,
-          category: input.category,
-          budget_delta: input.budgetImpact,
-          client_id: null,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+    .mutation(async ({ input }) =>
+      insertClientSelection({
+        projectId: input.projectId,
+        selection: input.selection,
+        category: input.category,
+        budgetImpact: input.budgetImpact,
+      })
+    ),
 });

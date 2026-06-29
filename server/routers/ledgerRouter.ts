@@ -1,5 +1,10 @@
-import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import {
+  appendLedgerEntry,
+  listAuditLedgerEntries,
+  listLedgerEntries,
+  listVisibleLedgerEntries,
+} from "../_data/ledgerRepo";
 import { z } from "zod";
 
 const EntryTypeEnum = z.enum([
@@ -22,33 +27,12 @@ export const ledgerRouter = router({
         pageSize: z.number().int().min(1).max(100).optional(),
       })
     )
-    .query(async ({ input }) => {
-      const { from, to } = paginate(input);
-      const { data, error, count } = await db
-        .from("ledger_entries")
-        .select("*", { count: "exact" })
-        .eq("project_id", input.projectId)
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      if (error) throw new Error(error.message);
-      return { data: data ?? [], total: count ?? 0 };
-    }),
+    .query(async ({ input }) => listLedgerEntries(input)),
 
   // Client: visible entries only
   listVisible: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
-    .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("ledger_entries")
-        .select(
-          "id,entry_type,title,description,amount_delta,document_url,document_name,created_at"
-        )
-        .eq("project_id", input.projectId)
-        .eq("visible_to_client", true)
-        .order("created_at", { ascending: false });
-      if (error) throw new Error(error.message);
-      return data ?? [];
-    }),
+    .query(async ({ input }) => listVisibleLedgerEntries(input.projectId)),
 
   // Admin-only audit feed: ledger entries whose title is tagged "[AUDIT]".
   // The Activity Log page previously read these straight from the browser
@@ -60,16 +44,7 @@ export const ledgerRouter = router({
         .object({ limit: z.number().int().min(1).max(200).optional() })
         .optional()
     )
-    .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("ledger_entries")
-        .select("id,title,description,project_id,created_at")
-        .like("title", "[AUDIT]%")
-        .order("created_at", { ascending: false })
-        .limit(input?.limit ?? 100);
-      if (error) throw new Error(error.message);
-      return data ?? [];
-    }),
+    .query(async ({ input }) => listAuditLedgerEntries(input?.limit ?? 100)),
 
   // Append-only — no update/delete
   append: adminProcedure
@@ -85,23 +60,17 @@ export const ledgerRouter = router({
         visibleToClient: z.boolean().optional().default(true),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("ledger_entries")
-        .insert({
-          project_id: input.projectId,
-          author_id: ctx.user!.id,
-          entry_type: input.entryType,
-          title: input.title,
-          description: input.description,
-          amount_delta: input.amountDelta,
-          document_url: input.documentUrl,
-          document_name: input.documentName,
-          visible_to_client: input.visibleToClient ?? true,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+    .mutation(async ({ input, ctx }) =>
+      appendLedgerEntry({
+        projectId: input.projectId,
+        authorId: ctx.user!.id,
+        entryType: input.entryType,
+        title: input.title,
+        description: input.description,
+        amountDelta: input.amountDelta,
+        documentUrl: input.documentUrl,
+        documentName: input.documentName,
+        visibleToClient: input.visibleToClient,
+      })
+    ),
 });

@@ -1,30 +1,23 @@
-import { db } from "../db";
 import { adminProcedure, router } from "../_core/trpc";
 import { notifyOwner } from "../_core/notification";
 import { ENV } from "../_core/env";
+import {
+  createSubContractor,
+  deleteSubContractor,
+  getProjectBriefingInfo,
+  getSubContractorById,
+  getSubContractorContact,
+  listSubContractors,
+  updateSubContractor,
+} from "../_data/subContractorsRepo";
 import { z } from "zod";
 
 export const subContractorsRouter = router({
-  list: adminProcedure.query(async () => {
-    const { data, error } = await db
-      .from("sub_contractors")
-      .select("*")
-      .order("name");
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  }),
+  list: adminProcedure.query(async () => listSubContractors()),
 
   getById: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("sub_contractors")
-        .select("*")
-        .eq("id", input.id)
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+    .query(async ({ input }) => getSubContractorById(input.id)),
 
   create: adminProcedure
     .input(
@@ -59,24 +52,7 @@ export const subContractorsRouter = router({
         notes: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("sub_contractors")
-        .insert({
-          name: input.name,
-          company: input.company,
-          email: input.email,
-          phone: input.phone,
-          trade: input.trade,
-          license_number: input.licenseNumber,
-          insurance_expiry: input.insuranceExpiry,
-          notes: input.notes,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    }),
+    .mutation(async ({ input }) => createSubContractor(input)),
 
   update: adminProcedure
     .input(
@@ -96,21 +72,14 @@ export const subContractorsRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, licenseNumber, insuranceExpiry, isActive, ...rest } = input;
-      const { data, error } = await db
-        .from("sub_contractors")
-        .update({
-          ...rest,
-          ...(licenseNumber !== undefined && { license_number: licenseNumber }),
-          ...(insuranceExpiry !== undefined && {
-            insurance_expiry: insuranceExpiry,
-          }),
-          ...(isActive !== undefined && { is_active: isActive }),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return updateSubContractor(id, {
+        ...rest,
+        ...(licenseNumber !== undefined && { license_number: licenseNumber }),
+        ...(insuranceExpiry !== undefined && {
+          insurance_expiry: insuranceExpiry,
+        }),
+        ...(isActive !== undefined && { is_active: isActive }),
+      });
     }),
 
   sendBriefing: adminProcedure
@@ -124,16 +93,8 @@ export const subContractorsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { data: sub } = await db
-        .from("sub_contractors")
-        .select("name,email,phone")
-        .eq("id", input.subContractorId)
-        .single();
-      const { data: project } = await db
-        .from("projects")
-        .select("name,address,city")
-        .eq("id", input.projectId)
-        .single();
+      const sub = await getSubContractorContact(input.subContractorId);
+      const project = await getProjectBriefingInfo(input.projectId);
 
       const briefingContent = [
         `Project: ${project?.name ?? "Unknown"}`,
@@ -186,12 +147,5 @@ export const subContractorsRouter = router({
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
-      const { error } = await db
-        .from("sub_contractors")
-        .delete()
-        .eq("id", input.id);
-      if (error) throw new Error(error.message);
-      return { success: true };
-    }),
+    .mutation(async ({ input }) => deleteSubContractor(input.id)),
 });
