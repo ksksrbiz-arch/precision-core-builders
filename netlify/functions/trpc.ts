@@ -10,86 +10,20 @@
  */
 import type { Handler } from "@netlify/functions";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { createClient } from "@supabase/supabase-js";
 import { appRouter } from "../../server/routers";
 import type { TrpcContext, SessionUser } from "../../server/_core/context";
+import { verifyToken } from "../../server/_core/auth/verifyToken";
 
 // ─── Auth context helper ─────────────────────────────────────────────────────
 
-/** Known dev bypass token — only trusted outside production. */
-const DEV_ADMIN_TOKEN = "dev-admin-token";
-
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL ?? "";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  if (!url || !key) return null;
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
-
+/**
+ * Resolve the authenticated user from a bearer token, delegating to the
+ * canonical `verifyToken` foundation (admin session token, dev bypass, and
+ * Supabase JWT). Any verification failure maps to an anonymous request.
+ */
 async function resolveUser(token: string | null): Promise<SessionUser | null> {
-  if (!token) return null;
-
-  // Admin session token — set via ADMIN_SESSION_TOKEN env var, no DB required.
-  const adminSessionToken = process.env.ADMIN_SESSION_TOKEN ?? "";
-  if (adminSessionToken && token === adminSessionToken) {
-    return {
-      id: "admin",
-      email: process.env.ADMIN_EMAIL ?? "admin@precisioncorebuilders.com",
-      name: "Eric Tadlock",
-      role: "admin",
-    };
-  }
-
-  // Dev bypass — never trusted in production.
-  if (token === DEV_ADMIN_TOKEN && process.env.NODE_ENV !== "production") {
-    return {
-      id: "dev-admin-local",
-      email: "dev@precisioncorebuilders.com",
-      name: "Dev Admin",
-      role: "admin",
-    };
-  }
-
-  const admin = getSupabaseAdmin();
-  if (!admin) return null;
-
-  try {
-    const { data, error } = await admin.auth.getUser(token);
-    if (error || !data.user) return null;
-
-    const u = data.user;
-
-    // Prefer role from public.users table; fall back to JWT metadata.
-    let role: "admin" | "user" = "user";
-    try {
-      const { data: profile } = await admin
-        .from("users")
-        .select("role")
-        .eq("id", u.id)
-        .single();
-      if (profile?.role === "admin") role = "admin";
-    } catch {
-      role =
-        (u.app_metadata?.role as "admin" | "user") ??
-        (u.user_metadata?.role as "admin" | "user") ??
-        "user";
-    }
-
-    return {
-      id: u.id,
-      email: u.email ?? "",
-      name:
-        u.user_metadata?.name ??
-        u.user_metadata?.full_name ??
-        u.email?.split("@")[0] ??
-        null,
-      role,
-    };
-  } catch {
-    return null;
-  }
+  const result = await verifyToken(token);
+  return result.ok ? result.user : null;
 }
 
 // ─── Netlify → Fetch Request conversion ──────────────────────────────────────
