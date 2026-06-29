@@ -8,6 +8,12 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
+import {
+  PROJECT_TYPES,
+  MATERIALS_OPTIONS,
+  TIMELINE_WEEKS,
+} from "@/config/projects";
+import { formatCurrency } from "@/lib/formatters";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import {
@@ -19,46 +25,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
-
-const PROJECT_TYPES = [
-  { id: "new-home", label: "New Home Build", icon: "🏠" },
-  { id: "full-remodel", label: "Full Remodel", icon: "🔨" },
-  { id: "kitchen", label: "Kitchen Remodel", icon: "🍳" },
-  { id: "bathroom", label: "Bathroom Remodel", icon: "🚿" },
-  { id: "addition", label: "Home Addition", icon: "📐" },
-  { id: "adu", label: "ADU / Second Unit", icon: "🏡" },
-  { id: "outdoor", label: "Outdoor / Deck", icon: "🌿" },
-  { id: "roofing", label: "Roofing", icon: "🏗️" },
-  { id: "restoration", label: "Restoration", icon: "🔧" },
-  { id: "cabinets", label: "Custom Cabinets", icon: "🪵" },
-];
-
-const MATERIALS_OPTIONS = [
-  "Premium fixtures and hardware",
-  "Custom cabinetry",
-  "Hardwood flooring",
-  "Tile and stone",
-  "High-end countertops (quartz/granite)",
-  "Energy-efficient windows",
-  "Smart home integration",
-  "Premium appliances",
-];
-
-// Rough timeline ranges (in weeks) by project type, used only as a ballpark
-// on the results screen. Adjusted by finish level below. These are client-side
-// heuristics — the on-site visit produces the real schedule.
-const TIMELINE_WEEKS: Record<string, [number, number]> = {
-  "new-home": [20, 36],
-  "full-remodel": [10, 20],
-  kitchen: [4, 8],
-  bathroom: [3, 6],
-  addition: [8, 16],
-  adu: [12, 24],
-  outdoor: [2, 6],
-  roofing: [1, 3],
-  restoration: [4, 12],
-  cabinets: [3, 8],
-};
 
 function estimateTimeline(
   projectType: string,
@@ -191,8 +157,6 @@ export default function Estimator() {
 
     setLeadSent(true);
   };
-
-  const fmt = (n: number) => `$${n.toLocaleString()}`;
 
   return (
     <>
@@ -466,7 +430,7 @@ export default function Estimator() {
                       <p
                         className={`text-xl sm:text-2xl font-bold mb-1 ${cls}`}
                       >
-                        {fmt(value)}
+                        {formatCurrency(value)}
                       </p>
                       <p
                         className="text-[10px] tracking-widest uppercase text-muted-foreground"
@@ -549,7 +513,7 @@ export default function Estimator() {
                               {p.label}
                             </span>
                             <span className="text-foreground font-medium tabular-nums">
-                              {fmt(p.value)}
+                              {formatCurrency(p.value)}
                             </span>
                           </div>
                         ))}
