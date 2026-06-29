@@ -704,7 +704,7 @@ export default function CommandCenter() {
                 </p>
               </div>
             </div>
-            <div className="grid sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <button
                 onClick={() => setLocation("/onboarding")}
                 className="flex items-start gap-3 p-3 border border-primary/30 bg-primary/10 hover:bg-primary/20 transition-colors text-left"
@@ -798,7 +798,7 @@ export default function CommandCenter() {
 
         {/* Profitability KPIs */}
         {stats && (stats.totalEstimated > 0 || stats.totalActual > 0) && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             <div className="bg-card border border-border/60 p-5">
               <p
                 className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2"
