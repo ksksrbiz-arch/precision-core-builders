@@ -17,6 +17,7 @@ import {
   Send,
   Loader2,
   ArrowLeft,
+  Check,
   CheckCircle2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -369,6 +370,65 @@ export default function FieldReportNew() {
           New Field Report
           <GuideHelpButton guideId="field-reports" />
         </h1>
+
+        {(() => {
+          const stages = ["Select", "Record", "Review", "Publish"];
+          const stageIndex =
+            step === "select"
+              ? 0
+              : step === "record"
+                ? 1
+                : step === "processing" || step === "review"
+                  ? 2
+                  : 3;
+          return (
+            <ol
+              className="flex items-center gap-2 mb-8"
+              aria-label="Field report progress"
+            >
+              {stages.map((label, i) => {
+                const done = i < stageIndex;
+                const active = i === stageIndex;
+                return (
+                  <li
+                    key={label}
+                    className="flex items-center gap-2 flex-1 last:flex-none"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        aria-current={active ? "step" : undefined}
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                          done
+                            ? "bg-primary text-primary-foreground"
+                            : active
+                              ? "border border-primary bg-primary/15 text-primary"
+                              : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {done ? <Check className="h-4 w-4" /> : i + 1}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold hidden sm:inline ${
+                          active ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                    {i < stages.length - 1 && (
+                      <span
+                        className={`h-0.5 flex-1 rounded ${
+                          i < stageIndex ? "bg-primary" : "bg-border"
+                        }`}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          );
+        })()}
 
         {step === "select" && (
           <div className="bg-card border border-border/60 p-6">

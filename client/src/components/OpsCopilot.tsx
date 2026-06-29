@@ -4,10 +4,10 @@
  * Backed by /api/ai-copilot (admin-only Netlify Function → invokeLLM with a
  * live DB snapshot injected as context).
  */
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChatComposer } from "@/components/ai/ChatComposer";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { ArrowUp, Brain, Sparkles, User } from "lucide-react";
+import { Brain, Sparkles, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type Message = {
@@ -135,9 +135,9 @@ export default function OpsCopilot() {
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="text-left text-[10px] p-2.5 border border-border/40 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors leading-snug"
+                  className="flex items-start gap-2 text-left text-xs min-h-11 p-3 border border-border/40 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors leading-snug"
                 >
-                  <Sparkles className="h-2.5 w-2.5 inline mr-1 text-primary/60" />
+                  <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/60" />
                   {p}
                 </button>
               ))}
@@ -177,24 +177,13 @@ export default function OpsCopilot() {
         </div>
       </ScrollArea>
 
-      <div className="px-3 py-3 border-t border-border/40 flex gap-2">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
-          placeholder="Ask about budgets, schedule, leads…"
-          disabled={loading}
-          className="flex-1 bg-background border border-input px-3.5 py-2 text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
-        />
-        <Button
-          size="icon"
-          onClick={() => send()}
-          disabled={!input.trim() || loading}
-          className="h-9 w-9 bg-primary hover:bg-primary/85"
-        >
-          <ArrowUp className="h-4 w-4" />
-        </Button>
-      </div>
+      <ChatComposer
+        value={input}
+        onChange={setInput}
+        onSend={() => send()}
+        disabled={loading}
+        placeholder="Ask about budgets, schedule, leads…"
+      />
     </div>
   );
 }

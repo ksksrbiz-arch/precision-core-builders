@@ -273,15 +273,15 @@ export default function VisionStudioAdmin() {
             />
 
             {/* Mode Selection */}
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {MODES.map(m => (
                 <button
                   key={m.id}
                   onClick={() => setMode(m.id)}
-                  className={`flex flex-col items-center gap-1 px-2 py-2 rounded-md border text-[10px] transition-all ${
+                  className={`flex flex-col items-center justify-center gap-1.5 min-h-20 px-2 py-3 rounded-md border text-xs font-semibold transition-all active:scale-95 ${
                     mode === m.id
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-border/40 text-muted-foreground hover:text-foreground"
+                      : "border-border/40 text-muted-foreground hover:text-foreground hover:border-primary/40"
                   }`}
                 >
                   <span className={mode === m.id ? "text-primary" : m.color}>
