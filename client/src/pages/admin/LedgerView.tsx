@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { formatCurrency } from "@/lib/formatters";
+import { fmtDate } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -105,8 +107,8 @@ export default function LedgerView() {
     },
   });
 
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", {
+  const fmtEntryDate = (d: string) =>
+    fmtDate(d, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -116,7 +118,7 @@ export default function LedgerView() {
   const fmtDelta = (n: number | null) => {
     if (!n) return null;
     const sign = n > 0 ? "+" : "";
-    return `${sign}$${Math.abs(n).toLocaleString()}`;
+    return `${sign}${formatCurrency(Math.abs(n))}`;
   };
 
   return (
@@ -413,7 +415,7 @@ export default function LedgerView() {
                         {entry.description}
                       </p>
                       <p className="text-[10px] text-muted-foreground/40 mt-2">
-                        {fmtDate(entry.created_at)}
+                        {fmtEntryDate(entry.created_at)}
                       </p>
                     </div>
                   </div>

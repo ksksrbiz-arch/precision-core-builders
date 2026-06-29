@@ -424,9 +424,7 @@ export default function FieldReportDetail() {
           <span>Report ID: #{report.id}</span>
           <span>Created: {fmtDateTime(report.created_at)}</span>
           {report.published_at && (
-            <span>
-              Published: {new Date(report.published_at).toLocaleString()}
-            </span>
+            <span>Published: {fmtDateTime(report.published_at)}</span>
           )}
         </div>
       </div>
