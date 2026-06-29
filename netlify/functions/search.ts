@@ -3,26 +3,11 @@
  * Semantic search across projects, clients, field reports, materials,
  * and schedule items using Claude for intent extraction + Supabase full-text search.
  */
-import type { Handler } from "@netlify/functions";
 import { invokeLLM } from "../../server/_core/llm";
 import { db } from "../../server/db";
-import { verifyAuth } from "./_utils/authGuard";
-import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
-
-const SEARCH_INTENT_PROMPT = `You are a search assistant for Precision Core Builders, a construction management platform.
-Given a natural-language query, extract the search intent and return JSON:
-{
-  "entities": ["projects"|"clients"|"field_reports"|"materials"|"schedule_items"],
-  "keywords": ["word1", "word2"],
-  "filters": {
-    "status": "lead"|"contracted"|"in_progress"|"complete"|null,
-    "dateRange": "today"|"this_week"|"this_month"|null,
-    "category": "string or null"
-  },
-  "summary": "one-sentence description of what to search for"
-}
-Return only valid JSON.`;
+import { withGuards } from "./_lib/http";
+import { PROMPTS } from "./_lib/llm/prompts";
 
 /**
  * Strips characters that are special in PostgREST ilike patterns to prevent
@@ -157,135 +142,99 @@ async function searchSchedule(keywords: string[]): Promise<SearchResult[]> {
   }));
 }
 
-export const handler: Handler = async event => {
-  const origin = event.headers["origin"];
-  const headers = corsHeaders(origin);
-
-  if (event.httpMethod === "OPTIONS")
-    return { statusCode: 204, headers, body: "" };
-
-  const originBlock = checkOrigin(origin);
-  if (originBlock) return originBlock;
-
-  if (event.httpMethod !== "POST")
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
-
+export const handler = withGuards(
   // Operational search reads private business data (clients, budgets, field
   // reports, vendor pricing) via the service-role DB — require an authenticated
   // user. Without this guard the endpoint leaks the entire dataset.
-  const authResult = await verifyAuth(event.headers);
-  if (!authResult.ok) {
-    return {
-      statusCode: authResult.statusCode,
-      headers,
-      body: JSON.stringify({ error: authResult.message }),
-    };
-  }
-
-  // Rate limit: 30 searches per minute per authenticated user.
-  const rl = checkRateLimit(`search:${authResult.user.id}`, {
-    maxRequests: 30,
-    windowMs: 60_000,
-  });
-  if (!rl.allowed) {
-    return {
-      statusCode: 429,
-      headers: { ...headers, ...rateLimitHeaders(rl) },
-      body: JSON.stringify({
-        error: "Search limit reached. Please wait a moment and try again.",
-      }),
-    };
-  }
-
-  try {
-    const { query } = JSON.parse(event.body ?? "{}") as { query?: string };
-    if (!query || query.trim().length < 2) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: "Query must be at least 2 characters." }),
-      };
+  { methods: ["POST"], auth: "user" },
+  async ({ event, user, json, error }) => {
+    // Rate limit: 30 searches per minute per authenticated user.
+    const rl = checkRateLimit(`search:${user!.id}`, {
+      maxRequests: 30,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return error(
+        429,
+        "Search limit reached. Please wait a moment and try again.",
+        rateLimitHeaders(rl)
+      );
     }
 
-    // Extract intent via LLM
-    let intent: {
-      entities: string[];
-      keywords: string[];
-      filters: Record<string, string | null>;
-      summary: string;
-    };
     try {
-      const raw = await invokeLLM({
-        feature: "search",
-        messages: [
-          { role: "system", content: SEARCH_INTENT_PROMPT },
-          { role: "user", content: query },
-        ],
-        jsonMode: true,
-        maxTokens: 300,
-        temperature: 0,
-      });
-      intent = JSON.parse(raw.text);
-    } catch {
-      // Fallback: treat entire query as keyword search across all entities
-      intent = {
-        entities: [
-          "projects",
-          "clients",
-          "field_reports",
-          "materials",
-          "schedule_items",
-        ],
-        keywords: query.split(/\s+/).slice(0, 3),
-        filters: {},
-        summary: query,
+      const { query } = JSON.parse(event.body ?? "{}") as { query?: string };
+      if (!query || query.trim().length < 2) {
+        return error(400, "Query must be at least 2 characters.");
+      }
+
+      // Extract intent via LLM
+      let intent: {
+        entities: string[];
+        keywords: string[];
+        filters: Record<string, string | null>;
+        summary: string;
       };
-    }
+      try {
+        const raw = await invokeLLM({
+          feature: "search",
+          messages: [
+            { role: "system", content: PROMPTS.searchIntent },
+            { role: "user", content: query },
+          ],
+          jsonMode: true,
+          maxTokens: 300,
+          temperature: 0,
+        });
+        intent = JSON.parse(raw.text);
+      } catch {
+        // Fallback: treat entire query as keyword search across all entities
+        intent = {
+          entities: [
+            "projects",
+            "clients",
+            "field_reports",
+            "materials",
+            "schedule_items",
+          ],
+          keywords: query.split(/\s+/).slice(0, 3),
+          filters: {},
+          summary: query,
+        };
+      }
 
-    const entities = intent.entities?.length
-      ? intent.entities
-      : ["projects", "clients", "field_reports", "materials"];
-    const keywords = intent.keywords?.length ? intent.keywords : [query];
+      const entities = intent.entities?.length
+        ? intent.entities
+        : ["projects", "clients", "field_reports", "materials"];
+      const keywords = intent.keywords?.length ? intent.keywords : [query];
 
-    // Run parallel searches across requested entities
-    const searches: Promise<SearchResult[]>[] = [];
-    if (entities.includes("projects"))
-      searches.push(searchProjects(keywords, intent.filters ?? {}));
-    if (entities.includes("clients")) searches.push(searchClients(keywords));
-    if (entities.includes("field_reports"))
-      searches.push(searchFieldReports(keywords));
-    if (entities.includes("materials"))
-      searches.push(searchMaterials(keywords));
-    if (entities.includes("schedule_items"))
-      searches.push(searchSchedule(keywords));
+      // Run parallel searches across requested entities
+      const searches: Promise<SearchResult[]>[] = [];
+      if (entities.includes("projects"))
+        searches.push(searchProjects(keywords, intent.filters ?? {}));
+      if (entities.includes("clients")) searches.push(searchClients(keywords));
+      if (entities.includes("field_reports"))
+        searches.push(searchFieldReports(keywords));
+      if (entities.includes("materials"))
+        searches.push(searchMaterials(keywords));
+      if (entities.includes("schedule_items"))
+        searches.push(searchSchedule(keywords));
 
-    const resultSets = await Promise.allSettled(searches);
-    const results: SearchResult[] = resultSets
-      .filter(
-        (r): r is PromiseFulfilledResult<SearchResult[]> =>
-          r.status === "fulfilled"
-      )
-      .flatMap(r => r.value);
+      const resultSets = await Promise.allSettled(searches);
+      const results: SearchResult[] = resultSets
+        .filter(
+          (r): r is PromiseFulfilledResult<SearchResult[]> =>
+            r.status === "fulfilled"
+        )
+        .flatMap(r => r.value);
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
+      return json(200, {
         results,
         summary: intent.summary,
         total: results.length,
-      }),
-    };
-  } catch (err) {
-    console.error("[search]", err);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: String(err) }),
-    };
+      });
+    } catch (err) {
+      console.error("[search]", err);
+      return error(500, String(err));
+    }
   }
-};
+);
