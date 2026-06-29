@@ -15,18 +15,9 @@
  * - invoice.payment_failed → flag for follow-up
  */
 import type { Handler } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { ENV } from "../../server/_core/env";
-
-function getDb() {
-  if (!ENV.supabaseUrl || !ENV.supabaseServiceRoleKey) {
-    throw new Error("Supabase not configured");
-  }
-  return createClient(ENV.supabaseUrl, ENV.supabaseServiceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { requireSupabaseAdmin } from "../../server/_core/supabase";
 
 /**
  * Verify a Stripe webhook signature.
@@ -127,7 +118,7 @@ export const handler: Handler = async event => {
     };
   }
 
-  const db = getDb();
+  const db = requireSupabaseAdmin();
 
   try {
     switch (eventType) {

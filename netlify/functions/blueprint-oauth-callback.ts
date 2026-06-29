@@ -17,23 +17,14 @@
  * query string so the UI can show a friendly message.
  */
 import type { Handler } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
 import { ENV } from "../../server/_core/env";
 import {
   encryptSecret,
   OAUTH_STATE_EXPIRY_MS,
   verifyState,
 } from "../../server/_core/crypto";
+import { requireSupabaseAdmin } from "../../server/_core/supabase";
 import { checkRateLimit, getClientIp } from "./_utils/rateLimiter";
-
-function supabase() {
-  if (!ENV.supabaseUrl || !ENV.supabaseServiceRoleKey) {
-    throw new Error("Supabase is not configured");
-  }
-  return createClient(ENV.supabaseUrl, ENV.supabaseServiceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 function parseState(
   state: string
@@ -160,7 +151,7 @@ export const handler: Handler = async event => {
       ? new Date(Date.now() + tokenResponse.expires_in * 1000).toISOString()
       : null;
 
-    const db = supabase();
+    const db = requireSupabaseAdmin();
     const { error } = await db.from("blueprint_connections").upsert(
       {
         user_id: parsed.uid,
