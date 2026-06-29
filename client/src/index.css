@@ -791,6 +791,49 @@
   line-height: 1.25rem;
 }
 
+/* The very smallest condensed labels (status pills, category tags) and the
+ * primary-action button labels were the worst offenders for onsite reading.
+ * Escalate them inside the admin shell too. */
+.admin-shell .text-\[9px\] {
+  font-size: 0.6875rem; /* 11px */
+}
+.admin-shell .text-\[11px\] {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.2rem;
+}
+
+/* ── Tablet / touch ergonomics ──────────────────────────────────────────
+ * Eric runs the admin on a tablet onsite. On any coarse-pointer device
+ * (phones AND tablets — width-independent, so iPads in the 768–1024px
+ * "no-man's-land" are covered) push the tiniest type up a little more for
+ * arm's-length reading and guarantee 44px tap targets. Mirrors the proven
+ * <768px mobile rule, scoped to the admin shell so public pages are
+ * untouched. `.icon-btn` opts a control out when a compact size is intended. */
+@media (hover: none) and (pointer: coarse) {
+  .admin-shell .text-\[9px\] {
+    font-size: 0.75rem; /* 12px */
+  }
+  .admin-shell .text-\[10px\] {
+    font-size: 0.8125rem; /* 13px */
+  }
+  .admin-shell .text-\[11px\] {
+    font-size: 0.875rem; /* 14px */
+  }
+
+  .admin-shell button:not(.icon-btn),
+  .admin-shell [role="button"]:not(.icon-btn) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent iOS auto-zoom on focus by keeping inputs ≥16px. */
+  .admin-shell input,
+  .admin-shell textarea,
+  .admin-shell select {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* Lighten icons that use muted-foreground — against a light bg the
  * same muted grey looks washed out. Explicit bump for icons tagged
  * with `text-muted-foreground` and used at small sizes. */

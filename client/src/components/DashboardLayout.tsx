@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AdminGuidePrompt } from "@/components/AdminGuidePrompt";
+import { AiLauncher } from "@/components/ai/AiLauncher";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { getGuideByPath } from "@/lib/guides";
 import { ASSETS } from "@/const";
@@ -608,6 +609,7 @@ function DashboardLayoutContent({
           </div>
         )}
         <div className="flex-1 p-4 pb-24 sm:p-6 md:p-8">{children}</div>
+        <AiLauncher />
       </SidebarInset>
     </>
   );
