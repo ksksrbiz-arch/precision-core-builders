@@ -9,16 +9,8 @@
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
 import { resolveProviderOrder } from "../../server/_core/llm";
-
-// Timing-safe comparison
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
-}
+import { getSupabaseAdmin } from "../../server/_core/supabase";
+import { timingSafeEqualStr } from "./_lib/crypto";
 
 type ServiceStatus = {
   id: string;
@@ -472,10 +464,9 @@ async function checkOpenAI(): Promise<ServiceStatus> {
 }
 
 async function checkDatabaseTables(): Promise<ServiceStatus> {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabase = getSupabaseAdmin();
 
-  if (!url || !key) {
+  if (!supabase) {
     return {
       id: "db_tables",
       name: "Database Schema",
@@ -486,8 +477,6 @@ async function checkDatabaseTables(): Promise<ServiceStatus> {
 
   const start = Date.now();
   try {
-    const supabase = createClient(url, key);
-
     // Check for critical tables
     const tables = [
       "profiles",
@@ -578,7 +567,7 @@ export const handler: Handler = async event => {
     };
   }
 
-  if (!adminToken || !timingSafeEqual(adminToken, expectedToken)) {
+  if (!adminToken || !timingSafeEqualStr(adminToken, expectedToken)) {
     return {
       statusCode: 401,
       headers,

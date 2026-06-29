@@ -1,13 +1,6 @@
-import type { Handler } from "@netlify/functions";
 import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "../../server/_core/env";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitHeaders,
-} from "./_utils/rateLimiter";
-import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
-import { verifyAuth } from "./_utils/authGuard";
+import { withGuards } from "./_lib/http";
 
 /**
  * Vision Studio — AI photo analysis endpoint.
@@ -66,136 +59,90 @@ const MODE_PROMPTS: Record<AnalysisMode, string> = {
     "Based on this construction photo, provide rough cost estimates for the visible work. Include material costs and labor estimates where possible. Note this is for ballpark planning only.",
 };
 
-export const handler: Handler = async event => {
-  const origin = event.headers["origin"];
-  const headers = corsHeaders(origin);
-
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
-
-  const originBlock = checkOrigin(origin);
-  if (originBlock) return originBlock;
-
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
-  }
-
-  // Vision analysis requires authentication — it processes private site photos.
-  const authResult = await verifyAuth(event.headers);
-  if (!authResult.ok) {
-    return {
-      statusCode: authResult.statusCode,
-      headers,
-      body: JSON.stringify({ error: authResult.message }),
-    };
-  }
-
-  // Rate limit: 15 analyses per hour per authenticated user.
-  const rl = checkRateLimit(`vision:${authResult.user.id}`, {
-    maxRequests: 15,
-    windowMs: 60 * 60_000,
-  });
-  if (!rl.allowed) {
-    return {
-      statusCode: 429,
-      headers: { ...headers, ...rateLimitHeaders(rl) },
-      body: JSON.stringify({
-        error:
-          "Analysis limit reached. Please wait before submitting more photos.",
-      }),
-    };
-  }
-
-  try {
-    const body = JSON.parse(event.body || "{}");
-    const {
-      image,
-      mediaType = "image/jpeg",
-      mode = "general",
-      customPrompt,
-    } = body as {
-      image?: string;
-      mediaType?: string;
-      mode?: AnalysisMode;
-      customPrompt?: string;
-    };
-
-    if (!image) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error:
-            "No image provided. Send base64-encoded image data in the 'image' field.",
-        }),
+export const handler = withGuards(
+  {
+    methods: ["POST"],
+    // Vision analysis requires authentication — it processes private site photos.
+    auth: "user",
+    // Rate limit: 15 analyses per hour per authenticated user.
+    rateLimit: {
+      key: ({ user }) => `vision:${user?.id}`,
+      maxRequests: 15,
+      windowMs: 60 * 60_000,
+    },
+  },
+  async ({ event, json, error }) => {
+    try {
+      const body = JSON.parse(event.body || "{}");
+      const {
+        image,
+        mediaType = "image/jpeg",
+        mode = "general",
+        customPrompt,
+      } = body as {
+        image?: string;
+        mediaType?: string;
+        mode?: AnalysisMode;
+        customPrompt?: string;
       };
-    }
 
-    if (!SUPPORTED_MEDIA_TYPES.includes(mediaType as SupportedMediaType)) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error: `Unsupported media type "${mediaType}". Supported: ${SUPPORTED_MEDIA_TYPES.join(", ")}.`,
-        }),
-      };
-    }
+      if (!image) {
+        return error(
+          400,
+          "No image provided. Send base64-encoded image data in the 'image' field."
+        );
+      }
 
-    if (!ENV.anthropicApiKey && !ENV.googleAiApiKey) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error:
-            "Vision AI is not configured. Please contact the site administrator.",
-        }),
-      };
-    }
+      if (!SUPPORTED_MEDIA_TYPES.includes(mediaType as SupportedMediaType)) {
+        return error(
+          400,
+          `Unsupported media type "${mediaType}". Supported: ${SUPPORTED_MEDIA_TYPES.join(", ")}.`
+        );
+      }
 
-    const userPrompt =
-      customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
+      if (!ENV.anthropicApiKey && !ENV.googleAiApiKey) {
+        return error(
+          500,
+          "Vision AI is not configured. Please contact the site administrator."
+        );
+      }
 
-    // ── Claude Vision (primary) ───────────────────────────────────────────────
-    if (ENV.anthropicApiKey) {
-      const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
+      const userPrompt =
+        customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
 
-      const response = await client.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4096,
-        temperature: 0.2,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: mediaType as SupportedMediaType,
-                  data: image,
+      // ── Claude Vision (primary) ──────────────────────────────────────────────
+      if (ENV.anthropicApiKey) {
+        const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
+
+        const response = await client.messages.create({
+          model: "claude-sonnet-4-6",
+          max_tokens: 4096,
+          temperature: 0.2,
+          system: SYSTEM_PROMPT,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: mediaType as SupportedMediaType,
+                    data: image,
+                  },
                 },
-              },
-              { type: "text", text: userPrompt },
-            ],
-          },
-        ],
-      });
+                { type: "text", text: userPrompt },
+              ],
+            },
+          ],
+        });
 
-      const analysisText = response.content
-        .filter(block => block.type === "text")
-        .map(block => (block as Anthropic.TextBlock).text)
-        .join("");
+        const analysisText = response.content
+          .filter(block => block.type === "text")
+          .map(block => (block as Anthropic.TextBlock).text)
+          .join("");
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
+        return json(200, {
           analysis: analysisText,
           mode,
           model: response.model,
@@ -206,67 +153,63 @@ export const handler: Handler = async event => {
               response.usage.input_tokens + response.usage.output_tokens,
           },
           timestamp: new Date().toISOString(),
-        }),
-      };
-    }
+        });
+      }
 
-    // ── Gemini Vision (fallback) ──────────────────────────────────────────────
-    const geminiModel = "gemini-2.0-flash";
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${ENV.googleAiApiKey}`;
+      // ── Gemini Vision (fallback) ─────────────────────────────────────────────
+      const geminiModel = "gemini-2.0-flash";
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${ENV.googleAiApiKey}`;
 
-    const geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `${SYSTEM_PROMPT}\n\n${userPrompt}`,
-              },
-              {
-                inline_data: {
-                  mime_type: mediaType,
-                  data: image,
+      const geminiRes = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `${SYSTEM_PROMPT}\n\n${userPrompt}`,
                 },
-              },
-            ],
-          },
-        ],
-        generationConfig: { maxOutputTokens: 4096, temperature: 0.2 },
-      }),
-    });
+                {
+                  inline_data: {
+                    mime_type: mediaType,
+                    data: image,
+                  },
+                },
+              ],
+            },
+          ],
+          generationConfig: { maxOutputTokens: 4096, temperature: 0.2 },
+        }),
+      });
 
-    type GeminiVisionResponse = {
-      candidates?: Array<{
-        content?: { parts?: Array<{ text?: string }> };
-      }>;
-      usageMetadata?: {
-        promptTokenCount?: number;
-        candidatesTokenCount?: number;
-        totalTokenCount?: number;
+      type GeminiVisionResponse = {
+        candidates?: Array<{
+          content?: { parts?: Array<{ text?: string }> };
+        }>;
+        usageMetadata?: {
+          promptTokenCount?: number;
+          candidatesTokenCount?: number;
+          totalTokenCount?: number;
+        };
+        error?: { message?: string };
       };
-      error?: { message?: string };
-    };
 
-    const geminiData = (await geminiRes.json()) as GeminiVisionResponse;
+      const geminiData = (await geminiRes.json()) as GeminiVisionResponse;
 
-    if (!geminiRes.ok || geminiData.error) {
-      throw new Error(
-        `Vision analysis failed: ${geminiData.error?.message ?? geminiRes.statusText}`
-      );
-    }
+      if (!geminiRes.ok || geminiData.error) {
+        throw new Error(
+          `Vision analysis failed: ${geminiData.error?.message ?? geminiRes.statusText}`
+        );
+      }
 
-    const analysisText =
-      geminiData.candidates
-        ?.flatMap(c => c.content?.parts ?? [])
-        .map(p => p.text ?? "")
-        .join("") ?? "";
+      const analysisText =
+        geminiData.candidates
+          ?.flatMap(c => c.content?.parts ?? [])
+          .map(p => p.text ?? "")
+          .join("") ?? "";
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
+      return json(200, {
         analysis: analysisText,
         mode,
         model: geminiModel,
@@ -279,21 +222,18 @@ export const handler: Handler = async event => {
             }
           : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         timestamp: new Date().toISOString(),
-      }),
-    };
-  } catch (err: unknown) {
-    console.error("[vision-studio] Error:", err);
-    const isConfigError =
-      err instanceof Error && err.message.includes("No LLM API key configured");
-    const message = isConfigError
-      ? "Vision AI is not configured. Please contact the site administrator."
-      : err instanceof Error
-        ? err.message
-        : "Vision analysis failed. Please try again.";
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: message }),
-    };
+      });
+    } catch (err: unknown) {
+      console.error("[vision-studio] Error:", err);
+      const isConfigError =
+        err instanceof Error &&
+        err.message.includes("No LLM API key configured");
+      const message = isConfigError
+        ? "Vision AI is not configured. Please contact the site administrator."
+        : err instanceof Error
+          ? err.message
+          : "Vision analysis failed. Please try again.";
+      return error(500, message);
+    }
   }
-};
+);
