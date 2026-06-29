@@ -19,21 +19,38 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AdminRoute, ProtectedRoute } from "./components/RouteGuards";
 import type { ComponentType } from "react";
 
+/**
+ * Wrap a page component in its own ErrorBoundary so a crash in one route is
+ * isolated to that route instead of blanking the whole app. The global
+ * ErrorBoundary in App() remains as a final safety net.
+ */
+function withBoundary<P extends object>(Component: ComponentType<P>) {
+  return (props: P) => (
+    <ErrorBoundary>
+      <Component {...props} />
+    </ErrorBoundary>
+  );
+}
+
 /** Wrap a lazy-loaded page component with the AdminRoute guard. */
 function adminPage<P extends object>(Component: ComponentType<P>) {
   return (props: P) => (
-    <AdminRoute>
-      <Component {...props} />
-    </AdminRoute>
+    <ErrorBoundary>
+      <AdminRoute>
+        <Component {...props} />
+      </AdminRoute>
+    </ErrorBoundary>
   );
 }
 
 /** Wrap a lazy-loaded page component with the ProtectedRoute guard. */
 function protectedPage<P extends object>(Component: ComponentType<P>) {
   return (props: P) => (
-    <ProtectedRoute>
-      <Component {...props} />
-    </ProtectedRoute>
+    <ErrorBoundary>
+      <ProtectedRoute>
+        <Component {...props} />
+      </ProtectedRoute>
+    </ErrorBoundary>
   );
 }
 import Home from "./pages/Home";
@@ -138,21 +155,24 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         {/* Public */}
-        <Route path="/" component={Home} />
-        <Route path="/about" component={About} />
-        <Route path="/services" component={Services} />
-        <Route path="/portfolio" component={Portfolio} />
-        <Route path="/portfolio/:slug" component={PortfolioDetail} />
-        <Route path="/faq" component={FAQ} />
-        <Route path="/contact" component={Contact} />
-        <Route path="/estimator" component={Estimator} />
+        <Route path="/" component={withBoundary(Home)} />
+        <Route path="/about" component={withBoundary(About)} />
+        <Route path="/services" component={withBoundary(Services)} />
+        <Route path="/portfolio" component={withBoundary(Portfolio)} />
+        <Route
+          path="/portfolio/:slug"
+          component={withBoundary(PortfolioDetail)}
+        />
+        <Route path="/faq" component={withBoundary(FAQ)} />
+        <Route path="/contact" component={withBoundary(Contact)} />
+        <Route path="/estimator" component={withBoundary(Estimator)} />
 
         {/* Auth */}
-        <Route path="/auth/login" component={AuthLogin} />
-        <Route path="/auth/callback" component={AuthCallback} />
-        <Route path="/callback" component={AuthCallback} />
-        <Route path="/auth/resend" component={ResendLink} />
-        <Route path="/dev-login" component={DevLogin} />
+        <Route path="/auth/login" component={withBoundary(AuthLogin)} />
+        <Route path="/auth/callback" component={withBoundary(AuthCallback)} />
+        <Route path="/callback" component={withBoundary(AuthCallback)} />
+        <Route path="/auth/resend" component={withBoundary(ResendLink)} />
+        <Route path="/dev-login" component={withBoundary(DevLogin)} />
 
         {/* Admin — all routes require role=admin via AdminRoute guard.
             /admin/setup is intentionally NOT wrapped because it has its
@@ -197,10 +217,10 @@ function Router() {
           component={adminPage(PortfolioAdmin)}
         />
         {/* Bootstrapping wizard — guarded by its own token, not AdminRoute. */}
-        <Route path="/admin/setup" component={SetupWizard} />
+        <Route path="/admin/setup" component={withBoundary(SetupWizard)} />
 
         {/* Public token-gated onboarding wizard for new account owner */}
-        <Route path="/onboarding" component={OnboardingWizard} />
+        <Route path="/onboarding" component={withBoundary(OnboardingWizard)} />
         <Route
           path="/admin/vision-studio"
           component={adminPage(VisionStudioAdmin)}
@@ -246,20 +266,35 @@ function Router() {
         )}
 
         {/* Service pages */}
-        <Route path="/services/residential" component={LazyResidential} />
-        <Route path="/services/remodels" component={LazyRemodels} />
+        <Route
+          path="/services/residential"
+          component={withBoundary(LazyResidential)}
+        />
+        <Route
+          path="/services/remodels"
+          component={withBoundary(LazyRemodels)}
+        />
         <Route
           path="/services/new-construction"
-          component={LazyNewConstruction}
+          component={withBoundary(LazyNewConstruction)}
         />
-        <Route path="/services/restoration" component={LazyRestoration} />
-        <Route path="/services/outdoor" component={LazyOutdoor} />
-        <Route path="/services/painting" component={LazyPainting} />
-        <Route path="/services/roofing" component={LazyRoofing} />
-        <Route path="/services/cabinets" component={LazyCabinets} />
+        <Route
+          path="/services/restoration"
+          component={withBoundary(LazyRestoration)}
+        />
+        <Route path="/services/outdoor" component={withBoundary(LazyOutdoor)} />
+        <Route
+          path="/services/painting"
+          component={withBoundary(LazyPainting)}
+        />
+        <Route path="/services/roofing" component={withBoundary(LazyRoofing)} />
+        <Route
+          path="/services/cabinets"
+          component={withBoundary(LazyCabinets)}
+        />
 
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
+        <Route path="/404" component={withBoundary(NotFound)} />
+        <Route component={withBoundary(NotFound)} />
       </Switch>
     </Suspense>
   );

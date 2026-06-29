@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AdminGuidePrompt } from "@/components/AdminGuidePrompt";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
-import { getGuideByPath } from "@/pages/admin/guides-data";
+import { getGuideByPath } from "@/lib/guides";
 import { ASSETS } from "@/const";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
