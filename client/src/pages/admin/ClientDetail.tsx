@@ -3,6 +3,9 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { formatCurrency } from "@/lib/formatters";
+import { fmtDate } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
@@ -36,17 +39,17 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState<{
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-    city: string;
-    state: string;
-    zip: string;
-    notes: string;
-    leadSource: string;
-  } | null>(null);
+  const editForm = useEntityForm({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "OR",
+    zip: "",
+    notes: "",
+    leadSource: "",
+  });
 
   const utils = trpc.useUtils();
   const {
@@ -67,7 +70,7 @@ export default function ClientDetail() {
 
   const startEdit = () => {
     if (!client) return;
-    setEditForm({
+    editForm.reset({
       name: client.name ?? "",
       email: client.email ?? "",
       phone: client.phone ?? "",
@@ -83,34 +86,35 @@ export default function ClientDetail() {
 
   const cancelEdit = () => {
     setEditing(false);
-    setEditForm(null);
+    editForm.reset();
   };
 
+  const ef = editForm.values;
+
   const handleSave = () => {
-    if (!editForm || !editForm.name || !editForm.email) return;
+    if (!ef.name || !ef.email) return;
     updateMut.mutate({
       id: Number(id),
-      name: editForm.name,
-      email: editForm.email,
-      phone: editForm.phone || undefined,
-      address: editForm.address || undefined,
-      city: editForm.city || undefined,
-      state: editForm.state || undefined,
-      zip: editForm.zip || undefined,
-      notes: editForm.notes || undefined,
-      leadSource: editForm.leadSource || undefined,
+      name: ef.name,
+      email: ef.email,
+      phone: ef.phone || undefined,
+      address: ef.address || undefined,
+      city: ef.city || undefined,
+      state: ef.state || undefined,
+      zip: ef.zip || undefined,
+      notes: ef.notes || undefined,
+      leadSource: ef.leadSource || undefined,
     });
   };
 
-  const ef = editForm;
   const setEf = (key: string, value: string) =>
-    setEditForm(prev => (prev ? { ...prev, [key]: value } : prev));
+    editForm.setField(key as keyof typeof ef, value);
 
   const inputCls =
     "w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60";
 
   const fmt = (n: number | string | null | undefined) =>
-    n ? `$${Number(n).toLocaleString()}` : "—";
+    n ? formatCurrency(Number(n)) : "—";
 
   if (isLoading) {
     return (
@@ -362,7 +366,7 @@ export default function ClientDetail() {
                 )}
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3 text-primary" /> Client since{" "}
-                  {new Date(client.created_at).toLocaleDateString("en-US", {
+                  {fmtDate(client.created_at, {
                     month: "short",
                     year: "numeric",
                   })}
@@ -413,7 +417,7 @@ export default function ClientDetail() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{p.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Created {new Date(p.created_at).toLocaleDateString()}
+                    Created {fmtDate(p.created_at)}
                   </p>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">

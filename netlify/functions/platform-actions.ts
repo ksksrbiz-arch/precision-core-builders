@@ -6,18 +6,9 @@
  * Body: { action: string, params?: object, adminToken: string }
  */
 import type { Handler } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
 import { invokeLLM } from "../../server/_core/llm";
-
-// Timing-safe comparison
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
-}
+import { getSupabaseAdmin } from "../../server/_core/supabase";
+import { timingSafeEqualStr } from "./_lib/crypto";
 
 type ActionResult = {
   success: boolean;
@@ -64,10 +55,9 @@ function throwIfActionError(
 }
 
 function getSupabase() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase not configured");
-  return createClient(url, key);
+  const client = getSupabaseAdmin();
+  if (!client) throw new Error("Supabase not configured");
+  return client;
 }
 
 // ─── Action: Seed Demo Data ──────────────────────────────────────────────────
@@ -589,7 +579,7 @@ export const handler: Handler = async event => {
     };
   }
 
-  if (!body.adminToken || !timingSafeEqual(body.adminToken, expectedToken)) {
+  if (!body.adminToken || !timingSafeEqualStr(body.adminToken, expectedToken)) {
     return {
       statusCode: 401,
       headers,

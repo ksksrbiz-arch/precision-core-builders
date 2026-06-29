@@ -19,8 +19,10 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
+import { TASK_TYPES, type TaskType } from "@/config/schedule";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { fmtDate } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -48,26 +50,6 @@ type WeatherDay = {
   rainMm: number;
   willRain: boolean;
 };
-
-// Must match server/routers/scheduleRouter.ts TaskTypeEnum.
-const TASK_TYPES = [
-  "outdoor",
-  "indoor",
-  "framing",
-  "roofing",
-  "electrical",
-  "plumbing",
-  "insulation",
-  "drywall",
-  "flooring",
-  "cabinetry",
-  "painting",
-  "finish_work",
-  "inspection",
-  "other",
-] as const;
-
-type TaskType = (typeof TASK_TYPES)[number];
 
 type WeatherData = {
   forecast: WeatherDay[];
@@ -136,11 +118,9 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
       <div className="overflow-x-auto -mx-1">
         <div className="grid grid-cols-7 gap-2 min-w-[420px] px-1">
           {days.map(day => {
-            const date = new Date(day.date + "T12:00:00");
-            const label = date.toLocaleDateString("en-US", {
-              weekday: "short",
-            });
-            const md = date.toLocaleDateString("en-US", {
+            const noonLocal = day.date + "T12:00:00";
+            const label = fmtDate(noonLocal, { weekday: "short" });
+            const md = fmtDate(noonLocal, {
               month: "numeric",
               day: "numeric",
             });
@@ -731,12 +711,12 @@ export default function ScheduleView() {
                       {item.planned_start && (
                         <span className="flex items-center gap-1">
                           <Calendar className="h-2.5 w-2.5" />
-                          {new Date(item.planned_start).toLocaleDateString(
-                            "en-US",
-                            { month: "short", day: "numeric" }
-                          )}
+                          {fmtDate(item.planned_start, {
+                            month: "short",
+                            day: "numeric",
+                          })}
                           {item.planned_end &&
-                            ` – ${new Date(item.planned_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                            ` – ${fmtDate(item.planned_end, { month: "short", day: "numeric" })}`}
                         </span>
                       )}
                       {item.duration_days && (

@@ -3,7 +3,7 @@
  * Each plan stores JSON-serialised elements + appState so the canvas can be
  * restored exactly as the user left it.  Thumbnails are optional base-64 PNGs.
  */
-import { db } from "../db";
+import { sitePlansRepo } from "../_data/sitePlansRepo";
 import { adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
@@ -16,33 +16,14 @@ export const sitePlansRouter = router({
       })
     )
     .query(async ({ input }) => {
-      let q = db
-        .from("site_plans")
-        .select(
-          "id,name,project_id,author_id,thumbnail_data_url,created_at,updated_at"
-        )
-        .order("updated_at", { ascending: false });
-      if (input.projectId) q = q.eq("project_id", input.projectId);
-      const { data, error } = await q;
-      if (error)
-        throw new Error(`Failed to fetch site plans: ${error.message}`);
-      return data ?? [];
+      return sitePlansRepo.list(input.projectId);
     }),
 
   /** Load a single plan by ID (returns full elements + appState JSON) */
   getById: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("site_plans")
-        .select("*")
-        .eq("id", input.id)
-        .single();
-      if (error)
-        throw new Error(
-          `Failed to fetch site plan with ID ${input.id}: ${error.message}`
-        );
-      return data;
+      return sitePlansRepo.getById(input.id);
     }),
 
   /** Create a new plan */
@@ -57,21 +38,14 @@ export const sitePlansRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("site_plans")
-        .insert({
-          name: input.name,
-          project_id: input.projectId ?? null,
-          author_id: ctx.user!.id,
-          elements: input.elements,
-          app_state: input.appState,
-          thumbnail_data_url: input.thumbnailDataUrl ?? null,
-        })
-        .select()
-        .single();
-      if (error)
-        throw new Error(`Failed to create site plan: ${error.message}`);
-      return data;
+      return sitePlansRepo.create({
+        name: input.name,
+        project_id: input.projectId ?? null,
+        author_id: ctx.user!.id,
+        elements: input.elements,
+        app_state: input.appState,
+        thumbnail_data_url: input.thumbnailDataUrl ?? null,
+      });
     }),
 
   /** Update/save an existing plan */
@@ -88,36 +62,21 @@ export const sitePlansRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, thumbnailDataUrl, appState, projectId, ...rest } = input;
-      const { data, error } = await db
-        .from("site_plans")
-        .update({
-          ...rest,
-          ...(appState !== undefined && { app_state: appState }),
-          ...(thumbnailDataUrl !== undefined && {
-            thumbnail_data_url: thumbnailDataUrl,
-          }),
-          ...(projectId !== undefined && { project_id: projectId }),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error)
-        throw new Error(
-          `Failed to update site plan with ID ${id}: ${error.message}`
-        );
-      return data;
+      return sitePlansRepo.update(id, {
+        ...rest,
+        ...(appState !== undefined && { app_state: appState }),
+        ...(thumbnailDataUrl !== undefined && {
+          thumbnail_data_url: thumbnailDataUrl,
+        }),
+        ...(projectId !== undefined && { project_id: projectId }),
+        updated_at: new Date().toISOString(),
+      });
     }),
 
   /** Delete a plan permanently */
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { error } = await db.from("site_plans").delete().eq("id", input.id);
-      if (error)
-        throw new Error(
-          `Failed to delete site plan with ID ${input.id}: ${error.message}`
-        );
-      return { success: true };
+      return sitePlansRepo.delete(input.id);
     }),
 });

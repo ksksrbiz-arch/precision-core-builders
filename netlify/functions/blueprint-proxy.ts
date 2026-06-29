@@ -15,9 +15,9 @@
  * Response:  Blueprint API response body (JSON passthrough), or error JSON.
  */
 import type { Handler } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
 import { ENV } from "../../server/_core/env";
 import { decryptSecret } from "../../server/_core/crypto";
+import { getSupabaseAdmin } from "../../server/_core/supabase";
 import { verifyAuth } from "./_utils/authGuard";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import {
@@ -42,12 +42,6 @@ const ALLOWED_PATH_PATTERNS: RegExp[] = [
 
 function pathIsAllowed(path: string): boolean {
   return ALLOWED_PATH_PATTERNS.some(re => re.test(path));
-}
-
-function db() {
-  return createClient(ENV.supabaseUrl, ENV.supabaseServiceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
 }
 
 export const handler: Handler = async event => {
@@ -93,14 +87,14 @@ export const handler: Handler = async event => {
   }
 
   // Load the caller's Blueprint connection.
-  if (!ENV.supabaseUrl || !ENV.supabaseServiceRoleKey) {
+  const supa = getSupabaseAdmin();
+  if (!supa) {
     return {
       statusCode: 503,
       headers,
       body: JSON.stringify({ error: "Server not configured" }),
     };
   }
-  const supa = db();
   const { data: conn, error: connErr } = await supa
     .from("blueprint_connections")
     .select("*")

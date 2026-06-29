@@ -21,6 +21,7 @@ import {
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
+import { formatCurrency, formatPercent, fmtDate } from "@/lib/formatters";
 import {
   AlertTriangle,
   BarChart3,
@@ -177,7 +178,7 @@ function formatRelativeTime(ts: number): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(ts).toLocaleDateString();
+  return fmtDate(ts);
 }
 
 function LeadScoringPanel() {
@@ -413,7 +414,7 @@ function LeadScoringPanel() {
                     <p className="text-xs text-muted-foreground mt-1">
                       Est. value:{" "}
                       <span className="text-primary font-semibold">
-                        ${result.estimatedValue.toLocaleString()}
+                        {formatCurrency(result.estimatedValue)}
                       </span>
                     </p>
                   )}
@@ -527,7 +528,7 @@ function LeadScoringPanel() {
                               <>
                                 {" · "}
                                 <span className="text-primary">
-                                  ${lead.estimatedValue.toLocaleString()}
+                                  {formatCurrency(lead.estimatedValue)}
                                 </span>
                               </>
                             ) : null}
@@ -643,7 +644,7 @@ export default function CommandCenter() {
         <AdminPageHeader
           title="Command Center"
           guideId="command-center"
-          description={new Date().toLocaleDateString("en-US", {
+          description={fmtDate(new Date(), {
             weekday: "long",
             month: "long",
             day: "numeric",
@@ -858,7 +859,12 @@ export default function CommandCenter() {
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 {stats.totalEstimated > 0 && stats.totalActual > 0
-                  ? `${(((stats.totalEstimated - stats.totalActual) / stats.totalEstimated) * 100).toFixed(1)}%`
+                  ? formatPercent(
+                      ((stats.totalEstimated - stats.totalActual) /
+                        stats.totalEstimated) *
+                        100,
+                      1
+                    )
                   : "—"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1039,7 +1045,7 @@ export default function CommandCenter() {
                         {(r as any).projects?.name ?? "Unknown Project"}
                       </p>
                       <p className="text-xs text-muted-foreground font-light">
-                        {new Date(r.report_date).toLocaleDateString()}
+                        {fmtDate(r.report_date)}
                       </p>
                     </div>
                     <span

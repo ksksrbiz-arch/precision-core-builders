@@ -3,6 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { Pagination } from "@/components/Pagination";
 import { SkeletonCard } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import {
@@ -15,6 +16,8 @@ import {
 } from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { usePagination } from "@/hooks/usePagination";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -27,27 +30,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-} from "lucide-react";
-import { useState } from "react";
+import { Mail, MapPin, Phone, Plus, Search, Trash2, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 export default function ClientsList() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
-  const [page, setPage] = useState(1);
   const [showNew, setShowNew] = useState(false);
-  const [form, setForm] = useState({
+  const form = useEntityForm({
     name: "",
     email: "",
     phone: "",
@@ -58,22 +50,16 @@ export default function ClientsList() {
   });
 
   const utils = trpc.useUtils();
+  const [total, setTotal] = useState(0);
+  const pager = usePagination(total, { pageSize: 20 });
   const { data, isLoading, isError, refetch } = trpc.clients.list.useQuery({
-    page,
+    page: pager.page,
     pageSize: 20,
     search: debouncedSearch || undefined,
   });
-
-  const resetForm = () =>
-    setForm({
-      name: "",
-      email: "",
-      phone: "",
-      city: "",
-      state: "OR",
-      notes: "",
-      leadSource: "",
-    });
+  useEffect(() => {
+    if (data) setTotal(data.total);
+  }, [data]);
 
   const createMut = useMutationWithToast(trpc.clients.create.useMutation(), {
     success: "Client Created",
@@ -83,7 +69,7 @@ export default function ClientsList() {
     invalidate: () => utils.clients.list.invalidate(),
     onSuccess: () => {
       setShowNew(false);
-      resetForm();
+      form.reset();
     },
   });
 
@@ -121,7 +107,7 @@ export default function ClientsList() {
             value={search}
             onChange={e => {
               setSearch(e.target.value);
-              setPage(1);
+              pager.setPage(1);
             }}
             className="w-full pl-9 pr-4 py-3 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
           />
@@ -152,9 +138,12 @@ export default function ClientsList() {
                   </label>
                   <input
                     type={f.type}
-                    value={(form as any)[f.key]}
+                    value={(form.values as any)[f.key]}
                     onChange={e =>
-                      setForm(prev => ({ ...prev, [f.key]: e.target.value }))
+                      form.setField(
+                        f.key as keyof typeof form.values,
+                        e.target.value
+                      )
                     }
                     className="w-full bg-input border border-border text-sm text-foreground p-3 focus:outline-none focus:border-primary/60"
                   />
@@ -169,10 +158,8 @@ export default function ClientsList() {
                 Notes
               </label>
               <textarea
-                value={form.notes}
-                onChange={e =>
-                  setForm(prev => ({ ...prev, notes: e.target.value }))
-                }
+                value={form.values.notes}
+                onChange={e => form.setField("notes", e.target.value)}
                 rows={2}
                 className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60 resize-none"
               />
@@ -181,7 +168,7 @@ export default function ClientsList() {
               <button
                 onClick={() => {
                   setShowNew(false);
-                  resetForm();
+                  form.reset();
                 }}
                 className="px-4 py-3 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
@@ -189,8 +176,10 @@ export default function ClientsList() {
                 Cancel
               </button>
               <button
-                onClick={() => createMut.mutate(form)}
-                disabled={!form.name || !form.email || createMut.isPending}
+                onClick={() => createMut.mutate(form.values)}
+                disabled={
+                  !form.values.name || !form.values.email || createMut.isPending
+                }
                 className="px-4 py-3 min-h-11 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -333,27 +322,15 @@ export default function ClientsList() {
           </div>
         )}
 
-        {data && data.total > 20 && (
-          <div className="flex items-center justify-between mt-6">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="flex min-h-11 items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" /> Previous
-            </button>
-            <span className="text-xs text-muted-foreground">
-              Page {page} of {Math.ceil(data.total / 20)}
-            </span>
-            <button
-              onClick={() => setPage(p => p + 1)}
-              disabled={page * 20 >= data.total}
-              className="flex min-h-11 items-center gap-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-            >
-              Next <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
+        <Pagination
+          page={pager.page}
+          pageCount={pager.pageCount}
+          canPrev={pager.canPrev}
+          canNext={pager.canNext}
+          prev={pager.prev}
+          next={pager.next}
+          className="mt-6"
+        />
       </div>
     </DashboardLayout>
   );

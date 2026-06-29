@@ -1,4 +1,4 @@
-import { db } from "../db";
+import { portfolioRepo } from "../_data/portfolioRepo";
 import { adminProcedure, publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
@@ -22,66 +22,39 @@ const PortfolioInput = z.object({
 
 export const portfolioRouter = router({
   listPublished: publicProcedure.query(async () => {
-    const { data, error } = await db
-      .from("portfolio_projects")
-      .select(
-        "id,title,slug,category,short_description,location,completion_year,square_footage,cover_image_url,featured,sort_order"
-      )
-      .eq("published", true)
-      .order("sort_order")
-      .order("completion_year", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data ?? [];
+    return portfolioRepo.listPublished();
   }),
 
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("portfolio_projects")
-        .select("*")
-        .eq("slug", input.slug)
-        .eq("published", true)
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return portfolioRepo.getBySlug(input.slug);
     }),
 
   listAdmin: adminProcedure.query(async () => {
-    const { data, error } = await db
-      .from("portfolio_projects")
-      .select("*")
-      .order("sort_order");
-    if (error) throw new Error(error.message);
-    return data ?? [];
+    return portfolioRepo.listAdmin();
   }),
 
   create: adminProcedure.input(PortfolioInput).mutation(async ({ input }) => {
-    const { data, error } = await db
-      .from("portfolio_projects")
-      .insert({
-        title: input.title,
-        slug: input.slug,
-        category: input.category,
-        description: input.description,
-        short_description: input.shortDescription,
-        location: input.location,
-        completion_year: input.completionYear,
-        square_footage: input.squareFootage,
-        cover_image_url: input.coverImageUrl,
-        gallery_image_urls: input.galleryImageUrls
-          ? JSON.stringify(input.galleryImageUrls)
-          : null,
-        client_testimonial: input.clientTestimonial,
-        client_name: input.clientName,
-        featured: input.featured,
-        published: input.published,
-        sort_order: input.sortOrder,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data;
+    return portfolioRepo.create({
+      title: input.title,
+      slug: input.slug,
+      category: input.category,
+      description: input.description,
+      short_description: input.shortDescription,
+      location: input.location,
+      completion_year: input.completionYear,
+      square_footage: input.squareFootage,
+      cover_image_url: input.coverImageUrl,
+      gallery_image_urls: input.galleryImageUrls
+        ? JSON.stringify(input.galleryImageUrls)
+        : null,
+      client_testimonial: input.clientTestimonial,
+      client_name: input.clientName,
+      featured: input.featured,
+      published: input.published,
+      sort_order: input.sortOrder,
+    });
   }),
 
   update: adminProcedure
@@ -103,34 +76,27 @@ export const portfolioRouter = router({
         sortOrder,
         ...rest
       } = input;
-      const { data, error } = await db
-        .from("portfolio_projects")
-        .update({
-          ...rest,
-          ...(shortDescription !== undefined && {
-            short_description: shortDescription,
-          }),
-          ...(completionYear !== undefined && {
-            completion_year: completionYear,
-          }),
-          ...(squareFootage !== undefined && { square_footage: squareFootage }),
-          ...(coverImageUrl !== undefined && {
-            cover_image_url: coverImageUrl,
-          }),
-          ...(galleryImageUrls !== undefined && {
-            gallery_image_urls: JSON.stringify(galleryImageUrls),
-          }),
-          ...(clientTestimonial !== undefined && {
-            client_testimonial: clientTestimonial,
-          }),
-          ...(clientName !== undefined && { client_name: clientName }),
-          ...(sortOrder !== undefined && { sort_order: sortOrder }),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return portfolioRepo.update(id, {
+        ...rest,
+        ...(shortDescription !== undefined && {
+          short_description: shortDescription,
+        }),
+        ...(completionYear !== undefined && {
+          completion_year: completionYear,
+        }),
+        ...(squareFootage !== undefined && { square_footage: squareFootage }),
+        ...(coverImageUrl !== undefined && {
+          cover_image_url: coverImageUrl,
+        }),
+        ...(galleryImageUrls !== undefined && {
+          gallery_image_urls: JSON.stringify(galleryImageUrls),
+        }),
+        ...(clientTestimonial !== undefined && {
+          client_testimonial: clientTestimonial,
+        }),
+        ...(clientName !== undefined && { client_name: clientName }),
+        ...(sortOrder !== undefined && { sort_order: sortOrder }),
+      });
     }),
 
   togglePublished: adminProcedure
@@ -138,37 +104,18 @@ export const portfolioRouter = router({
       z.object({ id: z.number().int().positive(), published: z.boolean() })
     )
     .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("portfolio_projects")
-        .update({ published: input.published })
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return portfolioRepo.update(input.id, { published: input.published });
     }),
 
   publish: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("portfolio_projects")
-        .update({ published: true })
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return portfolioRepo.update(input.id, { published: true });
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { error } = await db
-        .from("portfolio_projects")
-        .delete()
-        .eq("id", input.id);
-      if (error) throw new Error(error.message);
-      return { success: true };
+      return portfolioRepo.delete(input.id);
     }),
 });

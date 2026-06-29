@@ -4,6 +4,7 @@
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { fmtDate } from "@/lib/formatters";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import { SkeletonCard } from "@/components/Skeletons";
 import { motion } from "framer-motion";
@@ -38,9 +39,8 @@ function fmtMoney(n: number | null | undefined) {
   }).format(n);
 }
 
-function fmtDate(d: string | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", {
+function formatDate(d: string | null | undefined) {
+  return fmtDate(d, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -247,10 +247,10 @@ export default function PortalPayments() {
                 )}
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Prepared {fmtDate(latestEstimate.created_at)}</span>
+                  <span>Prepared {formatDate(latestEstimate.created_at)}</span>
                   {latestEstimate.expires_at && (
                     <span>
-                      Valid until {fmtDate(latestEstimate.expires_at)}
+                      Valid until {formatDate(latestEstimate.expires_at)}
                     </span>
                   )}
                 </div>
@@ -364,7 +364,7 @@ export default function PortalPayments() {
                           {est.projects?.name ?? "Project Estimate"}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {fmtDate(est.created_at)}
+                          {formatDate(est.created_at)}
                         </p>
                       </div>
                       <div className="text-right">

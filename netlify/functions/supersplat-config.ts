@@ -1,10 +1,4 @@
-import type { Handler } from "@netlify/functions";
-import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitHeaders,
-} from "./_utils/rateLimiter";
+import { withGuards } from "./_lib/http";
 
 const DEFAULT_SUPER_SPLAT_URL = "https://superspl.at";
 const DEFAULT_SUPER_SPLAT_DEMO_URL =
@@ -35,67 +29,41 @@ function safeUrl(
   return fallback;
 }
 
-export const handler: Handler = async event => {
-  const origin = event.headers.origin;
-  const headers = {
-    ...corsHeaders(origin),
-    "Cache-Control": "public, max-age=300",
-  };
+export const handler = withGuards(
+  {
+    methods: ["GET"],
+    rateLimit: {
+      key: ({ ip }) => `supersplat-config:${ip}`,
+      maxRequests: 120,
+      windowMs: 60_000,
+    },
+  },
+  async ({ json }) => {
+    const accountUrl = safeUrl(
+      process.env.SUPERSPLAT_ACCOUNT_URL,
+      DEFAULT_SUPER_SPLAT_URL,
+      ALLOWED_ACCOUNT_ORIGINS
+    );
+    const demoUrl = safeUrl(
+      process.env.SUPERSPLAT_DEMO_URL,
+      DEFAULT_SUPER_SPLAT_DEMO_URL,
+      ALLOWED_DEMO_ORIGINS
+    );
 
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
+    return json(
+      200,
+      {
+        provider: "SuperSplat",
+        accountUrl,
+        demoUrl,
+        features: [
+          "Create a free SuperSplat account.",
+          "Upload and publish 3D Gaussian splat scenes.",
+          "Share interactive project links with clients and teams.",
+        ],
+        fetchedAt: new Date().toISOString(),
+      },
+      { "Cache-Control": "public, max-age=300" }
+    );
   }
-
-  const originBlock = checkOrigin(origin);
-  if (originBlock) return originBlock;
-
-  if (event.httpMethod !== "GET") {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
-  }
-
-  const ip = getClientIp(event.headers);
-  const rl = checkRateLimit(`supersplat-config:${ip}`, {
-    maxRequests: 120,
-    windowMs: 60_000,
-  });
-  if (!rl.allowed) {
-    return {
-      statusCode: 429,
-      headers: { ...headers, ...rateLimitHeaders(rl) },
-      body: JSON.stringify({
-        error: "Too many SuperSplat config requests. Please try again soon.",
-      }),
-    };
-  }
-
-  const accountUrl = safeUrl(
-    process.env.SUPERSPLAT_ACCOUNT_URL,
-    DEFAULT_SUPER_SPLAT_URL,
-    ALLOWED_ACCOUNT_ORIGINS
-  );
-  const demoUrl = safeUrl(
-    process.env.SUPERSPLAT_DEMO_URL,
-    DEFAULT_SUPER_SPLAT_DEMO_URL,
-    ALLOWED_DEMO_ORIGINS
-  );
-
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({
-      provider: "SuperSplat",
-      accountUrl,
-      demoUrl,
-      features: [
-        "Create a free SuperSplat account.",
-        "Upload and publish 3D Gaussian splat scenes.",
-        "Share interactive project links with clients and teams.",
-      ],
-      fetchedAt: new Date().toISOString(),
-    }),
-  };
-};
+);

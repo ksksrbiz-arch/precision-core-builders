@@ -1,4 +1,4 @@
-import { db } from "../db";
+import { leadsRepo } from "../_data/leadsRepo";
 import { adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
@@ -9,15 +9,7 @@ export const leadsRouter = router({
   list: adminProcedure
     .input(z.object({ limit: z.number().int().min(1).max(100).optional() }))
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("leads")
-        .select(
-          "id,name,project_type,budget,location,timeline,message,score,priority,reasoning,suggested_action,estimated_value,created_at"
-        )
-        .order("created_at", { ascending: false })
-        .limit(input.limit ?? 50);
-      if (error) throw new Error(error.message);
-      return data ?? [];
+      return leadsRepo.list(input.limit ?? 50);
     }),
 
   create: adminProcedure
@@ -37,40 +29,30 @@ export const leadsRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("leads")
-        .insert({
-          name: input.name,
-          project_type: input.projectType,
-          budget: input.budget,
-          location: input.location,
-          timeline: input.timeline,
-          message: input.message,
-          score: input.score,
-          priority: input.priority,
-          reasoning: input.reasoning,
-          suggested_action: input.suggestedAction,
-          estimated_value: input.estimatedValue ?? null,
-          scored_by: ctx.user!.id,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return leadsRepo.create({
+        name: input.name,
+        project_type: input.projectType,
+        budget: input.budget,
+        location: input.location,
+        timeline: input.timeline,
+        message: input.message,
+        score: input.score,
+        priority: input.priority,
+        reasoning: input.reasoning,
+        suggested_action: input.suggestedAction,
+        estimated_value: input.estimatedValue ?? null,
+        scored_by: ctx.user!.id,
+      });
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { error } = await db.from("leads").delete().eq("id", input.id);
-      if (error) throw new Error(error.message);
-      return { success: true };
+      return leadsRepo.delete(input.id);
     }),
 
   // Clear the whole board (single-admin operations tool).
   clear: adminProcedure.mutation(async () => {
-    const { error } = await db.from("leads").delete().gte("id", 0);
-    if (error) throw new Error(error.message);
-    return { success: true };
+    return leadsRepo.clear();
   }),
 });
