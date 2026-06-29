@@ -4,6 +4,7 @@
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { fmtDate } from "@/lib/formatters";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import { motion } from "framer-motion";
 import {
@@ -53,8 +54,8 @@ export default function PortalLedger() {
     { enabled: !!project?.id }
   );
 
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", {
+  const formatEntryDate = (d: string) =>
+    fmtDate(d, {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -173,7 +174,7 @@ export default function PortalLedger() {
                         </a>
                       )}
                       <p className="text-[10px] text-muted-foreground/40 mt-2">
-                        {fmtDate(entry.created_at)}
+                        {formatEntryDate(entry.created_at)}
                       </p>
                     </div>
                   </motion.div>

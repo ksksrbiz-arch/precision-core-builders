@@ -5,6 +5,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
+import { fmtDate } from "@/lib/formatters";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import PortalAssistant from "@/components/PortalAssistant";
 import { motion } from "framer-motion";
@@ -43,8 +44,8 @@ export default function PortalReports() {
       return [];
     }
   };
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", {
+  const formatReportDate = (d: string) =>
+    fmtDate(d, {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -111,7 +112,7 @@ export default function PortalReports() {
                   <div className="flex items-center gap-2 mb-3">
                     <Calendar className="h-3.5 w-3.5 text-primary" />
                     <span className="text-xs text-muted-foreground">
-                      {fmtDate(report.report_date)}
+                      {formatReportDate(report.report_date)}
                     </span>
                     <CheckCircle2 className="h-3 w-3 text-green-400 ml-auto" />
                   </div>

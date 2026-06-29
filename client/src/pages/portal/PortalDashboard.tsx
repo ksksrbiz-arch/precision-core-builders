@@ -4,6 +4,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
+import { fmtDate } from "@/lib/formatters";
 import { SITE } from "@/const";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import PortalAssistant from "@/components/PortalAssistant";
@@ -306,14 +307,12 @@ export default function PortalDashboard() {
                           </p>
                           {item.planned_start_date && (
                             <p className="text-xs text-muted-foreground">
-                              {new Date(
-                                item.planned_start_date
-                              ).toLocaleDateString("en-US", {
+                              {fmtDate(item.planned_start_date, {
                                 month: "short",
                                 day: "numeric",
                               })}
                               {item.planned_end_date &&
-                                ` – ${new Date(item.planned_end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                                ` – ${fmtDate(item.planned_end_date, { month: "short", day: "numeric" })}`}
                             </p>
                           )}
                         </div>
