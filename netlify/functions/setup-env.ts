@@ -11,21 +11,12 @@
  * already configured in the Netlify dashboard.
  */
 import type { Handler } from "@netlify/functions";
-import { timingSafeEqual as _tse } from "node:crypto";
 import {
   checkRateLimit,
   getClientIp,
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
-
-/** Timing-safe string comparison to prevent side-channel attacks */
-function timingSafeEqual(a: string, b: string): boolean {
-  try {
-    return _tse(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
-  } catch {
-    return false;
-  }
-}
+import { timingSafeEqualStr } from "./_lib/crypto";
 
 // Allowed keys that Eric is permitted to self-configure
 const ALLOWED_KEYS = new Set([
@@ -96,7 +87,7 @@ export const handler: Handler = async event => {
       !adminToken ||
       typeof adminToken !== "string" ||
       adminToken.length !== ADMIN_TOKEN.length ||
-      !timingSafeEqual(adminToken, ADMIN_TOKEN)
+      !timingSafeEqualStr(adminToken, ADMIN_TOKEN)
     ) {
       return {
         statusCode: 401,

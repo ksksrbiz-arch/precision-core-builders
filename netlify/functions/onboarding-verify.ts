@@ -13,15 +13,7 @@
  * Response: { ok: boolean, service: string, message: string, details?: any }
  */
 import type { Handler } from "@netlify/functions";
-import { timingSafeEqual as _tse } from "node:crypto";
-
-function timingSafeEqual(a: string, b: string): boolean {
-  try {
-    return _tse(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
-  } catch {
-    return false;
-  }
-}
+import { timingSafeEqualStr } from "./_lib/crypto";
 
 const ONBOARDING_TOKEN = process.env.ONBOARDING_TOKEN ?? "";
 
@@ -215,7 +207,7 @@ export const handler: Handler = async event => {
       !onboardingToken ||
       typeof onboardingToken !== "string" ||
       onboardingToken.length !== ONBOARDING_TOKEN.length ||
-      !timingSafeEqual(onboardingToken, ONBOARDING_TOKEN)
+      !timingSafeEqualStr(onboardingToken, ONBOARDING_TOKEN)
     ) {
       return {
         statusCode: 401,

@@ -22,174 +22,119 @@
  *   ADMIN_EMAIL (optional)       — primary admin email to allowlist
  *   ADMIN_EMAILS  (optional)     — extra allowlisted admin emails
  */
-import type { Handler } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
 import { getAdminEmailSetWithDb } from "./_utils/adminEmails";
-import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
+import { getSupabaseAdmin } from "../../server/_core/supabase";
+import { withGuards } from "./_lib/http";
 
-function getSupabaseAdminClient() {
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    return null;
-  }
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+export const handler = withGuards(
+  { methods: ["POST"], auth: "none" },
+  async ({ event, json, error }) => {
+    const authHeader =
+      event.headers["authorization"] ?? event.headers["Authorization"];
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
 
-export const handler: Handler = async event => {
-  const origin = event.headers["origin"];
-  const headers = corsHeaders(origin);
+    if (!token) {
+      return error(401, "Missing authorization token");
+    }
 
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      console.error(
+        "[auth-sync-role] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set"
+      );
+      return error(503, "Auth role sync is not configured on the server.");
+    }
 
-  const originBlock = checkOrigin(origin);
-  if (originBlock) return originBlock;
+    // 1. Verify JWT and resolve user
+    const { data: userData, error: userErr } =
+      await supabase.auth.getUser(token);
+    if (userErr || !userData.user) {
+      return error(401, "Invalid or expired token");
+    }
 
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
-  }
+    const authUser = userData.user;
+    const email = (authUser.email ?? "").trim().toLowerCase();
+    if (!email) {
+      return error(400, "Authenticated user has no email");
+    }
 
-  const authHeader =
-    event.headers["authorization"] ?? event.headers["Authorization"];
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : null;
+    const adminEmails = await getAdminEmailSetWithDb(supabase);
+    const isAdminEmail = adminEmails.has(email);
 
-  if (!token) {
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ error: "Missing authorization token" }),
-    };
-  }
+    // 2. Look up any existing public.users row so we don't downgrade admins
+    //    who aren't currently on the allowlist (e.g. legacy accounts).
+    const { data: existing, error: existingErr } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", authUser.id)
+      .maybeSingle();
 
-  const supabase = getSupabaseAdminClient();
-  if (!supabase) {
-    console.error(
-      "[auth-sync-role] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set"
+    if (existingErr) {
+      console.error(
+        "[auth-sync-role] failed to read existing user row:",
+        existingErr
+      );
+      return error(500, "Failed to read user record");
+    }
+
+    const existingRole =
+      (existing?.role as "admin" | "user" | undefined) ?? null;
+
+    let nextRole: "admin" | "user";
+    if (isAdminEmail) {
+      nextRole = "admin";
+    } else if (existingRole === "admin") {
+      nextRole = "admin"; // preserve existing admin
+    } else {
+      nextRole = "user";
+    }
+
+    // 3. Upsert public.users row. Service role bypasses RLS.
+    const name =
+      (authUser.user_metadata?.name as string | undefined) ??
+      (authUser.user_metadata?.full_name as string | undefined) ??
+      null;
+
+    const { error: upsertErr } = await supabase.from("users").upsert(
+      {
+        id: authUser.id,
+        email,
+        name,
+        role: nextRole,
+        last_signed_in: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
     );
-    return {
-      statusCode: 503,
-      headers,
-      body: JSON.stringify({
-        error: "Auth role sync is not configured on the server.",
-      }),
-    };
+
+    if (upsertErr) {
+      console.error("[auth-sync-role] upsert failed:", upsertErr);
+      return error(500, "Failed to sync user role");
+    }
+
+    // Also persist role in Supabase Auth metadata so the JWT carries the
+    // role even when the client-side `public.users` read fails (e.g. RLS
+    // not yet applied, table latency, or network hiccup).  `app_metadata`
+    // is preferred because only the service role can write to it — the
+    // user cannot escalate their own privileges.  We also mirror the value
+    // into `user_metadata` so legacy fallback paths that read it continue
+    // to work.
+    try {
+      await supabase.auth.admin.updateUserById(authUser.id, {
+        app_metadata: { role: nextRole },
+        user_metadata: { role: nextRole },
+      });
+    } catch (metaErr) {
+      // Non-fatal — the public.users row was already written so the
+      // primary role resolution path will still work.
+      console.warn(
+        "[auth-sync-role] failed to update auth metadata (non-fatal):",
+        metaErr
+      );
+    }
+
+    return json(200, { role: nextRole, email });
   }
-
-  // 1. Verify JWT and resolve user
-  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-  if (userErr || !userData.user) {
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ error: "Invalid or expired token" }),
-    };
-  }
-
-  const authUser = userData.user;
-  const email = (authUser.email ?? "").trim().toLowerCase();
-  if (!email) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: "Authenticated user has no email" }),
-    };
-  }
-
-  const adminEmails = await getAdminEmailSetWithDb(supabase);
-  const isAdminEmail = adminEmails.has(email);
-
-  // 2. Look up any existing public.users row so we don't downgrade admins
-  //    who aren't currently on the allowlist (e.g. legacy accounts).
-  const { data: existing, error: existingErr } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", authUser.id)
-    .maybeSingle();
-
-  if (existingErr) {
-    console.error(
-      "[auth-sync-role] failed to read existing user row:",
-      existingErr
-    );
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "Failed to read user record" }),
-    };
-  }
-
-  const existingRole = (existing?.role as "admin" | "user" | undefined) ?? null;
-
-  let nextRole: "admin" | "user";
-  if (isAdminEmail) {
-    nextRole = "admin";
-  } else if (existingRole === "admin") {
-    nextRole = "admin"; // preserve existing admin
-  } else {
-    nextRole = "user";
-  }
-
-  // 3. Upsert public.users row. Service role bypasses RLS.
-  const name =
-    (authUser.user_metadata?.name as string | undefined) ??
-    (authUser.user_metadata?.full_name as string | undefined) ??
-    null;
-
-  const { error: upsertErr } = await supabase.from("users").upsert(
-    {
-      id: authUser.id,
-      email,
-      name,
-      role: nextRole,
-      last_signed_in: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
-
-  if (upsertErr) {
-    console.error("[auth-sync-role] upsert failed:", upsertErr);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "Failed to sync user role" }),
-    };
-  }
-
-  // Also persist role in Supabase Auth metadata so the JWT carries the
-  // role even when the client-side `public.users` read fails (e.g. RLS
-  // not yet applied, table latency, or network hiccup).  `app_metadata`
-  // is preferred because only the service role can write to it — the
-  // user cannot escalate their own privileges.  We also mirror the value
-  // into `user_metadata` so legacy fallback paths that read it continue
-  // to work.
-  try {
-    await supabase.auth.admin.updateUserById(authUser.id, {
-      app_metadata: { role: nextRole },
-      user_metadata: { role: nextRole },
-    });
-  } catch (metaErr) {
-    // Non-fatal — the public.users row was already written so the
-    // primary role resolution path will still work.
-    console.warn(
-      "[auth-sync-role] failed to update auth metadata (non-fatal):",
-      metaErr
-    );
-  }
-
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ role: nextRole, email }),
-  };
-};
+);
