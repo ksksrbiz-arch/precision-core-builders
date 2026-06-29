@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import AiUsagePanel from "@/components/AiUsagePanel";
 import ProfitabilityTable from "@/components/ProfitabilityTable";
 import { trpc } from "@/lib/trpc";
+import { formatPercent } from "@/lib/formatters";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -203,7 +204,7 @@ export default function Analytics() {
           />
           <KPICard
             label="Gross Margin"
-            value={grossMargin !== null ? `${grossMargin.toFixed(1)}%` : "—"}
+            value={grossMargin !== null ? formatPercent(grossMargin, 1) : "—"}
             sub={
               grossMargin !== null
                 ? grossMargin >= 20
