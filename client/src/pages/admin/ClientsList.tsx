@@ -3,6 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { Pagination } from "@/components/Pagination";
 import { SkeletonCard } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import {
@@ -15,6 +16,8 @@ import {
 } from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { usePagination } from "@/hooks/usePagination";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -27,27 +30,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-} from "lucide-react";
-import { useState } from "react";
+import { Mail, MapPin, Phone, Plus, Search, Trash2, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 export default function ClientsList() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
-  const [page, setPage] = useState(1);
   const [showNew, setShowNew] = useState(false);
-  const [form, setForm] = useState({
+  const form = useEntityForm({
     name: "",
     email: "",
     phone: "",
@@ -58,22 +50,16 @@ export default function ClientsList() {
   });
 
   const utils = trpc.useUtils();
+  const [total, setTotal] = useState(0);
+  const pager = usePagination(total, { pageSize: 20 });
   const { data, isLoading, isError, refetch } = trpc.clients.list.useQuery({
-    page,
+    page: pager.page,
     pageSize: 20,
     search: debouncedSearch || undefined,
   });
-
-  const resetForm = () =>
-    setForm({
-      name: "",
-      email: "",
-      phone: "",
-      city: "",
-      state: "OR",
-      notes: "",
-      leadSource: "",
-    });
+  useEffect(() => {
+    if (data) setTotal(data.total);
+  }, [data]);
 
   const createMut = useMutationWithToast(trpc.clients.create.useMutation(), {
     success: "Client Created",
@@ -83,7 +69,7 @@ export default function ClientsList() {
     invalidate: () => utils.clients.list.invalidate(),
     onSuccess: () => {
       setShowNew(false);
-      resetForm();
+      form.reset();
     },
   });
 
@@ -121,7 +107,7 @@ export default function ClientsList() {
             value={search}
             onChange={e => {
               setSearch(e.target.value);
-              setPage(1);
+              pager.setPage(1);
             }}
             className="w-full pl-9 pr-4 py-3 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
           />
