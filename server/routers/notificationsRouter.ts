@@ -1,5 +1,4 @@
-import { db } from "../db";
-import { paginate } from "../db";
+import { notificationsRepo } from "../_data/notificationsRepo";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { ENV } from "../_core/env";
 import { z } from "zod";
@@ -37,29 +36,13 @@ export const notificationsRouter = router({
   list: protectedProcedure
     .input(z.object({ unreadOnly: z.boolean().optional() }))
     .query(async ({ input, ctx }) => {
-      let q = db
-        .from("notifications")
-        .select("*")
-        .eq("recipient_id", ctx.user.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (input.unreadOnly) q = q.is("read_at", null);
-      const { data, error } = await q;
-      if (error) throw new Error(error.message);
-      return data ?? [];
+      return notificationsRepo.listForRecipient(ctx.user.id, input.unreadOnly);
     }),
 
   markRead: protectedProcedure
     .input(z.object({ ids: z.array(z.number().int().positive()).min(1) }))
     .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("notifications")
-        .update({ read_at: new Date().toISOString(), status: "read" })
-        .in("id", input.ids)
-        .eq("recipient_id", ctx.user.id)
-        .select();
-      if (error) throw new Error(error.message);
-      return data ?? [];
+      return notificationsRepo.markRead(input.ids, ctx.user.id);
     }),
 
   send: adminProcedure
@@ -73,19 +56,14 @@ export const notificationsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("notifications")
-        .insert({
-          recipient_id: input.recipientId,
-          project_id: input.projectId,
-          channel: input.channel,
-          subject: input.subject,
-          body: input.body,
-          status: "pending",
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await notificationsRepo.insert({
+        recipient_id: input.recipientId,
+        project_id: input.projectId,
+        channel: input.channel,
+        subject: input.subject,
+        body: input.body,
+        status: "pending",
+      });
 
       // Dispatch email/SMS via n8n for non-in_app channels
       if (input.channel !== "in_app") {
@@ -98,10 +76,7 @@ export const notificationsRouter = router({
         });
 
         // Mark as sent
-        await db
-          .from("notifications")
-          .update({ status: "sent" })
-          .eq("id", data.id);
+        await notificationsRepo.markSent(data.id);
       }
 
       return data;
@@ -118,28 +93,9 @@ export const notificationsRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const { from, to } = paginate(input);
-      let q = db
-        .from("notifications")
-        .select(
-          "id, recipient_id, project_id, channel, status, subject, body, created_at, sent_at, read_at, failure_reason, projects(name)",
-          { count: "exact" }
-        )
-        .order("created_at", { ascending: false })
-        .range(from, to);
+      const { data, count } = await notificationsRepo.adminList(input);
 
-      if (input.channel) q = q.eq("channel", input.channel);
-      if (input.status) q = q.eq("status", input.status);
-      if (input.search) {
-        q = q.or(
-          `subject.ilike.%${input.search}%,body.ilike.%${input.search}%`
-        );
-      }
-
-      const { data, error, count } = await q;
-      if (error) throw new Error(error.message);
-
-      const notifications = data ?? [];
+      const notifications = data;
       const recipientIds = Array.from(
         new Set(
           notifications
@@ -151,15 +107,10 @@ export const notificationsRouter = router({
       let clientsMap = new Map<string, ClientInfo>();
 
       if (recipientIds.length > 0) {
-        const { data: clients, error: clientsError } = await db
-          .from("clients")
-          .select("id, user_id, name, email")
-          .in("user_id", recipientIds);
-
-        if (clientsError) throw new Error(clientsError.message);
+        const clients = await notificationsRepo.clientsByUserIds(recipientIds);
 
         clientsMap = new Map(
-          (clients ?? [])
+          clients
             .filter(client => !!client.user_id)
             .map(client => [
               client.user_id as string,
