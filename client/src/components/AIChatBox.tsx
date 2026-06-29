@@ -1,17 +1,14 @@
 /**
  * AIChatBox — Digital Foreman AI assistant.
- * Backed by /api/ai-chat (Netlify Function → Claude via invokeLLM).
+ * Backed by /api/ai-chat (Netlify Function → invokeLLM/streamLLM). Streams the
+ * reply token-by-token when the server supports it, falling back to a single
+ * buffered response otherwise — both handled by useStreamingChat.
  */
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatComposer } from "@/components/ai/ChatComposer";
+import { useStreamingChat } from "@/hooks/useStreamingChat";
 import { Bot, User, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
 
 function getChatErrorMessage(status: number, fallback?: string): string {
   if (status === 429) {
@@ -31,70 +28,22 @@ const QUICK_PROMPTS = [
 ];
 
 export default function AIChatBox({ compact = false }: { compact?: boolean }) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages, loading, send } = useStreamingChat({
+    endpoint: "/api/ai-chat",
+    formatError: getChatErrorMessage,
+  });
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async (text?: string) => {
+  const submit = (text?: string) => {
     const content = (text ?? input).trim();
-    if (!content || loading) return;
-
-    const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content };
-    const assistantId = `a-${Date.now()}`;
-
-    setMessages(prev => [
-      ...prev,
-      userMsg,
-      { id: assistantId, role: "assistant", content: "" },
-    ]);
+    if (!content) return;
     setInput("");
-    setLoading(true);
-
-    try {
-      const history = [...messages, userMsg].map(m => ({
-        role: m.role,
-        content: m.content,
-      }));
-      const res = await fetch("/api/ai-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
-      });
-      const data = await res.json();
-      let errorContent: string | undefined;
-      if (!res.ok) {
-        errorContent = getChatErrorMessage(res.status, data.error);
-      }
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === assistantId
-            ? {
-                ...m,
-                content: errorContent ?? data.text ?? "No response received.",
-              }
-            : m
-        )
-      );
-    } catch {
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === assistantId
-            ? {
-                ...m,
-                content:
-                  "⚠️ Connection error. Please check your internet and try again.",
-              }
-            : m
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
+    void send(content);
   };
 
   return (
@@ -133,7 +82,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
               {QUICK_PROMPTS.map(p => (
                 <button
                   key={p}
-                  onClick={() => send(p)}
+                  onClick={() => submit(p)}
                   className="flex items-start gap-2 text-left text-xs min-h-11 p-3 border border-border/40 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors leading-snug"
                 >
                   <Zap className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/60" />
@@ -179,7 +128,7 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
       <ChatComposer
         value={input}
         onChange={setInput}
-        onSend={() => send()}
+        onSend={() => submit()}
         disabled={loading}
         placeholder="Ask about your project…"
       />

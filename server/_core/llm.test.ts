@@ -17,7 +17,36 @@ vi.mock("./env", () => ({
 }));
 
 import { ENV } from "./env";
-import { invokeLLM, isLLMConfigured, resolveProviderOrder } from "./llm";
+import {
+  invokeLLM,
+  isLLMConfigured,
+  resolveProviderOrder,
+  streamLLM,
+  type LLMStreamChunk,
+} from "./llm";
+
+/** Build a fake SSE Response whose body streams the given lines. */
+function sseResponse(lines: string[], status = 200) {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const line of lines) controller.enqueue(encoder.encode(line));
+      controller.close();
+    },
+  });
+  return { ok: status >= 200 && status < 300, status, statusText: "", body };
+}
+
+/** Drain a streamLLM generator into its text + done chunks. */
+async function collect(gen: AsyncGenerator<LLMStreamChunk>) {
+  const text: string[] = [];
+  let done: Extract<LLMStreamChunk, { type: "done" }> | undefined;
+  for await (const chunk of gen) {
+    if (chunk.type === "text") text.push(chunk.text);
+    else if (chunk.type === "done") done = chunk;
+  }
+  return { text: text.join(""), done };
+}
 
 function resetEnv() {
   ENV.groqApiKey = "";
@@ -148,6 +177,92 @@ describe("invokeLLM", () => {
 
     await expect(
       invokeLLM({ messages: [{ role: "user", content: "hi" }] })
+    ).rejects.toThrow(/All LLM providers failed/);
+  });
+});
+
+describe("streamLLM", () => {
+  it("throws (before yielding) when no provider is configured", async () => {
+    await expect(
+      collect(streamLLM({ messages: [{ role: "user", content: "hi" }] }))
+    ).rejects.toThrow(/No LLM API key configured/);
+  });
+
+  it("streams OpenAI-compatible SSE deltas then a done chunk", async () => {
+    ENV.groqApiKey = "g";
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      sseResponse([
+        'data: {"choices":[{"delta":{"content":"Hel"}}],"model":"m1"}\n\n',
+        'data: {"choices":[{"delta":{"content":"lo"}}]}\n\n',
+        'data: {"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3}}\n\n',
+        "data: [DONE]\n\n",
+      ])
+    );
+
+    const { text, done } = await collect(
+      streamLLM({ messages: [{ role: "user", content: "hi" }] })
+    );
+
+    expect(text).toBe("Hello");
+    expect(done?.done.provider).toBe("groq");
+    expect(done?.done.model).toBe("m1");
+    expect(done?.done.usage?.totalTokens).toBe(3);
+  });
+
+  it("handles SSE frames split across network chunk boundaries", async () => {
+    ENV.groqApiKey = "g";
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      sseResponse([
+        'data: {"choices":[{"delta":{"con',
+        'tent":"split"}}]}\n\n',
+        "data: [DONE]\n\n",
+      ])
+    );
+
+    const { text } = await collect(
+      streamLLM({ messages: [{ role: "user", content: "hi" }] })
+    );
+    expect(text).toBe("split");
+  });
+
+  it("falls back to the next provider when the first errors pre-stream", async () => {
+    ENV.groqApiKey = "g";
+    ENV.googleAiApiKey = "ge";
+    const mock = fetch as ReturnType<typeof vi.fn>;
+    // Groq fails non-retryably, then Gemini (buffered) succeeds.
+    mock.mockResolvedValueOnce(errResponse(401, "unauthorized"));
+    mock.mockResolvedValueOnce(okGemini("from gemini"));
+
+    const { text, done } = await collect(
+      streamLLM({ messages: [{ role: "user", content: "hi" }] })
+    );
+
+    expect(text).toBe("from gemini");
+    expect(done?.done.provider).toBe("gemini");
+  });
+
+  it("buffers Gemini into a single text chunk", async () => {
+    ENV.googleAiApiKey = "ge";
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      okGemini("buffered reply")
+    );
+
+    const { text, done } = await collect(
+      streamLLM({ messages: [{ role: "user", content: "hi" }] })
+    );
+
+    expect(text).toBe("buffered reply");
+    expect(done?.done.provider).toBe("gemini");
+  });
+
+  it("throws an aggregated error when all providers fail pre-stream", async () => {
+    ENV.groqApiKey = "g";
+    ENV.openrouterApiKey = "o";
+    const mock = fetch as ReturnType<typeof vi.fn>;
+    mock.mockResolvedValue(errResponse(401, "unauthorized"));
+
+    await expect(
+      collect(streamLLM({ messages: [{ role: "user", content: "hi" }] }))
     ).rejects.toThrow(/All LLM providers failed/);
   });
 });
