@@ -1,6 +1,18 @@
-import { db, paginate } from "../db";
+import { db } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { logAdminAction } from "../_core/auditLog";
+import {
+  createFieldReport,
+  deleteFieldReport,
+  getFieldReportById,
+  getFieldReportProjectId,
+  getWeeklyStatsRows,
+  listFieldReports,
+  listPublishedFieldReports,
+  publishFieldReport,
+  unpublishFieldReport,
+  updateFieldReport,
+} from "../_data/fieldReportsRepo";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -14,27 +26,13 @@ export const fieldReportsRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const { from, to } = paginate(input);
-      let q = db
-        .from("field_reports")
-        .select("*, projects(id,name)", { count: "exact" })
-        .order("report_date", { ascending: false })
-        .range(from, to);
-      if (input.projectId) q = q.eq("project_id", input.projectId);
-      const { data, error, count } = await q;
-      if (error) throw new Error(error.message);
-      return { data: data ?? [], total: count ?? 0 };
+      return listFieldReports(input);
     }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("field_reports")
-        .select("*, projects(id,name,client_id,clients(user_id))")
-        .eq("id", input.id)
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await getFieldReportById(input.id);
       // Clients may only read reports for their own project.
       if (ctx.user.role !== "admin") {
         const clientUserId = (data?.projects as any)?.clients?.user_id;
@@ -64,32 +62,27 @@ export const fieldReportsRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("field_reports")
-        .insert({
-          project_id: input.projectId,
-          author_id: ctx.user!.id,
-          report_date: input.reportDate ?? new Date().toISOString(),
-          transcription: input.transcription,
-          summary: input.summary,
-          tasks_completed: input.tasksCompleted
-            ? JSON.stringify(input.tasksCompleted)
-            : null,
-          materials_used: input.materialsUsed
-            ? JSON.stringify(input.materialsUsed)
-            : null,
-          issues_flagged: input.issuesFlagged
-            ? JSON.stringify(input.issuesFlagged)
-            : null,
-          material_shortages: input.materialShortages
-            ? JSON.stringify(input.materialShortages)
-            : null,
-          photo_urls: input.photoUrls ? JSON.stringify(input.photoUrls) : null,
-          voice_memo_url: input.voiceMemoUrl,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await createFieldReport({
+        project_id: input.projectId,
+        author_id: ctx.user!.id,
+        report_date: input.reportDate ?? new Date().toISOString(),
+        transcription: input.transcription,
+        summary: input.summary,
+        tasks_completed: input.tasksCompleted
+          ? JSON.stringify(input.tasksCompleted)
+          : null,
+        materials_used: input.materialsUsed
+          ? JSON.stringify(input.materialsUsed)
+          : null,
+        issues_flagged: input.issuesFlagged
+          ? JSON.stringify(input.issuesFlagged)
+          : null,
+        material_shortages: input.materialShortages
+          ? JSON.stringify(input.materialShortages)
+          : null,
+        photo_urls: input.photoUrls ? JSON.stringify(input.photoUrls) : null,
+        voice_memo_url: input.voiceMemoUrl,
+      });
       await logAdminAction(db, ctx, "fieldReport.create", input.projectId, {
         reportId: data.id,
         reportDate: data.report_date,
@@ -117,43 +110,27 @@ export const fieldReportsRouter = router({
         materialShortages,
         ...rest
       } = input;
-      const { data, error } = await db
-        .from("field_reports")
-        .update({
-          ...rest,
-          ...(tasksCompleted !== undefined && {
-            tasks_completed: JSON.stringify(tasksCompleted),
-          }),
-          ...(materialsUsed !== undefined && {
-            materials_used: JSON.stringify(materialsUsed),
-          }),
-          ...(issuesFlagged !== undefined && {
-            issues_flagged: JSON.stringify(issuesFlagged),
-          }),
-          ...(materialShortages !== undefined && {
-            material_shortages: JSON.stringify(materialShortages),
-          }),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return updateFieldReport(id, {
+        ...rest,
+        ...(tasksCompleted !== undefined && {
+          tasks_completed: JSON.stringify(tasksCompleted),
+        }),
+        ...(materialsUsed !== undefined && {
+          materials_used: JSON.stringify(materialsUsed),
+        }),
+        ...(issuesFlagged !== undefined && {
+          issues_flagged: JSON.stringify(issuesFlagged),
+        }),
+        ...(materialShortages !== undefined && {
+          material_shortages: JSON.stringify(materialShortages),
+        }),
+      });
     }),
 
   publish: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("field_reports")
-        .update({
-          published_to_client: true,
-          published_at: new Date().toISOString(),
-        })
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await publishFieldReport(input.id);
       await logAdminAction(db, ctx, "fieldReport.publish", data.project_id, {
         reportId: input.id,
       });
@@ -163,16 +140,7 @@ export const fieldReportsRouter = router({
   unpublish: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("field_reports")
-        .update({
-          published_to_client: false,
-          published_at: null,
-        })
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await unpublishFieldReport(input.id);
       await logAdminAction(db, ctx, "fieldReport.unpublish", data.project_id, {
         reportId: input.id,
       });
@@ -183,19 +151,13 @@ export const fieldReportsRouter = router({
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
       // Fetch project_id before deletion for audit log.
-      const { data: report, error: fetchError } = await db
-        .from("field_reports")
-        .select("project_id")
-        .eq("id", input.id)
-        .single();
+      const { data: report, error: fetchError } = await getFieldReportProjectId(
+        input.id
+      );
       if (fetchError || !report) {
         throw new Error(fetchError?.message ?? "Field report not found");
       }
-      const { error } = await db
-        .from("field_reports")
-        .delete()
-        .eq("id", input.id);
-      if (error) throw new Error(error.message);
+      await deleteFieldReport(input.id);
       await logAdminAction(db, ctx, "fieldReport.delete", report.project_id, {
         reportId: input.id,
       });
@@ -206,28 +168,12 @@ export const fieldReportsRouter = router({
   listPublished: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("field_reports")
-        .select(
-          "id,report_date,summary,tasks_completed,published_at,photo_urls"
-        )
-        .eq("project_id", input.projectId)
-        .eq("published_to_client", true)
-        .order("report_date", { ascending: false });
-      if (error) throw new Error(error.message);
-      return data ?? [];
+      return listPublishedFieldReports(input.projectId);
     }),
 
   // Analytics: report counts by week (last 8 weeks)
   weeklyStats: adminProcedure.query(async () => {
-    const { data } = await db
-      .from("field_reports")
-      .select("report_date,published_to_client,issues_flagged")
-      .order("report_date", { ascending: true })
-      .gte(
-        "report_date",
-        new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString()
-      );
+    const data = await getWeeklyStatsRows();
 
     const weeks: Record<
       string,

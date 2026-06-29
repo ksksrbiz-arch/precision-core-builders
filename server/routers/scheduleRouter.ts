@@ -1,5 +1,12 @@
-import { db, paginate } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import {
+  createScheduleItem,
+  deleteScheduleItem,
+  getWeatherSensitiveItems,
+  listScheduleItems,
+  updateScheduleItem,
+  updateScheduleItemOrder,
+} from "../_data/scheduleRepo";
 import { z } from "zod";
 
 const TaskTypeEnum = z.enum([
@@ -48,42 +55,29 @@ export const scheduleRouter = router({
   list: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("schedule_items")
-        .select("*")
-        .eq("project_id", input.projectId)
-        .order("sort_order")
-        .order("planned_start");
-      if (error) throw new Error(error.message);
-      return data ?? [];
+      return listScheduleItems(input.projectId);
     }),
 
   create: adminProcedure
     .input(ScheduleItemInput)
     .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("schedule_items")
-        .insert({
-          project_id: input.projectId,
-          parent_id: input.parentId,
-          title: input.title,
-          description: input.description,
-          task_type: input.taskType,
-          status: input.status,
-          is_outdoor: input.isOutdoor,
-          weather_sensitive: input.weatherSensitive,
-          planned_start: input.plannedStart,
-          planned_end: input.plannedEnd,
-          duration_days: input.durationDays,
-          depends_on: input.dependsOn,
-          sort_order: input.sortOrder,
-          assigned_to: input.assignedTo,
-          notes: input.notes,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return createScheduleItem({
+        project_id: input.projectId,
+        parent_id: input.parentId,
+        title: input.title,
+        description: input.description,
+        task_type: input.taskType,
+        status: input.status,
+        is_outdoor: input.isOutdoor,
+        weather_sensitive: input.weatherSensitive,
+        planned_start: input.plannedStart,
+        planned_end: input.plannedEnd,
+        duration_days: input.durationDays,
+        depends_on: input.dependsOn,
+        sort_order: input.sortOrder,
+        assigned_to: input.assignedTo,
+        notes: input.notes,
+      });
     }),
 
   update: adminProcedure
@@ -107,28 +101,21 @@ export const scheduleRouter = router({
         parentId,
         ...rest
       } = input;
-      const { data, error } = await db
-        .from("schedule_items")
-        .update({
-          ...rest,
-          ...(parentId !== undefined && { parent_id: parentId }),
-          ...(taskType !== undefined && { task_type: taskType }),
-          ...(isOutdoor !== undefined && { is_outdoor: isOutdoor }),
-          ...(weatherSensitive !== undefined && {
-            weather_sensitive: weatherSensitive,
-          }),
-          ...(plannedStart !== undefined && { planned_start: plannedStart }),
-          ...(plannedEnd !== undefined && { planned_end: plannedEnd }),
-          ...(durationDays !== undefined && { duration_days: durationDays }),
-          ...(dependsOn !== undefined && { depends_on: dependsOn }),
-          ...(sortOrder !== undefined && { sort_order: sortOrder }),
-          ...(assignedTo !== undefined && { assigned_to: assignedTo }),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return updateScheduleItem(id, {
+        ...rest,
+        ...(parentId !== undefined && { parent_id: parentId }),
+        ...(taskType !== undefined && { task_type: taskType }),
+        ...(isOutdoor !== undefined && { is_outdoor: isOutdoor }),
+        ...(weatherSensitive !== undefined && {
+          weather_sensitive: weatherSensitive,
+        }),
+        ...(plannedStart !== undefined && { planned_start: plannedStart }),
+        ...(plannedEnd !== undefined && { planned_end: plannedEnd }),
+        ...(durationDays !== undefined && { duration_days: durationDays }),
+        ...(dependsOn !== undefined && { depends_on: dependsOn }),
+        ...(sortOrder !== undefined && { sort_order: sortOrder }),
+        ...(assignedTo !== undefined && { assigned_to: assignedTo }),
+      });
     }),
 
   updateStatus: adminProcedure
@@ -141,29 +128,17 @@ export const scheduleRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { data, error } = await db
-        .from("schedule_items")
-        .update({
-          status: input.status,
-          ...(input.actualStart && { actual_start: input.actualStart }),
-          ...(input.actualEnd && { actual_end: input.actualEnd }),
-        })
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return updateScheduleItem(input.id, {
+        status: input.status,
+        ...(input.actualStart && { actual_start: input.actualStart }),
+        ...(input.actualEnd && { actual_end: input.actualEnd }),
+      });
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { error } = await db
-        .from("schedule_items")
-        .delete()
-        .eq("id", input.id);
-      if (error) throw new Error(error.message);
-      return { success: true };
+      return deleteScheduleItem(input.id);
     }),
 
   // Weather-sensitive tasks for a date window
@@ -176,16 +151,7 @@ export const scheduleRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("schedule_items")
-        .select("*")
-        .eq("project_id", input.projectId)
-        .eq("weather_sensitive", true)
-        .neq("status", "complete")
-        .gte("planned_start", input.startDate)
-        .lte("planned_end", input.endDate);
-      if (error) throw new Error(error.message);
-      return data ?? [];
+      return getWeatherSensitiveItems(input);
     }),
 
   updateOrder: adminProcedure
@@ -199,11 +165,7 @@ export const scheduleRouter = router({
     )
     .mutation(async ({ input }) => {
       for (const { id, order } of input.updates) {
-        await db
-          .from("schedule_items")
-          .update({ sort_order: order })
-          .eq("id", id)
-          .eq("project_id", input.projectId);
+        await updateScheduleItemOrder(id, order, input.projectId);
       }
       return { success: true };
     }),
