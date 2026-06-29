@@ -29,20 +29,12 @@
  *   (10 req / 5 min). Defense-in-depth on top of the token gate.
  */
 import type { Handler } from "@netlify/functions";
-import { timingSafeEqual as _tse } from "node:crypto";
 import {
   checkRateLimit,
   getClientIp,
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
-
-function timingSafeEqual(a: string, b: string): boolean {
-  try {
-    return _tse(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
-  } catch {
-    return false;
-  }
-}
+import { timingSafeEqualStr } from "./_lib/crypto";
 
 // Per-phase allowlists. Each phase corresponds to a wizard step.
 const PHASE_ALLOWLIST: Record<string, Set<string>> = {
@@ -141,7 +133,7 @@ export const handler: Handler = async event => {
       !onboardingToken ||
       typeof onboardingToken !== "string" ||
       onboardingToken.length !== ONBOARDING_TOKEN.length ||
-      !timingSafeEqual(onboardingToken, ONBOARDING_TOKEN)
+      !timingSafeEqualStr(onboardingToken, ONBOARDING_TOKEN)
     ) {
       return {
         statusCode: 401,
