@@ -29,7 +29,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/useMobile";
+import { useIsPhone } from "@/hooks/useMobile";
 import {
   BarChart3,
   Bell,
@@ -314,7 +314,9 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
+  // Phone-class width drives the compact bottom-nav layout. Tablets (768–1023px)
+  // fall on the desktop side and get the full sidebar + breadcrumb header.
+  const isPhone = useIsPhone();
   const currentNav = getCurrentNavItem(location);
   const currentSection = getCurrentNavSection(location);
   const currentGuide = getGuideByPath(location);
@@ -508,7 +510,7 @@ function DashboardLayoutContent({
           </SidebarFooter>
         </Sidebar>
 
-        {!isMobile && !isCollapsed && (
+        {!isPhone && !isCollapsed && (
           <div
             className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors z-50"
             onPointerDown={() => setIsResizing(true)}
@@ -518,7 +520,7 @@ function DashboardLayoutContent({
 
       <SidebarInset>
         <AdminGuidePrompt />
-        {!isMobile && (
+        {!isPhone && (
           <div className="flex border-b border-border/40 h-16 items-center px-4 sm:px-6 bg-background/90 backdrop-blur-xl sticky top-0 z-30 gap-3">
             <SidebarTrigger className="!size-11 rounded flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -539,7 +541,7 @@ function DashboardLayoutContent({
             <Button
               variant="outline"
               size="sm"
-              className="h-11 hidden lg:inline-flex"
+              className="h-11 hidden md:inline-flex"
               onClick={() => setLocation("/admin/projects/new")}
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -564,7 +566,7 @@ function DashboardLayoutContent({
             </Button>
           </div>
         )}
-        {isMobile && (
+        {isPhone && (
           <div
             className="flex border-b border-border/40 h-14 items-center px-3 bg-background/95 backdrop-blur-xl sticky top-0 z-40 gap-2"
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}

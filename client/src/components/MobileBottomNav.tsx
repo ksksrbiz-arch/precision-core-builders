@@ -5,7 +5,7 @@
  */
 import { Calendar, ClipboardList, HardHat, Mic, Search } from "lucide-react";
 import { useLocation } from "wouter";
-import { useIsMobile } from "@/hooks/useMobile";
+import { useIsPhone } from "@/hooks/useMobile";
 
 const MOBILE_NAV = [
   { icon: HardHat, label: "Home", path: "/admin" },
@@ -21,11 +21,11 @@ const MOBILE_NAV = [
 ];
 
 export function MobileBottomNav() {
-  const isMobile = useIsMobile();
+  const isPhone = useIsPhone();
   const [location, setLocation] = useLocation();
 
-  // Only show in admin on mobile
-  if (!isMobile || !location.startsWith("/admin")) return null;
+  // Only show in admin on phones (<768px). Tablets get the desktop sidebar.
+  if (!isPhone || !location.startsWith("/admin")) return null;
 
   return (
     <nav
