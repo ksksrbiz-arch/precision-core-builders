@@ -14,17 +14,9 @@ import { buildOpsSnapshot } from "../../server/_core/opsSnapshot";
 import { getEugeneForecast } from "../../server/_core/weather";
 import { sendEmail, sendSms } from "../../server/_core/delivery";
 import { db } from "../../server/db";
+import { PROMPTS } from "./_lib/llm/prompts";
 
-const SYSTEM_PROMPT = `You are the Ops Co-pilot for Precision Core Builders (owner Eric Tadlock, Eugene OR). Write Eric's morning briefing from the OPERATIONAL DATA SNAPSHOT and WEATHER FORECAST provided.
-
-Format (plain text, no markdown headers):
-- One-sentence overall status.
-- "⚠️ Risks:" — 1-5 bullets: projects over budget, overdue tasks, material shortages. Skip the line if none.
-- "🌧️ Weather:" — only if rain/snow days in the forecast overlap upcoming weather-sensitive/outdoor tasks; name the task, project, and day. Skip if no conflict.
-- "📞 Leads:" — top 1-3 leads to call today by score, with name + why. Skip if none.
-- "✅ Today:" — 2-4 prioritized actions.
-
-Keep it under ~180 words. Use US dollars. Never invent data; if the snapshot is empty, say there's nothing to report yet.`;
+const SYSTEM_PROMPT = PROMPTS.dailyBriefing;
 
 async function getAdminRecipientIds(): Promise<string[]> {
   if (!db) return [];
