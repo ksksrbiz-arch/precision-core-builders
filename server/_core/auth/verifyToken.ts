@@ -74,7 +74,7 @@ export async function verifyToken(token: string | null): Promise<VerifyResult> {
       user: {
         id: "admin",
         email: process.env.ADMIN_EMAIL ?? "admin@precisioncorebuilders.com",
-        name: "Admin",
+        name: "Eric Tadlock",
         role: "admin",
       },
     };
