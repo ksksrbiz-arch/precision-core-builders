@@ -1,27 +1,17 @@
 /**
  * OpsCopilot — AI assistant that answers questions over Eric's REAL
  * operational data (projects, budgets, schedule, ledger, leads, materials).
- * Backed by /api/ai-copilot (admin-only Netlify Function → invokeLLM with a
- * live DB snapshot injected as context).
+ * Backed by /api/ai-copilot (admin-only Netlify Function → invokeLLM/streamLLM
+ * with a live DB snapshot injected as context). Streams the reply
+ * token-by-token when supported, falling back to a buffered response — both
+ * handled by useStreamingChat. Always sends the admin Bearer token.
  */
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatComposer } from "@/components/ai/ChatComposer";
+import { useStreamingChat } from "@/hooks/useStreamingChat";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Brain, Sparkles, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
-
-const QUICK_PROMPTS = [
-  "Which projects are over budget?",
-  "What's behind schedule right now?",
-  "Which leads should I call first?",
-  "Give me a 5-line status of the whole business",
-];
 
 function errorFor(status: number, fallback?: string): string {
   if (status === 429)
@@ -31,68 +21,35 @@ function errorFor(status: number, fallback?: string): string {
   return fallback ?? "⚠️ Co-pilot temporarily unavailable. Please try again.";
 }
 
+const QUICK_PROMPTS = [
+  "Which projects are over budget?",
+  "What's behind schedule right now?",
+  "Which leads should I call first?",
+  "Give me a 5-line status of the whole business",
+];
+
 export default function OpsCopilot() {
   const { accessToken } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState<string | null>(null);
+  const { messages, loading, send } = useStreamingChat({
+    endpoint: "/api/ai-copilot",
+    headers: (): Record<string, string> =>
+      accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    formatError: errorFor,
+    onProvider: setProvider,
+  });
+  const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async (text?: string) => {
+  const submit = (text?: string) => {
     const content = (text ?? input).trim();
-    if (!content || loading) return;
-
-    const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content };
-    const assistantId = `a-${Date.now()}`;
-    setMessages(prev => [
-      ...prev,
-      userMsg,
-      { id: assistantId, role: "assistant", content: "" },
-    ]);
+    if (!content) return;
     setInput("");
-    setLoading(true);
-
-    try {
-      const history = [...messages, userMsg].map(m => ({
-        role: m.role,
-        content: m.content,
-      }));
-      const res = await fetch("/api/ai-copilot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({ messages: history }),
-      });
-      const data = await res.json();
-      const errorContent = res.ok
-        ? undefined
-        : errorFor(res.status, data.error);
-      if (res.ok && data.provider) setProvider(data.provider);
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === assistantId
-            ? { ...m, content: errorContent ?? data.text ?? "No response." }
-            : m
-        )
-      );
-    } catch {
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === assistantId
-            ? { ...m, content: "⚠️ Connection error. Please try again." }
-            : m
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
+    void send(content);
   };
 
   return (
@@ -134,7 +91,7 @@ export default function OpsCopilot() {
               {QUICK_PROMPTS.map(p => (
                 <button
                   key={p}
-                  onClick={() => send(p)}
+                  onClick={() => submit(p)}
                   className="flex items-start gap-2 text-left text-xs min-h-11 p-3 border border-border/40 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors leading-snug"
                 >
                   <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/60" />
@@ -180,7 +137,7 @@ export default function OpsCopilot() {
       <ChatComposer
         value={input}
         onChange={setInput}
-        onSend={() => send()}
+        onSend={() => submit()}
         disabled={loading}
         placeholder="Ask about budgets, schedule, leads…"
       />
