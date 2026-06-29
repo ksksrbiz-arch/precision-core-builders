@@ -18,13 +18,22 @@ export const data = db;
 export { paginate };
 export type { PaginationInput };
 
-export type SupabaseResult<T> = {
-  data: T | null;
+/**
+ * Untyped Supabase row. The project's Supabase client carries no generated
+ * Database types, so query results were already effectively `any` before this
+ * refactor; the data layer preserves that exact looseness so adopting it does
+ * not change the inferred tRPC output types of the routers.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SupabaseRow = any;
+
+export type SupabaseResult = {
+  data: SupabaseRow;
   error: { message: string } | null;
 };
 
-export type SupabaseListResult<T> = {
-  data: T[] | null;
+export type SupabaseListResult = {
+  data: SupabaseRow[] | null;
   error: { message: string } | null;
   count?: number | null;
 };
@@ -33,14 +42,14 @@ export type SupabaseListResult<T> = {
  * Resolve a single-row Supabase result, throwing the Supabase error message on
  * failure (matching the routers' existing `throw new Error(error.message)`).
  */
-export function unwrapOne<T>(result: SupabaseResult<T>): T {
+export function unwrapOne(result: SupabaseResult): SupabaseRow {
   if (result.error) throw new Error(result.error.message);
-  return result.data as T;
+  return result.data;
 }
 
 /** Resolve a list Supabase result to `{ data, total }`, throwing on error. */
-export function unwrapList<T>(result: SupabaseListResult<T>): {
-  data: T[];
+export function unwrapList(result: SupabaseListResult): {
+  data: SupabaseRow[];
   total: number;
 } {
   if (result.error) throw new Error(result.error.message);
