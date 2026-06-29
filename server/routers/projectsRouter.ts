@@ -1,6 +1,18 @@
-import { db, paginate } from "../db";
+import { db } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { logAdminAction } from "../_core/auditLog";
+import {
+  createProject,
+  deleteProject,
+  getMyProject,
+  getProfitabilitySources,
+  getProjectById,
+  getProjectRow,
+  getProjectsStats,
+  listProjects,
+  updateProject,
+  updateProjectProgress,
+} from "../_data/projectsRepo";
 import { z } from "zod";
 
 const ProjectStatusEnum = z.enum([
@@ -48,17 +60,7 @@ export const projectsRouter = router({
         .default({})
     )
     .query(async ({ input }) => {
-      const { from, to } = paginate(input);
-      let q = db
-        .from("projects")
-        .select("*, clients(id,name,email,phone)", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      if (input.status) q = q.eq("status", input.status);
-      if (input.search) q = q.ilike("name", `%${input.search}%`);
-      const { data, error, count } = await q;
-      if (error) throw new Error(error.message);
-      return { data: data ?? [], total: count ?? 0 };
+      return listProjects(input);
     }),
 
   // Returns the authenticated client's own active project (portal use).
@@ -68,27 +70,13 @@ export const projectsRouter = router({
     if (ctx.user.role === "admin") return null;
     // Filter by the client row whose user_id matches the authenticated user.
     // Supabase foreign-table filters use the `foreignTable.column` syntax.
-    const { data, error } = await db
-      .from("projects")
-      .select("*, clients!inner(id,name,email,phone,user_id)")
-      .eq("client_portal_enabled", true)
-      .eq("clients.user_id", ctx.user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return data ?? null;
+    return getMyProject(ctx.user.id);
   }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("projects")
-        .select("*, clients(id,name,email,phone,user_id)")
-        .eq("id", input.id)
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await getProjectById(input.id);
       // Clients can only view their own projects
       if (ctx.user?.role !== "admin") {
         if (
@@ -104,29 +92,24 @@ export const projectsRouter = router({
   create: adminProcedure
     .input(CreateProjectInput)
     .mutation(async ({ input, ctx }) => {
-      const { data, error } = await db
-        .from("projects")
-        .insert({
-          client_id: input.clientId,
-          name: input.name,
-          description: input.description,
-          status: input.status,
-          project_type: input.projectType,
-          address: input.address,
-          city: input.city,
-          state: input.state ?? "OR",
-          zip: input.zip,
-          estimated_budget: input.estimatedBudget,
-          contracted_budget: input.contractedBudget,
-          estimated_start_date: input.estimatedStartDate,
-          estimated_end_date: input.estimatedEndDate,
-          client_portal_enabled: input.clientPortalEnabled ?? true,
-          site_cam_url: input.siteCamUrl,
-          permit_numbers: input.permitNumbers,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await createProject({
+        client_id: input.clientId,
+        name: input.name,
+        description: input.description,
+        status: input.status,
+        project_type: input.projectType,
+        address: input.address,
+        city: input.city,
+        state: input.state ?? "OR",
+        zip: input.zip,
+        estimated_budget: input.estimatedBudget,
+        contracted_budget: input.contractedBudget,
+        estimated_start_date: input.estimatedStartDate,
+        estimated_end_date: input.estimatedEndDate,
+        client_portal_enabled: input.clientPortalEnabled ?? true,
+        site_cam_url: input.siteCamUrl,
+        permit_numbers: input.permitNumbers,
+      });
       await logAdminAction(db, ctx, "project.create", data.id, {
         name: data.name,
         clientId: data.client_id,
@@ -155,34 +138,28 @@ export const projectsRouter = router({
         permitNumbers,
         ...rest
       } = input;
-      const { data, error } = await db
-        .from("projects")
-        .update({
-          ...(clientId !== undefined && { client_id: clientId }),
-          ...(projectType !== undefined && { project_type: projectType }),
-          ...(estimatedBudget !== undefined && {
-            estimated_budget: estimatedBudget,
-          }),
-          ...(contractedBudget !== undefined && {
-            contracted_budget: contractedBudget,
-          }),
-          ...(estimatedStartDate !== undefined && {
-            estimated_start_date: estimatedStartDate,
-          }),
-          ...(estimatedEndDate !== undefined && {
-            estimated_end_date: estimatedEndDate,
-          }),
-          ...(clientPortalEnabled !== undefined && {
-            client_portal_enabled: clientPortalEnabled,
-          }),
-          ...(siteCamUrl !== undefined && { site_cam_url: siteCamUrl }),
-          ...(permitNumbers !== undefined && { permit_numbers: permitNumbers }),
-          ...rest,
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await updateProject(id, {
+        ...(clientId !== undefined && { client_id: clientId }),
+        ...(projectType !== undefined && { project_type: projectType }),
+        ...(estimatedBudget !== undefined && {
+          estimated_budget: estimatedBudget,
+        }),
+        ...(contractedBudget !== undefined && {
+          contracted_budget: contractedBudget,
+        }),
+        ...(estimatedStartDate !== undefined && {
+          estimated_start_date: estimatedStartDate,
+        }),
+        ...(estimatedEndDate !== undefined && {
+          estimated_end_date: estimatedEndDate,
+        }),
+        ...(clientPortalEnabled !== undefined && {
+          client_portal_enabled: clientPortalEnabled,
+        }),
+        ...(siteCamUrl !== undefined && { site_cam_url: siteCamUrl }),
+        ...(permitNumbers !== undefined && { permit_numbers: permitNumbers }),
+        ...rest,
+      });
       await logAdminAction(db, ctx, "project.update", id, {
         updatedFields: Object.keys(rest).concat(
           clientId !== undefined ? ["clientId"] : [],
@@ -207,21 +184,9 @@ export const projectsRouter = router({
       if (input.actualCost !== undefined)
         updates.actual_cost = input.actualCost;
       if (Object.keys(updates).length === 0) {
-        const { data: current } = await db
-          .from("projects")
-          .select()
-          .eq("id", input.id)
-          .single();
-        return current;
+        return getProjectRow(input.id);
       }
-      const { data, error } = await db
-        .from("projects")
-        .update(updates)
-        .eq("id", input.id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return updateProjectProgress(input.id, updates);
     }),
 
   delete: adminProcedure
@@ -230,16 +195,11 @@ export const projectsRouter = router({
       await logAdminAction(db, ctx, "project.delete", input.id, {
         projectId: input.id,
       });
-      const { error } = await db.from("projects").delete().eq("id", input.id);
-      if (error) throw new Error(error.message);
-      return { success: true };
+      return deleteProject(input.id);
     }),
 
   stats: adminProcedure.query(async () => {
-    const { data } = await db
-      .from("projects")
-      .select("status, estimated_budget, actual_cost, contracted_budget");
-    const all = data ?? [];
+    const all = await getProjectsStats();
     return {
       total: all.length,
       byStatus: {
@@ -259,23 +219,8 @@ export const projectsRouter = router({
   profitability: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const [projectRes, materialsRes, ledgerRes] = await Promise.all([
-        db
-          .from("projects")
-          .select(
-            "id,name,estimated_budget,contracted_budget,actual_cost,completion_percent,status"
-          )
-          .eq("id", input.id)
-          .single(),
-        db
-          .from("materials")
-          .select("unit_price_current,quantity_needed,quantity_on_hand")
-          .eq("project_id", input.id),
-        db
-          .from("ledger_entries")
-          .select("amount_delta,entry_type")
-          .eq("project_id", input.id),
-      ]);
+      const [projectRes, materialsRes, ledgerRes] =
+        await getProfitabilitySources(input.id);
 
       if (projectRes.error) throw new Error(projectRes.error.message);
       const project = projectRes.data;

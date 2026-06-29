@@ -1,5 +1,11 @@
-import { db, paginate } from "../db";
 import { adminProcedure, router } from "../_core/trpc";
+import {
+  createClient,
+  deleteClient,
+  getClientById,
+  listClients,
+  updateClient,
+} from "../_data/clientsRepo";
 import { z } from "zod";
 
 const ClientInput = z.object({
@@ -28,52 +34,17 @@ export const clientsRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const { from, to } = paginate(input);
-      let q = db
-        .from("clients")
-        .select("*, projects(id,name,status)", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      if (input.search)
-        q = q.or(`name.ilike.%${input.search}%,email.ilike.%${input.search}%`);
-      const { data, error, count } = await q;
-      if (error) throw new Error(error.message);
-      return { data: data ?? [], total: count ?? 0 };
+      return listClients(input);
     }),
 
   getById: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { data, error } = await db
-        .from("clients")
-        .select(
-          "*, projects(id,name,status,estimated_budget,actual_cost,completion_percent,created_at)"
-        )
-        .eq("id", input.id)
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return getClientById(input.id);
     }),
 
   create: adminProcedure.input(ClientInput).mutation(async ({ input }) => {
-    const { data, error } = await db
-      .from("clients")
-      .insert({
-        name: input.name,
-        email: input.email,
-        phone: input.phone,
-        address: input.address,
-        city: input.city,
-        state: input.state,
-        zip: input.zip,
-        notes: input.notes,
-        lead_source: input.leadSource,
-        user_id: input.userId,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data;
+    return createClient(input);
   }),
 
   update: adminProcedure
@@ -82,25 +53,16 @@ export const clientsRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, leadSource, userId, ...rest } = input;
-      const { data, error } = await db
-        .from("clients")
-        .update({
-          ...rest,
-          ...(leadSource !== undefined && { lead_source: leadSource }),
-          ...(userId !== undefined && { user_id: userId }),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return updateClient(id, {
+        ...rest,
+        ...(leadSource !== undefined && { lead_source: leadSource }),
+        ...(userId !== undefined && { user_id: userId }),
+      });
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { error } = await db.from("clients").delete().eq("id", input.id);
-      if (error) throw new Error(error.message);
-      return { success: true };
+      return deleteClient(input.id);
     }),
 });
