@@ -13,7 +13,11 @@ export const ENV = {
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
   // Google Gemini — free tier via Google AI Studio (no credit card required)
   // Get a free key at: https://aistudio.google.com/app/apikey
-  googleAiApiKey: process.env.GOOGLE_AI_API_KEY ?? "",
+  // Free Google AI (Gemini) key. Accept GEMINI_API_KEY as an alias — some
+  // Netlify setups store the key under that name, and without this the whole
+  // free Gemini path (LLM fallback, Vision, transcription) silently no-ops.
+  googleAiApiKey:
+    process.env.GOOGLE_AI_API_KEY ?? process.env.GEMINI_API_KEY ?? "",
   // Groq — free tier, ultra-fast LPU inference (OpenAI-compatible)
   // Get a free key (no credit card) at: https://console.groq.com/keys
   groqApiKey: process.env.GROQ_API_KEY ?? "",

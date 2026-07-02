@@ -4,7 +4,8 @@ import { withGuards } from "./_lib/http";
 
 /**
  * Vision Studio — AI photo analysis endpoint.
- * Primary: Claude Vision (Anthropic). Fallback: Gemini Vision (Google AI).
+ * Free-first: Gemini Vision (Google AI, free tier) when configured; Claude
+ * Vision (Anthropic, paid) only as a fallback.
  * Accepts base64-encoded images and returns AI analysis
  * for construction site photos, material inspection, progress tracking, etc.
  */
@@ -110,7 +111,71 @@ export const handler = withGuards(
       const userPrompt =
         customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
 
-      // ── Claude Vision (primary) ──────────────────────────────────────────────
+      // ── Gemini Vision (primary — free tier) ──────────────────────────────────
+      // Free-first: prefer the free Google AI key when configured. Claude Vision
+      // (paid) is only used when no Google AI key is available.
+      if (ENV.googleAiApiKey) {
+        const geminiModel = "gemini-2.0-flash";
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${ENV.googleAiApiKey}`;
+
+        const geminiRes = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: `${SYSTEM_PROMPT}\n\n${userPrompt}` },
+                  { inline_data: { mime_type: mediaType, data: image } },
+                ],
+              },
+            ],
+            generationConfig: { maxOutputTokens: 4096, temperature: 0.2 },
+          }),
+        });
+
+        type GeminiVisionResponse = {
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+          usageMetadata?: {
+            promptTokenCount?: number;
+            candidatesTokenCount?: number;
+            totalTokenCount?: number;
+          };
+          error?: { message?: string };
+        };
+
+        const geminiData = (await geminiRes.json()) as GeminiVisionResponse;
+        if (!geminiRes.ok || geminiData.error) {
+          throw new Error(
+            `Vision analysis failed: ${geminiData.error?.message ?? geminiRes.statusText}`
+          );
+        }
+
+        const analysisText =
+          geminiData.candidates
+            ?.flatMap(c => c.content?.parts ?? [])
+            .map(p => p.text ?? "")
+            .join("") ?? "";
+
+        return json(200, {
+          analysis: analysisText,
+          mode,
+          model: geminiModel,
+          usage: geminiData.usageMetadata
+            ? {
+                promptTokens: geminiData.usageMetadata.promptTokenCount ?? 0,
+                completionTokens:
+                  geminiData.usageMetadata.candidatesTokenCount ?? 0,
+                totalTokens: geminiData.usageMetadata.totalTokenCount ?? 0,
+              }
+            : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // ── Claude Vision (paid fallback) ────────────────────────────────────────
       if (ENV.anthropicApiKey) {
         const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
 
@@ -156,73 +221,11 @@ export const handler = withGuards(
         });
       }
 
-      // ── Gemini Vision (fallback) ─────────────────────────────────────────────
-      const geminiModel = "gemini-2.0-flash";
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${ENV.googleAiApiKey}`;
-
-      const geminiRes = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `${SYSTEM_PROMPT}\n\n${userPrompt}`,
-                },
-                {
-                  inline_data: {
-                    mime_type: mediaType,
-                    data: image,
-                  },
-                },
-              ],
-            },
-          ],
-          generationConfig: { maxOutputTokens: 4096, temperature: 0.2 },
-        }),
-      });
-
-      type GeminiVisionResponse = {
-        candidates?: Array<{
-          content?: { parts?: Array<{ text?: string }> };
-        }>;
-        usageMetadata?: {
-          promptTokenCount?: number;
-          candidatesTokenCount?: number;
-          totalTokenCount?: number;
-        };
-        error?: { message?: string };
-      };
-
-      const geminiData = (await geminiRes.json()) as GeminiVisionResponse;
-
-      if (!geminiRes.ok || geminiData.error) {
-        throw new Error(
-          `Vision analysis failed: ${geminiData.error?.message ?? geminiRes.statusText}`
-        );
-      }
-
-      const analysisText =
-        geminiData.candidates
-          ?.flatMap(c => c.content?.parts ?? [])
-          .map(p => p.text ?? "")
-          .join("") ?? "";
-
-      return json(200, {
-        analysis: analysisText,
-        mode,
-        model: geminiModel,
-        usage: geminiData.usageMetadata
-          ? {
-              promptTokens: geminiData.usageMetadata.promptTokenCount ?? 0,
-              completionTokens:
-                geminiData.usageMetadata.candidatesTokenCount ?? 0,
-              totalTokens: geminiData.usageMetadata.totalTokenCount ?? 0,
-            }
-          : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-        timestamp: new Date().toISOString(),
-      });
+      // Neither provider configured (already guarded above) — safety net.
+      return error(
+        500,
+        "Vision AI is not configured. Please contact the site administrator."
+      );
     } catch (err: unknown) {
       console.error("[vision-studio] Error:", err);
       const isConfigError =
