@@ -246,8 +246,27 @@ const serve = async (event: HandlerEvent): Promise<StreamingResponse> => {
   }
 };
 
+/**
+ * Netlify's `stream()` requires the response `body` to be a Node `Readable`.
+ * Our buffered-success, guard/error, and OPTIONS responses return *string*
+ * bodies — feeding those through `stream()` makes the Lambda runtime emit a
+ * corrupted envelope (the "invalid character '\x00'" decode error). Coerce any
+ * string body to a one-shot Readable so every response path is valid while
+ * streaming; genuine streaming bodies (already Readable) pass through untouched.
+ */
+function toReadableBody(body: string | Readable): Readable {
+  if (typeof body !== "string") return body;
+  const readable = new Readable({ read() {} });
+  if (body.length) readable.push(body);
+  readable.push(null);
+  return readable;
+}
+
 // In the streaming runtime, wrap with Netlify's `stream()` so the Readable body
 // is flushed to the client incrementally. Elsewhere, expose the plain handler.
 export const handler: Handler = STREAMING_RUNTIME
-  ? stream(serve)
+  ? stream(async event => {
+      const res = await serve(event);
+      return { ...res, body: toReadableBody(res.body as string | Readable) };
+    })
   : (serve as unknown as Handler);
