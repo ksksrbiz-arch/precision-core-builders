@@ -1,10 +1,10 @@
 /**
  * Voice transcription — server-side audio → text.
  *
- * Priority order:
- *  1. OpenAI Whisper (best quality, requires OPENAI_API_KEY — paid)
- *  2. Google Gemini 2.0 Flash audio input (free tier, requires GOOGLE_AI_API_KEY)
- *     Get a free key (no credit card): https://aistudio.google.com/app/apikey
+ * Priority order (free-first):
+ *  1. Google Gemini 2.0 Flash audio input (free tier, GOOGLE_AI_API_KEY /
+ *     GEMINI_API_KEY). Get a free key: https://aistudio.google.com/app/apikey
+ *  2. OpenAI Whisper (paid fallback, requires OPENAI_API_KEY)
  *
  * If neither key is configured, the browser-side Web Speech API path in
  * FieldReportNew remains available as a fully-free option — the resulting
@@ -129,7 +129,8 @@ async function transcribeWithGemini(
 
 /**
  * Transcribe an audio buffer.
- * Tries OpenAI Whisper first; falls back to Google Gemini (free tier).
+ * Free-first: tries Google Gemini (free tier) first, then falls back to the
+ * paid OpenAI Whisper only when no Google AI key is configured.
  * Accepts any common audio format: webm, mp3, m4a, wav, ogg.
  */
 export async function transcribeAudio(
@@ -137,11 +138,11 @@ export async function transcribeAudio(
   mimeType: string = "audio/webm",
   filename: string = "field-memo.webm"
 ): Promise<TranscriptionResult> {
-  if (ENV.openaiApiKey) {
-    return transcribeWithWhisper(audioBuffer, mimeType, filename);
-  }
   if (ENV.googleAiApiKey) {
     return transcribeWithGemini(audioBuffer, mimeType);
+  }
+  if (ENV.openaiApiKey) {
+    return transcribeWithWhisper(audioBuffer, mimeType, filename);
   }
 
   throw new Error(
