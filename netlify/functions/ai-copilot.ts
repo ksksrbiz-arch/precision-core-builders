@@ -37,13 +37,16 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 const RATE_LIMIT = { maxRequests: 20, windowMs: 60_000 };
 
 /**
- * Netlify's response streaming relies on the AWS Lambda `awslambda` global,
- * which only exists in the deployed Functions runtime. When it's absent (unit
- * tests, classic `netlify dev`) we fall back to a plain buffered handler so the
- * function never crashes at import time and existing behaviour is preserved.
+ * Streaming is DISABLED: Netlify's `stream()` wrapper produces a corrupted
+ * lambda response ("invalid character '\x00' after top-level value") for every
+ * path in this deployment — the SSE body, the buffered fallback, and error
+ * responses alike — which took ai-copilot down in production. Until response
+ * streaming is validated end-to-end on a deploy preview, `serveInner` always
+ * returns the classic buffered JSON, which the frontend `useStreamingChat`
+ * consumes via its buffered fallback. Flip this back to a runtime check once
+ * streaming is proven to work on a preview.
  */
-const STREAMING_RUNTIME =
-  typeof (globalThis as { awslambda?: unknown }).awslambda !== "undefined";
+const STREAMING_RUNTIME = false;
 
 /** True when the caller opted into SSE via the Accept header. */
 function wantsStream(headers: Record<string, string | undefined>): boolean {
@@ -246,27 +249,5 @@ const serve = async (event: HandlerEvent): Promise<StreamingResponse> => {
   }
 };
 
-/**
- * Netlify's `stream()` requires the response `body` to be a Node `Readable`.
- * Our buffered-success, guard/error, and OPTIONS responses return *string*
- * bodies — feeding those through `stream()` makes the Lambda runtime emit a
- * corrupted envelope (the "invalid character '\x00'" decode error). Coerce any
- * string body to a one-shot Readable so every response path is valid while
- * streaming; genuine streaming bodies (already Readable) pass through untouched.
- */
-function toReadableBody(body: string | Readable): Readable {
-  if (typeof body !== "string") return body;
-  const readable = new Readable({ read() {} });
-  if (body.length) readable.push(body);
-  readable.push(null);
-  return readable;
-}
-
-// In the streaming runtime, wrap with Netlify's `stream()` so the Readable body
-// is flushed to the client incrementally. Elsewhere, expose the plain handler.
-export const handler: Handler = STREAMING_RUNTIME
-  ? stream(async event => {
-      const res = await serve(event);
-      return { ...res, body: toReadableBody(res.body as string | Readable) };
-    })
-  : (serve as unknown as Handler);
+// Buffered classic handler (streaming disabled — see STREAMING_RUNTIME above).
+export const handler: Handler = serve as unknown as Handler;
