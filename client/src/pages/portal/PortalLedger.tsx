@@ -43,11 +43,16 @@ export default function PortalLedger() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: projects } = trpc.projects.list.useQuery(
+  // Portal clients use myProject; admins previewing the portal use list.
+  const isAdmin = user?.role === "admin";
+  const { data: myProject } = trpc.projects.myProject.useQuery(undefined, {
+    enabled: !!user && !isAdmin,
+  });
+  const { data: adminProjects } = trpc.projects.list.useQuery(
     { pageSize: 1 },
-    { enabled: !!user }
+    { enabled: !!user && isAdmin }
   );
-  const project = projects?.data?.[0];
+  const project = isAdmin ? adminProjects?.data?.[0] : myProject;
 
   const { data: entries, isLoading } = trpc.ledger.listVisible.useQuery(
     { projectId: project?.id! },
