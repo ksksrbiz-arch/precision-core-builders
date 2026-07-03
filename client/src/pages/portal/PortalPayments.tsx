@@ -5,8 +5,13 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { fmtDate } from "@/lib/formatters";
+import { SITE } from "@/const";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import { SkeletonCard } from "@/components/Skeletons";
+import {
+  buildFreePaymentLinks,
+  hasAnyFreePaymentMethod,
+} from "@/lib/freePayments";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -15,8 +20,10 @@ import {
   CreditCard,
   DollarSign,
   FileText,
+  Mail,
   Send,
   Sparkles,
+  Wallet,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -51,11 +58,18 @@ export default function PortalPayments() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: projects } = trpc.projects.list.useQuery(
+  // Resolve the project the same way the portal dashboard does: portal clients
+  // use the client-scoped `myProject`; admins previewing the portal use `list`.
+  // The old unscoped `list` leaked the newest system-wide project to clients.
+  const isAdmin = user?.role === "admin";
+  const { data: myProject } = trpc.projects.myProject.useQuery(undefined, {
+    enabled: !!user && !isAdmin,
+  });
+  const { data: adminProjects } = trpc.projects.list.useQuery(
     { pageSize: 1 },
-    { enabled: !!user }
+    { enabled: !!user && isAdmin }
   );
-  const project = projects?.data?.[0];
+  const project = isAdmin ? adminProjects?.data?.[0] : myProject;
 
   const { data: estimatesResult, isLoading } =
     trpc.estimates.listForClient.useQuery(
@@ -72,12 +86,32 @@ export default function PortalPayments() {
     ...m,
     idx: Number(idx),
     amount: Math.round((midValue * m.pct) / 100),
-    // Mark milestone paid if project progress exceeds its threshold
+    // Mark milestone paid once real project completion exceeds its threshold.
+    // The schema column is `completion_percent` (see PortalDashboard).
     paid:
-      project?.progress_percent != null
-        ? project.progress_percent >= [10, 30, 60, 80, 90, 100][Number(idx)]
+      project?.completion_percent != null
+        ? project.completion_percent >= [10, 30, 60, 80, 90, 100][Number(idx)]
         : false,
   }));
+
+  // Outstanding balance = sum of milestone amounts not yet marked paid.
+  const outstandingDollars = milestones
+    .filter(m => !m.paid)
+    .reduce((sum, m) => sum + m.amount, 0);
+
+  // Free, zero-key pay links (PayPal.me / Venmo / Zelle / mailto invoice) for
+  // the outstanding balance. Empty when no handles are configured — the page
+  // then falls back to the "call Eric" note below.
+  const payLinks =
+    midValue > 0 && outstandingDollars > 0 && hasAnyFreePaymentMethod()
+      ? buildFreePaymentLinks({
+          amountCents: Math.round(outstandingDollars * 100),
+          description: `${project?.name ?? "Project"} — outstanding balance`,
+          clientEmail: user?.email ?? undefined,
+          clientName: user?.name ?? undefined,
+          projectName: project?.name ?? undefined,
+        })
+      : [];
 
   if (!user) {
     setLocation("/auth");
@@ -121,6 +155,23 @@ export default function PortalPayments() {
 
         {isLoading ? (
           <SkeletonCard count={3} />
+        ) : !project && !latestEstimate ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-card border border-border/60 p-12 text-center"
+          >
+            <Sparkles className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground text-sm mb-2">
+              No active project found for your account yet.
+            </p>
+            <p className="text-xs text-muted-foreground/60">
+              Contact Eric at{" "}
+              <a href={SITE.phoneHref} className="text-primary hover:underline">
+                {SITE.phone}
+              </a>
+            </p>
+          </motion.div>
         ) : !latestEstimate ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -336,6 +387,62 @@ export default function PortalPayments() {
               </motion.div>
             )}
 
+            {/* Pay Outstanding Balance — free, zero-key links */}
+            {payLinks.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.15 }}
+                className="bg-card border border-primary/30 overflow-hidden"
+              >
+                <div className="flex items-center justify-between p-5 border-b border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <Wallet className="h-4 w-4 text-primary" />
+                    <span
+                      className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Pay Outstanding Balance
+                    </span>
+                  </div>
+                  <span
+                    className="text-base font-bold text-primary"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    {fmtMoney(outstandingDollars)}
+                  </span>
+                </div>
+
+                <div className="p-4 sm:p-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {payLinks.map(link => (
+                      <a
+                        key={link.provider}
+                        href={link.url}
+                        target={link.isMailto ? undefined : "_blank"}
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 border border-border/60 px-4 py-3 text-[11px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {link.isMailto ? (
+                          <Mail className="h-3.5 w-3.5" />
+                        ) : (
+                          <CreditCard className="h-3.5 w-3.5" />
+                        )}
+                        {link.provider === "paypal" || link.provider === "venmo"
+                          ? `Pay with ${link.label}`
+                          : link.label}
+                      </a>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/70 mt-3 text-center">
+                    Payments are processed directly by the provider — no fees
+                    are added by Precision Core Builders.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
             {/* All Estimates History */}
             {estimates.length > 1 && (
               <motion.div
@@ -396,11 +503,8 @@ export default function PortalPayments() {
             {/* Contact note */}
             <p className="text-xs text-muted-foreground text-center pb-4">
               Questions about your estimate or payments?{" "}
-              <a
-                href="tel:541-852-5144"
-                className="text-primary hover:underline"
-              >
-                Call Eric at 541-852-5144
+              <a href={SITE.phoneHref} className="text-primary hover:underline">
+                Call Eric at {SITE.phone}
               </a>
             </p>
           </div>
