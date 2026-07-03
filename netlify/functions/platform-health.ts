@@ -34,7 +34,8 @@ async function checkSupabase(): Promise<ServiceStatus> {
       id: "supabase",
       name: "Supabase Database",
       status: "not_configured",
-      message: "SUPABASE_URL or SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY not set",
+      message:
+        "SUPABASE_URL or SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY not set",
     };
   }
 
@@ -446,7 +447,8 @@ async function checkOpenAI(): Promise<ServiceStatus> {
       id: "openai",
       name: "OpenAI (Whisper, legacy)",
       status: "not_configured",
-      message: "OpenAI not used — free-tier transcription active (Gemini + Groq)",
+      message:
+        "OpenAI not used — free-tier transcription active (Gemini + Groq)",
     };
   }
 

@@ -59,20 +59,20 @@ The visual language is **"Warm Modern"**—minimalist, high-contrast, utilizing 
 
 ## Tech Stack
 
-| Layer            | Technology                                         | Purpose                                                           |
-| :--------------- | :------------------------------------------------- | :---------------------------------------------------------------- |
-| **Frontend**     | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion | High-performance UI with tactile animations and PWA support.      |
-| **Routing**      | Wouter 3                                           | Lightweight client-side router.                                   |
-| **State/API**    | tRPC 11 + React Query 5                            | End-to-end type-safe API with server-state caching.               |
-| **Backend**      | Netlify Functions (serverless)                     | Stateless compute — AI, voice, weather, OAuth callbacks, proxies. |
-| **Database**     | Supabase (PostgreSQL)                              | Real-time subscriptions, Row-Level Security, Auth.                |
-| **AI/LLM**       | Anthropic Claude / Google Gemini                   | Field report generation, lead scoring, cost estimation, chat.     |
-| **Voice**        | Gemini / Groq Whisper (free); OpenAI Whisper (legacy) | Voice-to-text for field memos (free-tier first).              |
-| **Automation**   | n8n                                                | Orchestration of leads, notifications, sub-contractor comms.      |
-| **Deployment**   | GitHub → Netlify                                   | CI/CD with automatic builds and edge deployment.                  |
-| **Storage**      | Supabase Storage                                   | Images, videos, documents, site-cam feeds.                        |
-| **Package Mgr**  | pnpm 10.4.1                                        | Fast, strict, workspace-ready.                                    |
-| **Integrations** | Blueprint.am _(feature-flagged)_                   | Plan/design attachment; see `docs/integrations/blueprint.md`.     |
+| Layer            | Technology                                            | Purpose                                                           |
+| :--------------- | :---------------------------------------------------- | :---------------------------------------------------------------- |
+| **Frontend**     | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion    | High-performance UI with tactile animations and PWA support.      |
+| **Routing**      | Wouter 3                                              | Lightweight client-side router.                                   |
+| **State/API**    | tRPC 11 + React Query 5                               | End-to-end type-safe API with server-state caching.               |
+| **Backend**      | Netlify Functions (serverless)                        | Stateless compute — AI, voice, weather, OAuth callbacks, proxies. |
+| **Database**     | Supabase (PostgreSQL)                                 | Real-time subscriptions, Row-Level Security, Auth.                |
+| **AI/LLM**       | Anthropic Claude / Google Gemini                      | Field report generation, lead scoring, cost estimation, chat.     |
+| **Voice**        | Gemini / Groq Whisper (free); OpenAI Whisper (legacy) | Voice-to-text for field memos (free-tier first).                  |
+| **Automation**   | n8n                                                   | Orchestration of leads, notifications, sub-contractor comms.      |
+| **Deployment**   | GitHub → Netlify                                      | CI/CD with automatic builds and edge deployment.                  |
+| **Storage**      | Supabase Storage                                      | Images, videos, documents, site-cam feeds.                        |
+| **Package Mgr**  | pnpm 10.4.1                                           | Fast, strict, workspace-ready.                                    |
+| **Integrations** | Blueprint.am _(feature-flagged)_                      | Plan/design attachment; see `docs/integrations/blueprint.md`.     |
 
 ## Quick Start
 
