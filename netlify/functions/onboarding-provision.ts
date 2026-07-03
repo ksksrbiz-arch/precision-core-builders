@@ -46,6 +46,11 @@ const PHASE_ALLOWLIST: Record<string, Set<string>> = {
   weather: new Set(["OPENWEATHERMAP_API_KEY"]),
   supabase: new Set([
     "SUPABASE_URL",
+    // New-format keys (preferred — unmanaged by the Netlify Supabase extension).
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_SECRET_KEY",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+    // Legacy JWT keys (kept for backward compatibility).
     "SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
     "VITE_SUPABASE_URL",

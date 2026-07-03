@@ -445,7 +445,17 @@ const createAdminProfile: ActionHandler = async params => {
 
 const testVoiceEndpoint: ActionHandler = async () => {
   const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OpenAI API key not configured");
+  if (!key) {
+    // OpenAI is legacy/optional — the free-tier transcription stack
+    // (Gemini + Groq Whisper) handles voice. A missing key is not a setup
+    // failure, so report success with a skipped note instead of throwing.
+    return {
+      success: true,
+      message:
+        "OpenAI not configured — free-tier transcription (Gemini + Groq) is active. OpenAI is optional/legacy.",
+      data: { skipped: true, reason: "OPENAI_API_KEY not set" },
+    };
+  }
 
   // Just verify key format and model access
   const res = await fetch("https://api.openai.com/v1/models/whisper-1", {

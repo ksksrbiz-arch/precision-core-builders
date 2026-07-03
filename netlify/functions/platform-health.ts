@@ -24,14 +24,17 @@ type ServiceStatus = {
 async function checkSupabase(): Promise<ServiceStatus> {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.SUPABASE_ANON_KEY;
 
   if (!url || !key) {
     return {
       id: "supabase",
       name: "Supabase Database",
       status: "not_configured",
-      message: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set",
+      message: "SUPABASE_URL or SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY not set",
     };
   }
 
@@ -436,11 +439,14 @@ async function checkOpenAI(): Promise<ServiceStatus> {
   const key = process.env.OPENAI_API_KEY;
 
   if (!key) {
+    // OpenAI is now a legacy/optional transcription provider. The free-tier
+    // stack (Gemini + Groq Whisper) covers transcription, so a missing
+    // OPENAI_API_KEY is expected and must not surface as degraded/failed.
     return {
       id: "openai",
-      name: "OpenAI (Whisper)",
+      name: "OpenAI (Whisper, legacy)",
       status: "not_configured",
-      message: "OPENAI_API_KEY not set",
+      message: "OpenAI not used — free-tier transcription active (Gemini + Groq)",
     };
   }
 

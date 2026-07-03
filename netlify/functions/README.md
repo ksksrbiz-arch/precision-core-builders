@@ -226,7 +226,9 @@ All functions have access to environment variables set in Netlify dashboard:
 - `OPENWEATHERMAP_API_KEY`
 - `N8N_WEBHOOK_URL`
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SECRET_KEY` (preferred, new-format service-role key; falls back to `SUPABASE_SERVICE_ROLE_KEY`)
+- `SUPABASE_PUBLISHABLE_KEY` (preferred, new-format anon/public key; falls back to `SUPABASE_ANON_KEY`)
+- `SUPABASE_SERVICE_ROLE_KEY` (legacy)
 - etc.
 
 Access them via `process.env.VARIABLE_NAME`

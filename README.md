@@ -10,7 +10,7 @@ Precision Core Builders is built on the **Cathedral Principle**: sequential, pha
 
 ### 1. AI-Powered Voice-to-Report Field Logging
 
-Eric records voice memos on-site. The system automatically transcribes them with Whisper, generates structured daily field reports using Claude/Gemini, and updates the client portal in real-time. No manual data entry required.
+Eric records voice memos on-site. The system automatically transcribes them free-first with Google Gemini or Groq Whisper (OpenAI Whisper optional/legacy), generates structured daily field reports using Claude/Gemini, and updates the client portal in real-time. No manual data entry required.
 
 ### 2. Smart Weather-Responsive Scheduling
 
@@ -67,7 +67,7 @@ The visual language is **"Warm Modern"**—minimalist, high-contrast, utilizing 
 | **Backend**      | Netlify Functions (serverless)                     | Stateless compute — AI, voice, weather, OAuth callbacks, proxies. |
 | **Database**     | Supabase (PostgreSQL)                              | Real-time subscriptions, Row-Level Security, Auth.                |
 | **AI/LLM**       | Anthropic Claude / Google Gemini                   | Field report generation, lead scoring, cost estimation, chat.     |
-| **Voice**        | OpenAI Whisper                                     | Voice-to-text for field memos.                                    |
+| **Voice**        | Gemini / Groq Whisper (free); OpenAI Whisper (legacy) | Voice-to-text for field memos (free-tier first).              |
 | **Automation**   | n8n                                                | Orchestration of leads, notifications, sub-contractor comms.      |
 | **Deployment**   | GitHub → Netlify                                   | CI/CD with automatic builds and edge deployment.                  |
 | **Storage**      | Supabase Storage                                   | Images, videos, documents, site-cam feeds.                        |
@@ -207,7 +207,8 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 # AI / LLM (at least one required)
 ANTHROPIC_API_KEY=sk-ant-...           # Claude (preferred)
 GOOGLE_AI_API_KEY=AIza...             # Gemini (free fallback)
-OPENAI_API_KEY=sk-...                  # Whisper voice transcription
+GROQ_API_KEY=gsk_...                   # Free Whisper transcription (https://console.groq.com/keys)
+# OPENAI_API_KEY=sk-...                # Optional/legacy Whisper — free-tier (Gemini/Groq) preferred
 
 # Weather (optional — Open-Meteo used automatically if omitted)
 OPENWEATHERMAP_API_KEY=...
