@@ -7,9 +7,50 @@ import { trpc } from "@/lib/trpc";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import PortalAssistant from "@/components/PortalAssistant";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, DollarSign, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, DollarSign, Plus, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/components/ToastProvider";
+
+/**
+ * Curated finish options the client can choose from, grouped by category.
+ * `delta` is the budget impact (in dollars) relative to the base allowance.
+ */
+const FINISH_OPTIONS: {
+  category: string;
+  options: { label: string; delta: number }[];
+}[] = [
+  {
+    category: "Countertops",
+    options: [
+      { label: "Quartz (Standard)", delta: 0 },
+      { label: "Granite", delta: 1200 },
+      { label: "Natural Marble", delta: 3500 },
+    ],
+  },
+  {
+    category: "Flooring",
+    options: [
+      { label: "Engineered Hardwood (Standard)", delta: 0 },
+      { label: "Luxury Vinyl Plank", delta: -800 },
+      { label: "Natural Stone Tile", delta: 2400 },
+    ],
+  },
+  {
+    category: "Cabinetry",
+    options: [
+      { label: "Shaker (Standard)", delta: 0 },
+      { label: "Custom Inset", delta: 4000 },
+    ],
+  },
+  {
+    category: "Fixtures",
+    options: [
+      { label: "Brushed Nickel (Standard)", delta: 0 },
+      { label: "Matte Black", delta: 350 },
+      { label: "Polished Brass", delta: 600 },
+    ],
+  },
+];
 
 export default function PortalFinishes() {
   const { addToast } = useToast();
@@ -17,11 +58,16 @@ export default function PortalFinishes() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
 
-  const { data: projects } = trpc.projects.list.useQuery(
+  // Portal clients use myProject; admins previewing the portal use list.
+  const isAdmin = user?.role === "admin";
+  const { data: myProject } = trpc.projects.myProject.useQuery(undefined, {
+    enabled: !!user && !isAdmin,
+  });
+  const { data: adminProjects } = trpc.projects.list.useQuery(
     { pageSize: 1 },
-    { enabled: !!user }
+    { enabled: !!user && isAdmin }
   );
-  const project = projects?.data?.[0];
+  const project = isAdmin ? adminProjects?.data?.[0] : myProject;
 
   const { data: selections, isLoading } = trpc.finishSelections.list.useQuery(
     { projectId: project?.id! },
@@ -33,9 +79,17 @@ export default function PortalFinishes() {
       { enabled: !!project?.id }
     );
 
+  const refetchFinishes = () => {
+    if (!project?.id) return;
+    utils.finishSelections.list.invalidate({ projectId: project.id });
+    utils.finishSelections.calcBudgetImpact.invalidate({
+      projectId: project.id,
+    });
+  };
+
   const approveMut = trpc.finishSelections.clientApprove.useMutation({
     onSuccess: () => {
-      utils.finishSelections.list.invalidate();
+      refetchFinishes();
       addToast({
         type: "success",
         title: "Selection Approved",
@@ -44,6 +98,39 @@ export default function PortalFinishes() {
       });
     },
   });
+
+  const selectMut = trpc.finishSelections.select.useMutation({
+    onSuccess: () => {
+      refetchFinishes();
+      addToast({
+        type: "success",
+        title: "Selection Saved",
+        message: "Your finish choice has been recorded.",
+        duration: 4000,
+      });
+    },
+    onError: err => {
+      addToast({
+        type: "error",
+        title: "Could Not Save Selection",
+        message: err.message,
+        duration: 5000,
+      });
+    },
+  });
+
+  const chooseFinish = (
+    category: string,
+    option: { label: string; delta: number }
+  ) => {
+    if (!project?.id) return;
+    selectMut.mutate({
+      projectId: project.id,
+      category,
+      selection: option.label,
+      budgetImpact: option.delta,
+    });
+  };
 
   const fmt = (n: number | string | null | undefined) =>
     n ? `$${Number(n).toLocaleString()}` : "—";
@@ -122,122 +209,185 @@ export default function PortalFinishes() {
           )}
         </motion.div>
 
-        {isLoading ? (
-          <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
-            Loading selections…
-          </div>
-        ) : !selections?.length ? (
+        {!project ? (
           <div className="bg-card border border-border/60 p-12 text-center">
-            <Sparkles className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm">
-              No finish selections yet. Eric will add options as your project
-              progresses.
+            <Sparkles className="h-10 w-10 text-primary/40 mx-auto mb-4" />
+            <p className="text-sm text-muted-foreground font-light mb-1">
+              No active project found.
+            </p>
+            <p className="text-xs text-muted-foreground/60">
+              Finish selections appear here once your project is set up.
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {Object.entries(grouped).map(([room, items]) => (
-              <div key={room}>
-                <p
-                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-3"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {room}
-                </p>
-                <div className="space-y-2">
-                  {(items as any[]).map((sel: any) => (
-                    <div
-                      key={sel.id}
-                      className="bg-card border border-border/60 p-4 flex items-start gap-4"
-                    >
-                      {/* Swatch / image */}
-                      {sel.image_url ? (
-                        <img
-                          src={sel.image_url}
-                          alt={sel.item_name}
-                          className="h-16 w-16 object-cover border border-border/40 shrink-0"
-                        />
-                      ) : (
-                        <div className="h-16 w-16 bg-input border border-border/40 flex items-center justify-center shrink-0">
-                          <Sparkles className="h-5 w-5 text-muted-foreground/20" />
-                        </div>
-                      )}
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-semibold">
-                              {sel.item_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {[
-                                sel.brand,
-                                sel.color_name,
-                                sel.sku ? `SKU: ${sel.sku}` : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-sm font-semibold">
-                              {fmt(sel.total_cost)}
-                            </p>
-                            {sel.budget_delta != null &&
-                              Number(sel.budget_delta) !== 0 && (
-                                <p
-                                  className={`text-xs font-bold ${Number(sel.budget_delta) > 0 ? "text-red-400" : "text-green-400"}`}
-                                >
-                                  {Number(sel.budget_delta) > 0 ? "+" : ""}
-                                  {fmt(sel.budget_delta)}
-                                </p>
-                              )}
-                          </div>
-                        </div>
-                        {sel.notes && (
-                          <p className="text-xs text-muted-foreground/70 mt-1 font-light">
-                            {sel.notes}
-                          </p>
-                        )}
-
-                        {/* Approval */}
-                        <div className="mt-3 flex items-center gap-3">
-                          {sel.client_approved ? (
+          <>
+            {/* Choose your finishes */}
+            <div className="mb-10">
+              <p
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-3"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Choose Your Finishes
+              </p>
+              <div className="space-y-4">
+                {FINISH_OPTIONS.map(({ category, options }) => (
+                  <div
+                    key={category}
+                    className="bg-card border border-border/60 p-4"
+                  >
+                    <p className="text-sm font-semibold mb-3">{category}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {options.map(option => (
+                        <button
+                          key={option.label}
+                          onClick={() => chooseFinish(category, option)}
+                          disabled={selectMut.isPending}
+                          className="group flex items-center gap-2 border border-border/60 px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 disabled:opacity-50 transition-all"
+                        >
+                          <Plus className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span className="text-xs font-medium">
+                            {option.label}
+                          </span>
+                          {option.delta !== 0 && (
                             <span
-                              className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-green-400"
-                              style={{ fontFamily: "var(--font-condensed)" }}
+                              className={`text-[11px] font-bold ${option.delta > 0 ? "text-red-400" : "text-green-400"}`}
                             >
-                              <Check className="h-3 w-3" /> Approved{" "}
-                              {sel.client_approved_at
-                                ? new Date(
-                                    sel.client_approved_at
-                                  ).toLocaleDateString()
-                                : ""}
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => approveMut.mutate({ id: sel.id })}
-                              disabled={approveMut.isPending}
-                              className="text-[10px] font-bold tracking-widest uppercase text-primary hover:text-primary/70 border border-primary/30 px-3 py-1 hover:bg-primary/5 disabled:opacity-50 transition-all"
-                              style={{ fontFamily: "var(--font-condensed)" }}
-                            >
-                              Approve Selection
-                            </button>
-                          )}
-                          {sel.eric_approved && (
-                            <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
-                              <Check className="h-2.5 w-2.5" /> Confirmed by
-                              Eric
+                              {option.delta > 0 ? "+" : ""}
+                              {fmt(option.delta)}
                             </span>
                           )}
-                        </div>
-                      </div>
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+
+            {isLoading ? (
+              <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
+                Loading selections…
+              </div>
+            ) : !selections?.length ? (
+              <div className="bg-card border border-border/60 p-12 text-center">
+                <Sparkles className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground text-sm">
+                  No finish selections yet. Eric will add options as your
+                  project progresses.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {Object.entries(grouped).map(([room, items]) => (
+                  <div key={room}>
+                    <p
+                      className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-3"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      {room}
+                    </p>
+                    <div className="space-y-2">
+                      {(items as any[]).map((sel: any) => (
+                        <div
+                          key={sel.id}
+                          className="bg-card border border-border/60 p-4 flex items-start gap-4"
+                        >
+                          {/* Swatch / image */}
+                          {sel.image_url ? (
+                            <img
+                              src={sel.image_url}
+                              alt={sel.item_name}
+                              className="h-16 w-16 object-cover border border-border/40 shrink-0"
+                            />
+                          ) : (
+                            <div className="h-16 w-16 bg-input border border-border/40 flex items-center justify-center shrink-0">
+                              <Sparkles className="h-5 w-5 text-muted-foreground/20" />
+                            </div>
+                          )}
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold">
+                                  {sel.item_name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {[
+                                    sel.brand,
+                                    sel.color_name,
+                                    sel.sku ? `SKU: ${sel.sku}` : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-semibold">
+                                  {fmt(sel.total_cost)}
+                                </p>
+                                {sel.budget_delta != null &&
+                                  Number(sel.budget_delta) !== 0 && (
+                                    <p
+                                      className={`text-xs font-bold ${Number(sel.budget_delta) > 0 ? "text-red-400" : "text-green-400"}`}
+                                    >
+                                      {Number(sel.budget_delta) > 0 ? "+" : ""}
+                                      {fmt(sel.budget_delta)}
+                                    </p>
+                                  )}
+                              </div>
+                            </div>
+                            {sel.notes && (
+                              <p className="text-xs text-muted-foreground/70 mt-1 font-light">
+                                {sel.notes}
+                              </p>
+                            )}
+
+                            {/* Approval */}
+                            <div className="mt-3 flex items-center gap-3">
+                              {sel.client_approved ? (
+                                <span
+                                  className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-green-400"
+                                  style={{
+                                    fontFamily: "var(--font-condensed)",
+                                  }}
+                                >
+                                  <Check className="h-3 w-3" /> Approved{" "}
+                                  {sel.client_approved_at
+                                    ? new Date(
+                                        sel.client_approved_at
+                                      ).toLocaleDateString()
+                                    : ""}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    approveMut.mutate({ id: sel.id })
+                                  }
+                                  disabled={approveMut.isPending}
+                                  className="text-[10px] font-bold tracking-widest uppercase text-primary hover:text-primary/70 border border-primary/30 px-3 py-1 hover:bg-primary/5 disabled:opacity-50 transition-all"
+                                  style={{
+                                    fontFamily: "var(--font-condensed)",
+                                  }}
+                                >
+                                  Approve Selection
+                                </button>
+                              )}
+                              {sel.eric_approved && (
+                                <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
+                                  <Check className="h-2.5 w-2.5" /> Confirmed by
+                                  Eric
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {/* Finishes assistant */}
