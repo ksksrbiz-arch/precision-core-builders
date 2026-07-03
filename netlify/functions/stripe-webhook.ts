@@ -15,9 +15,99 @@
  * - invoice.payment_failed → flag for follow-up
  */
 import type { Handler } from "@netlify/functions";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { ENV } from "../../server/_core/env";
 import { requireSupabaseAdmin } from "../../server/_core/supabase";
+
+/**
+ * Coerce a Stripe metadata value into a positive integer project id.
+ * Stripe metadata values arrive as strings; anything non-numeric → null.
+ */
+function parseProjectId(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null;
+  const n = typeof raw === "number" ? raw : parseInt(String(raw), 10);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  return n;
+}
+
+/**
+ * Resolve the PCB project id for a paid Stripe invoice. We look at the invoice
+ * metadata first, then fall back to the first line item's metadata (Stripe
+ * copies subscription/line metadata there). Returns null when unresolvable.
+ */
+function resolveInvoiceProjectId(data: Record<string, any>): number | null {
+  return (
+    parseProjectId(data.metadata?.project_id) ??
+    parseProjectId(data.metadata?.projectId) ??
+    parseProjectId(data.lines?.data?.[0]?.metadata?.project_id) ??
+    null
+  );
+}
+
+/**
+ * Idempotency guard: has this Stripe event id already been recorded in
+ * billing_events? Called before inserting the current event, so a `true`
+ * result means a prior delivery of the same event already landed and we must
+ * not post the ledger entry again. Fails open (returns false) on read errors so
+ * a transient DB hiccup never silently drops a real payment reconciliation.
+ */
+async function eventAlreadyRecorded(
+  db: SupabaseClient,
+  stripeEventId: string | undefined
+): Promise<boolean> {
+  if (!stripeEventId) return false;
+  const { data, error } = await db
+    .from("billing_events")
+    .select("id")
+    .eq("stripe_event_id", stripeEventId)
+    .limit(1);
+  if (error) {
+    console.error("[stripe-webhook] idempotency check failed:", error);
+    return false;
+  }
+  return Array.isArray(data) && data.length > 0;
+}
+
+/**
+ * Record a client payment in the project ledger so the immutable ledger and the
+ * portal financials reflect real money received. Uses the "milestone" entry
+ * type (the closest existing enum value for a payment milestone) and stores the
+ * amount in dollars, matching the decimal columns elsewhere in the schema.
+ */
+async function recordLedgerPayment(
+  db: SupabaseClient,
+  input: {
+    projectId: number;
+    amountCents: number;
+    currency: string;
+    invoiceId?: string | null;
+    invoiceNumber?: string | null;
+    invoiceUrl?: string | null;
+    source: string;
+  }
+): Promise<void> {
+  const dollars = (input.amountCents / 100).toFixed(2);
+  const currency = (input.currency || "usd").toUpperCase();
+  const ref = input.invoiceNumber || input.invoiceId || "";
+  const title = ref ? `Payment received — ${ref}` : "Payment received";
+  const description = ref
+    ? `Client payment of $${dollars} ${currency} received via Stripe for ${input.source} ${ref}.`
+    : `Client payment of $${dollars} ${currency} received via Stripe (${input.source}).`;
+
+  const { error } = await db.from("ledger_entries").insert({
+    project_id: input.projectId,
+    author_id: null,
+    entry_type: "milestone",
+    title,
+    description,
+    amount_delta: dollars,
+    document_url: input.invoiceUrl ?? null,
+    document_name: ref ? `Invoice ${ref}` : null,
+    visible_to_client: true,
+  });
+  if (error) console.error("[stripe-webhook] Ledger insert error:", error);
+}
 
 /**
  * Verify a Stripe webhook signature.
@@ -123,6 +213,12 @@ export const handler: Handler = async event => {
   try {
     switch (eventType) {
       case "invoice.paid": {
+        const projectId = resolveInvoiceProjectId(data);
+        // Check for a prior delivery BEFORE we insert this event's row, so the
+        // ledger entry is posted at most once per Stripe event.
+        const alreadyRecorded =
+          projectId !== null ? await eventAlreadyRecorded(db, body.id) : false;
+
         const { error } = await db.from("billing_events").insert({
           stripe_event_id: body.id,
           stripe_invoice_id: data.id,
@@ -134,16 +230,35 @@ export const handler: Handler = async event => {
           description: data.description ?? data.lines?.data?.[0]?.description,
           invoice_url: data.hosted_invoice_url ?? null,
           invoice_pdf: data.invoice_pdf ?? null,
+          project_id: projectId,
           metadata: {
             stripe_customer_id: data.customer,
             invoice_number: data.number,
           },
         });
         if (error) console.error("[stripe-webhook] Insert error:", error);
+
+        // Reconcile the payment into the project ledger. Skip when we can't
+        // resolve a project or when this event was already processed.
+        if (projectId !== null && !alreadyRecorded) {
+          await recordLedgerPayment(db, {
+            projectId,
+            amountCents: data.amount_paid ?? 0,
+            currency: data.currency ?? "usd",
+            invoiceId: data.id,
+            invoiceNumber: data.number,
+            invoiceUrl: data.hosted_invoice_url,
+            source: "invoice",
+          });
+        }
         break;
       }
 
       case "checkout.session.completed": {
+        const projectId = parseProjectId(data.metadata?.project_id);
+        const alreadyRecorded =
+          projectId !== null ? await eventAlreadyRecorded(db, body.id) : false;
+
         const { error } = await db.from("billing_events").insert({
           stripe_event_id: body.id,
           event_type: "checkout.completed",
@@ -152,6 +267,7 @@ export const handler: Handler = async event => {
           client_email: data.customer_details?.email ?? null,
           client_name: data.customer_details?.name ?? null,
           description: `Payment link completion`,
+          project_id: projectId,
           metadata: {
             payment_intent: data.payment_intent,
             payment_link: data.payment_link,
@@ -159,6 +275,18 @@ export const handler: Handler = async event => {
           },
         });
         if (error) console.error("[stripe-webhook] Insert error:", error);
+
+        if (projectId !== null && !alreadyRecorded) {
+          await recordLedgerPayment(db, {
+            projectId,
+            amountCents: data.amount_total ?? 0,
+            currency: data.currency ?? "usd",
+            invoiceId: data.invoice ?? null,
+            invoiceNumber: null,
+            invoiceUrl: null,
+            source: "payment link",
+          });
+        }
         break;
       }
 
