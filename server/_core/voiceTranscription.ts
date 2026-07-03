@@ -4,7 +4,9 @@
  * Priority order (free-first):
  *  1. Google Gemini 2.0 Flash audio input (free tier, GOOGLE_AI_API_KEY /
  *     GEMINI_API_KEY). Get a free key: https://aistudio.google.com/app/apikey
- *  2. OpenAI Whisper (paid fallback, requires OPENAI_API_KEY)
+ *  2. Groq Whisper large v3 (free tier, OpenAI-compatible, GROQ_API_KEY).
+ *     Get a free key: https://console.groq.com/keys
+ *  3. OpenAI Whisper (legacy, optional — only when OPENAI_API_KEY is set)
  *
  * If neither key is configured, the browser-side Web Speech API path in
  * FieldReportNew remains available as a fully-free option — the resulting
@@ -17,7 +19,7 @@ export type TranscriptionResult = {
   language?: string;
   duration?: number;
   /** Identifier of the provider that produced the transcription. */
-  provider?: "openai-whisper" | "google-gemini";
+  provider?: "openai-whisper" | "google-gemini" | "groq-whisper";
 };
 
 const GEMINI_AUDIO_MODEL = "gemini-2.0-flash";
@@ -65,6 +67,46 @@ async function transcribeWithWhisper(
   };
 }
 
+async function transcribeWithGroq(
+  audioBuffer: ArrayBuffer,
+  mimeType: string,
+  filename: string
+): Promise<TranscriptionResult> {
+  // Groq hosts Whisper large v3 on their free tier via an OpenAI-compatible
+  // endpoint. Same multipart form shape as OpenAI Whisper.
+  const form = new FormData();
+  form.append("file", new Blob([audioBuffer], { type: mimeType }), filename);
+  form.append("model", "whisper-large-v3");
+
+  const auth = "Bearer " + ENV.groqApiKey;
+  const res = await fetch(
+    "https://api.groq.com/openai/v1/audio/transcriptions",
+    {
+      method: "POST",
+      headers: { Authorization: auth },
+      body: form,
+      signal: AbortSignal.timeout(120_000),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => "");
+    throw new Error(`Groq Whisper API error ${res.status}: ${err}`);
+  }
+
+  const data = (await res.json()) as {
+    text: string;
+    language?: string;
+    duration?: number;
+  };
+
+  return {
+    text: data.text,
+    language: data.language,
+    duration: data.duration,
+    provider: "groq-whisper",
+  };
+}
 async function transcribeWithGemini(
   audioBuffer: ArrayBuffer,
   mimeType: string
@@ -129,8 +171,9 @@ async function transcribeWithGemini(
 
 /**
  * Transcribe an audio buffer.
- * Free-first: tries Google Gemini (free tier) first, then falls back to the
- * paid OpenAI Whisper only when no Google AI key is configured.
+ * Free-first: tries Google Gemini (free tier), then Groq Whisper (free tier),
+ * and only falls back to the legacy paid OpenAI Whisper when OPENAI_API_KEY is
+ * set and no free provider is configured.
  * Accepts any common audio format: webm, mp3, m4a, wav, ogg.
  */
 export async function transcribeAudio(
@@ -141,11 +184,14 @@ export async function transcribeAudio(
   if (ENV.googleAiApiKey) {
     return transcribeWithGemini(audioBuffer, mimeType);
   }
+  if (ENV.groqApiKey) {
+    return transcribeWithGroq(audioBuffer, mimeType, filename);
+  }
   if (ENV.openaiApiKey) {
     return transcribeWithWhisper(audioBuffer, mimeType, filename);
   }
 
   throw new Error(
-    "No transcription provider configured. Set OPENAI_API_KEY (paid Whisper) or GOOGLE_AI_API_KEY (free at https://aistudio.google.com/app/apikey), or submit a pre-transcribed transcript from the browser's Web Speech API."
+    "No transcription provider configured. Set GOOGLE_AI_API_KEY (free at https://aistudio.google.com/app/apikey) or GROQ_API_KEY (free at https://console.groq.com/keys). OPENAI_API_KEY (paid Whisper) is supported as a legacy option. Alternatively, submit a pre-transcribed transcript from the browser's Web Speech API."
   );
 }

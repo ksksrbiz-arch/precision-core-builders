@@ -243,7 +243,9 @@ export const handler: Handler = async event => {
       case "supabase":
         result = await verifySupabase(
           credentials.SUPABASE_URL ?? "",
-          credentials.SUPABASE_ANON_KEY ?? ""
+          credentials.SUPABASE_PUBLISHABLE_KEY ??
+            credentials.SUPABASE_ANON_KEY ??
+            ""
         );
         break;
       case "elevenlabs":

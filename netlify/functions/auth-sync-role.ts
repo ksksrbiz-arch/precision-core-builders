@@ -18,7 +18,7 @@
  *
  * Required env vars (server-side, Netlify dashboard):
  *   SUPABASE_URL                 — Supabase project URL
- *   SUPABASE_SERVICE_ROLE_KEY    — service role key (bypasses RLS for upsert)
+ *   SUPABASE_SECRET_KEY          — service-role key, new-format (preferred);
  *   ADMIN_EMAIL (optional)       — primary admin email to allowlist
  *   ADMIN_EMAILS  (optional)     — extra allowlisted admin emails
  */
@@ -42,7 +42,7 @@ export const handler = withGuards(
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error(
-        "[auth-sync-role] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set"
+        "[auth-sync-role] SUPABASE_URL or SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY not set"
       );
       return error(503, "Auth role sync is not configured on the server.");
     }

@@ -16,7 +16,8 @@ let cached: { cacheKey: string; client: SupabaseClient } | null = null;
 
 function readConfig(): { url: string; key: string } {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  const key =
+    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
   return { url, key };
 }
 
@@ -47,7 +48,7 @@ export function requireSupabaseAdmin(): SupabaseClient {
   const client = getSupabaseAdmin();
   if (!client) {
     throw new Error(
-      "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not configured"
+      "SUPABASE_URL or SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY is not configured"
     );
   }
   return client;
