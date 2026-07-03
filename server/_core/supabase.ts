@@ -17,7 +17,9 @@ let cached: { cacheKey: string; client: SupabaseClient } | null = null;
 function readConfig(): { url: string; key: string } {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "";
   const key =
-    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    "";
   return { url, key };
 }
 
