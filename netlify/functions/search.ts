@@ -21,6 +21,30 @@ function sanitizeKeyword(raw: string): string {
     .trim();
 }
 
+/**
+ * Builds a PostgREST `.or()` filter that matches ANY of the extracted
+ * keywords against ANY of the given columns via ILIKE. Keywords are
+ * sanitized and capped so a noisy LLM response can't explode the query.
+ * Returns null when no usable keyword remains (callers should short-circuit).
+ */
+function buildIlikeOrFilter(
+  columns: string[],
+  keywords: string[]
+): string | null {
+  const safeKeywords = keywords
+    .map(sanitizeKeyword)
+    .filter(Boolean)
+    .slice(0, 5);
+  if (safeKeywords.length === 0) return null;
+  const clauses: string[] = [];
+  for (const keyword of safeKeywords) {
+    for (const column of columns) {
+      clauses.push(`${column}.ilike.%${keyword}%`);
+    }
+  }
+  return clauses.join(",");
+}
+
 interface SearchResult {
   type: string;
   id: number;
@@ -34,12 +58,12 @@ async function searchProjects(
   keywords: string[],
   filters: Record<string, string | null>
 ): Promise<SearchResult[]> {
-  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
-  if (!safeKeyword) return [];
+  const orFilter = buildIlikeOrFilter(["name", "address"], keywords);
+  if (!orFilter) return [];
   let q = db
     .from("projects")
     .select("id,name,status,address,city,estimated_budget,contracted_budget")
-    .or(`name.ilike.%${safeKeyword}%,address.ilike.%${safeKeyword}%`)
+    .or(orFilter)
     .order("created_at", { ascending: false })
     .limit(5);
   if (filters.status) q = q.eq("status", filters.status);
@@ -59,12 +83,12 @@ async function searchProjects(
 }
 
 async function searchClients(keywords: string[]): Promise<SearchResult[]> {
-  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
-  if (!safeKeyword) return [];
+  const orFilter = buildIlikeOrFilter(["name", "email"], keywords);
+  if (!orFilter) return [];
   const { data } = await db
     .from("clients")
     .select("id,name,email,phone,city")
-    .or(`name.ilike.%${safeKeyword}%,email.ilike.%${safeKeyword}%`)
+    .or(orFilter)
     .limit(5);
   return (data ?? []).map((c: any) => ({
     type: "client",
@@ -76,12 +100,12 @@ async function searchClients(keywords: string[]): Promise<SearchResult[]> {
 }
 
 async function searchFieldReports(keywords: string[]): Promise<SearchResult[]> {
-  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
-  if (!safeKeyword) return [];
+  const orFilter = buildIlikeOrFilter(["summary", "transcription"], keywords);
+  if (!orFilter) return [];
   const { data } = await db
     .from("field_reports")
     .select("id,project_id,report_date,summary,transcription")
-    .or(`summary.ilike.%${safeKeyword}%,transcription.ilike.%${safeKeyword}%`)
+    .or(orFilter)
     .order("report_date", { ascending: false })
     .limit(5);
   return (data ?? []).map((r: any) => ({
@@ -96,16 +120,17 @@ async function searchFieldReports(keywords: string[]): Promise<SearchResult[]> {
 }
 
 async function searchMaterials(keywords: string[]): Promise<SearchResult[]> {
-  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
-  if (!safeKeyword) return [];
+  const orFilter = buildIlikeOrFilter(
+    ["name", "category", "vendor_name"],
+    keywords
+  );
+  if (!orFilter) return [];
   const { data } = await db
     .from("materials")
     .select(
       "id,name,category,vendor_name,quantity_needed,quantity_on_hand,unit,unit_price_current"
     )
-    .or(
-      `name.ilike.%${safeKeyword}%,category.ilike.%${safeKeyword}%,vendor_name.ilike.%${safeKeyword}%`
-    )
+    .or(orFilter)
     .limit(5);
   return (data ?? []).map((m: any) => ({
     type: "material",
@@ -120,13 +145,13 @@ async function searchMaterials(keywords: string[]): Promise<SearchResult[]> {
 }
 
 async function searchSchedule(keywords: string[]): Promise<SearchResult[]> {
-  const safeKeyword = sanitizeKeyword(keywords[0] ?? "");
-  if (!safeKeyword) return [];
+  const orFilter = buildIlikeOrFilter(["title", "task_type"], keywords);
+  if (!orFilter) return [];
   const { data } = await db
     .from("schedule_items")
-    .select("id,project_id,title,task_type,status,planned_start_date")
-    .or(`title.ilike.%${safeKeyword}%,task_type.ilike.%${safeKeyword}%`)
-    .order("planned_start_date", { ascending: true })
+    .select("id,project_id,title,task_type,status,planned_start")
+    .or(orFilter)
+    .order("planned_start", { ascending: true })
     .limit(5);
   return (data ?? []).map((s: any) => ({
     type: "schedule_item",
@@ -136,8 +161,8 @@ async function searchSchedule(keywords: string[]): Promise<SearchResult[]> {
       .filter(Boolean)
       .join(" · "),
     href: `/admin/schedule`,
-    meta: s.planned_start_date
-      ? new Date(s.planned_start_date).toLocaleDateString()
+    meta: s.planned_start
+      ? new Date(s.planned_start).toLocaleDateString()
       : undefined,
   }));
 }
