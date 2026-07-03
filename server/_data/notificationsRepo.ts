@@ -59,7 +59,60 @@ export const notificationsRepo = {
   },
 
   async markSent(id: number) {
-    await data.from("notifications").update({ status: "sent" }).eq("id", id);
+    const { data: row, error } = await data
+      .from("notifications")
+      .update({ status: "sent", sent_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  },
+
+  async markFailed(id: number, reason: string) {
+    const { data: row, error } = await data
+      .from("notifications")
+      .update({ status: "failed", failure_reason: reason.slice(0, 500) })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  },
+
+  /**
+   * Resolve a recipient's contact details for outbound delivery. The
+   * notification's recipient_id references `users`; we prefer the user's own
+   * email/phone and fall back to a linked `clients` row for any missing field.
+   */
+  async recipientContact(recipientId: string) {
+    let email: string | null = null;
+    let phone: string | null = null;
+
+    const { data: user } = await data
+      .from("users")
+      .select("email, phone")
+      .eq("id", recipientId)
+      .maybeSingle();
+    if (user) {
+      email = user.email ?? null;
+      phone = user.phone ?? null;
+    }
+
+    if (!email || !phone) {
+      const { data: client } = await data
+        .from("clients")
+        .select("email, phone")
+        .eq("user_id", recipientId)
+        .limit(1)
+        .maybeSingle();
+      if (client) {
+        email = email ?? client.email ?? null;
+        phone = phone ?? client.phone ?? null;
+      }
+    }
+
+    return { email, phone };
   },
 
   async adminList(input: AdminListFilters) {

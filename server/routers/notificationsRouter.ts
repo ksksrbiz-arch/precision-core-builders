@@ -1,6 +1,7 @@
 import { notificationsRepo } from "../_data/notificationsRepo";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { ENV } from "../_core/env";
+import { sendEmail, sendSms } from "../_core/delivery";
 import { z } from "zod";
 
 type ClientInfo = {
@@ -56,7 +57,7 @@ export const notificationsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const data = await notificationsRepo.insert({
+      const record = await notificationsRepo.insert({
         recipient_id: input.recipientId,
         project_id: input.projectId,
         channel: input.channel,
@@ -65,21 +66,58 @@ export const notificationsRouter = router({
         status: "pending",
       });
 
-      // Dispatch email/SMS via n8n for non-in_app channels
-      if (input.channel !== "in_app") {
-        await dispatchViaN8n({
-          channel: input.channel,
-          recipientId: input.recipientId,
-          subject: input.subject,
-          body: input.body,
-          projectId: input.projectId,
-        });
-
-        // Mark as sent
-        await notificationsRepo.markSent(data.id);
+      // in_app: the DB row IS the delivery — nothing to send externally.
+      if (input.channel === "in_app") {
+        return notificationsRepo.markSent(record.id);
       }
 
-      return data;
+      // email/sms: resolve the recipient's contact details and deliver via the
+      // real Resend/Twilio implementations in delivery.ts. Status only flips to
+      // "sent" on a confirmed send; otherwise the row is recorded as "failed".
+      const contact = await notificationsRepo.recipientContact(
+        input.recipientId
+      );
+
+      let result;
+      if (input.channel === "email") {
+        if (!contact.email) {
+          return notificationsRepo.markFailed(
+            record.id,
+            "No email address on file for recipient."
+          );
+        }
+        result = await sendEmail({
+          subject: input.subject ?? "Precision Core Builders",
+          text: input.body,
+          to: contact.email,
+        });
+      } else {
+        if (!contact.phone) {
+          return notificationsRepo.markFailed(
+            record.id,
+            "No phone number on file for recipient."
+          );
+        }
+        result = await sendSms({ body: input.body, to: contact.phone });
+      }
+
+      // Optional additional relay — best-effort, never flips delivery status.
+      await dispatchViaN8n({
+        channel: input.channel,
+        recipientId: input.recipientId,
+        subject: input.subject,
+        body: input.body,
+        projectId: input.projectId,
+      });
+
+      if (result.ok) {
+        return notificationsRepo.markSent(record.id);
+      }
+
+      const reason = result.skipped
+        ? `${input.channel === "email" ? "Email (Resend)" : "SMS (Twilio)"} provider is not configured.`
+        : (result.error ?? "Delivery failed.");
+      return notificationsRepo.markFailed(record.id, reason);
     }),
 
   adminList: adminProcedure
