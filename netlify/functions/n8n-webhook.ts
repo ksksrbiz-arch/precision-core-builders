@@ -13,6 +13,7 @@
 import type { Handler } from "@netlify/functions";
 import { ENV } from "../../server/_core/env";
 import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
+import { timingSafeEqualStr } from "./_lib/crypto";
 
 const VALID_EVENTS = [
   "lead_captured",
@@ -42,6 +43,42 @@ export const handler: Handler = async event => {
 
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: "" };
+  }
+
+  // Inbound authentication. checkOrigin deliberately allows server-to-server
+  // (no-Origin) calls, so on its own it does not stop anyone who can reach this
+  // URL from injecting platform events. When N8N_WEBHOOK_SECRET is configured
+  // we require the caller to present it. Accepted forms (either works):
+  //   - Header:  X-N8N-Signature: <secret>
+  //   - Header:  Authorization: Bearer <secret>
+  // The comparison is timing-safe. When the secret is UNSET we preserve the
+  // legacy (unauthenticated) behavior for backward-compat, but log a warning.
+  const configuredSecret = process.env.N8N_WEBHOOK_SECRET ?? "";
+  if (configuredSecret) {
+    const bearer = event.headers["authorization"] ?? "";
+    const bearerSecret = bearer.toLowerCase().startsWith("bearer ")
+      ? bearer.slice(7).trim()
+      : "";
+    const providedSecret = event.headers["x-n8n-signature"] ?? bearerSecret;
+
+    const authorized =
+      providedSecret !== "" &&
+      timingSafeEqualStr(providedSecret, configuredSecret);
+    if (!authorized) {
+      console.warn(
+        "[n8n-webhook] Rejected inbound request: bad/missing secret"
+      );
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ error: "Unauthorized" }),
+      };
+    }
+  } else {
+    console.warn(
+      "[n8n-webhook] N8N_WEBHOOK_SECRET not set — inbound endpoint is " +
+        "UNAUTHENTICATED. Configure the secret to require request signing."
+    );
   }
 
   try {
