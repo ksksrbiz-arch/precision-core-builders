@@ -1,11 +1,9 @@
 /**
  * Login page — Supabase magic link is the default sign-in method.
  * Email/password is available as a secondary option.
- * Auth0 remains available as an admin fallback.
  */
 import { ASSETS } from "@/const";
 import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
-import { beginAuth0Login, isAuth0Configured } from "@/lib/auth0";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,7 +12,6 @@ import {
   Building2,
   Check,
   Facebook,
-  KeyRound,
   Loader2,
   Lock,
   Mail,
@@ -101,9 +98,7 @@ export default function AuthLogin() {
     e.preventDefault();
     if (!email.trim()) return;
     if (!isSupabaseConfigured) {
-      setError(
-        "Sign-in is not configured yet. Use Auth0 fallback if available."
-      );
+      setError("Sign-in is not configured yet. Please contact support.");
       return;
     }
 
@@ -136,9 +131,7 @@ export default function AuthLogin() {
     e.preventDefault();
     if (!email.trim() || !password) return;
     if (!isSupabaseConfigured) {
-      setError(
-        "Sign-in is not configured yet. Use Auth0 fallback if available."
-      );
+      setError("Sign-in is not configured yet. Please contact support.");
       return;
     }
 
@@ -164,7 +157,7 @@ export default function AuthLogin() {
       }
 
       try {
-        // Clear any legacy Auth0/admin fallback token so this Supabase
+        // Clear any legacy admin fallback token so this Supabase
         // session is the source of truth for useAuth.
         localStorage.removeItem(ADMIN_SESSION_KEY);
       } catch {
@@ -207,17 +200,6 @@ export default function AuthLogin() {
     } catch {
       setError("Unable to start Facebook sign-in. Please try again.");
       setFbLoading(false);
-    }
-  };
-
-  const handleAuth0SignIn = () => {
-    setError("");
-    try {
-      beginAuth0Login("/admin");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to start Auth0 sign-in."
-      );
     }
   };
 
@@ -537,31 +519,6 @@ export default function AuthLogin() {
                       Continue with Facebook
                     </>
                   )}
-                </button>
-              </>
-            )}
-
-            {isAuth0Configured && (
-              <>
-                <div className="mt-6 pt-5 border-t border-border/40 flex items-center gap-3">
-                  <span className="h-px flex-1 bg-border/40" />
-                  <span
-                    className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/50"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    Auth0 Fallback
-                  </span>
-                  <span className="h-px flex-1 bg-border/40" />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleAuth0SignIn}
-                  className="mt-4 w-full flex items-center justify-center gap-2 bg-card border border-border/80 text-foreground py-3.5 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-primary/60 hover:bg-primary/5 transition-all min-h-[48px]"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <KeyRound className="h-3.5 w-3.5" />
-                  Continue with Auth0
                 </button>
               </>
             )}

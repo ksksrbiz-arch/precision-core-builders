@@ -31,9 +31,6 @@ const SHOULD_BE_BUILD_ONLY = new Set([
   "VITE_DEV_PASSWORD",
   "VITE_SITE_URL",
   "VITE_NETLIFY_SITE_NAME",
-  "VITE_AUTH0_AUDIENCE",
-  "VITE_AUTH0_CLIENT_ID",
-  "VITE_AUTH0_DOMAIN",
   // Build-tooling only
   "NODE_VERSION",
   "PNPM_VERSION",
@@ -51,11 +48,6 @@ const SHOULD_BE_BUILD_ONLY = new Set([
 
 // Vars that belong to OTHER projects on the team account — delete from this site.
 const UNRELATED_TO_THIS_PROJECT = new Set([
-  "AUTH0_AUDIENCE",
-  "AUTH0_CLIENT_ID",
-  "AUTH0_ISSUER_BASE_URL",
-  "NEXT_PUBLIC_AUTH0_CLIENT_ID",
-  "NEXT_PUBLIC_AUTH0_DOMAIN",
   "CF_ACCOUNT_ID",
   "CF_API_TOKEN",
   "CF_KV_RATE_LIMIT_NS",

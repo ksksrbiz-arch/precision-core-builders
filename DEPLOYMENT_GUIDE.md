@@ -187,7 +187,7 @@ update the scope of the variables listed above as "Builds only":
 6. Trigger a new deploy after all scopes are updated
 
 > **Tip — remove unused variables.** Variables left over from previous
-> configurations (e.g. `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, etc.) that are not
+> configurations that are not
 > listed above should be **deleted** from the Netlify dashboard. Each unused
 > variable still counts against the 4 KB budget.
 

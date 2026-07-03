@@ -5,15 +5,14 @@
  */
 import { ASSETS } from "@/const";
 import { ADMIN_SESSION_KEY } from "@/_core/hooks/useAuth";
-import { consumeAuth0ReturnTo, consumeAuth0State } from "@/lib/auth0";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
-type State = "loading" | "error" | "notice";
+type State = "loading" | "error";
 
 /** How long to wait before declaring the sign-in attempt timed out. */
 const SIGN_IN_TIMEOUT_MS = 20_000;
@@ -81,89 +80,6 @@ export default function AuthCallback() {
       setState("error");
       setStatusMessage(friendly);
       setResendable(isResendableError(decoded));
-      return;
-    }
-
-    const auth0VerificationStatus = url.searchParams.get("success");
-    const auth0VerificationMessage = url.searchParams.get("message");
-    if (auth0VerificationStatus || auth0VerificationMessage) {
-      const message = auth0VerificationMessage
-        ? decodeURIComponent(auth0VerificationMessage).replace(/\+/g, " ")
-        : "";
-      if (auth0VerificationStatus === "false") {
-        setState("error");
-        setStatusMessage(
-          message ||
-            "Auth0 could not verify your email. Please return to the sign-in page, check your inbox, or request a new verification email from Auth0."
-        );
-      } else {
-        setState("notice");
-        setStatusMessage(
-          message
-            ? `${message} Please sign in again to continue.`
-            : "Your email is verified. Please sign in again to continue."
-        );
-      }
-      return;
-    }
-
-    /**
-     * Auth0 Authorization Code flow.  Auth0 redirects back with
-     * `?code=...&state=...` in the query string (no hash).  When we see
-     * those params, swap them for an admin session token via the
-     * `auth0-exchange` Netlify Function.  The expected `state` was
-     * stashed in sessionStorage by `beginAuth0Login`, so we can detect
-     * (and reject) cross-site forgeries before contacting the server.
-     */
-    const auth0Code = url.searchParams.get("code");
-    const auth0State = url.searchParams.get("state");
-    if (auth0Code && auth0State && !didRedirect.current) {
-      const expectedState = consumeAuth0State();
-      const returnTo = consumeAuth0ReturnTo();
-
-      if (!expectedState || expectedState !== auth0State) {
-        setState("error");
-        setStatusMessage(
-          "Sign-in could not be verified (state mismatch). Please try again."
-        );
-        return;
-      }
-
-      didRedirect.current = true;
-      (async () => {
-        try {
-          const res = await fetch("/api/auth0-exchange", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              code: auth0Code,
-              redirectUri: `${window.location.origin}/auth/callback`,
-            }),
-          });
-          const data = (await res.json()) as {
-            token?: string;
-            error?: string;
-          };
-          if (!res.ok || !data.token) {
-            didRedirect.current = false;
-            setState("error");
-            setStatusMessage(data.error ?? "Auth0 sign-in failed.");
-            return;
-          }
-          try {
-            localStorage.setItem(ADMIN_SESSION_KEY, data.token);
-          } catch {
-            // Fall through — useAuth will recover on next load.
-          }
-          setLocation(returnTo);
-        } catch {
-          didRedirect.current = false;
-          setState("error");
-          setStatusMessage(
-            "Unable to reach the sign-in service. Check your connection and try again."
-          );
-        }
-      })();
       return;
     }
 
@@ -301,9 +217,8 @@ export default function AuthCallback() {
     // would make no difference (they're stable) but would obscure the intent.
   }, [setLocation]);
 
-  if (state === "error" || state === "notice") {
-    const isNotice = state === "notice";
-    const Icon = isNotice ? CheckCircle2 : AlertCircle;
+  if (state === "error") {
+    const Icon = AlertCircle;
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -312,31 +227,21 @@ export default function AuthCallback() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-card border border-border/60 p-8 max-w-sm w-full text-center shadow-xl shadow-black/20"
         >
-          <div
-            className={`h-12 w-12 border flex items-center justify-center mx-auto mb-5 ${
-              isNotice
-                ? "border-primary/40 bg-primary/10"
-                : "border-destructive/40 bg-destructive/10"
-            }`}
-          >
-            <Icon
-              className={`h-6 w-6 ${
-                isNotice ? "text-primary" : "text-destructive"
-              }`}
-            />
+          <div className="h-12 w-12 border flex items-center justify-center mx-auto mb-5 border-destructive/40 bg-destructive/10">
+            <Icon className="h-6 w-6 text-destructive" />
           </div>
           <h2
             className="text-lg font-semibold mb-2"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            {isNotice ? "Email verified" : "Sign-in failed"}
+            Sign-in failed
           </h2>
           <p className="text-sm text-muted-foreground font-light mb-6 leading-relaxed">
             {statusMessage ||
               "Something went wrong during sign-in. Please try again."}
           </p>
           <div className="flex flex-col gap-2">
-            {!isNotice && resendable && (
+            {resendable && (
               <a
                 href="/auth/resend"
                 className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
@@ -350,13 +255,13 @@ export default function AuthCallback() {
               href="/auth/login"
               className={cn(
                 "inline-flex items-center justify-center gap-2 px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase transition-colors",
-                !isNotice && resendable
+                resendable
                   ? "bg-card border border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                   : "bg-primary text-primary-foreground hover:bg-primary/85"
               )}
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              {isNotice ? "Sign In" : "Back to Login"}
+              Back to Login
             </a>
           </div>
         </motion.div>
