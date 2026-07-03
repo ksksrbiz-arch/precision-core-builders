@@ -137,6 +137,7 @@ export const handler: Handler = async event => {
           amountCents,
           description,
           projectName,
+          projectId,
           dueDate,
         } = params;
         if (!clientEmail || !amountCents || !description) {
@@ -175,12 +176,17 @@ export const handler: Handler = async event => {
           currency: "usd",
         });
 
-        // Create invoice
+        // Create invoice. When a projectId is supplied we stamp it into the
+        // invoice metadata so the webhook can reconcile the payment against the
+        // right project ledger once the client pays.
         const invoice = await stripeRequest("POST", "/invoices", {
           customer: customerId,
           collection_method: "send_invoice",
           days_until_due: dueDate ? undefined : 14,
           description: `${projectName ?? "Project"} — ${description}`,
+          ...(projectId != null && projectId !== ""
+            ? { "metadata[project_id]": projectId }
+            : {}),
         });
 
         // Add line item
@@ -197,15 +203,24 @@ export const handler: Handler = async event => {
           {}
         );
 
+        // Send the invoice so Stripe emails it to the client. Without this the
+        // invoice would sit "open" in Stripe and the client would never be
+        // notified — even though the admin UI already toasts "Invoice sent".
+        const sent = await stripeRequest(
+          "POST",
+          `/invoices/${finalized.id}/send`,
+          {}
+        );
+
         return {
           statusCode: 200,
           headers,
           body: JSON.stringify({
-            invoiceId: finalized.id,
-            invoiceUrl: finalized.hosted_invoice_url,
-            invoicePdf: finalized.invoice_pdf,
-            status: finalized.status,
-            amountDue: finalized.amount_due,
+            invoiceId: sent.id ?? finalized.id,
+            invoiceUrl: sent.hosted_invoice_url ?? finalized.hosted_invoice_url,
+            invoicePdf: sent.invoice_pdf ?? finalized.invoice_pdf,
+            status: sent.status ?? finalized.status,
+            amountDue: sent.amount_due ?? finalized.amount_due,
             clientEmail,
           }),
         };
