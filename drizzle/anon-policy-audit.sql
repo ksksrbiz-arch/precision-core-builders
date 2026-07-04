@@ -18,6 +18,13 @@
 -- EXPECT: 0 rows. Any row here means the `anon` (unauthenticated) role can
 -- read or write that table directly via the Supabase API. Drop each with:
 --   DROP POLICY IF EXISTS "<policyname>" ON <tablename>;
+--
+-- Matches BOTH policies explicitly scoped `TO anon` AND policies with no
+-- `TO` clause at all — an omitted `TO` defaults to the `public` pseudo-role,
+-- which Postgres reports back as roles = '{public}' and which grants access
+-- to `anon` just as surely as an explicit `TO anon` would. The original
+-- version of this check only matched the explicit form and would have
+-- missed that gap.
 SELECT
   tablename,
   policyname,
@@ -27,7 +34,7 @@ SELECT
   with_check
 FROM pg_policies
 WHERE schemaname = 'public'
-  AND 'anon' = ANY (roles)
+  AND ('anon' = ANY (roles) OR 'public' = ANY (roles))
 ORDER BY tablename, policyname;
 
 -- ── 2. Public tables with RLS disabled ──────────────────────

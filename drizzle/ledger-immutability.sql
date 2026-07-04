@@ -26,11 +26,16 @@
 --   UPDATE of author_id only     -> allowed (FK set-null maintenance)
 --   direct DELETE (project live) -> blocked (restrict_violation)
 --   cascade DELETE (project gone)-> allowed
+--
+-- Both functions pin `search_path` explicitly (Supabase linter:
+-- function_search_path_mutable) so a hijacked session search_path can't
+-- redirect the unqualified `projects` lookup to a spoofed object.
 -- ============================================================
 
 create or replace function pcb_ledger_block_update()
 returns trigger
 language plpgsql
+set search_path = pg_catalog, public
 as $$
 begin
   -- Allow the FK-driven author_id -> NULL update (user deletion); block any
@@ -54,6 +59,7 @@ $$;
 create or replace function pcb_ledger_block_delete()
 returns trigger
 language plpgsql
+set search_path = pg_catalog, public
 as $$
 begin
   -- Permit deletes that occur as part of a parent project cascade (the parent
