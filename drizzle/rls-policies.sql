@@ -9,7 +9,12 @@
 --   • Clients can only read/write data belonging to their own account.
 --     A client's identity is established by matching auth.uid() to
 --     clients.user_id, then following project/client_id foreign keys.
---   • The public can only read published portfolio projects.
+--   • The public portfolio page is served through a tRPC publicProcedure
+--     using the service-role key (server-side), never the anon key
+--     directly — see docs/CCB_COMPLIANCE.md §3.3. So every policy below
+--     is scoped `TO authenticated`: the app has no legitimate anon-role
+--     access path to any table, and none of these policies should ever
+--     be evaluated for the `anon` role.
 --   • All other tables are private by default.
 --
 -- Helper function: is_admin()
@@ -21,6 +26,17 @@
 --   The idx_users_id_role index below is critical on Nano tier
 --   (t4g.nano) — every admin EXISTS sub-query in every policy
 --   would otherwise trigger a table scan on public.users.
+--
+-- Security note (Supabase linter: anon/authenticated_security_definer_
+-- function_executable): Postgres grants EXECUTE on new functions to
+-- PUBLIC by default, which makes is_admin()/client_id_for_user()
+-- directly callable via PostgREST (e.g. /rest/v1/rpc/is_admin) by both
+-- anon and authenticated. Every policy that calls them below declares
+-- `TO authenticated`, so anon never needs to evaluate either helper —
+-- it is therefore safe to revoke anon's EXECUTE grant entirely.
+-- authenticated still needs it (the helpers run inside every admin/
+-- client policy); calling either directly only returns a boolean/id the
+-- caller's own JWT already implies, so no extra information leaks.
 -- ============================================================
 
 -- ─── Performance Index (run first — used by every admin check) ─
@@ -59,6 +75,14 @@ AS $$
   LIMIT 1;
 $$;
 
+-- ─── Harden helper-function exposure ─────────────────────────
+-- See "Security note" above. Safe to re-run.
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.client_id_for_user() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.client_id_for_user() TO authenticated;
+
 -- ============================================================
 -- 1. users
 --    • Admins: full access.
@@ -68,14 +92,17 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "users_admin_all"
   ON public.users FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "users_self_select"
   ON public.users FOR SELECT
+  TO authenticated
   USING (id = auth.uid());
 
 CREATE POLICY "users_self_update"
   ON public.users FOR UPDATE
+  TO authenticated
   USING (id = auth.uid())
   WITH CHECK (id = auth.uid());
 
@@ -88,14 +115,17 @@ ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "clients_admin_all"
   ON public.clients FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "clients_self_select"
   ON public.clients FOR SELECT
+  TO authenticated
   USING (user_id = auth.uid());
 
 CREATE POLICY "clients_self_update"
   ON public.clients FOR UPDATE
+  TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
@@ -109,10 +139,12 @@ ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "projects_admin_all"
   ON public.projects FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "projects_client_select"
   ON public.projects FOR SELECT
+  TO authenticated
   USING (
     client_id = public.client_id_for_user()
     AND client_portal_enabled = true
@@ -127,10 +159,12 @@ ALTER TABLE public.field_reports ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "field_reports_admin_all"
   ON public.field_reports FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "field_reports_client_select"
   ON public.field_reports FOR SELECT
+  TO authenticated
   USING (
     published_to_client = true
     AND project_id IN (
@@ -149,10 +183,12 @@ ALTER TABLE public.schedule_items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "schedule_items_admin_all"
   ON public.schedule_items FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "schedule_items_client_select"
   ON public.schedule_items FOR SELECT
+  TO authenticated
   USING (
     project_id IN (
       SELECT id FROM public.projects
@@ -170,10 +206,12 @@ ALTER TABLE public.estimates ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "estimates_admin_all"
   ON public.estimates FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "estimates_client_select"
   ON public.estimates FOR SELECT
+  TO authenticated
   USING (client_id = public.client_id_for_user());
 
 -- ============================================================
@@ -185,10 +223,12 @@ ALTER TABLE public.ledger_entries ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "ledger_entries_admin_all"
   ON public.ledger_entries FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "ledger_entries_client_select"
   ON public.ledger_entries FOR SELECT
+  TO authenticated
   USING (
     visible_to_client = true
     AND project_id IN (
@@ -207,21 +247,28 @@ ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "materials_admin_all"
   ON public.materials FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 -- ============================================================
 -- 9. portfolio_projects
 --    • Admins: full access.
---    • Public: can read published items (is_published = true).
+--    • Public: served via tRPC publicProcedure + service-role key
+--      (docs/CCB_COMPLIANCE.md §3.3) — the anon key never queries this
+--      table directly, so no anon-facing policy is needed. This policy
+--      exists only as defense-in-depth if that ever changes; it is
+--      scoped to `authenticated` like everything else in this file.
 -- ============================================================
 ALTER TABLE public.portfolio_projects ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "portfolio_admin_all"
   ON public.portfolio_projects FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "portfolio_public_select"
   ON public.portfolio_projects FOR SELECT
+  TO authenticated
   USING (published = true);
 
 -- ============================================================
@@ -233,6 +280,7 @@ ALTER TABLE public.sub_contractors ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "sub_contractors_admin_all"
   ON public.sub_contractors FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 -- ============================================================
@@ -244,14 +292,17 @@ ALTER TABLE public.finish_selections ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "finish_selections_admin_all"
   ON public.finish_selections FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "finish_selections_client_select"
   ON public.finish_selections FOR SELECT
+  TO authenticated
   USING (client_id = public.client_id_for_user());
 
 CREATE POLICY "finish_selections_client_insert"
   ON public.finish_selections FOR INSERT
+  TO authenticated
   WITH CHECK (client_id = public.client_id_for_user());
 
 -- ============================================================
@@ -263,14 +314,17 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "notifications_admin_all"
   ON public.notifications FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "notifications_recipient_select"
   ON public.notifications FOR SELECT
+  TO authenticated
   USING (recipient_id = auth.uid());
 
 CREATE POLICY "notifications_recipient_update"
   ON public.notifications FOR UPDATE
+  TO authenticated
   USING (recipient_id = auth.uid())
   WITH CHECK (recipient_id = auth.uid());
 
@@ -283,10 +337,12 @@ ALTER TABLE public.vision_studio_requests ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "vision_requests_admin_all"
   ON public.vision_studio_requests FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "vision_requests_owner_select"
   ON public.vision_studio_requests FOR SELECT
+  TO authenticated
   USING (user_id = auth.uid());
 
 -- ============================================================
@@ -298,6 +354,7 @@ ALTER TABLE public.billing_events ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "billing_events_admin_all"
   ON public.billing_events FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 -- ============================================================
@@ -320,6 +377,7 @@ ALTER TABLE public.admin_emails ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "admin_emails_admin_all"
   ON public.admin_emails FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 -- ============================================================
@@ -331,14 +389,17 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "profiles_admin_all"
   ON public.profiles FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "profiles_self_select"
   ON public.profiles FOR SELECT
+  TO authenticated
   USING (id = auth.uid());
 
 CREATE POLICY "profiles_self_update"
   ON public.profiles FOR UPDATE
+  TO authenticated
   USING (id = auth.uid())
   WITH CHECK (id = auth.uid());
 
@@ -351,10 +412,12 @@ ALTER TABLE public.site_plans ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "site_plans_admin_all"
   ON public.site_plans FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "site_plans_client_select"
   ON public.site_plans FOR SELECT
+  TO authenticated
   USING (
     project_id IN (
       SELECT id FROM public.projects
@@ -372,14 +435,17 @@ ALTER TABLE public.blueprint_connections ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "blueprint_connections_admin_all"
   ON public.blueprint_connections FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "blueprint_connections_self_select"
   ON public.blueprint_connections FOR SELECT
+  TO authenticated
   USING (user_id = auth.uid());
 
 CREATE POLICY "blueprint_connections_self_update"
   ON public.blueprint_connections FOR UPDATE
+  TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
@@ -393,10 +459,12 @@ ALTER TABLE public.blueprint_artifacts ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "blueprint_artifacts_admin_all"
   ON public.blueprint_artifacts FOR ALL
+  TO authenticated
   USING (public.is_admin());
 
 CREATE POLICY "blueprint_artifacts_client_select"
   ON public.blueprint_artifacts FOR SELECT
+  TO authenticated
   USING (
     visible_to_client = true
     AND project_id IN (

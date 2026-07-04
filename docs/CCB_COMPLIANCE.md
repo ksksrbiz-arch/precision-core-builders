@@ -102,6 +102,13 @@ RLS policies are defined in `drizzle/rls-policies.sql` and must be applied to th
 > an `anon` INSERT policy to `leads`; this audit catches any recurrence. Drop
 > offenders with `DROP POLICY IF EXISTS "<name>" ON <table>;`.
 
+> **Schema drift.** Objects created directly in the Supabase SQL editor
+> without a matching file under `drizzle/` are invisible to this repo and
+> to code review — the July 2026 linter pass found five (two functions,
+> three tables) that existed live but nowhere in git. See
+> `drizzle/security-linter-followup.sql` for the reconciliation status and
+> the diagnostics to pull them back into version control.
+
 ### 3.4 Ledger Immutability
 
 The Core Values ledger (`ledger_entries`) is append-only. Because the
