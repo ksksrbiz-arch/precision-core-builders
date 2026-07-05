@@ -3,19 +3,40 @@
 -- ============================================================
 -- Addresses the remaining Supabase database-linter findings that could NOT
 -- be closed out by editing rls-policies.sql / ledger-immutability.sql,
--- because the objects involved are not tracked anywhere in this repo:
+-- because the objects involved are not tracked anywhere in this repo.
 --
---   • function `public.handle_new_user`   — no matching definition in git
---   • function `public.rls_auto_enable`   — no matching definition in git
---   • table    `public.click_logs`        — no matching definition in git
---   • table    `public.email_subscribers` — no matching definition in git
---   • table    `public.inquiries`         — no matching definition in git
+-- ── Two functions — origin still unknown ─────────────────────
+--   • function `public.handle_new_user`   — in NEITHER this repo nor the
+--                                            dealflow repo (see below)
+--   • function `public.rls_auto_enable`   — likewise unaccounted for
+--   Both read like Supabase-quickstart / auto-provisioning helpers
+--   (`handle_new_user` is the canonical Supabase "sync auth.users → public
+--   row" trigger name; `rls_auto_enable` reads as a DDL event trigger).
+--   Section 1 REVOKEs their PUBLIC execute grant — safe regardless of which
+--   app owns them. Run section 0a and paste the bodies back to place them.
 --
--- These were created directly against the live database (Supabase SQL
--- editor / dashboard) and never made it into drizzle/schema.ts or any
--- drizzle/*.sql file. That's schema drift: git is no longer the source of
--- truth for these five objects. Run section 0 first and paste the output
--- back so the drift can be reconciled into tracked migrations.
+-- ── Six tables — NOT PCB's; they belong to the dealflow app ──
+--   blog_posts   deals   site_settings   click_logs   email_subscribers   inquiries
+--
+--   RESOLVED (July 2026): these are the schema of the 1commerce.world
+--   "dealflow" app — GitHub repo ksksrbiz-arch/reddit-referral-mark — not
+--   Precision Core Builders drift. That repo's feature set maps 1:1 onto
+--   them (BlogManager→blog_posts, DealsManager→deals, ContactPage→
+--   inquiries, EmailCaptureModal→email_subscribers, track-share/conversion
+--   →click_logs, DashboardSettings→site_settings) and its Netlify function
+--   hardcodes https://1commerce.world + the literal "dealflow:" prefix. The
+--   dealflow app has since moved to a single `key_value_store` table, so
+--   these six are almost certainly ORPHANED leftovers from its pre-KV
+--   schema, sitting in this project and never cleaned up.
+--
+--   → Do NOT reconcile them into this repo. The recommended action is to
+--     drop them once confirmed dead — see
+--     drizzle/dealflow-orphan-tables-cleanup.sql (guarded, drops only empty
+--     tables). Section 2 below is retained for the record but its
+--     policy-scoping tweak is superseded by that cleanup.
+--
+-- Run section 0 first (read-only) and paste the output back if you still
+-- want the two functions reconciled into tracked migrations.
 -- ============================================================
 
 -- ─── 0. Diagnostics — read-only, run this first ──────────────
@@ -71,7 +92,17 @@ REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC;
 
 -- ============================================================
 -- 2. click_logs / email_subscribers / inquiries — permissive INSERT
+--    (SUPERSEDED — see dealflow-orphan-tables-cleanup.sql)
 -- ============================================================
+-- ⚠️  These tables belong to the external dealflow app (see header), and
+-- the `blog_posts` / `deals` / `site_settings` public-SELECT policies the
+-- audit later surfaced are the same app's. The recommended fix is now to
+-- DROP all six tables via drizzle/dealflow-orphan-tables-cleanup.sql, which
+-- removes both the permissive INSERT policies AND the permissive SELECT
+-- policies at once. The `admins_can_read_inquiries` retype below is left
+-- for the record but is moot if the table is dropped — and note it lands on
+-- a dealflow table, not a PCB one.
+--
 -- Linter: rls_policy_always_true. All three carry an INSERT policy with
 -- WITH CHECK (true), letting the anon key write arbitrary rows.
 --
