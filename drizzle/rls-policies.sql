@@ -2,7 +2,12 @@
 -- Precision Core Builders — Row-Level Security Policies
 -- ============================================================
 -- Run this SQL in the Supabase SQL editor after applying the
--- Drizzle schema migration (pnpm db:push).
+-- Drizzle schema migration (pnpm db:push). Idempotent — every
+-- CREATE POLICY is preceded by a matching DROP POLICY IF EXISTS,
+-- so re-running this file to pick up a change is safe. (Postgres
+-- has no CREATE POLICY IF NOT EXISTS / OR REPLACE — re-running the
+-- file without the DROPs fails with "policy ... already exists" the
+-- moment it hits a table that already has these policies applied.)
 --
 -- Design principles:
 --   • Admins (role = 'admin' in public.users) have unrestricted access.
@@ -90,16 +95,19 @@ GRANT EXECUTE ON FUNCTION public.client_id_for_user() TO authenticated;
 -- ============================================================
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "users_admin_all" ON public.users;
 CREATE POLICY "users_admin_all"
   ON public.users FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "users_self_select" ON public.users;
 CREATE POLICY "users_self_select"
   ON public.users FOR SELECT
   TO authenticated
   USING (id = auth.uid());
 
+DROP POLICY IF EXISTS "users_self_update" ON public.users;
 CREATE POLICY "users_self_update"
   ON public.users FOR UPDATE
   TO authenticated
@@ -113,16 +121,19 @@ CREATE POLICY "users_self_update"
 -- ============================================================
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "clients_admin_all" ON public.clients;
 CREATE POLICY "clients_admin_all"
   ON public.clients FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "clients_self_select" ON public.clients;
 CREATE POLICY "clients_self_select"
   ON public.clients FOR SELECT
   TO authenticated
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "clients_self_update" ON public.clients;
 CREATE POLICY "clients_self_update"
   ON public.clients FOR UPDATE
   TO authenticated
@@ -137,11 +148,13 @@ CREATE POLICY "clients_self_update"
 -- ============================================================
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "projects_admin_all" ON public.projects;
 CREATE POLICY "projects_admin_all"
   ON public.projects FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "projects_client_select" ON public.projects;
 CREATE POLICY "projects_client_select"
   ON public.projects FOR SELECT
   TO authenticated
@@ -157,11 +170,13 @@ CREATE POLICY "projects_client_select"
 -- ============================================================
 ALTER TABLE public.field_reports ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "field_reports_admin_all" ON public.field_reports;
 CREATE POLICY "field_reports_admin_all"
   ON public.field_reports FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "field_reports_client_select" ON public.field_reports;
 CREATE POLICY "field_reports_client_select"
   ON public.field_reports FOR SELECT
   TO authenticated
@@ -181,11 +196,13 @@ CREATE POLICY "field_reports_client_select"
 -- ============================================================
 ALTER TABLE public.schedule_items ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "schedule_items_admin_all" ON public.schedule_items;
 CREATE POLICY "schedule_items_admin_all"
   ON public.schedule_items FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "schedule_items_client_select" ON public.schedule_items;
 CREATE POLICY "schedule_items_client_select"
   ON public.schedule_items FOR SELECT
   TO authenticated
@@ -204,11 +221,13 @@ CREATE POLICY "schedule_items_client_select"
 -- ============================================================
 ALTER TABLE public.estimates ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "estimates_admin_all" ON public.estimates;
 CREATE POLICY "estimates_admin_all"
   ON public.estimates FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "estimates_client_select" ON public.estimates;
 CREATE POLICY "estimates_client_select"
   ON public.estimates FOR SELECT
   TO authenticated
@@ -221,11 +240,13 @@ CREATE POLICY "estimates_client_select"
 -- ============================================================
 ALTER TABLE public.ledger_entries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "ledger_entries_admin_all" ON public.ledger_entries;
 CREATE POLICY "ledger_entries_admin_all"
   ON public.ledger_entries FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "ledger_entries_client_select" ON public.ledger_entries;
 CREATE POLICY "ledger_entries_client_select"
   ON public.ledger_entries FOR SELECT
   TO authenticated
@@ -245,6 +266,7 @@ CREATE POLICY "ledger_entries_client_select"
 -- ============================================================
 ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "materials_admin_all" ON public.materials;
 CREATE POLICY "materials_admin_all"
   ON public.materials FOR ALL
   TO authenticated
@@ -261,11 +283,13 @@ CREATE POLICY "materials_admin_all"
 -- ============================================================
 ALTER TABLE public.portfolio_projects ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "portfolio_admin_all" ON public.portfolio_projects;
 CREATE POLICY "portfolio_admin_all"
   ON public.portfolio_projects FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "portfolio_public_select" ON public.portfolio_projects;
 CREATE POLICY "portfolio_public_select"
   ON public.portfolio_projects FOR SELECT
   TO authenticated
@@ -278,6 +302,7 @@ CREATE POLICY "portfolio_public_select"
 -- ============================================================
 ALTER TABLE public.sub_contractors ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "sub_contractors_admin_all" ON public.sub_contractors;
 CREATE POLICY "sub_contractors_admin_all"
   ON public.sub_contractors FOR ALL
   TO authenticated
@@ -290,16 +315,19 @@ CREATE POLICY "sub_contractors_admin_all"
 -- ============================================================
 ALTER TABLE public.finish_selections ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "finish_selections_admin_all" ON public.finish_selections;
 CREATE POLICY "finish_selections_admin_all"
   ON public.finish_selections FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "finish_selections_client_select" ON public.finish_selections;
 CREATE POLICY "finish_selections_client_select"
   ON public.finish_selections FOR SELECT
   TO authenticated
   USING (client_id = public.client_id_for_user());
 
+DROP POLICY IF EXISTS "finish_selections_client_insert" ON public.finish_selections;
 CREATE POLICY "finish_selections_client_insert"
   ON public.finish_selections FOR INSERT
   TO authenticated
@@ -312,16 +340,19 @@ CREATE POLICY "finish_selections_client_insert"
 -- ============================================================
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "notifications_admin_all" ON public.notifications;
 CREATE POLICY "notifications_admin_all"
   ON public.notifications FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "notifications_recipient_select" ON public.notifications;
 CREATE POLICY "notifications_recipient_select"
   ON public.notifications FOR SELECT
   TO authenticated
   USING (recipient_id = auth.uid());
 
+DROP POLICY IF EXISTS "notifications_recipient_update" ON public.notifications;
 CREATE POLICY "notifications_recipient_update"
   ON public.notifications FOR UPDATE
   TO authenticated
@@ -335,11 +366,13 @@ CREATE POLICY "notifications_recipient_update"
 -- ============================================================
 ALTER TABLE public.vision_studio_requests ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "vision_requests_admin_all" ON public.vision_studio_requests;
 CREATE POLICY "vision_requests_admin_all"
   ON public.vision_studio_requests FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "vision_requests_owner_select" ON public.vision_studio_requests;
 CREATE POLICY "vision_requests_owner_select"
   ON public.vision_studio_requests FOR SELECT
   TO authenticated
@@ -352,6 +385,7 @@ CREATE POLICY "vision_requests_owner_select"
 -- ============================================================
 ALTER TABLE public.billing_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "billing_events_admin_all" ON public.billing_events;
 CREATE POLICY "billing_events_admin_all"
   ON public.billing_events FOR ALL
   TO authenticated
@@ -375,6 +409,7 @@ CREATE POLICY "billing_events_admin_all"
 -- ============================================================
 ALTER TABLE public.admin_emails ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "admin_emails_admin_all" ON public.admin_emails;
 CREATE POLICY "admin_emails_admin_all"
   ON public.admin_emails FOR ALL
   TO authenticated
@@ -387,16 +422,19 @@ CREATE POLICY "admin_emails_admin_all"
 -- ============================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "profiles_admin_all" ON public.profiles;
 CREATE POLICY "profiles_admin_all"
   ON public.profiles FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "profiles_self_select" ON public.profiles;
 CREATE POLICY "profiles_self_select"
   ON public.profiles FOR SELECT
   TO authenticated
   USING (id = auth.uid());
 
+DROP POLICY IF EXISTS "profiles_self_update" ON public.profiles;
 CREATE POLICY "profiles_self_update"
   ON public.profiles FOR UPDATE
   TO authenticated
@@ -410,11 +448,13 @@ CREATE POLICY "profiles_self_update"
 -- ============================================================
 ALTER TABLE public.site_plans ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "site_plans_admin_all" ON public.site_plans;
 CREATE POLICY "site_plans_admin_all"
   ON public.site_plans FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "site_plans_client_select" ON public.site_plans;
 CREATE POLICY "site_plans_client_select"
   ON public.site_plans FOR SELECT
   TO authenticated
@@ -433,16 +473,19 @@ CREATE POLICY "site_plans_client_select"
 -- ============================================================
 ALTER TABLE public.blueprint_connections ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "blueprint_connections_admin_all" ON public.blueprint_connections;
 CREATE POLICY "blueprint_connections_admin_all"
   ON public.blueprint_connections FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "blueprint_connections_self_select" ON public.blueprint_connections;
 CREATE POLICY "blueprint_connections_self_select"
   ON public.blueprint_connections FOR SELECT
   TO authenticated
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "blueprint_connections_self_update" ON public.blueprint_connections;
 CREATE POLICY "blueprint_connections_self_update"
   ON public.blueprint_connections FOR UPDATE
   TO authenticated
@@ -457,11 +500,13 @@ CREATE POLICY "blueprint_connections_self_update"
 -- ============================================================
 ALTER TABLE public.blueprint_artifacts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "blueprint_artifacts_admin_all" ON public.blueprint_artifacts;
 CREATE POLICY "blueprint_artifacts_admin_all"
   ON public.blueprint_artifacts FOR ALL
   TO authenticated
   USING (public.is_admin());
 
+DROP POLICY IF EXISTS "blueprint_artifacts_client_select" ON public.blueprint_artifacts;
 CREATE POLICY "blueprint_artifacts_client_select"
   ON public.blueprint_artifacts FOR SELECT
   TO authenticated
