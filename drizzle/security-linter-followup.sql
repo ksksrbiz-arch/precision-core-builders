@@ -75,28 +75,59 @@ REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC;
 -- Linter: rls_policy_always_true. All three carry an INSERT policy with
 -- WITH CHECK (true), letting the anon key write arbitrary rows.
 --
--- This is the SAME anti-pattern anon-policy-audit.sql was written to catch
--- after it happened once already on `leads` (see that file's header): a
--- generic "anon_insert" policy template applied to a table that should
--- only ever be written server-side. Per docs/CCB_COMPLIANCE.md §3.3 this
--- app never relies on anon-role access — public form submissions go
--- through a tRPC publicProcedure or a Netlify Function (service-role key),
--- exactly like netlify/functions/submission-created.ts does for the
--- Netlify Forms → `leads` path.
+-- UPDATE (after running 0c against the live project): this is NOT the
+-- `leads` anon-insert incident repeating. That one was a bare, unpaired
+-- "anon_insert" template with no corresponding read-side policy at all —
+-- a leftover, not a design. These three are different:
 --
--- DO NOT uncomment/run the DROPs below blind. This script has no way to
--- confirm whether some external integration (an embedded newsletter
--- widget, a click-tracking pixel, an n8n/Make scenario, etc.) is currently
--- relying on this exact anon-insert path with no server-side fallback —
--- dropping it would break that intake with zero warning. Confirm first
--- (check Netlify Forms config, n8n workflows, and anything embedded in the
--- marketing pages that posts to Supabase directly), stand up an equivalent
--- service-role insert path if one doesn't already exist, and only then
--- run:
+--   click_logs         click_logs_insert              INSERT  {public}  check=true
+--   email_subscribers  email_subscribers_insert        INSERT  {public}  check=true
+--   email_subscribers  email_subscribers_service_all   ALL     {public}  using=auth.role()='service_role'
+--   inquiries          public_can_insert_inquiries     INSERT  {public}  check=true
+--   inquiries          admins_can_read_inquiries       SELECT  {public}  using=EXISTS(...role='admin'...)
 --
--- DROP POLICY IF EXISTS "click_logs_insert" ON public.click_logs;
--- DROP POLICY IF EXISTS "email_subscribers_insert" ON public.email_subscribers;
--- DROP POLICY IF EXISTS "public_can_insert_inquiries" ON public.inquiries;
+-- `inquiries` and `email_subscribers` each pair the public insert with a
+-- real read-side policy (admin read / service-role management) — a
+-- complete, working design for public-form intake, just never committed
+-- to git. And this repo has zero code (grepped client + server + netlify
+-- functions) that reads or writes any of the three tables by name, so
+-- whatever inserts into them — an embedded widget, a marketing-site form,
+-- an external automation — is doing it directly against this anon-insert
+-- policy with NO service-role fallback in this codebase. Dropping these
+-- would break that intake outright. Do not drop them.
+--
+-- What IS worth doing, mirroring the is_admin()-exposure fix in
+-- rls-policies.sql: scope the read-side policies to `authenticated` so
+-- `anon` never needs to evaluate them (harmless today since the `using`
+-- clause already resolves false for anon's null auth.uid(), but it's the
+-- same defense-in-depth this repo already applies everywhere else).
+-- Idempotent — safe to re-run.
+DROP POLICY IF EXISTS "admins_can_read_inquiries" ON public.inquiries;
+CREATE POLICY "admins_can_read_inquiries"
+  ON public.inquiries FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users u
+      WHERE u.id = auth.uid() AND u.role = 'admin'::user_role
+    )
+  );
+-- email_subscribers_service_all is left as-is: service_role bypasses RLS
+-- entirely regardless of any policy, so this one is inert either way.
+--
+-- click_logs has NO read-side policy at all — right now nothing (other
+-- than the service-role key) can read it back, in Supabase or in this
+-- app. That may be intentional (write-only telemetry, read via Studio or
+-- an external BI tool) or an oversight (data being collected with no admin
+-- UI to see it). This script doesn't guess which — flag it to whoever owns
+-- the click-tracking integration and add a read policy once you know the
+-- intended consumer.
+--
+-- The WITH CHECK (true) on all three inserts is the accepted trade-off for
+-- unauthenticated public-form intake — Postgres RLS can constrain which
+-- *rows* get written, not rate-limit *how many*; that needs an app/edge
+-- layer (Netlify's form spam filtering, Cloudflare Turnstile, etc.), not a
+-- CHECK expression.
 
 -- ============================================================
 -- 3. auth_leaked_password_protection
