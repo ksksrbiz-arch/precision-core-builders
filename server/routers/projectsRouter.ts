@@ -5,6 +5,7 @@ import {
   createProject,
   deleteProject,
   getMyProject,
+  getPortfolioProfitability,
   getProfitabilitySources,
   getProjectById,
   getProjectRow,
@@ -263,4 +264,61 @@ export const projectsRouter = router({
         onBudget: variance >= 0,
       };
     }),
+
+  // Portfolio-wide profitability rollup. Moves ProfitabilityTable's
+  // client-side margin math server-side so the table and the analytics
+  // charts share one source of truth. Decimal columns arrive as strings, so
+  // every numeric field is coerced via `num()`.
+  profitabilitySummary: adminProcedure.query(async () => {
+    const num = (v: unknown): number => {
+      const x = typeof v === "string" ? parseFloat(v) : Number(v);
+      return Number.isFinite(x) ? x : 0;
+    };
+
+    const rows = await getPortfolioProfitability();
+
+    const projects = rows.map(p => {
+      const contracted = num(p.contracted_budget);
+      const estimated = num(p.estimated_budget);
+      const actualCost = num(p.actual_cost);
+      // Margin is measured against the contracted value when present,
+      // otherwise the estimate.
+      const basis = contracted || estimated;
+      const profit = basis - actualCost;
+      const marginPct = basis > 0 ? (profit / basis) * 100 : 0;
+      const variance = estimated > 0 ? actualCost - estimated : 0;
+      return {
+        id: p.id as number,
+        name: p.name as string,
+        status: (p.status ?? null) as string | null,
+        contracted,
+        estimated,
+        actualCost,
+        basis,
+        profit,
+        marginPct,
+        variance,
+        hasData: basis > 0 || actualCost > 0,
+      };
+    });
+
+    const totals = projects.reduce(
+      (acc, r) => {
+        acc.contracted += r.contracted;
+        acc.estimated += r.estimated;
+        acc.actualCost += r.actualCost;
+        acc.profit += r.profit;
+        acc.basis += r.basis;
+        return acc;
+      },
+      { contracted: 0, estimated: 0, actualCost: 0, profit: 0, basis: 0 }
+    );
+
+    // Blended portfolio margin over the same contracted-or-estimate basis
+    // each project's profit was measured against.
+    const marginPct =
+      totals.basis > 0 ? (totals.profit / totals.basis) * 100 : 0;
+
+    return { projects, totals: { ...totals, marginPct } };
+  }),
 });

@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import AiUsagePanel from "@/components/AiUsagePanel";
 import ProfitabilityTable from "@/components/ProfitabilityTable";
 import { trpc } from "@/lib/trpc";
-import { formatPercent } from "@/lib/formatters";
+import { formatCompactCurrency, formatPercent } from "@/lib/formatters";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -40,12 +40,8 @@ const COLORS = [
 ];
 const PROJECT_NAME_MAX_LEN = 20;
 
-function fmt(n: number | null | undefined) {
-  if (!n && n !== 0) return "—";
-  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
-  return `$${n.toFixed(0)}`;
-}
+// Shared compact-money formatter for KPI tiles and chart axis/tooltip labels.
+const fmt = (n: number | null | undefined) => formatCompactCurrency(n);
 
 function KPICard({
   label,
@@ -94,6 +90,8 @@ export default function Analytics() {
   const { data: stats, isError: statsError } = trpc.projects.stats.useQuery();
   const { data: allProjects, isError: projectsError } =
     trpc.projects.list.useQuery({ pageSize: 100 });
+  const { data: profitability, isError: profitabilityError } =
+    trpc.projects.profitabilitySummary.useQuery();
   const { data: weeklyReports, isError: reportsError } =
     trpc.fieldReports.weeklyStats.useQuery();
   const { data: shortages, isError: shortagesError } =
@@ -102,7 +100,11 @@ export default function Analytics() {
       pageSize: 100,
     });
   const anyError =
-    statsError || projectsError || reportsError || shortagesError;
+    statsError ||
+    projectsError ||
+    reportsError ||
+    shortagesError ||
+    profitabilityError;
 
   const totalEstimated = stats?.totalEstimated ?? 0;
   const totalActual = stats?.totalActual ?? 0;
@@ -141,6 +143,27 @@ export default function Analytics() {
       estimated: Number(p.estimated_budget ?? 0),
       actual: Number(p.actual_cost ?? 0),
       fill: COLORS[i % COLORS.length],
+    }));
+
+  // Per-project margin, from the server profitability summary (single source
+  // of truth for the profit/margin math).
+  const marginByProject = (profitability?.projects ?? [])
+    .filter(p => p.hasData && p.basis > 0)
+    .sort((a, b) => b.contracted - a.contracted)
+    .slice(0, 10)
+    .map(p => ({
+      name:
+        p.name.length > PROJECT_NAME_MAX_LEN
+          ? p.name.slice(0, PROJECT_NAME_MAX_LEN) + "…"
+          : p.name,
+      profit: p.profit,
+      margin: p.marginPct,
+      fill:
+        p.marginPct >= 20
+          ? "#6B8E23"
+          : p.marginPct >= 10
+            ? "#D4A574"
+            : "#C0392B",
     }));
 
   const totalReports = weeklyReports?.reduce((s, w) => s + w.reports, 0) ?? 0;
@@ -415,8 +438,74 @@ export default function Analytics() {
           </div>
         )}
 
+        {/* Margin by project */}
+        {marginByProject.length > 0 && (
+          <div className="bg-card border border-border/60 p-5 mb-6">
+            <p
+              className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-4"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Margin by Project (Top 10)
+            </p>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={marginByProject}
+                layout="vertical"
+                barSize={12}
+                margin={{ left: 0 }}
+              >
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 9, fill: "#7A7060" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={v => `${v.toFixed(0)}%`}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={120}
+                  tick={{ fontSize: 9, fill: "#7A7060" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 0,
+                    fontSize: 11,
+                  }}
+                  formatter={(value: number, name) =>
+                    name === "margin"
+                      ? [`${value.toFixed(1)}%`, "Margin"]
+                      : [formatCompactCurrency(value), "Profit"]
+                  }
+                />
+                <Bar dataKey="margin" name="margin" radius={[0, 2, 2, 0]}>
+                  {marginByProject.map((entry, i) => (
+                    <Cell key={i} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
         {/* Per-project profitability */}
-        <ProfitabilityTable projects={allProjects?.data ?? []} />
+        <ProfitabilityTable
+          projects={profitability?.projects ?? []}
+          totals={
+            profitability?.totals ?? {
+              contracted: 0,
+              estimated: 0,
+              actualCost: 0,
+              profit: 0,
+              basis: 0,
+              marginPct: 0,
+            }
+          }
+        />
 
         {/* Material shortages table */}
         {(shortages?.data ?? []).length > 0 && (
@@ -440,7 +529,7 @@ export default function Analytics() {
                     <p className="text-sm font-medium">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {m.vendor_name ?? "Unknown vendor"} ·{" "}
-                      {m.quantity_on_hand ?? 0}/{m.quantity_needed ?? "?"}{" "}
+                      {m.quantity_received ?? 0}/{m.quantity_needed ?? "?"}{" "}
                       {m.unit ?? "units"}
                     </p>
                   </div>
