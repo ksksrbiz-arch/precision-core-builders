@@ -135,7 +135,7 @@ describe("OnboardingWizard — reducer", () => {
         phase: "ai",
         update: {
           status: "verified",
-          data: { ANTHROPIC_API_KEY: "sk-ant-x" },
+          data: { GROQ_API_KEY: "gsk_x" },
         },
       });
       s = reducer(s, {
@@ -143,7 +143,7 @@ describe("OnboardingWizard — reducer", () => {
         phase: "ai",
         update: { verifiedAt: "2026-04-16T21:00:00Z" },
       });
-      expect(s.phases.ai.data?.ANTHROPIC_API_KEY).toBe("sk-ant-x");
+      expect(s.phases.ai.data?.GROQ_API_KEY).toBe("gsk_x");
       expect(s.phases.ai.verifiedAt).toBe("2026-04-16T21:00:00Z");
       expect(s.phases.ai.status).toBe("verified");
     });

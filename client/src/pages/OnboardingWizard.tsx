@@ -1256,23 +1256,23 @@ function AIPhase(props: {
       stepLabel="Step 5 of 7"
       title="AI Intelligence"
       description="Powers Voice-to-Report, the AI Estimator, Vision Studio, and the chat assistant."
-      serviceId="anthropic"
+      serviceId="groq"
       phaseId="ai"
-      accountUrl="https://console.anthropic.com/settings/keys"
-      accountUrlLabel="Get Anthropic API Key"
+      accountUrl="https://console.groq.com/keys"
+      accountUrlLabel="Get Groq API Key"
       instructions={[
         <>
-          Sign up at Anthropic. Google sign-in works if you'd rather not make a
+          Sign up at Groq. Google sign-in works if you'd rather not make a
           password.
         </>,
         <>
-          <strong>No credit card needed.</strong> Free-tier credits cover your
+          <strong>No credit card needed.</strong> Groq's free tier covers your
           usage.
         </>,
         <>
-          Click <strong>Create Key</strong>. Name it{" "}
+          Click <strong>Create API Key</strong>. Name it{" "}
           <code className="text-[#C8A84B]">precision-core-digital-foreman</code>
-          . Copy it right away — Anthropic only shows it once.
+          . Copy it right away — Groq only shows it once.
         </>,
         <>
           Paste it below and hit <strong>Verify</strong>.
@@ -1280,10 +1280,10 @@ function AIPhase(props: {
       ]}
       fields={[
         {
-          key: "ANTHROPIC_API_KEY",
-          label: "Anthropic API Key",
-          placeholder: "sk-ant-api03-...",
-          hint: "Starts with sk-ant-. About 100 characters long.",
+          key: "GROQ_API_KEY",
+          label: "Groq API Key (free)",
+          placeholder: "gsk_...",
+          hint: "Starts with gsk_. About 56 characters long.",
         },
       ]}
     />

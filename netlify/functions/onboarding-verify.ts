@@ -6,7 +6,7 @@
  * POST /api/onboarding-verify
  * Body: {
  *   onboardingToken: string,
- *   service: 'anthropic' | 'openweather' | 'stripe' | 'n8n' | 'supabase' | 'elevenlabs' | 'cloudflare_ai',
+ *   service: 'groq' | 'openweather' | 'stripe' | 'n8n' | 'supabase' | 'elevenlabs' | 'cloudflare_ai',
  *   credentials: Record<string, string>
  * }
  *
@@ -17,19 +17,10 @@ import { timingSafeEqualStr } from "./_lib/crypto";
 
 const ONBOARDING_TOKEN = process.env.ONBOARDING_TOKEN ?? "";
 
-async function verifyAnthropic(apiKey: string) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 10,
-      messages: [{ role: "user", content: "ping" }],
-    }),
+async function verifyGroq(apiKey: string) {
+  // Groq is OpenAI-compatible; listing models is a cheap, read-only auth check.
+  const res = await fetch("https://api.groq.com/openai/v1/models", {
+    headers: { Authorization: `Bearer ${apiKey}` },
   });
   if (res.status === 401) return { ok: false, message: "Invalid API key" };
   if (res.status === 429)
@@ -38,13 +29,15 @@ async function verifyAnthropic(apiKey: string) {
       message: "Key is valid (rate limit hit — that's fine)",
     };
   if (!res.ok) {
-    const err = (await res.json()) as { error?: { message?: string } };
+    const err = (await res.json().catch(() => ({}))) as {
+      error?: { message?: string };
+    };
     return {
       ok: false,
-      message: err.error?.message ?? `Anthropic returned ${res.status}`,
+      message: err.error?.message ?? `Groq returned ${res.status}`,
     };
   }
-  return { ok: true, message: "Anthropic key verified — AI features ready" };
+  return { ok: true, message: "Groq key verified — AI features ready" };
 }
 
 async function verifyOpenWeather(apiKey: string) {
@@ -226,8 +219,8 @@ export const handler: Handler = async event => {
 
     let result: { ok: boolean; message: string };
     switch (service) {
-      case "anthropic":
-        result = await verifyAnthropic(credentials.ANTHROPIC_API_KEY ?? "");
+      case "groq":
+        result = await verifyGroq(credentials.GROQ_API_KEY ?? "");
         break;
       case "openweather":
         result = await verifyOpenWeather(

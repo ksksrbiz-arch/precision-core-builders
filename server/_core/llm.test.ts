@@ -6,11 +6,9 @@ vi.mock("./env", () => ({
     groqApiKey: "",
     googleAiApiKey: "",
     openrouterApiKey: "",
-    anthropicApiKey: "",
     groqModel: "",
     geminiModel: "",
     openrouterModel: "",
-    anthropicModel: "",
     llmProviderOrder: "",
     siteUrl: "",
   },
@@ -52,11 +50,9 @@ function resetEnv() {
   ENV.groqApiKey = "";
   ENV.googleAiApiKey = "";
   ENV.openrouterApiKey = "";
-  ENV.anthropicApiKey = "";
   ENV.groqModel = "";
   ENV.geminiModel = "";
   ENV.openrouterModel = "";
-  ENV.anthropicModel = "";
   ENV.llmProviderOrder = "";
   ENV.siteUrl = "";
 }
@@ -104,8 +100,8 @@ afterEach(() => {
 describe("resolveProviderOrder", () => {
   it("defaults to free-first and filters to configured providers", () => {
     ENV.groqApiKey = "g";
-    ENV.anthropicApiKey = "a";
-    expect(resolveProviderOrder()).toEqual(["groq", "anthropic"]);
+    ENV.openrouterApiKey = "o";
+    expect(resolveProviderOrder()).toEqual(["groq", "openrouter"]);
   });
 
   it("returns empty when nothing is configured", () => {
@@ -115,11 +111,11 @@ describe("resolveProviderOrder", () => {
 
   it("honors LLM_PROVIDER_ORDER override", () => {
     ENV.groqApiKey = "g";
-    ENV.anthropicApiKey = "a";
+    ENV.openrouterApiKey = "o";
     ENV.googleAiApiKey = "ge";
-    ENV.llmProviderOrder = "anthropic,groq";
+    ENV.llmProviderOrder = "openrouter,groq";
     // Override comes first; remaining configured providers appended.
-    expect(resolveProviderOrder()).toEqual(["anthropic", "groq", "gemini"]);
+    expect(resolveProviderOrder()).toEqual(["openrouter", "groq", "gemini"]);
   });
 
   it("ignores unknown providers in the override list", () => {

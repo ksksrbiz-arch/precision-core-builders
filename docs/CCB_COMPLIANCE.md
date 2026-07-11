@@ -211,7 +211,9 @@ In the event of a suspected data breach:
 | Secret                    | Rotation Frequency                  |
 | ------------------------- | ----------------------------------- |
 | Supabase service-role key | Quarterly                           |
-| Anthropic API key         | Annually or on personnel change     |
+| Groq API key              | Annually or on personnel change     |
+| Google Gemini API key     | Annually or on personnel change     |
+| OpenRouter API key        | Annually or on personnel change     |
 | OpenWeatherMap API key    | Annually                            |
 | Stripe keys               | Annually or on suspected compromise |
 | n8n webhook secret        | Annually                            |

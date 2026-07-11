@@ -288,10 +288,10 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
 // ─── Action: Test AI Endpoint ────────────────────────────────────────────────
 
 const testAIEndpoint: ActionHandler = async () => {
-  // Exercise the same LLM router the app actually uses (Anthropic Claude
-  // primary, Google Gemini free-tier fallback) rather than a deprecated
-  // provider — otherwise this check can report failure while the real AI
-  // features work fine. invokeLLM throws a clear error when no key is set.
+  // Exercise the same LLM router the app actually uses (free-tier: Groq
+  // primary, Gemini + OpenRouter fallback) rather than a deprecated provider —
+  // otherwise this check can report failure while the real AI features work
+  // fine. invokeLLM throws a clear error when no key is set.
   const result = await invokeLLM({
     messages: [
       {

@@ -156,20 +156,6 @@ const SERVICES: ServiceKey[] = [
     prefix: "",
   },
   {
-    id: "anthropic_ai",
-    label: "Claude AI (Optional Upgrade)",
-    envKey: "ANTHROPIC_API_KEY",
-    icon: Shield,
-    description:
-      "Optional paid LLM upgrade. When set, takes precedence over Gemini. Leave blank to keep the free tier.",
-    optional: true,
-    guideSteps: [],
-    guideUrl: "",
-    urlLabel: "",
-    placeholder: "Optional — leave blank for free Gemini",
-    prefix: "sk-ant-",
-  },
-  {
     id: "openai",
     label: "OpenAI Whisper (Optional)",
     envKey: "OPENAI_API_KEY",

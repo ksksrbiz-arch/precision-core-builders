@@ -8,8 +8,13 @@
 import { db } from "../../server/db";
 import { withGuards } from "./_lib/http";
 
-/** Providers billed per-token. Everything else runs on a free tier. */
-const PAID_PROVIDERS = new Set(["anthropic"]);
+/**
+ * Providers billed per-token. The platform now runs entirely on free-tier
+ * providers (Groq / Gemini / OpenRouter), so this set is empty — every call
+ * counts as free. Kept as a set so a paid provider can be reintroduced without
+ * touching the aggregation logic below.
+ */
+const PAID_PROVIDERS = new Set<string>();
 
 type UsageRow = {
   feature: string | null;
