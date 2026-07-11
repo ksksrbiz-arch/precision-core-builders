@@ -4,6 +4,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   Check,
@@ -113,6 +114,15 @@ export default function FinishSelectionsAdmin() {
     success: "Deleted",
     error: "Delete Failed",
     invalidate: () => {
+      utils.finishSelections.list.invalidate();
+      utils.finishSelections.calcBudgetImpact.invalidate();
+    },
+  });
+
+  // Live updates: client approvals/changes refresh selections and budget impact.
+  useRealtimeTable({
+    table: "finish_selections",
+    onUpdate: () => {
       utils.finishSelections.list.invalidate();
       utils.finishSelections.calcBudgetImpact.invalidate();
     },

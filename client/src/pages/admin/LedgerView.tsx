@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatCurrency } from "@/lib/formatters";
 import { fmtDate } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
@@ -105,6 +106,12 @@ export default function LedgerView() {
         visibleToClient: true,
       });
     },
+  });
+
+  // Live updates: new ledger entries appear without a manual refresh.
+  useRealtimeTable({
+    table: "ledger_entries",
+    onUpdate: () => utils.ledger.list.invalidate(),
   });
 
   const fmtEntryDate = (d: string) =>

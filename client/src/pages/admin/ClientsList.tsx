@@ -18,6 +18,7 @@ import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useEntityForm } from "@/hooks/useEntityForm";
 import { usePagination } from "@/hooks/usePagination";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -79,6 +80,12 @@ export default function ClientsList() {
     error: "Delete Failed",
     errorMessage: "Failed to delete client. Please try again.",
     invalidate: () => utils.clients.list.invalidate(),
+  });
+
+  // Live updates: client records added/edited elsewhere refresh here.
+  useRealtimeTable({
+    table: "clients",
+    onUpdate: () => utils.clients.list.invalidate(),
   });
 
   return (
