@@ -363,6 +363,11 @@ export const materials = pgTable(
     vendorName: varchar("vendor_name", { length: 200 }),
     vendorSku: varchar("vendor_sku", { length: 100 }),
     vendorUrl: text("vendor_url"),
+    // Optional link to the standalone vendor catalog (additive — vendorName
+    // above remains the free-text snapshot).
+    vendorId: integer("vendor_id").references(() => vendors.id, {
+      onDelete: "set null",
+    }),
     poNumber: varchar("po_number", { length: 100 }),
     orderedAt: timestamp("ordered_at"),
     expectedDelivery: timestamp("expected_delivery"),
@@ -408,6 +413,38 @@ export const portfolioProjects = pgTable("portfolio_projects", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ─── Vendors (Supplier Catalog) ──────────────────────────────────────────────
+// Standalone, deduped supplier list Eric maintains. Materials and purchase
+// orders may reference a vendor via a nullable vendor_id FK (additive — the
+// existing free-text vendor columns on those tables are left intact).
+
+export const vendors = pgTable(
+  "vendors",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 200 }).notNull(),
+    contactName: varchar("contact_name", { length: 200 }),
+    email: varchar("email", { length: 320 }),
+    phone: varchar("phone", { length: 20 }),
+    website: text("website"),
+    address: text("address"),
+    category: varchar("category", { length: 120 }),
+    accountNumber: varchar("account_number", { length: 120 }),
+    paymentTerms: varchar("payment_terms", { length: 120 }),
+    notes: text("notes"),
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_vendors_name").on(t.name),
+    index("idx_vendors_category").on(t.category),
+  ]
+);
+
+export type Vendor = typeof vendors.$inferSelect;
+export type InsertVendor = typeof vendors.$inferInsert;
 
 // ─── 10. Sub-Contractors ──────────────────────────────────────────────────────
 
@@ -770,6 +807,11 @@ export const purchaseOrders = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     poNumber: varchar("po_number", { length: 100 }).notNull(),
     vendorName: varchar("vendor_name", { length: 200 }).notNull(),
+    // Optional link to the standalone vendor catalog (additive — vendorName
+    // above remains the free-text snapshot the PO was issued against).
+    vendorId: integer("vendor_id").references(() => vendors.id, {
+      onDelete: "set null",
+    }),
     status: purchaseOrderStatusEnum("status").default("draft").notNull(),
     subtotal: decimal("subtotal", { precision: 12, scale: 2 }),
     notes: text("notes"),

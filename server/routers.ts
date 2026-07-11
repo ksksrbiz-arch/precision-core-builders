@@ -15,6 +15,7 @@ import { purchaseOrdersRouter } from "./routers/purchaseOrdersRouter";
 import { scheduleRouter } from "./routers/scheduleRouter";
 import { sitePlansRouter } from "./routers/sitePlansRouter";
 import { subContractorsRouter } from "./routers/subContractorsRouter";
+import { vendorsRouter } from "./routers/vendorsRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -31,6 +32,7 @@ export const appRouter = router({
   materials: materialsRouter,
   purchaseOrders: purchaseOrdersRouter,
   subContractors: subContractorsRouter,
+  vendors: vendorsRouter,
   finishSelections: finishSelectionsRouter,
   notifications: notificationsRouter,
   portfolio: portfolioRouter,

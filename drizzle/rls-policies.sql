@@ -540,3 +540,15 @@ ALTER TABLE public.purchase_order_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "purchase_order_items_admin_all"
   ON public.purchase_order_items FOR ALL
   USING (public.is_admin());
+
+-- ============================================================
+-- 22. vendors (Supplier Catalog)
+--     • Admins: full access.
+--     • All others: no access (internal supplier data).
+-- ============================================================
+ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "vendors_admin_all" ON public.vendors;
+CREATE POLICY "vendors_admin_all"
+  ON public.vendors FOR ALL
+  USING (public.is_admin());
