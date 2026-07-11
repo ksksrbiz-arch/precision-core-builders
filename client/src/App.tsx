@@ -90,6 +90,7 @@ const FieldReportsList = lazy(() => import("./pages/admin/FieldReportsList"));
 const ClientsList = lazy(() => import("./pages/admin/ClientsList"));
 const ClientDetail = lazy(() => import("./pages/admin/ClientDetail"));
 const EstimatesList = lazy(() => import("./pages/admin/EstimatesList"));
+const EstimateEditor = lazy(() => import("./pages/admin/EstimateEditor"));
 const SubContractorsList = lazy(
   () => import("./pages/admin/SubContractorsList")
 );
@@ -198,6 +199,14 @@ function Router() {
         />
         <Route path="/admin/clients/:id" component={adminPage(ClientDetail)} />
         <Route path="/admin/clients" component={adminPage(ClientsList)} />
+        <Route
+          path="/admin/estimates/new"
+          component={adminPage(EstimateEditor)}
+        />
+        <Route
+          path="/admin/estimates/:id/edit"
+          component={adminPage(EstimateEditor)}
+        />
         <Route path="/admin/estimates" component={adminPage(EstimatesList)} />
         <Route
           path="/admin/sub-contractors"
