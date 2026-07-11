@@ -3,6 +3,7 @@
  * Client reviews and approves material/finish choices with real-time budget impact.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import PortalAssistant from "@/components/PortalAssistant";
@@ -86,6 +87,14 @@ export default function PortalFinishes() {
       projectId: project.id,
     });
   };
+
+  // Live: budget impact and selections update as Eric edits them
+  useRealtimeTable({
+    table: "finish_selections",
+    onUpdate: () => {
+      if (project?.id) refetchFinishes();
+    },
+  });
 
   const approveMut = trpc.finishSelections.clientApprove.useMutation({
     onSuccess: () => {

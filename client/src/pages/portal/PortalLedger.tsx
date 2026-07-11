@@ -3,6 +3,7 @@
  * Transparent record of all decisions, permits, inspections visible to this client.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { fmtDate } from "@/lib/formatters";
 import { PortalLayout } from "@/components/layout/PortalLayout";
@@ -42,6 +43,7 @@ const ENTRY_COLORS: Record<string, string> = {
 export default function PortalLedger() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
 
   // Portal clients use myProject; admins previewing the portal use list.
   const isAdmin = user?.role === "admin";
@@ -58,6 +60,15 @@ export default function PortalLedger() {
     { projectId: project?.id! },
     { enabled: !!project?.id }
   );
+
+  // Live: new ledger entries appear without manual refresh
+  useRealtimeTable({
+    table: "ledger_entries",
+    onUpdate: () => {
+      if (project?.id)
+        utils.ledger.listVisible.invalidate({ projectId: project.id });
+    },
+  });
 
   const formatEntryDate = (d: string) =>
     fmtDate(d, {

@@ -3,6 +3,7 @@
  * Shows the client their project estimates, payment milestones, and approval status.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { fmtDate } from "@/lib/formatters";
 import { SITE } from "@/const";
@@ -57,6 +58,7 @@ function formatDate(d: string | null | undefined) {
 export default function PortalPayments() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
 
   // Resolve the project the same way the portal dashboard does: portal clients
   // use the client-scoped `myProject`; admins previewing the portal use `list`.
@@ -76,6 +78,23 @@ export default function PortalPayments() {
       { projectId: project?.id },
       { enabled: !!user }
     );
+
+  // Live: estimates update as Eric authors or sends them
+  useRealtimeTable({
+    table: "estimates",
+    onUpdate: () => {
+      if (project?.id)
+        utils.estimates.listForClient.invalidate({ projectId: project.id });
+    },
+  });
+  // Live: paid-milestone state (derived from completion_percent) stays current
+  useRealtimeTable({
+    table: "projects",
+    onUpdate: () => {
+      utils.projects.myProject.invalidate();
+      if (isAdmin) utils.projects.list.invalidate();
+    },
+  });
 
   const estimates = estimatesResult?.data ?? [];
   const latestEstimate = estimates[0];
