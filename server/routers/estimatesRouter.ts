@@ -8,8 +8,29 @@ import {
   listEstimatesForClient,
   markEstimateApproved,
   markEstimateSent,
+  updateEstimate,
 } from "../_data/estimatesRepo";
 import { z } from "zod";
+
+/** Shared editable fields for authoring/editing an estimate (all optional). */
+const EstimateFields = z.object({
+  projectId: z.number().int().positive().optional(),
+  clientId: z.number().int().positive().optional(),
+  squareFootage: z.number().positive().optional(),
+  projectType: z.string().max(100).optional(),
+  complexity: z.enum(["low", "medium", "high"]).optional(),
+  materials: z.array(z.string()).optional(),
+  location: z.string().max(200).optional(),
+  additionalNotes: z.string().optional(),
+  estimatedLow: z.number().positive().optional(),
+  estimatedMid: z.number().positive().optional(),
+  estimatedHigh: z.number().positive().optional(),
+  laborCost: z.number().positive().optional(),
+  materialsCost: z.number().positive().optional(),
+  permitsCost: z.number().positive().optional(),
+  contingency: z.number().positive().optional(),
+  aiReasoning: z.string().optional(),
+});
 
 export const estimatesRouter = router({
   list: adminProcedure
@@ -26,29 +47,21 @@ export const estimatesRouter = router({
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => getEstimateById(input.id)),
 
-  // Protected: only authenticated users (admin saving AI estimates, portal approvals, etc.)
-  create: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.number().int().positive().optional(),
-        clientId: z.number().int().positive().optional(),
-        squareFootage: z.number().positive().optional(),
-        projectType: z.string().max(100).optional(),
-        complexity: z.enum(["low", "medium", "high"]).optional(),
-        materials: z.array(z.string()).optional(),
-        location: z.string().max(200).optional(),
-        additionalNotes: z.string().optional(),
-        estimatedLow: z.number().positive().optional(),
-        estimatedMid: z.number().positive().optional(),
-        estimatedHigh: z.number().positive().optional(),
-        laborCost: z.number().positive().optional(),
-        materialsCost: z.number().positive().optional(),
-        permitsCost: z.number().positive().optional(),
-        contingency: z.number().positive().optional(),
-        aiReasoning: z.string().optional(),
-      })
-    )
+  // Admin: author a new estimate from the admin editor. The public estimator
+  // persists via the estimate-project Netlify function (service role), not this
+  // mutation, so gating this to admins does not affect the lead-gen wizard.
+  create: adminProcedure
+    .input(EstimateFields)
     .mutation(async ({ input }) => createEstimate(input)),
+
+  // Admin: edit an existing estimate. Same optional fields as `create` plus the
+  // required target `id`.
+  update: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }).merge(EstimateFields))
+    .mutation(async ({ input }) => {
+      const { id, ...fields } = input;
+      return updateEstimate(id, fields);
+    }),
 
   markSent: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))

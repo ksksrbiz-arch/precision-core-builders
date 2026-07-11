@@ -83,6 +83,50 @@ export async function createEstimate(input: CreateEstimateInput) {
   return row;
 }
 
+/**
+ * Update an existing estimate. Mirrors `createEstimate`'s camel→snake column
+ * mapping but only writes the fields actually provided (partial update), so an
+ * edit never clobbers untouched columns. Bumps `updated_at`. Does NOT touch
+ * `sent_at`/`approved_at` send/approve semantics.
+ */
+export async function updateEstimate(id: number, input: CreateEstimateInput) {
+  const patch: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (input.projectId !== undefined) patch.project_id = input.projectId;
+  if (input.clientId !== undefined) patch.client_id = input.clientId;
+  if (input.squareFootage !== undefined)
+    patch.square_footage = input.squareFootage;
+  if (input.projectType !== undefined) patch.project_type = input.projectType;
+  if (input.complexity !== undefined) patch.complexity = input.complexity;
+  if (input.materials !== undefined)
+    patch.materials = input.materials ? JSON.stringify(input.materials) : null;
+  if (input.location !== undefined) patch.location = input.location;
+  if (input.additionalNotes !== undefined)
+    patch.additional_notes = input.additionalNotes;
+  if (input.estimatedLow !== undefined)
+    patch.estimated_low = input.estimatedLow;
+  if (input.estimatedMid !== undefined)
+    patch.estimated_mid = input.estimatedMid;
+  if (input.estimatedHigh !== undefined)
+    patch.estimated_high = input.estimatedHigh;
+  if (input.laborCost !== undefined) patch.labor_cost = input.laborCost;
+  if (input.materialsCost !== undefined)
+    patch.materials_cost = input.materialsCost;
+  if (input.permitsCost !== undefined) patch.permits_cost = input.permitsCost;
+  if (input.contingency !== undefined) patch.contingency = input.contingency;
+  if (input.aiReasoning !== undefined) patch.ai_reasoning = input.aiReasoning;
+
+  const { data: row, error } = await data
+    .from("estimates")
+    .update(patch)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return row;
+}
+
 export async function markEstimateSent(id: number) {
   const { data: row, error } = await data
     .from("estimates")

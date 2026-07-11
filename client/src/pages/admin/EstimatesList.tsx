@@ -25,6 +25,7 @@ import {
   Clock,
   DollarSign,
   FileDown,
+  Pencil,
   Send,
 } from "lucide-react";
 import { useState } from "react";
@@ -79,7 +80,7 @@ export default function EstimatesList() {
           description="Manage pricing proposals, send approvals, and monitor estimate lifecycle."
           actions={
             <button
-              onClick={() => setLocation("/estimator")}
+              onClick={() => setLocation("/admin/estimates/new")}
               className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
@@ -115,11 +116,11 @@ export default function EstimatesList() {
             </EmptyHeader>
             <EmptyContent>
               <button
-                onClick={() => setLocation("/estimator")}
+                onClick={() => setLocation("/admin/estimates/new")}
                 className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                + Run your first estimate
+                + Create your first estimate
               </button>
             </EmptyContent>
           </Empty>
@@ -212,6 +213,15 @@ export default function EstimatesList() {
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      onClick={() =>
+                        setLocation(`/admin/estimates/${est.id}/edit`)
+                      }
+                      className="flex w-full items-center justify-center gap-1.5 rounded border border-border/60 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </button>
                     <button
                       onClick={() => generateEstimatePdf(est)}
                       className="flex w-full items-center justify-center gap-1.5 rounded border border-border/60 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
@@ -343,6 +353,16 @@ export default function EstimatesList() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
+                            <button
+                              onClick={() =>
+                                setLocation(`/admin/estimates/${est.id}/edit`)
+                              }
+                              className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                              title="Edit estimate"
+                            >
+                              <Pencil className="h-3 w-3" /> Edit
+                            </button>
                             <button
                               onClick={() => generateEstimatePdf(est)}
                               className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
