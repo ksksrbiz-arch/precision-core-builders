@@ -1,7 +1,7 @@
 # Precision Core Builders: Development TODO
 
-**Last Updated:** April 23, 2026
-**Overall Progress:** 55% complete (Foundation ~95% | Operations ~40% | Portal/Features ~20-30% | Blueprint ✅ shipped)
+**Last Updated:** July 11, 2026
+**Overall Progress:** ~70% complete (Foundation ✅ | Operations ~60% | Portal/Features ~40% | Estimator UI, Lead Scoring, Stripe billing, Purchase Orders, Full-Text Search, Blueprint ✅ shipped)
 **Next Milestone:** Complete Phase 2 (Gantt chart + real-time updates)
 
 ---
@@ -59,36 +59,38 @@
   - No console errors on subscription
   - Graceful handling of disconnections
 
-### [CRITICAL-3] Complete Project Estimator UI Form
+### [CRITICAL-3] Complete Project Estimator UI Form ✅ _Shipped_
+
+Public estimator form plus admin estimate authoring/edit UI are live.
 
 - **Why Critical:** Public-facing lead generation tool; drives client acquisition
 - **File:** `client/src/pages/Estimator.tsx`
 - **Form Fields:**
-  - [ ] Project Type dropdown (New Home, Remodel, Addition, Repair, Custom)
-  - [ ] Square Footage input (optional, for sizing)
-  - [ ] Complexity selector (Basic, Standard, High-End)
-  - [ ] Material Preferences multi-select (budget-friendly, mid-range, premium)
-  - [ ] Location input (default: Eugene, OR)
-  - [ ] Additional Notes textarea
-  - [ ] Submit button
+  - [x] Project Type dropdown (New Home, Remodel, Addition, Repair, Custom)
+  - [x] Square Footage input (optional, for sizing)
+  - [x] Complexity selector (Basic, Standard, High-End)
+  - [x] Material Preferences multi-select (budget-friendly, mid-range, premium)
+  - [x] Location input (default: Eugene, OR)
+  - [x] Additional Notes textarea
+  - [x] Submit button
 - **Integration:**
-  - [ ] Call `/api/estimate-project` function on submit
-  - [ ] Display loading spinner while processing
-  - [ ] Show 3-tier results (Low/Mid/High)
-  - [ ] Render cost breakdown by category (Labor, Materials, Permits, Contingency)
-  - [ ] Show Claude's reasoning
-  - [ ] "Save Estimate" button (for authenticated users)
+  - [x] Call `/api/estimate-project` function on submit
+  - [x] Display loading spinner while processing
+  - [x] Show 3-tier results (Low/Mid/High)
+  - [x] Render cost breakdown by category (Labor, Materials, Permits, Contingency)
+  - [x] Show Claude's reasoning
+  - [x] "Save Estimate" button (for authenticated users)
 - **UI/UX:**
-  - [ ] Responsive design (mobile-first)
-  - [ ] Error messages for validation
-  - [ ] Success message after estimate
+  - [x] Responsive design (mobile-first)
+  - [x] Error messages for validation
+  - [x] Success message after estimate
   - [ ] Share estimate via email (optional)
   - [ ] Print-friendly format
 - **Testing:**
-  - [ ] Submit estimator form; verify API call succeeds
-  - [ ] Verify 3-tier pricing displays correctly
-  - [ ] Test with missing fields (should validate)
-  - [ ] Save estimate; verify stored in database
+  - [x] Submit estimator form; verify API call succeeds
+  - [x] Verify 3-tier pricing displays correctly
+  - [x] Test with missing fields (should validate)
+  - [x] Save estimate; verify stored in database
 - **Acceptance Criteria:**
   - Form submits and returns estimate within 5 seconds
   - Cost breakdown totals match overall estimate
@@ -334,42 +336,48 @@ See [`docs/integrations/blueprint.md`](docs/integrations/blueprint.md) for full 
 
 ## PHASE 4: Automation & Procurement (Priority 2 — Week 2)
 
-### [PHASE4-1] Implement AI Lead Scoring
+### [PHASE4-1] Implement AI Lead Scoring ✅ _Shipped_
 
-- **File:** Complete `netlify/functions/lead-score.ts`
+AI lead scoring + capture is live; scored leads persist in the `leads` table.
+
+- **File:** `netlify/functions/lead-score.ts`
 - **Algorithm:**
-  - [ ] Score based on project type (residential > commercial)
-  - [ ] Score based on budget (higher budget = higher priority)
-  - [ ] Score based on timeline (urgent = higher priority)
-  - [ ] Score based on complexity (high-end = higher priority)
+  - [x] Score based on project type (residential > commercial)
+  - [x] Score based on budget (higher budget = higher priority)
+  - [x] Score based on timeline (urgent = higher priority)
+  - [x] Score based on complexity (high-end = higher priority)
   - [ ] Score based on Eric's past success with similar projects
 - **Integration:**
-  - [ ] Call `lead-score` function when lead intake form submitted
-  - [ ] Store score in database (new `leads` table)
-  - [ ] Sort leads by score in Command Center
+  - [x] Call `lead-score` function when lead intake form submitted
+  - [x] Store score in database (`leads` table)
+  - [x] Sort leads by score in Command Center
 - **Testing:**
-  - [ ] Submit lead → verify score calculated
-  - [ ] Scores sort correctly (high to low)
-  - [ ] Score reasonably reflects lead quality
+  - [x] Submit lead → verify score calculated
+  - [x] Scores sort correctly (high to low)
+  - [x] Score reasonably reflects lead quality
 - **Acceptance Criteria:**
   - Leads automatically prioritized by score
   - Scoring algorithm transparent (show reasoning)
   - High-value leads highlighted for Eric
 
-### [PHASE4-2] Build Material Procurement UI
+### [PHASE4-2] Build Material Procurement UI — _PO generation shipped_
+
+Shortage detection and persisted, vendor-bucketed purchase orders are live
+(`purchase_orders` / `purchase_order_items` tables). Live vendor-pricing API
+integration and delivery tracking remain pending.
 
 - **File:** `client/src/pages/admin/MaterialsView.tsx`
 - **Components:**
-  - [ ] Inventory table (item, quantity, unit cost, vendor, status)
-  - [ ] Add new material form
+  - [x] Inventory table (item, quantity, unit cost, vendor, status)
+  - [x] Add new material form
   - [ ] Vendor multi-select
   - [ ] Bulk import from project estimate
-  - [ ] Generate Purchase Order (PDF or email)
+  - [x] Generate Purchase Order (persisted, vendor-bucketed)
   - [ ] Delivery tracking (expected vs actual)
 - **Integration:**
-  - [ ] Fetch materials via `materialsRouter.list()`
-  - [ ] Create new material via `materialsRouter.create()`
-  - [ ] Call `/api/material-procurement` to generate PO
+  - [x] Fetch materials via `materialsRouter.list()`
+  - [x] Create new material via `materialsRouter.create()`
+  - [x] Call `/api/material-procurement` to generate PO
   - [ ] Track delivery status in database
 - **Testing:**
   - [ ] Add material → saves to database
@@ -667,9 +675,9 @@ See [`docs/integrations/blueprint.md`](docs/integrations/blueprint.md) for full 
 | ------------------------------------ | -------------------- | ----------- | --------------------------------------- |
 | Supabase Realtime setup              | Real-time features   | Claude      | ⏳ Ready, pending implementation        |
 | n8n workflow creation                | Automation           | Eric/Claude | ⏳ Pending                              |
-| Stripe API integration               | Billing              | Claude      | ⏳ Scaffolded, pending completion       |
+| Stripe API integration               | Billing              | Claude      | ✅ Shipped (invoicing + webhook)        |
 | Vendor API keys (Home Depot, Lowe's) | Material procurement | Eric        | ⏳ Pending                              |
-| Netlify Identity setup               | Authentication       | Claude      | ⏳ Pending                              |
+| Supabase Auth setup                  | Authentication       | Claude      | ✅ Shipped (single JWT verifier)        |
 | Project photography                  | Portfolio            | Eric        | ⏳ Waiting for completed projects       |
 | Blueprint.am API credentials         | Blueprint OAuth      | Eric        | ⏳ Contact Blueprint for partner access |
 
