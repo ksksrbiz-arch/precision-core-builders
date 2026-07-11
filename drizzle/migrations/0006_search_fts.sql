@@ -12,6 +12,21 @@
 -- pg_trgm powers optional typo/fuzzy tolerance (available for future use).
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
+-- ─── IMMUTABLE enum→text helper ───────────────────────────────────────────────
+-- Casting an enum to text (`col::text`) calls the enum I/O function `enum_out`,
+-- which Postgres marks STABLE (labels can change via ALTER TYPE ... RENAME
+-- VALUE), so a bare `enum::text` is rejected inside an expression index with
+-- "functions in index expression must be marked IMMUTABLE" (42P17). We wrap the
+-- cast in an IMMUTABLE SQL function so it is usable in the GIN index below. This
+-- is safe in practice: enum labels are effectively constant; if one is ever
+-- renamed, REINDEX the affected index. The search_all query uses this same
+-- helper so its expression matches the index exactly (planner can use it).
+CREATE OR REPLACE FUNCTION immutable_enum_text(anyenum)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+AS $$ SELECT $1::text $$;
+
 -- ─── GIN expression indexes ───────────────────────────────────────────────────
 -- Each index's to_tsvector(...) expression must match the expression used by the
 -- search_all function EXACTLY, or the planner won't use the index. 'english' is
@@ -43,7 +58,7 @@ CREATE INDEX IF NOT EXISTS idx_materials_fts ON materials USING gin (
 CREATE INDEX IF NOT EXISTS idx_schedule_items_fts ON schedule_items USING gin (
   to_tsvector(
     'english',
-    coalesce(title, '') || ' ' || coalesce(task_type::text, '')
+    coalesce(title, '') || ' ' || coalesce(immutable_enum_text(task_type), '')
   )
 );
 
@@ -193,7 +208,7 @@ AS $$
         ts_rank(
           to_tsvector(
             'english',
-            coalesce(s.title, '') || ' ' || coalesce(s.task_type::text, '')
+            coalesce(s.title, '') || ' ' || coalesce(immutable_enum_text(s.task_type), '')
           ),
           tsq.query
         ) AS rank,
@@ -201,7 +216,7 @@ AS $$
       FROM schedule_items s, tsq
       WHERE to_tsvector(
               'english',
-              coalesce(s.title, '') || ' ' || coalesce(s.task_type::text, '')
+              coalesce(s.title, '') || ' ' || coalesce(immutable_enum_text(s.task_type), '')
             ) @@ tsq.query
       ORDER BY rank DESC
       LIMIT 5
