@@ -78,13 +78,38 @@ export const handler = withGuards(
       const persistedPoIds: Record<string, number> = {};
       const clearedMaterialIds = new Set<number>();
       try {
+        // Resolve vendor_id from the vendors catalog by name (case-insensitive).
+        // Best-effort: if the select fails, the table is empty, or no name
+        // matches, vendor_id stays null and POs persist exactly as before.
+        // Isolated in its own try/catch so a rejected select never skips PO
+        // persistence.
+        const vendorIdByName = new Map<string, number>();
+        try {
+          const { data: vendorRows } = await db
+            .from("vendors")
+            .select("id,name");
+          for (const v of vendorRows ?? []) {
+            if (v?.name == null) continue;
+            vendorIdByName.set(String(v.name).trim().toLowerCase(), v.id);
+          }
+        } catch (vendorErr) {
+          console.warn(
+            "[material-procurement] vendor_id resolution skipped:",
+            vendorErr
+          );
+        }
+
         for (const po of purchaseOrders) {
+          const vendorId =
+            vendorIdByName.get(po.vendor.trim().toLowerCase()) ?? null;
+
           const { data: poRow, error: poErr } = await db
             .from("purchase_orders")
             .insert({
               project_id: projectId,
               po_number: po.id,
               vendor_name: po.vendor,
+              vendor_id: vendorId,
               status: "draft",
               subtotal: po.total,
             })
@@ -120,6 +145,7 @@ export const handler = withGuards(
               .from("materials")
               .update({
                 po_number: po.id,
+                vendor_id: vendorId,
                 quantity_ordered: material?.quantity_needed ?? undefined,
                 ordered_at: new Date().toISOString(),
                 is_shortage: false,
