@@ -11,13 +11,14 @@ All backend logic runs as Netlify Functions, providing:
 - Edge deployment
 - Zero server management
 
-## Required Functions (Per CLAUDE.md)
+## Core Functions
 
-The following serverless functions need to be implemented:
+These serverless functions are **implemented and deployed** (20+ functions live in
+this directory). Key endpoints:
 
 ### 1. Voice-to-Report (`voice-to-report.ts`)
 
-Accepts audio file, transcribes with Whisper, generates field report with Gemini.
+Accepts audio file, transcribes with Whisper, generates field report with Claude.
 
 **Endpoint:** `POST /api/voice-to-report`
 
@@ -62,21 +63,19 @@ Calculates real-time cost ranges based on project parameters.
 }
 ```
 
-**Response:**
+**Response:** flat fields (the LLM returns this exact JSON; the function also
+attaches `savedEstimate` when a `projectId`/`clientId` is supplied):
 
 ```typescript
 {
-  estimatedCost: {
-    low: number,
-    mid: number,
-    high: number
-  },
-  breakdown: {
-    labor: number,
-    materials: number,
-    permits: number,
-    contingency: number
-  }
+  estimatedLow: number,
+  estimatedMid: number,
+  estimatedHigh: number,
+  laborCost: number,
+  materialsCost: number,
+  permitsCost: number,
+  contingency: number,
+  aiReasoning: string
 }
 ```
 

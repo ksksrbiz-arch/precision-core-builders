@@ -1,5 +1,13 @@
 # Precision Core Builders: Platform Audit & Status Report
 
+> **⚠️ Historical snapshot (April 2026).** This audit reflects the platform as of
+> April 6, 2026 and is preserved for reference only. It has been **superseded by
+> subsequent work** — including the vendor-bucketed purchase-order persistence,
+> Postgres full-text search, admin estimate authoring/edit UI, Stripe billing +
+> ledger reconciliation, lead scoring & capture, and the auth consolidation onto
+> a single JWT verifier. Function/router/table counts and "pending" items below
+> are stale; see `CLAUDE.md` and `TODO.md` for current status.
+
 **Date:** April 6, 2026  
 **Auditor:** Claude  
 **Build Status:** ✅ Passing (10.82s)  

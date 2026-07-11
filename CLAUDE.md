@@ -20,7 +20,7 @@ This document primes AI assistants with the codebase structure, development work
 
 ## 2. Current Implementation Status
 
-> **Phase 1 is 95% complete.** Foundation, design system, pages, routers, and Netlify Functions are built. Phase 2-5 features are 15-40% complete depending on feature.
+> **Phase 1 is complete and the core operational feature set has shipped.** The stack has migrated to Supabase Postgres + Supabase Auth + Netlify Functions + Drizzle ORM. Field reporting, estimating, scheduling, AI features, lead scoring, billing, and procurement are all built and running. Remaining work is UI polish, real-time subscriptions in more pages, and select automation/analytics items.
 
 ### What's Built
 
@@ -29,55 +29,56 @@ This document primes AI assistants with the codebase structure, development work
 - ✅ DashboardLayout, ErrorBoundary, Map, VoiceRecorder, HeroSection, PWAInstallPrompt
 - ✅ Tailwind CSS 4 design system with custom "Quiet Luxury" theme
 - ✅ Netlify deployment configuration with security headers
-- ✅ tRPC 11 router structure with 11 routers, 1,500+ lines of API code
-- ✅ 12 production-ready PostgreSQL tables via Drizzle ORM with RLS
-- ✅ 9 Netlify Functions (voice-to-report, estimate-project, weather-schedule, ai-chat, vision-studio, etc.)
+- ✅ tRPC 11 router structure with 15 feature routers plus `system`/`auth`
+- ✅ 15+ production-ready PostgreSQL tables via Drizzle ORM (Supabase) with RLS
+- ✅ 20+ Netlify Functions (voice-to-report, estimate-project, weather-schedule, ai-chat, vision-studio, lead-score, stripe-billing, stripe-webhook, material-procurement, search, etc.)
 - ✅ Full type safety (0 TypeScript errors, 100% tRPC coverage)
 - ✅ GitHub → Netlify CI/CD pipeline working
-- ✅ Supabase Auth scaffolded with admin/user role system
+- ✅ Supabase Auth with admin/user role system, consolidated onto a single JWT verifier
 
 ### What's Implemented & Tested
 
-- ✅ **Voice-to-Report:** Recording → Whisper transcription → Claude report generation → DB save (90% done)
-- ✅ **Estimator:** Project details → Claude cost calculation → 3-tier pricing with breakdown (90% done)
-- ✅ **Weather Scheduling:** OpenWeatherMap forecast → weather-sensitive task identification (85% done)
-- ✅ **AI Chat:** Claude conversation interface (85% done)
-- ✅ **Vision Studio:** Photo analysis with 2+ modes (80% done)
-- ✅ **Real-time Architecture:** Supabase Realtime configured (pending implementation in pages)
+- ✅ **Voice-to-Report:** Recording → Whisper transcription → Claude report generation → DB save
+- ✅ **Estimator:** Project details → Claude cost calculation → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI
+- ✅ **Weather Scheduling:** OpenWeatherMap forecast → weather-sensitive task identification
+- ✅ **AI Chat:** Claude conversation interface
+- ✅ **Vision Studio:** Photo analysis with multiple modes
+- ✅ **Lead Scoring & Capture:** AI-scored, persisted lead prioritization board
+- ✅ **Stripe Billing:** Invoicing + webhook-driven ledger reconciliation
+- ✅ **Material Procurement:** Shortage detection + persisted, vendor-bucketed purchase orders
+- ✅ **Search:** Postgres full-text search across projects, clients, reports, and more
+- ✅ **Notifications:** Delivery pipeline (in-app / email / SMS via n8n)
+- ✅ **Blueprint Integration:** OAuth + API-key connect, artifact sharing (flag-gated by `VITE_FEATURE_BLUEPRINT`)
 
 ### What's Scaffolded / Pending
 
-⏳ **Missing Core Features:**
+⏳ **Remaining Work:**
 
-- Gantt chart with drag-and-drop (critical blocker)
-- Real-time updates in portal/admin pages (architecture ready, implementation pending)
-- Field report publishing workflow (form ready, publish logic pending)
-- Client portal dashboard (structure ready, real-time data pending)
-- Digital finish showroom (structure ready, product catalog pending)
-- Stripe billing integration (API structure ready, workflow pending)
-- n8n automation workflows (URLs configured, workflows pending)
-- Lead scoring algorithm (scaffold only)
-- Material procurement vendor integration (scaffold only)
-- Portfolio showcase with images (structure ready, project data pending)
+- Gantt chart with drag-and-drop
+- Real-time updates in remaining portal/admin pages (architecture ready, rollout in progress)
+- Client portal dashboard polish (structure and data live, UX refinement pending)
+- Digital finish showroom product catalog population
+- n8n automation workflow authoring (functions and webhook wiring in place)
+- Portfolio showcase content/images (structure and admin CRUD ready, project data pending)
 
 ---
 
 ## 3. Technical Architecture (Actual Stack)
 
-| Layer               | Technology                                           | Notes                                        |
-| :------------------ | :--------------------------------------------------- | :------------------------------------------- |
-| **Frontend**        | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion   | shadcn/ui + Radix primitives for components  |
-| **Routing**         | Wouter 3.3                                           | Lightweight client-side router               |
-| **State/Data**      | tRPC 11 + React Query 5                              | End-to-end type-safe API calls               |
-| **Backend**         | Netlify Functions                                    | Serverless; Express scaffolding is legacy    |
-| **Database**        | Netlify extension (e.g., Neon Postgres, PlanetScale) | Use whichever Netlify DB extension fits best |
-| **Authentication**  | Netlify Identity                                     | Native Netlify auth extension                |
-| **Storage**         | Netlify Blobs                                        | Native Netlify file/object storage           |
-| **Forms**           | React Hook Form + Zod 4                              | Type-safe validation                         |
-| **Charts**          | Recharts 2                                           | Data visualization                           |
-| **Platform**        | GitHub → Netlify                                     | CI/CD with edge deployment                   |
-| **Integrations**    | blueprint.am (optional, feature-flagged)             | See `docs/integrations/blueprint.md`         |
-| **Package Manager** | pnpm 10.4.1                                          | Strict, fast, workspace-ready                |
+| Layer               | Technology                                         | Notes                                          |
+| :------------------ | :------------------------------------------------- | :--------------------------------------------- |
+| **Frontend**        | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion | shadcn/ui + Radix primitives for components    |
+| **Routing**         | Wouter 3.3                                         | Lightweight client-side router                 |
+| **State/Data**      | tRPC 11 + React Query 5                            | End-to-end type-safe API calls                 |
+| **Backend**         | Netlify Functions                                  | Serverless; legacy Express scaffolding retired |
+| **Database**        | Supabase (PostgreSQL) via Drizzle ORM              | RLS-enforced; migrations via `pnpm db:push`    |
+| **Authentication**  | Supabase Auth                                      | JWT-based, admin/user roles, single verifier   |
+| **Storage**         | Supabase Storage                                   | Media/object storage (image + PDF URLs)        |
+| **Forms**           | React Hook Form + Zod 4                            | Type-safe validation                           |
+| **Charts**          | Recharts 2                                         | Data visualization                             |
+| **Platform**        | GitHub → Netlify                                   | CI/CD with edge deployment                     |
+| **Integrations**    | blueprint.am (optional, feature-flagged)           | See `docs/integrations/blueprint.md`           |
+| **Package Manager** | pnpm 10.4.1                                        | Strict, fast, workspace-ready                  |
 
 ### 3.0. Service Architecture Principle
 
@@ -92,25 +93,41 @@ This document primes AI assistants with the codebase structure, development work
 
 ### 3.1. Server Architecture
 
-Backend logic runs as **Netlify Functions** (serverless). The existing Express server in `server/_core/index.ts` is legacy scaffolding from the initial Manus setup and will be replaced.
+Backend logic runs as **Netlify Functions** (serverless). The tRPC app router is served from `netlify/functions/trpc.ts`; the legacy Manus Express server has been retired.
 
-**Target architecture:**
+**Architecture:**
 
 ```
 Netlify Functions (netlify/functions/)
-├── API endpoints (tRPC or REST, routed via netlify.toml)
-├── AI/LLM calls (Gemini, Whisper)
-├── Scheduled tasks (weather checks, procurement)
-└── Webhooks (n8n, notifications)
+├── tRPC handler (trpc.ts) exposing the app router
+├── AI/LLM calls (Claude via Anthropic SDK, Whisper transcription)
+├── Feature endpoints (estimate-project, lead-score, search, stripe-*, etc.)
+├── Scheduled tasks (daily-briefing, weather checks, procurement)
+└── Webhooks (Stripe, n8n, Netlify form submissions, notifications)
 ```
 
-**tRPC Router structure** (`server/routers.ts`) — carried forward into Netlify Functions:
+**tRPC Router structure** (`server/routers.ts`) — served via Netlify Functions:
 
 ```typescript
 appRouter = {
-  system: { health, notifyOwner },
-  auth: { me, logout },
-  // Feature routers go here (not yet implemented)
+  system, // health, notifyOwner
+  auth, // me
+  // 15 feature routers:
+  projects,
+  clients,
+  fieldReports,
+  schedule,
+  estimates,
+  ledger,
+  leads,
+  materials,
+  purchaseOrders,
+  subContractors,
+  finishSelections,
+  notifications,
+  portfolio,
+  sitePlans,
+  blueprint,
 };
 ```
 
@@ -122,32 +139,34 @@ appRouter = {
 
 ### 3.2. Authentication
 
-Use **Netlify Identity** for authentication. The existing custom OAuth flow (`server/_core/oauth.ts`, `server/_core/sdk.ts`) is legacy Manus scaffolding to be replaced.
+Authentication is handled by **Supabase Auth** (JWT-based). Auth verification is consolidated onto a single server-side verifier; the legacy Manus OAuth flow has been removed.
 
 - Eric is `role = 'admin'`; clients are `role = 'user'`
-- Netlify Identity handles signup, login, password reset, OAuth providers
-- Access control enforced via tRPC middleware and Netlify Identity JWT
+- Supabase Auth handles signup, login, password reset, and sessions
+- Admin role is resolved via the `users.role` column and the `admin_emails` allowlist
+- Access control enforced via tRPC middleware (`protectedProcedure` / `adminProcedure`) against the Supabase JWT
 
 ### 3.3. Database
 
-Use a **Netlify database extension** (e.g., Neon Postgres, PlanetScale, Supabase) managed via the Netlify dashboard. The current MySQL schema in `drizzle/schema.ts` is legacy scaffolding — the Drizzle ORM setup will be adapted to whichever Netlify DB extension is chosen.
+The database is **Supabase (PostgreSQL)**, accessed via **Drizzle ORM**. The schema in `drizzle/schema.ts` is Postgres (not MySQL), with row-level security (RLS) policies enforced. Migrations run via `pnpm db:push` once `SUPABASE_URL` + `DATABASE_URL` are set.
 
-**Current schema** (legacy, single `users` table — to be rebuilt):
+**Live schema** (`drizzle/schema.ts`) — 15+ tables, all with RLS:
 
-```
-users (legacy Manus table, to be replaced with Netlify Identity)
-```
-
-**Planned tables** (add to `drizzle/schema.ts` as features are built):
-
-- `projects` — Project metadata, budget, timeline, status
+- `users`, `admin_emails`, `profiles` — identity (extends Supabase Auth) + admin allowlist
 - `clients` — Client contact info, project history
+- `projects` — Project metadata, budget, timeline, status
 - `field_reports` — Voice memos, transcriptions, summaries
-- `materials` — Inventory, vendors, pricing
-- `schedule_items` — Gantt chart tasks, dependencies
-- `estimates` — Project cost breakdowns
+- `schedule_items` — Gantt tasks, dependencies, weather sensitivity
+- `estimates` — Project cost breakdowns (3-tier + category costs)
 - `ledger_entries` — Immutable decision/cost log
-- `portfolio_projects` — Completed project showcase
+- `materials` — Inventory, vendors, pricing, shortages
+- `purchase_orders` / `purchase_order_items` — Persisted, vendor-bucketed POs
+- `leads` — AI-scored lead prioritization board
+- `sub_contractors`, `finish_selections`, `notifications`, `portfolio_projects`
+- `site_plans` — Excalidraw canvas data
+- `vision_studio_requests`, `ai_usage` — AI analysis + usage tracking
+- `billing_events` — Stripe webhook records
+- `blueprint_connections` / `blueprint_artifacts` — Blueprint.am integration (tokens encrypted at rest)
 
 ---
 
@@ -316,40 +335,40 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 
 ## 7. Implementation Roadmap
 
-### Phase 1: Foundation (Design System + Auth) — **In Progress**
+### Phase 1: Foundation (Design System + Auth) — **Complete**
 
 - [x] Tailwind CSS 4 with custom color palette and typography
-- [x] OAuth authentication with role-based access (admin/user)
+- [x] Supabase Auth with role-based access (admin/user)
 - [x] DashboardLayout component
 - [ ] Landing page with full "Quiet Luxury" aesthetic (basic Home.tsx exists)
 
 ### Phase 2: Core Operations (Field Reporting + Scheduling)
 
-- [ ] Voice-to-report system (Whisper + Gemini via Netlify Functions)
+- [x] Voice-to-report system (Whisper + Claude via Netlify Functions)
 - [ ] Gantt chart component with weather-responsive logic
-- [ ] Field report UI for Eric to review and publish
+- [x] Field report UI for Eric to review and publish
 - [ ] Real-time updates to client portal
 
 ### Phase 3: Client Experience (Portal + Estimator)
 
 - [ ] Client portal with live project timeline
 - [ ] Digital finish selection manager with budget impact display
-- [ ] AI Project Estimator with real-time cost calculations
-- [ ] "Core Values" ledger for transparent decision tracking
+- [x] AI Project Estimator with real-time cost calculations (+ admin authoring/edit UI)
+- [x] "Core Values" ledger for transparent decision tracking
 
 ### Phase 4: Automation (Procurement + Sub-Contractors)
 
-- [ ] Material procurement system with vendor integration
+- [x] Material procurement system with persisted purchase orders
 - [ ] n8n workflows for sub-contractor scheduling and comms
-- [ ] Automated billing and milestone-based invoicing
-- [ ] SMS/Email notification system
+- [x] Automated billing and milestone-based invoicing (Stripe)
+- [x] SMS/Email/in-app notification system
 
 ### Phase 5: Analytics & Portfolio (Command Center + Showcase)
 
-- [ ] Owner Command Center dashboard with AI lead prioritization
+- [x] Owner Command Center dashboard with AI lead prioritization
 - [ ] Profitability tracking (estimated vs. actual costs)
 - [ ] Project portfolio showcase with 360 walkthroughs
-- [ ] LLM-powered search for operational queries
+- [x] Postgres full-text search for operational queries
 
 ---
 
@@ -430,17 +449,21 @@ Netlify is the **sole infrastructure platform**. All services are managed throug
 
 ---
 
-## 10. Planned Netlify Functions
+## 10. Netlify Functions
 
-These functions are documented in `netlify/functions/` but **not yet implemented**:
+These functions are **implemented** in `netlify/functions/` (20+ total). A representative subset:
 
 | Function                   | Purpose                                                            |
 | :------------------------- | :----------------------------------------------------------------- |
-| `voice-to-report`          | Whisper transcription + Gemini report generation                   |
+| `voice-to-report`          | Whisper transcription + Claude report generation                   |
 | `estimate-project`         | Real-time cost calculation from project params                     |
-| `weather-schedule`         | Eugene, OR weather → Gantt chart adjustments                       |
-| `material-procurement`     | Phase tracking, PO drafts, vendor pricing                          |
+| `weather-schedule`         | Eugene, OR weather → schedule adjustments                          |
+| `material-procurement`     | Shortage tracking + persisted purchase-order generation            |
 | `lead-score`               | AI lead prioritization by type/budget/location                     |
+| `stripe-billing`           | Invoice creation and billing actions                               |
+| `stripe-webhook`           | Stripe events → ledger/billing reconciliation                      |
+| `search`                   | Postgres full-text search across entities                          |
+| `daily-briefing`           | Scheduled morning operations briefing                              |
 | `blueprint-oauth-callback` | Blueprint.am OAuth redirect handler (token exchange)               |
 | `blueprint-proxy`          | Authenticated proxy to the Blueprint API (tokens server-side only) |
 
