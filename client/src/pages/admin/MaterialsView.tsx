@@ -48,6 +48,23 @@ type PurchaseOrder = {
   total: number;
 };
 
+const PO_STATUSES = [
+  "draft",
+  "issued",
+  "partial",
+  "received",
+  "cancelled",
+] as const;
+type PoStatus = (typeof PO_STATUSES)[number];
+
+const PO_STATUS_STYLES: Record<PoStatus, string> = {
+  draft: "border-border/60 text-muted-foreground",
+  issued: "border-primary/40 text-primary",
+  partial: "border-amber-400/40 text-amber-400",
+  received: "border-green-400/40 text-green-400",
+  cancelled: "border-red-400/40 text-red-400",
+};
+
 export default function MaterialsView() {
   const isMobile = useIsMobile();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
@@ -81,6 +98,24 @@ export default function MaterialsView() {
     pageSize: 100,
   });
   const utils = trpc.useUtils();
+  const {
+    data: purchaseOrdersData,
+    isLoading: poLoading,
+    isError: poIsError,
+    refetch: refetchPOs,
+  } = trpc.purchaseOrders.list.useQuery({
+    projectId: selectedProject ?? undefined,
+  });
+  const updatePOStatus = useMutationWithToast(
+    trpc.purchaseOrders.updateStatus.useMutation(),
+    {
+      success: "Status Updated",
+      successMessage: "Purchase order status updated.",
+      error: "Update Failed",
+      errorMessage: "Failed to update purchase order status.",
+      onSuccess: () => utils.purchaseOrders.list.invalidate(),
+    }
+  );
   const appendLedger = trpc.ledger.append.useMutation({
     onError: err => {
       addToast({
@@ -183,6 +218,8 @@ export default function MaterialsView() {
         }).catch(() => {});
 
         refetch();
+        // Surface the freshly persisted POs in the table below.
+        utils.purchaseOrders.list.invalidate();
       } else {
         addToast({
           type: "info",
@@ -209,6 +246,17 @@ export default function MaterialsView() {
     n != null
       ? `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : "—";
+
+  const fmtDate = (d: string | null | undefined) =>
+    d
+      ? new Date(d).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "—";
+
+  const persistedPOs = purchaseOrdersData?.data ?? [];
 
   const filtered = (materials?.data ?? []).filter(
     m =>
@@ -287,10 +335,10 @@ export default function MaterialsView() {
               className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-1"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              POs Generated
+              Purchase Orders
             </p>
             <p className="text-2xl font-bold text-primary">
-              {purchaseOrders.length}
+              {purchaseOrdersData?.total ?? persistedPOs.length}
             </p>
           </div>
         </div>
@@ -615,6 +663,186 @@ export default function MaterialsView() {
             ))}
           </div>
         )}
+
+        {/* Persisted Purchase Orders */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <p
+              className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Purchase Orders
+            </p>
+            {selectedProject && (
+              <button
+                onClick={() => refetchPOs()}
+                className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <RefreshCw className="h-3 w-3" /> Refresh
+              </button>
+            )}
+          </div>
+
+          {poLoading && (
+            <div className="border border-border/60 p-4 space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!poLoading && poIsError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Couldn't load purchase orders</AlertTitle>
+              <AlertDescription>
+                <button
+                  onClick={() => refetchPOs()}
+                  className="mt-1 flex items-center gap-2 text-[11px] border border-border/60 text-muted-foreground px-3 py-1.5 tracking-wider uppercase hover:border-primary/40 hover:text-primary transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <RefreshCw className="h-3 w-3" /> Retry
+                </button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!poLoading && !poIsError && persistedPOs.length === 0 && (
+            <div className="border border-border/60 border-dashed p-6 text-center">
+              <FileText className="mx-auto mb-2 h-5 w-5 text-muted-foreground/50" />
+              <p className="text-xs text-muted-foreground">
+                No purchase orders yet. Generate one from material shortages
+                above.
+              </p>
+            </div>
+          )}
+
+          {!poLoading && !poIsError && persistedPOs.length > 0 && (
+            <div className="border border-border/60 overflow-hidden">
+              {isMobile ? (
+                <div className="space-y-3 p-3">
+                  {persistedPOs.map(po => (
+                    <div
+                      key={po.id}
+                      className="rounded border border-border/40 bg-background/30 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            {po.po_number}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {po.vendor_name}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-primary">
+                          {fmtCurrency(po.subtotal)}
+                        </p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground">
+                          {fmtDate(po.created_at)}
+                        </span>
+                        <select
+                          value={po.status}
+                          disabled={updatePOStatus.isPending}
+                          onChange={e =>
+                            updatePOStatus.mutate({
+                              id: po.id,
+                              status: e.target.value as PoStatus,
+                            })
+                          }
+                          className={`border bg-input px-2 py-1 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-primary/60 disabled:opacity-50 ${
+                            PO_STATUS_STYLES[po.status as PoStatus] ??
+                            "border-border/60 text-muted-foreground"
+                          }`}
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {PO_STATUSES.map(s => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/30 border-b border-border/40">
+                      {[
+                        "PO Number",
+                        "Vendor",
+                        "Subtotal",
+                        "Created",
+                        "Status",
+                      ].map(h => (
+                        <th
+                          key={h}
+                          className="px-4 py-3 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {persistedPOs.map(po => (
+                      <tr
+                        key={po.id}
+                        className="border-b border-border/20 last:border-0 hover:bg-card/50 transition-colors"
+                      >
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {po.po_number}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {po.vendor_name}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-foreground">
+                          {fmtCurrency(po.subtotal)}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {fmtDate(po.created_at)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={po.status}
+                            disabled={updatePOStatus.isPending}
+                            onChange={e =>
+                              updatePOStatus.mutate({
+                                id: po.id,
+                                status: e.target.value as PoStatus,
+                              })
+                            }
+                            className={`border bg-input px-2 py-1 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-primary/60 disabled:opacity-50 ${
+                              PO_STATUS_STYLES[po.status as PoStatus] ??
+                              "border-border/60 text-muted-foreground"
+                            }`}
+                            style={{ fontFamily: "var(--font-condensed)" }}
+                          >
+                            {PO_STATUSES.map(s => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Materials table */}
         {isLoading && (

@@ -25,8 +25,23 @@ export const handler = withGuards(
         m => m.quantity_needed && (m.quantity_ordered ?? 0) < m.quantity_needed
       );
 
-      // Build purchase-order drafts by grouping shortages per vendor.
-      const purchaseOrders = [];
+      // Build purchase-order drafts by grouping shortages per vendor. Each PO
+      // carries a stable poNumber (`po.id`) reused as the persisted po_number so
+      // the in-memory response and the DB row line up.
+      const purchaseOrders: Array<{
+        id: string;
+        vendor: string;
+        items: Array<{
+          materialId: number | null;
+          name: string;
+          quantity: number;
+          unit: string | null;
+          unitPrice: number | null;
+          sku: string | null;
+        }>;
+        total: number;
+      }> = [];
+
       if (shortages.length > 0) {
         const vendorGroups = new Map<string, typeof shortages>();
         for (const m of shortages) {
@@ -44,6 +59,7 @@ export const handler = withGuards(
             id: `PO-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
             vendor,
             items: items.map(m => ({
+              materialId: m.id ?? null,
               name: m.name,
               quantity: (m.quantity_needed ?? 0) - (m.quantity_ordered ?? 0),
               unit: m.unit,
@@ -55,8 +71,75 @@ export const handler = withGuards(
         }
       }
 
-      // Mark shortages in DB
+      // Persist the generated POs best-effort. If the purchase_orders tables
+      // don't exist yet (migration 0005 not applied) or any write fails, we log
+      // and fall through — the function must still return the POs so an
+      // unmigrated database never regresses the existing behaviour.
+      const persistedPoIds: Record<string, number> = {};
+      const clearedMaterialIds = new Set<number>();
+      try {
+        for (const po of purchaseOrders) {
+          const { data: poRow, error: poErr } = await db
+            .from("purchase_orders")
+            .insert({
+              project_id: projectId,
+              po_number: po.id,
+              vendor_name: po.vendor,
+              status: "draft",
+              subtotal: po.total,
+            })
+            .select("id")
+            .single();
+          if (poErr || !poRow) throw poErr ?? new Error("PO insert failed");
+
+          persistedPoIds[po.id] = poRow.id;
+
+          const itemRows = po.items.map(it => ({
+            purchase_order_id: poRow.id,
+            material_id: it.materialId,
+            description: it.name,
+            quantity: it.quantity,
+            unit_price: it.unitPrice,
+            line_total:
+              it.unitPrice != null ? it.quantity * it.unitPrice : null,
+          }));
+          if (itemRows.length > 0) {
+            const { error: itemErr } = await db
+              .from("purchase_order_items")
+              .insert(itemRows);
+            if (itemErr) throw itemErr;
+          }
+
+          // Clear the shortage on the sourced materials: stamp the PO number and
+          // advance quantity_ordered to quantity_needed so the shortage resolves
+          // once a PO has been generated for it.
+          for (const it of po.items) {
+            if (it.materialId == null) continue;
+            const material = shortages.find(m => m.id === it.materialId);
+            await db
+              .from("materials")
+              .update({
+                po_number: po.id,
+                quantity_ordered: material?.quantity_needed ?? undefined,
+                ordered_at: new Date().toISOString(),
+                is_shortage: false,
+              })
+              .eq("id", it.materialId);
+            clearedMaterialIds.add(it.materialId);
+          }
+        }
+      } catch (persistErr) {
+        console.warn(
+          "[material-procurement] PO persistence skipped (migration 0005 may be unapplied):",
+          persistErr
+        );
+      }
+
+      // Flag any shortages that were not cleared by a persisted PO above. When
+      // persistence is unavailable this preserves the original behaviour of
+      // marking every shortage.
       for (const m of shortages) {
+        if (clearedMaterialIds.has(m.id)) continue;
         await db.from("materials").update({ is_shortage: true }).eq("id", m.id);
       }
 
@@ -65,7 +148,10 @@ export const handler = withGuards(
         phase,
         materialsChecked: (materials ?? []).length,
         shortagesFound: shortages.length,
-        purchaseOrders,
+        purchaseOrders: purchaseOrders.map(po => ({
+          ...po,
+          persistedId: persistedPoIds[po.id] ?? null,
+        })),
       });
     } catch (err) {
       console.error("[material-procurement]", err);
