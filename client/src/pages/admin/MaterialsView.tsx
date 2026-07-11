@@ -78,6 +78,7 @@ export default function MaterialsView() {
     name: "",
     category: "",
     unit: "",
+    vendorId: undefined as number | undefined,
     vendorName: "",
     quantityNeeded: "",
     unitPriceCurrent: "",
@@ -87,6 +88,7 @@ export default function MaterialsView() {
   const { addToast } = useToast();
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
+  const { data: vendorsData } = trpc.vendors.list.useQuery();
   const {
     data: materials,
     isLoading,
@@ -152,6 +154,7 @@ export default function MaterialsView() {
           name: "",
           category: "",
           unit: "",
+          vendorId: undefined,
           vendorName: "",
           quantityNeeded: "",
           unitPriceCurrent: "",
@@ -407,6 +410,29 @@ export default function MaterialsView() {
               </button>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Catalog vendor picker — snapshots name into vendorName */}
+              <select
+                value={newMaterial.vendorId ?? ""}
+                onChange={e => {
+                  const id = e.target.value
+                    ? parseInt(e.target.value)
+                    : undefined;
+                  const vendor = (vendorsData ?? []).find(v => v.id === id);
+                  setNewMaterial(prev => ({
+                    ...prev,
+                    vendorId: id,
+                    vendorName: vendor ? vendor.name : prev.vendorName,
+                  }));
+                }}
+                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+              >
+                <option value="">— Select vendor —</option>
+                {(vendorsData ?? []).map(v => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
               {[
                 { key: "name", placeholder: "Material name *", required: true },
                 {
@@ -462,6 +488,7 @@ export default function MaterialsView() {
                     projectId: selectedProject ?? undefined,
                     category: newMaterial.category || undefined,
                     unit: newMaterial.unit || undefined,
+                    vendorId: newMaterial.vendorId || undefined,
                     vendorName: newMaterial.vendorName || undefined,
                     quantityNeeded: newMaterial.quantityNeeded
                       ? parseFloat(newMaterial.quantityNeeded)
@@ -969,7 +996,7 @@ export default function MaterialsView() {
                             Vendor
                           </p>
                           <p className="mt-1 text-muted-foreground">
-                            {m.vendor_name ?? "—"}
+                            {(m as any).vendors?.name ?? m.vendor_name ?? "—"}
                           </p>
                           {m.vendor_sku && (
                             <p className="text-[10px] text-muted-foreground/60">
@@ -1078,7 +1105,7 @@ export default function MaterialsView() {
                           {(m as any).projects?.name ?? "—"}
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {m.vendor_name ?? "—"}
+                          {(m as any).vendors?.name ?? m.vendor_name ?? "—"}
                           {m.vendor_sku && (
                             <p className="text-[10px] text-muted-foreground/60">
                               SKU: {m.vendor_sku}

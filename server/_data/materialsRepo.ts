@@ -32,7 +32,7 @@ export async function listMaterials(params: {
   const { from, to } = paginate(params);
   let q = data
     .from("materials")
-    .select("*, projects(id,name)", { count: "exact" })
+    .select("*, projects(id,name), vendors(id,name)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
   if (params.projectId) q = q.eq("project_id", params.projectId);
@@ -51,6 +51,7 @@ export type CreateMaterialInput = {
   quantityReceived?: number;
   unitPriceCurrent?: number;
   unitPriceBudgeted?: number;
+  vendorId?: number;
   vendorName?: string;
   vendorSku?: string;
   vendorUrl?: string;
@@ -76,6 +77,7 @@ export async function createMaterial(input: CreateMaterialInput) {
       quantity_received: input.quantityReceived ?? 0,
       unit_price_current: input.unitPriceCurrent,
       unit_price_budgeted: input.unitPriceBudgeted,
+      vendor_id: input.vendorId,
       vendor_name: input.vendorName,
       vendor_sku: input.vendorSku,
       vendor_url: input.vendorUrl,

@@ -22,6 +22,7 @@ const MaterialInput = z.object({
   quantityReceived: z.number().nonnegative().optional(),
   unitPriceCurrent: z.number().positive().optional(),
   unitPriceBudgeted: z.number().positive().optional(),
+  vendorId: z.number().int().positive().optional(),
   vendorName: z.string().max(200).optional(),
   vendorSku: z.string().max(100).optional(),
   vendorUrl: z.string().url().optional(),
@@ -64,6 +65,7 @@ export const materialsRouter = router({
         quantityReceived,
         unitPriceCurrent,
         unitPriceBudgeted,
+        vendorId,
         vendorName,
         vendorSku,
         vendorUrl,
@@ -106,6 +108,7 @@ export const materialsRouter = router({
         ...(unitPriceBudgeted !== undefined && {
           unit_price_budgeted: unitPriceBudgeted,
         }),
+        ...(vendorId !== undefined && { vendor_id: vendorId }),
         ...(vendorName !== undefined && { vendor_name: vendorName }),
         ...(vendorSku !== undefined && { vendor_sku: vendorSku }),
         ...(vendorUrl !== undefined && { vendor_url: vendorUrl }),
