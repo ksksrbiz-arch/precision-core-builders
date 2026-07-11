@@ -8,6 +8,8 @@ import {
   materials,
   notifications,
   projects,
+  purchaseOrderItems,
+  purchaseOrders,
   scheduleItems,
   users,
 } from "./schema";
@@ -37,6 +39,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   materials: many(materials),
   finishSelections: many(finishSelections),
   notifications: many(notifications),
+  purchaseOrders: many(purchaseOrders),
 }));
 
 export const fieldReportsRelations = relations(fieldReports, ({ one }) => ({
@@ -79,12 +82,42 @@ export const ledgerEntriesRelations = relations(ledgerEntries, ({ one }) => ({
   }),
 }));
 
-export const materialsRelations = relations(materials, ({ one }) => ({
+export const materialsRelations = relations(materials, ({ one, many }) => ({
   project: one(projects, {
     fields: [materials.projectId],
     references: [projects.id],
   }),
+  purchaseOrderItems: many(purchaseOrderItems),
 }));
+
+export const purchaseOrdersRelations = relations(
+  purchaseOrders,
+  ({ one, many }) => ({
+    project: one(projects, {
+      fields: [purchaseOrders.projectId],
+      references: [projects.id],
+    }),
+    createdByUser: one(users, {
+      fields: [purchaseOrders.createdBy],
+      references: [users.id],
+    }),
+    items: many(purchaseOrderItems),
+  })
+);
+
+export const purchaseOrderItemsRelations = relations(
+  purchaseOrderItems,
+  ({ one }) => ({
+    purchaseOrder: one(purchaseOrders, {
+      fields: [purchaseOrderItems.purchaseOrderId],
+      references: [purchaseOrders.id],
+    }),
+    material: one(materials, {
+      fields: [purchaseOrderItems.materialId],
+      references: [materials.id],
+    }),
+  })
+);
 
 export const finishSelectionsRelations = relations(
   finishSelections,

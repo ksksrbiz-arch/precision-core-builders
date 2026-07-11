@@ -405,3 +405,25 @@ CREATE POLICY "blueprint_artifacts_client_select"
         AND client_portal_enabled = true
     )
   );
+
+-- ============================================================
+-- 20. purchase_orders
+--     • Admins: full access.
+--     • All others: no access (internal procurement data).
+-- ============================================================
+ALTER TABLE public.purchase_orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "purchase_orders_admin_all"
+  ON public.purchase_orders FOR ALL
+  USING (public.is_admin());
+
+-- ============================================================
+-- 21. purchase_order_items
+--     • Admins: full access.
+--     • All others: no access (internal procurement data).
+-- ============================================================
+ALTER TABLE public.purchase_order_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "purchase_order_items_admin_all"
+  ON public.purchase_order_items FOR ALL
+  USING (public.is_admin());

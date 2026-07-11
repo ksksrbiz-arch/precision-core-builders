@@ -747,3 +747,67 @@ export const aiUsage = pgTable(
 
 export type AiUsage = typeof aiUsage.$inferSelect;
 export type InsertAiUsage = typeof aiUsage.$inferInsert;
+
+// ─── Purchase Orders (Material Procurement) ───────────────────────────────────
+// Persisted vendor-bucketed purchase orders generated from material shortages by
+// the material-procurement function. Vendor is a name-string snapshot on the PO
+// (no separate vendor-catalog entity). Each PO carries its own line items.
+
+export const purchaseOrderStatusEnum = pgEnum("purchase_order_status", [
+  "draft",
+  "issued",
+  "partial",
+  "received",
+  "cancelled",
+]);
+
+export const purchaseOrders = pgTable(
+  "purchase_orders",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    poNumber: varchar("po_number", { length: 100 }).notNull(),
+    vendorName: varchar("vendor_name", { length: 200 }).notNull(),
+    status: purchaseOrderStatusEnum("status").default("draft").notNull(),
+    subtotal: decimal("subtotal", { precision: 12, scale: 2 }),
+    notes: text("notes"),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_purchase_orders_project_id").on(t.projectId),
+    index("idx_purchase_orders_status").on(t.status),
+  ]
+);
+
+export const purchaseOrderItems = pgTable(
+  "purchase_order_items",
+  {
+    id: serial("id").primaryKey(),
+    purchaseOrderId: integer("purchase_order_id")
+      .notNull()
+      .references(() => purchaseOrders.id, { onDelete: "cascade" }),
+    materialId: integer("material_id").references(() => materials.id, {
+      onDelete: "set null",
+    }),
+    description: varchar("description", { length: 300 }).notNull(),
+    quantity: decimal("quantity", { precision: 10, scale: 2 }),
+    unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
+    lineTotal: decimal("line_total", { precision: 12, scale: 2 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  t => [
+    index("idx_purchase_order_items_purchase_order_id").on(t.purchaseOrderId),
+  ]
+);
+
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type InsertPurchaseOrder = typeof purchaseOrders.$inferInsert;
+
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+export type InsertPurchaseOrderItem = typeof purchaseOrderItems.$inferInsert;

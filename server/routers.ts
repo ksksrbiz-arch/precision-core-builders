@@ -11,6 +11,7 @@ import { materialsRouter } from "./routers/materialsRouter";
 import { notificationsRouter } from "./routers/notificationsRouter";
 import { portfolioRouter } from "./routers/portfolioRouter";
 import { projectsRouter } from "./routers/projectsRouter";
+import { purchaseOrdersRouter } from "./routers/purchaseOrdersRouter";
 import { scheduleRouter } from "./routers/scheduleRouter";
 import { sitePlansRouter } from "./routers/sitePlansRouter";
 import { subContractorsRouter } from "./routers/subContractorsRouter";
@@ -28,6 +29,7 @@ export const appRouter = router({
   ledger: ledgerRouter,
   leads: leadsRouter,
   materials: materialsRouter,
+  purchaseOrders: purchaseOrdersRouter,
   subContractors: subContractorsRouter,
   finishSelections: finishSelectionsRouter,
   notifications: notificationsRouter,
