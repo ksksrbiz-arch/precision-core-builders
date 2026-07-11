@@ -1,60 +1,66 @@
 /**
  * ProfitabilityTable — per-project margin tracking for the Analytics page.
  * Complements the estimated-vs-actual chart with concrete profit, margin %,
- * and budget variance, plus portfolio totals. Pure presentation; takes the
- * projects already fetched by Analytics.
+ * and budget variance, plus portfolio totals. Pure presentation: the profit /
+ * margin / variance math now lives server-side in
+ * `projects.profitabilitySummary` (single source of truth) and this component
+ * only shapes it for display.
  */
 import { TrendingUp } from "lucide-react";
+import { formatCompactCurrency, formatPercent } from "@/lib/formatters";
 
-type ProjectRow = {
+/** One per-project row as returned by `projects.profitabilitySummary`. */
+export type ProfitabilityRow = {
   id: number;
   name: string;
   status?: string | null;
-  estimated_budget?: number | string | null;
-  contracted_budget?: number | string | null;
-  actual_cost?: number | string | null;
+  contracted: number;
+  estimated: number;
+  actualCost: number;
+  basis: number;
+  profit: number;
+  marginPct: number;
+  variance: number;
+  hasData: boolean;
 };
 
-const n = (v: unknown): number => {
-  const x = typeof v === "string" ? parseFloat(v) : (v as number);
-  return Number.isFinite(x) ? x : 0;
+/** Portfolio totals as returned by `projects.profitabilitySummary`. */
+export type ProfitabilityTotals = {
+  contracted: number;
+  estimated: number;
+  actualCost: number;
+  profit: number;
+  basis: number;
+  marginPct: number;
 };
-
-const money = (v: number): string =>
-  `$${Math.round(v).toLocaleString("en-US")}`;
 
 const NAME_MAX = 28;
+const MAX_ROWS = 12;
+
+// Margin is only meaningful once there's a budget basis to measure against.
+const marginClass = (basis: number, marginPct: number) =>
+  basis <= 0
+    ? "text-muted-foreground"
+    : marginPct >= 20
+      ? "text-green-400"
+      : marginPct >= 10
+        ? "text-amber-400"
+        : "text-red-400";
+
+const marginText = (basis: number, marginPct: number) =>
+  basis <= 0 ? "—" : formatPercent(marginPct, 1);
 
 export default function ProfitabilityTable({
   projects,
+  totals,
 }: {
-  projects: ProjectRow[];
+  projects: ProfitabilityRow[];
+  totals: ProfitabilityTotals;
 }) {
   const rows = projects
-    .map(p => {
-      const contracted = n(p.contracted_budget);
-      const estimated = n(p.estimated_budget);
-      const actual = n(p.actual_cost);
-      // Margin is only meaningful once there's a contracted value to measure against.
-      const basis = contracted || estimated;
-      const profit = basis - actual;
-      const margin = basis > 0 ? (profit / basis) * 100 : null;
-      const variance = estimated > 0 ? actual - estimated : null;
-      return {
-        id: p.id,
-        name: p.name,
-        contracted,
-        estimated,
-        actual,
-        profit,
-        margin,
-        variance,
-        hasData: basis > 0 || actual > 0,
-      };
-    })
     .filter(r => r.hasData)
     .sort((a, b) => b.contracted - a.contracted)
-    .slice(0, 12);
+    .slice(0, MAX_ROWS);
 
   if (rows.length === 0) {
     return (
@@ -74,27 +80,6 @@ export default function ProfitabilityTable({
       </div>
     );
   }
-
-  const totals = rows.reduce(
-    (acc, r) => {
-      acc.contracted += r.contracted;
-      acc.actual += r.actual;
-      return acc;
-    },
-    { contracted: 0, actual: 0 }
-  );
-  const totalProfit = totals.contracted - totals.actual;
-  const totalMargin =
-    totals.contracted > 0 ? (totalProfit / totals.contracted) * 100 : null;
-
-  const marginClass = (m: number | null) =>
-    m === null
-      ? "text-muted-foreground"
-      : m >= 20
-        ? "text-green-400"
-        : m >= 10
-          ? "text-amber-400"
-          : "text-red-400";
 
   return (
     <div className="bg-card border border-border/60 p-5 mb-6">
@@ -129,31 +114,32 @@ export default function ProfitabilityTable({
                   {r.name.length > NAME_MAX
                     ? r.name.slice(0, NAME_MAX) + "…"
                     : r.name}
-                  {r.variance !== null && r.variance > 0 && (
+                  {r.variance > 0 && (
                     <span className="ml-2 text-[10px] text-red-400/80">
-                      +{money(r.variance)} vs est
+                      +{formatCompactCurrency(r.variance)} vs est
                     </span>
                   )}
                 </td>
                 <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
-                  {r.contracted > 0 ? money(r.contracted) : "—"}
+                  {r.contracted > 0 ? formatCompactCurrency(r.contracted) : "—"}
                 </td>
                 <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
-                  {money(r.actual)}
+                  {formatCompactCurrency(r.actualCost)}
                 </td>
                 <td
                   className={`py-2 px-3 text-right tabular-nums ${
                     r.profit >= 0 ? "text-foreground" : "text-red-400"
                   }`}
                 >
-                  {money(r.profit)}
+                  {formatCompactCurrency(r.profit)}
                 </td>
                 <td
                   className={`py-2 pl-3 text-right tabular-nums font-medium ${marginClass(
-                    r.margin
+                    r.basis,
+                    r.marginPct
                   )}`}
                 >
-                  {r.margin === null ? "—" : `${r.margin.toFixed(1)}%`}
+                  {marginText(r.basis, r.marginPct)}
                 </td>
               </tr>
             ))}
@@ -162,24 +148,25 @@ export default function ProfitabilityTable({
             <tr className="border-t border-border/40 font-semibold">
               <td className="py-2 pr-3">Portfolio</td>
               <td className="py-2 px-3 text-right tabular-nums">
-                {money(totals.contracted)}
+                {formatCompactCurrency(totals.contracted)}
               </td>
               <td className="py-2 px-3 text-right tabular-nums">
-                {money(totals.actual)}
+                {formatCompactCurrency(totals.actualCost)}
               </td>
               <td
                 className={`py-2 px-3 text-right tabular-nums ${
-                  totalProfit >= 0 ? "text-foreground" : "text-red-400"
+                  totals.profit >= 0 ? "text-foreground" : "text-red-400"
                 }`}
               >
-                {money(totalProfit)}
+                {formatCompactCurrency(totals.profit)}
               </td>
               <td
                 className={`py-2 pl-3 text-right tabular-nums ${marginClass(
-                  totalMargin
+                  totals.basis,
+                  totals.marginPct
                 )}`}
               >
-                {totalMargin === null ? "—" : `${totalMargin.toFixed(1)}%`}
+                {marginText(totals.basis, totals.marginPct)}
               </td>
             </tr>
           </tfoot>

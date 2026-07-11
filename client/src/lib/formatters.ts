@@ -37,6 +37,24 @@ export function formatNumber(
   return (value as number).toLocaleString("en-US", options);
 }
 
+/**
+ * Format a value as compact USD, e.g. `1_200_000` → `"$1.2M"`, `5000` →
+ * `"$5K"`, `450` → `"$450"`. Backs chart axis/tooltip labels that need a short
+ * money string. Null/undefined/NaN render as the fallback.
+ */
+export function formatCompactCurrency(
+  value: number | null | undefined,
+  fallback = "—"
+): string {
+  if (isNullish(value)) return fallback;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value as number);
+}
+
 /** Format a value already expressed in percent units, e.g. `42` → `"42%"`. */
 export function formatPercent(
   value: number | null | undefined,

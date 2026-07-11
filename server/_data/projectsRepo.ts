@@ -111,11 +111,25 @@ export async function getProfitabilitySources(id: number) {
       .single(),
     data
       .from("materials")
-      .select("unit_price_current,quantity_needed,quantity_on_hand")
+      .select("unit_price_current,quantity_needed")
       .eq("project_id", id),
     data
       .from("ledger_entries")
       .select("amount_delta,entry_type")
       .eq("project_id", id),
   ]);
+}
+
+/**
+ * Portfolio-level profitability source rows: every project's budget/cost
+ * columns in a single query for a whole-portfolio rollup. Kept separate from
+ * `getProfitabilitySources` (which is per-project and also pulls materials +
+ * ledger detail) so the summary stays a cheap single round-trip.
+ */
+export async function getPortfolioProfitability() {
+  return unwrapList(
+    await data
+      .from("projects")
+      .select("id,name,status,estimated_budget,contracted_budget,actual_cost")
+  ).data;
 }
