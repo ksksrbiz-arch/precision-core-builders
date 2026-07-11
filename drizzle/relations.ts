@@ -12,6 +12,7 @@ import {
   purchaseOrders,
   scheduleItems,
   users,
+  vendors,
 } from "./schema";
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -82,10 +83,19 @@ export const ledgerEntriesRelations = relations(ledgerEntries, ({ one }) => ({
   }),
 }));
 
+export const vendorsRelations = relations(vendors, ({ many }) => ({
+  materials: many(materials),
+  purchaseOrders: many(purchaseOrders),
+}));
+
 export const materialsRelations = relations(materials, ({ one, many }) => ({
   project: one(projects, {
     fields: [materials.projectId],
     references: [projects.id],
+  }),
+  vendor: one(vendors, {
+    fields: [materials.vendorId],
+    references: [vendors.id],
   }),
   purchaseOrderItems: many(purchaseOrderItems),
 }));
@@ -96,6 +106,10 @@ export const purchaseOrdersRelations = relations(
     project: one(projects, {
       fields: [purchaseOrders.projectId],
       references: [projects.id],
+    }),
+    vendor: one(vendors, {
+      fields: [purchaseOrders.vendorId],
+      references: [vendors.id],
     }),
     createdByUser: one(users, {
       fields: [purchaseOrders.createdBy],

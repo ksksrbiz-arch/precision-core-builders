@@ -53,6 +53,7 @@ import {
   Settings,
   Shield,
   Sparkles,
+  Truck,
   Users,
   Wrench,
 } from "lucide-react";
@@ -91,6 +92,7 @@ const BASE_NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
         label: "Sub-Contractors",
         path: "/admin/sub-contractors",
       },
+      { icon: Truck, label: "Vendors", path: "/admin/vendors" },
       { icon: Shield, label: "Ledger", path: "/admin/ledger" },
       { icon: CreditCard, label: "Billing", path: "/admin/billing" },
     ],

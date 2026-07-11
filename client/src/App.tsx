@@ -94,6 +94,7 @@ const EstimateEditor = lazy(() => import("./pages/admin/EstimateEditor"));
 const SubContractorsList = lazy(
   () => import("./pages/admin/SubContractorsList")
 );
+const VendorsList = lazy(() => import("./pages/admin/VendorsList"));
 const LedgerView = lazy(() => import("./pages/admin/LedgerView"));
 const VisionStudioAdmin = lazy(() => import("./pages/admin/VisionStudio"));
 const SearchView = lazy(() => import("./pages/admin/Search"));
@@ -212,6 +213,7 @@ function Router() {
           path="/admin/sub-contractors"
           component={adminPage(SubContractorsList)}
         />
+        <Route path="/admin/vendors" component={adminPage(VendorsList)} />
         <Route path="/admin/ledger" component={adminPage(LedgerView)} />
         <Route
           path="/admin/site-plans"
