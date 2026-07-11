@@ -13,6 +13,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
   Plus,
   Search,
@@ -32,12 +33,19 @@ export default function ProjectsList() {
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const isMobile = useIsMobile();
+  const utils = trpc.useUtils();
 
   const { data, isLoading, isError, refetch } = trpc.projects.list.useQuery({
     page,
     pageSize: 20,
     search: debouncedSearch || undefined,
     status: (status as any) || undefined,
+  });
+
+  // Live updates: project status/progress changes refresh the list.
+  useRealtimeTable({
+    table: "projects",
+    onUpdate: () => utils.projects.list.invalidate(),
   });
 
   const fmt = (n: number | string | null | undefined) =>

@@ -7,6 +7,7 @@ import { SkeletonCard, SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { generateEstimatePdf } from "@/lib/estimatePdf";
 import {
@@ -60,6 +61,12 @@ export default function EstimatesList() {
       invalidate: () => utils.estimates.list.invalidate(),
     }
   );
+
+  // Live updates: estimates sent/approved from another device refresh here.
+  useRealtimeTable({
+    table: "estimates",
+    onUpdate: () => utils.estimates.list.invalidate(),
+  });
 
   const fmt = (n: number | string | null | undefined) =>
     n ? `$${Number(n).toLocaleString()}` : "—";
