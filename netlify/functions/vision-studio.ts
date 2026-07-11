@@ -1,14 +1,17 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "../../server/_core/env";
 import { withGuards } from "./_lib/http";
 
 /**
  * Vision Studio — AI photo analysis endpoint.
- * Free-first: Gemini Vision (Google AI, free tier) when configured; Claude
- * Vision (Anthropic, paid) only as a fallback.
+ * Free-tier only: Gemini Vision (Google AI) when configured, with a free
+ * OpenRouter vision model as the fallback.
  * Accepts base64-encoded images and returns AI analysis
  * for construction site photos, material inspection, progress tracking, etc.
  */
+
+/** Free OpenRouter vision model used when no Google AI (Gemini) key is set. */
+const DEFAULT_OPENROUTER_VISION_MODEL =
+  "meta-llama/llama-3.2-11b-vision-instruct:free";
 
 const SYSTEM_PROMPT = `You are the Vision AI for Precision Core Builders, owned by Eric Tadlock (CCB #246527), a master builder in Eugene, OR with 20+ years of experience.
 
@@ -101,7 +104,7 @@ export const handler = withGuards(
         );
       }
 
-      if (!ENV.anthropicApiKey && !ENV.googleAiApiKey) {
+      if (!ENV.googleAiApiKey && !ENV.openrouterApiKey) {
         return error(
           500,
           "Vision AI is not configured. Please contact the site administrator."
@@ -112,8 +115,8 @@ export const handler = withGuards(
         customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
 
       // ── Gemini Vision (primary — free tier) ──────────────────────────────────
-      // Free-first: prefer the free Google AI key when configured. Claude Vision
-      // (paid) is only used when no Google AI key is available.
+      // Free-first: prefer the free Google AI key when configured. The free
+      // OpenRouter vision model is only used when no Google AI key is available.
       if (ENV.googleAiApiKey) {
         const geminiModel = "gemini-2.0-flash";
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${ENV.googleAiApiKey}`;
@@ -175,48 +178,81 @@ export const handler = withGuards(
         });
       }
 
-      // ── Claude Vision (paid fallback) ────────────────────────────────────────
-      if (ENV.anthropicApiKey) {
-        const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
+      // ── OpenRouter Vision (free fallback) ────────────────────────────────────
+      // Used only when no Google AI key is set. OpenRouter is OpenAI-compatible;
+      // images are passed as base64 `data:` URIs on an image_url content part.
+      if (ENV.openrouterApiKey) {
+        const openrouterModel =
+          ENV.openrouterVisionModel || DEFAULT_OPENROUTER_VISION_MODEL;
 
-        const response = await client.messages.create({
-          model: "claude-sonnet-4-6",
-          max_tokens: 4096,
-          temperature: 0.2,
-          system: SYSTEM_PROMPT,
-          messages: [
-            {
-              role: "user",
-              content: [
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ENV.openrouterApiKey}`,
+          "X-Title": "Precision Core Builders",
+        };
+        if (ENV.siteUrl) headers["HTTP-Referer"] = ENV.siteUrl;
+
+        const openrouterRes = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              model: openrouterModel,
+              max_tokens: 4096,
+              temperature: 0.2,
+              messages: [
+                { role: "system", content: SYSTEM_PROMPT },
                 {
-                  type: "image",
-                  source: {
-                    type: "base64",
-                    media_type: mediaType as SupportedMediaType,
-                    data: image,
-                  },
+                  role: "user",
+                  content: [
+                    { type: "text", text: userPrompt },
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: `data:${mediaType};base64,${image}`,
+                      },
+                    },
+                  ],
                 },
-                { type: "text", text: userPrompt },
               ],
-            },
-          ],
-        });
+            }),
+          }
+        );
 
-        const analysisText = response.content
-          .filter(block => block.type === "text")
-          .map(block => (block as Anthropic.TextBlock).text)
-          .join("");
+        type OpenRouterVisionResponse = {
+          choices?: Array<{ message?: { content?: string } }>;
+          model?: string;
+          usage?: {
+            prompt_tokens?: number;
+            completion_tokens?: number;
+            total_tokens?: number;
+          };
+          error?: { message?: string };
+        };
+
+        const openrouterData =
+          (await openrouterRes.json()) as OpenRouterVisionResponse;
+        if (!openrouterRes.ok || openrouterData.error) {
+          throw new Error(
+            `Vision analysis failed: ${openrouterData.error?.message ?? openrouterRes.statusText}`
+          );
+        }
+
+        const analysisText =
+          openrouterData.choices?.[0]?.message?.content ?? "";
 
         return json(200, {
           analysis: analysisText,
           mode,
-          model: response.model,
-          usage: {
-            promptTokens: response.usage.input_tokens,
-            completionTokens: response.usage.output_tokens,
-            totalTokens:
-              response.usage.input_tokens + response.usage.output_tokens,
-          },
+          model: openrouterData.model ?? openrouterModel,
+          usage: openrouterData.usage
+            ? {
+                promptTokens: openrouterData.usage.prompt_tokens ?? 0,
+                completionTokens: openrouterData.usage.completion_tokens ?? 0,
+                totalTokens: openrouterData.usage.total_tokens ?? 0,
+              }
+            : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
           timestamp: new Date().toISOString(),
         });
       }

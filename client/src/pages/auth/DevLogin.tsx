@@ -275,7 +275,6 @@ const SERVICE_ICONS: Record<string, typeof Server> = {
   supabase: Database,
   db_tables: Database,
   cloudflare_ai: Sparkles,
-  anthropic_ai: Shield,
   openai: Mic,
   weather: Activity,
   stripe: CreditCard,

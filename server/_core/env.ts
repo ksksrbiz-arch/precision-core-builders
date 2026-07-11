@@ -12,8 +12,7 @@ export const ENV = {
     process.env.SUPABASE_SERVICE_ROLE_KEY ??
     "",
 
-  // AI / LLM
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  // AI / LLM (free-tier providers only)
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
   // Google Gemini — free tier via Google AI Studio (no credit card required)
   // Get a free key at: https://aistudio.google.com/app/apikey
@@ -32,9 +31,11 @@ export const ENV = {
   groqModel: process.env.GROQ_MODEL ?? "",
   geminiModel: process.env.GEMINI_MODEL ?? "",
   openrouterModel: process.env.OPENROUTER_MODEL ?? "",
-  anthropicModel: process.env.ANTHROPIC_MODEL ?? "",
-  // Comma-separated provider priority override, e.g. "groq,gemini,openrouter,anthropic".
-  // Default is free-first: free tiers tried before paid Anthropic.
+  // Free vision-capable OpenRouter model used as the Vision Studio fallback
+  // when no Google AI (Gemini) key is set.
+  openrouterVisionModel: process.env.OPENROUTER_VISION_MODEL ?? "",
+  // Comma-separated provider priority override, e.g. "gemini,groq,openrouter".
+  // All providers are free-tier; default order is groq → gemini → openrouter.
   llmProviderOrder: process.env.LLM_PROVIDER_ORDER ?? "",
 
   // External APIs

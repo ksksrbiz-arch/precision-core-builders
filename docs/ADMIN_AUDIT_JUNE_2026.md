@@ -71,7 +71,7 @@ Every admin page now meets these baselines:
 - **Degradation:**
   - Stripe absent → free PayPal/Venmo/Zelle billing path (already wired in `BillingView`).
   - n8n absent → fire-and-forget, no UI break (`.catch(() => {})` pattern).
-  - Anthropic absent → server falls back to Gemini.
+  - AI text generation: Groq primary → falls back to Gemini → OpenRouter.
   - OpenAI Whisper absent → server falls back to Gemini audio.
   - OpenWeatherMap absent → server falls back to Open-Meteo.
 - **Mobile:** All forms/tables use responsive Tailwind classes (`sm:`, `md:`); bottom nav for quick switching.
@@ -115,7 +115,7 @@ Before sign-off:
 - [x] Verified all admin nav targets map to live routes in `App.tsx`
 - [x] Verified all `trpc.*` calls in admin pages resolve to procedures in `server/routers/*`
 - [x] Verified all `fetch("/api/*")` calls in admin pages resolve to a Netlify function
-- [x] Graceful fallbacks for absent integrations (Stripe / Anthropic / Whisper / OpenWeatherMap / n8n) verified
+- [x] Graceful fallbacks for absent integrations (Stripe / Groq / Gemini / OpenRouter / Whisper / OpenWeatherMap / n8n) verified
 - [x] AdminRoute guard verified: unauthenticated → `/auth/login`, non-admin → `/portal`
 
 ### Pre-go-live smoke test (Eric's daily loop)

@@ -3,7 +3,7 @@
  *
  * Covers:
  *  - Auth gating
- *  - Service dispatch (anthropic, openweather, stripe, n8n, supabase, elevenlabs, cloudflare_ai)
+ *  - Service dispatch (groq, openweather, stripe, n8n, supabase, elevenlabs, cloudflare_ai)
  *  - Upstream response handling (success / 401 / network error)
  *  - Helpful error messages for common failure modes
  */
@@ -60,7 +60,7 @@ describe("onboarding-verify function", () => {
       const res = await handler(
         mockEvent("POST", {
           onboardingToken: "anything",
-          service: "anthropic",
+          service: "groq",
           credentials: {},
         }) as any,
         {} as any
@@ -73,8 +73,8 @@ describe("onboarding-verify function", () => {
       const res = await handler(
         mockEvent("POST", {
           onboardingToken: "wrong-token-but-right-length-here",
-          service: "anthropic",
-          credentials: { ANTHROPIC_API_KEY: "sk" },
+          service: "groq",
+          credentials: { GROQ_API_KEY: "gsk" },
         }) as any,
         {} as any
       );
@@ -106,7 +106,7 @@ describe("onboarding-verify function", () => {
     });
   });
 
-  describe("Anthropic verification", () => {
+  describe("Groq verification", () => {
     it("returns ok=true on successful API response", async () => {
       vi.stubGlobal(
         "fetch",
@@ -120,15 +120,15 @@ describe("onboarding-verify function", () => {
       const res = await handler(
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
-          service: "anthropic",
-          credentials: { ANTHROPIC_API_KEY: "sk-ant-real" },
+          service: "groq",
+          credentials: { GROQ_API_KEY: "gsk-real" },
         }) as any,
         {} as any
       );
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body!);
       expect(body.ok).toBe(true);
-      expect(body.service).toBe("anthropic");
+      expect(body.service).toBe("groq");
     });
 
     it("returns ok=false with clear message on 401", async () => {
@@ -140,8 +140,8 @@ describe("onboarding-verify function", () => {
       const res = await handler(
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
-          service: "anthropic",
-          credentials: { ANTHROPIC_API_KEY: "sk-ant-bad" },
+          service: "groq",
+          credentials: { GROQ_API_KEY: "gsk-bad" },
         }) as any,
         {} as any
       );
@@ -159,8 +159,8 @@ describe("onboarding-verify function", () => {
       const res = await handler(
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
-          service: "anthropic",
-          credentials: { ANTHROPIC_API_KEY: "sk-ant-rate-limited" },
+          service: "groq",
+          credentials: { GROQ_API_KEY: "gsk-rate-limited" },
         }) as any,
         {} as any
       );

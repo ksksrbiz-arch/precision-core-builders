@@ -24,7 +24,7 @@ The admin side is **substantially more complete than the project docs claim.** A
 | `ProjectsList`, `ProjectNew`, `ProjectDetail`             | `projectsRouter.ts` (9 procs incl. profitability/stats)                             | Real CRUD, ledger, n8n event emit                                            |
 | `ClientsList`, `ClientDetail`                             | `clientsRouter.ts`                                                                  | Full CRUD                                                                    |
 | `EstimatesList`                                           | `estimatesRouter.ts`                                                                | list/markSent/markApproved persist                                           |
-| `FieldReportsList`, `FieldReportNew`, `FieldReportDetail` | `fieldReportsRouter.ts` + `voice-to-report.ts`                                      | Whisper → Claude → DB pipeline real; publish/unpublish work; Realtime active |
+| `FieldReportsList`, `FieldReportNew`, `FieldReportDetail` | `fieldReportsRouter.ts` + `voice-to-report.ts`                                      | Whisper → Groq/Gemini → DB pipeline real; publish/unpublish work; Realtime active |
 | `MaterialsView`                                           | `materialsRouter.ts` + `material-procurement.ts`                                    | Real DB; ledger writes; n8n emit                                             |
 | `ScheduleView`                                            | `scheduleRouter.ts` (7 procs) + `weather-schedule.ts` + `GanttChart.tsx`            | Drag-to-reschedule wired                                                     |
 | `LedgerView`                                              | `ledgerRouter.ts`                                                                   | Append-only, real inserts                                                    |
@@ -34,9 +34,9 @@ The admin side is **substantially more complete than the project docs claim.** A
 | `SitePlanBuilder` (1131 LOC)                              | `sitePlansRouter.ts`                                                                | Canvas + saved-plans persistence                                             |
 | `BlueprintTools`                                          | `blueprintRouter.ts` (has tests)                                                    | OAuth + API-key paths real                                                   |
 | `Analytics`                                               | Composes `projects.stats/list`, `fieldReports.weeklyStats`, `materials.list`        | All real, no hardcoded values                                                |
-| `CommandCenter`                                           | tRPC stats/list + `lead-score.ts` (real Claude call) + `useRealtimeTable`           | Realtime active                                                              |
+| `CommandCenter`                                           | tRPC stats/list + `lead-score.ts` (real Groq/Gemini call) + `useRealtimeTable`      | Realtime active                                                              |
 | `ActivityLog`                                             | Direct Supabase channel on `ledger_entries`                                         | Works                                                                        |
-| `VisionStudio` (admin)                                    | `vision-studio.ts`                                                                  | Real Claude vision calls                                                     |
+| `VisionStudio` (admin)                                    | `vision-studio.ts`                                                                  | Real Gemini vision calls                                                     |
 | `Search`                                                  | `search.ts`                                                                         | Real                                                                         |
 | `BillingView`                                             | `stripe-billing.ts` + `stripe-webhook.ts`                                           | **Code-complete Stripe integration** with graceful no-key fallback           |
 | `NotificationsView`                                       | `notificationsRouter.ts`                                                            | adminList/send/markRead all persist                                          |
@@ -70,7 +70,7 @@ Code is ready; this single config pass unlocks billing, weather, and automation 
 - `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PUBLISHABLE_KEY`
 - `OPENWEATHERMAP_API_KEY`
 - `N8N_WEBHOOK_URL`, `N8N_API_KEY`
-- `ANTHROPIC_API_KEY` (or `GOOGLE_AI_API_KEY` for free-tier fallback)
+- `GROQ_API_KEY` (primary free-tier AI), with `GOOGLE_AI_API_KEY` and `OPENROUTER_API_KEY` as fallbacks
 
 After setting, validate end-to-end: file a test estimate, run a Stripe payment-link flow against test mode, and check `platform-health.ts` reports green for each.
 

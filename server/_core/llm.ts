@@ -4,22 +4,19 @@
  * All AI features (field reports, estimator, lead scoring, chat, search) call
  * invokeLLM(). Providers are tried in priority order; if one is unconfigured,
  * rate-limited, or errors, the next is attempted automatically. This keeps the
- * platform resilient and cheap: free tiers are exhausted before paid Claude.
+ * platform resilient and cheap: every provider is a free tier.
  *
- * Default priority (free-first, paid fallback):
+ * Providers are all free-tier (free-first priority):
  *   1. Groq          — free, ultra-fast LPU.  GROQ_API_KEY
  *                      https://console.groq.com/keys
  *   2. Google Gemini — free tier (no credit card).  GOOGLE_AI_API_KEY
  *                      https://aistudio.google.com/app/apikey
- *   3. OpenRouter    — free (:free) models + paid routing.  OPENROUTER_API_KEY
+ *   3. OpenRouter    — free (:free) models.  OPENROUTER_API_KEY
  *                      https://openrouter.ai/keys
- *   4. Anthropic     — paid, highest quality.  ANTHROPIC_API_KEY
  *
- * Override the order with LLM_PROVIDER_ORDER (e.g. "anthropic,groq,gemini").
- * Override any model with GROQ_MODEL / GEMINI_MODEL / OPENROUTER_MODEL /
- * ANTHROPIC_MODEL.
+ * Override the order with LLM_PROVIDER_ORDER (e.g. "gemini,groq,openrouter").
+ * Override any model with GROQ_MODEL / GEMINI_MODEL / OPENROUTER_MODEL.
  */
-import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "./env";
 import { logAiUsage } from "./aiUsage";
 
@@ -42,7 +39,7 @@ export type LLMInvokeParams = {
   userId?: string | null;
 };
 
-export type LLMProvider = "groq" | "gemini" | "openrouter" | "anthropic";
+export type LLMProvider = "groq" | "gemini" | "openrouter";
 
 export type LLMResult = {
   text: string;
@@ -64,18 +61,12 @@ type ResolvedParams = LLMInvokeParams & {
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
-const DEFAULT_ORDER: LLMProvider[] = [
-  "groq",
-  "gemini",
-  "openrouter",
-  "anthropic",
-];
+const DEFAULT_ORDER: LLMProvider[] = ["groq", "gemini", "openrouter"];
 
 const DEFAULT_MODELS: Record<LLMProvider, string> = {
   groq: "llama-3.3-70b-versatile",
   gemini: "gemini-2.0-flash",
   openrouter: "meta-llama/llama-3.3-70b-instruct:free",
-  anthropic: "claude-sonnet-4-6",
 };
 
 const GEMINI_API_BASE =
@@ -94,8 +85,6 @@ function apiKeyFor(provider: LLMProvider): string {
       return ENV.googleAiApiKey;
     case "openrouter":
       return ENV.openrouterApiKey;
-    case "anthropic":
-      return ENV.anthropicApiKey;
   }
 }
 
@@ -104,7 +93,6 @@ function modelFor(provider: LLMProvider): string {
     groq: ENV.groqModel,
     gemini: ENV.geminiModel,
     openrouter: ENV.openrouterModel,
-    anthropic: ENV.anthropicModel,
   }[provider];
   return override || DEFAULT_MODELS[provider];
 }
@@ -351,60 +339,6 @@ async function invokeGemini(params: ResolvedParams): Promise<LLMResult> {
   };
 }
 
-// ─── Anthropic (Claude) ──────────────────────────────────────────────────────
-
-async function invokeAnthropic(params: ResolvedParams): Promise<LLMResult> {
-  const {
-    system,
-    conversationMsgs,
-    maxTokens = 4096,
-    temperature = 0.3,
-  } = params;
-  const model = modelFor("anthropic");
-  const client = new Anthropic({ apiKey: apiKeyFor("anthropic") });
-
-  const sdkMessages: Anthropic.MessageParam[] = conversationMsgs.map(m => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
-
-  let response: Anthropic.Message;
-  try {
-    response = await client.messages.create({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      ...(system ? { system } : {}),
-      messages: sdkMessages,
-    });
-  } catch (err) {
-    const status =
-      err instanceof Anthropic.APIError && typeof err.status === "number"
-        ? err.status
-        : 0;
-    throw new ProviderError(
-      `anthropic error: ${err instanceof Error ? err.message : String(err)}`,
-      status === 0 ? true : isRetryableStatus(status)
-    );
-  }
-
-  const text = response.content
-    .filter(block => block.type === "text")
-    .map(block => (block as Anthropic.TextBlock).text)
-    .join("");
-
-  return {
-    text,
-    model: response.model,
-    provider: "anthropic",
-    usage: {
-      promptTokens: response.usage.input_tokens,
-      completionTokens: response.usage.output_tokens,
-      totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-    },
-  };
-}
-
 // ─── Dispatch ─────────────────────────────────────────────────────────────
 
 function callProvider(
@@ -418,8 +352,6 @@ function callProvider(
       return invokeOpenAICompatible("openrouter", OPENROUTER_API_BASE, params);
     case "gemini":
       return invokeGemini(params);
-    case "anthropic":
-      return invokeAnthropic(params);
   }
 }
 
@@ -452,9 +384,9 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   if (order.length === 0) {
     throw new Error(
       "No LLM API key configured. Set a free key — GROQ_API_KEY " +
-        "(https://console.groq.com/keys) or GOOGLE_AI_API_KEY " +
-        "(https://aistudio.google.com/app/apikey) — or ANTHROPIC_API_KEY / " +
-        "OPENROUTER_API_KEY in your Netlify environment variables."
+        "(https://console.groq.com/keys), GOOGLE_AI_API_KEY " +
+        "(https://aistudio.google.com/app/apikey), or OPENROUTER_API_KEY " +
+        "(https://openrouter.ai/keys) — in your Netlify environment variables."
     );
   }
 
@@ -635,95 +567,6 @@ async function* streamOpenAICompatible(
 }
 
 /**
- * Stream tokens from Anthropic using the SDK's `.stream()` helper, which emits
- * `content_block_delta` events as text arrives.
- */
-async function* streamAnthropic(
-  params: ResolvedParams
-): AsyncGenerator<LLMStreamChunk> {
-  const {
-    system,
-    conversationMsgs,
-    maxTokens = 4096,
-    temperature = 0.3,
-  } = params;
-  const model = modelFor("anthropic");
-  const client = new Anthropic({ apiKey: apiKeyFor("anthropic") });
-
-  const sdkMessages: Anthropic.MessageParam[] = conversationMsgs.map(m => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
-
-  let stream: ReturnType<Anthropic.Messages["stream"]>;
-  try {
-    stream = client.messages.stream({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      ...(system ? { system } : {}),
-      messages: sdkMessages,
-    });
-  } catch (err) {
-    throw toAnthropicProviderError(err);
-  }
-
-  let emitted = false;
-  let resolvedModel = model;
-  try {
-    for await (const event of stream) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
-        const text = event.delta.text;
-        if (text) {
-          emitted = true;
-          yield { type: "text", text };
-        }
-      } else if (event.type === "message_start") {
-        if (event.message.model) resolvedModel = event.message.model;
-      }
-    }
-  } catch (err) {
-    throw toAnthropicProviderError(err);
-  }
-
-  const final = await stream.finalMessage().catch(() => null);
-  if (final?.model) resolvedModel = final.model;
-
-  if (!emitted) {
-    throw new ProviderError("anthropic returned an empty stream", true);
-  }
-
-  yield {
-    type: "done",
-    done: {
-      model: resolvedModel,
-      provider: "anthropic",
-      usage: final
-        ? {
-            promptTokens: final.usage.input_tokens,
-            completionTokens: final.usage.output_tokens,
-            totalTokens: final.usage.input_tokens + final.usage.output_tokens,
-          }
-        : undefined,
-    },
-  };
-}
-
-function toAnthropicProviderError(err: unknown): ProviderError {
-  const status =
-    err instanceof Anthropic.APIError && typeof err.status === "number"
-      ? err.status
-      : 0;
-  return new ProviderError(
-    `anthropic error: ${err instanceof Error ? err.message : String(err)}`,
-    status === 0 ? true : isRetryableStatus(status)
-  );
-}
-
-/**
  * Gemini has a streaming endpoint, but to keep the surface small and reliable
  * we fall back to the buffered call and emit its text as a single chunk. This
  * still works end-to-end behind the SSE plumbing; the response simply arrives
@@ -755,8 +598,6 @@ function streamProvider(
       return streamOpenAICompatible("openrouter", OPENROUTER_API_BASE, params);
     case "gemini":
       return streamGeminiBuffered(params);
-    case "anthropic":
-      return streamAnthropic(params);
   }
 }
 
@@ -824,9 +665,9 @@ export async function* streamLLM(
   if (order.length === 0) {
     throw new Error(
       "No LLM API key configured. Set a free key — GROQ_API_KEY " +
-        "(https://console.groq.com/keys) or GOOGLE_AI_API_KEY " +
-        "(https://aistudio.google.com/app/apikey) — or ANTHROPIC_API_KEY / " +
-        "OPENROUTER_API_KEY in your Netlify environment variables."
+        "(https://console.groq.com/keys), GOOGLE_AI_API_KEY " +
+        "(https://aistudio.google.com/app/apikey), or OPENROUTER_API_KEY " +
+        "(https://openrouter.ai/keys) — in your Netlify environment variables."
     );
   }
 

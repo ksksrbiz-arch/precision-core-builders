@@ -38,10 +38,10 @@ This document primes AI assistants with the codebase structure, development work
 
 ### What's Implemented & Tested
 
-- ✅ **Voice-to-Report:** Recording → Whisper transcription → Claude report generation → DB save
-- ✅ **Estimator:** Project details → Claude cost calculation → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI
+- ✅ **Voice-to-Report:** Recording → Whisper transcription → AI report generation → DB save
+- ✅ **Estimator:** Project details → AI cost calculation → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI
 - ✅ **Weather Scheduling:** OpenWeatherMap forecast → weather-sensitive task identification
-- ✅ **AI Chat:** Claude conversation interface
+- ✅ **AI Chat:** Free-tier LLM conversation interface
 - ✅ **Vision Studio:** Photo analysis with multiple modes
 - ✅ **Lead Scoring & Capture:** AI-scored, persisted lead prioritization board
 - ✅ **Stripe Billing:** Invoicing + webhook-driven ledger reconciliation
@@ -100,7 +100,7 @@ Backend logic runs as **Netlify Functions** (serverless). The tRPC app router is
 ```
 Netlify Functions (netlify/functions/)
 ├── tRPC handler (trpc.ts) exposing the app router
-├── AI/LLM calls (Claude via Anthropic SDK, Whisper transcription)
+├── AI/LLM calls (free-tier LLM router — Groq/Gemini/OpenRouter, Whisper transcription)
 ├── Feature endpoints (estimate-project, lead-score, search, stripe-*, etc.)
 ├── Scheduled tasks (daily-briefing, weather checks, procurement)
 └── Webhooks (Stripe, n8n, Netlify form submissions, notifications)
@@ -344,7 +344,7 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 
 ### Phase 2: Core Operations (Field Reporting + Scheduling)
 
-- [x] Voice-to-report system (Whisper + Claude via Netlify Functions)
+- [x] Voice-to-report system (Whisper + free-tier LLM via Netlify Functions)
 - [ ] Gantt chart component with weather-responsive logic
 - [x] Field report UI for Eric to review and publish
 - [ ] Real-time updates to client portal
@@ -455,7 +455,7 @@ These functions are **implemented** in `netlify/functions/` (20+ total). A repre
 
 | Function                   | Purpose                                                            |
 | :------------------------- | :----------------------------------------------------------------- |
-| `voice-to-report`          | Whisper transcription + Claude report generation                   |
+| `voice-to-report`          | Whisper transcription + AI report generation                       |
 | `estimate-project`         | Real-time cost calculation from project params                     |
 | `weather-schedule`         | Eugene, OR weather → schedule adjustments                          |
 | `material-procurement`     | Shortage tracking + persisted purchase-order generation            |

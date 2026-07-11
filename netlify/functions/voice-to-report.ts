@@ -6,7 +6,7 @@
  *  2. JSON body: { projectId, audio, mimeType } — base64-encoded audio, transcribed
  *     server-side via OpenAI Whisper (requires OPENAI_API_KEY)
  *
- * Generates a structured field report via Claude/Gemini and saves to field_reports table.
+ * Generates a structured field report via the free-tier LLM router and saves to field_reports table.
  */
 import { requireSupabaseAdmin } from "../../server/_core/supabase";
 import { transcribeAudio } from "../../server/_core/voiceTranscription";
@@ -77,7 +77,7 @@ export const handler = withGuards(
         );
       }
 
-      // ── 2. Generate structured report with Claude/Gemini ──────────────────────
+      // ── 2. Generate structured report with the free-tier LLM router ───────────
       const llmResult = await invokeLLM({
         feature: "voice-to-report",
         messages: [

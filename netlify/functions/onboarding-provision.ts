@@ -1,7 +1,7 @@
 /**
  * onboarding-provision — Batch-writes multiple environment variables
  * and triggers a single redeploy. Designed for the Onboarding Wizard
- * flow where Eric finalizes a phase (e.g., "Anthropic + OpenWeatherMap
+ * flow where Eric finalizes a phase (e.g., "AI + OpenWeatherMap
  * keys collected") and we commit the batch atomically.
  *
  * POST /api/onboarding-provision
@@ -39,7 +39,10 @@ import { timingSafeEqualStr } from "./_lib/crypto";
 // Per-phase allowlists. Each phase corresponds to a wizard step.
 const PHASE_ALLOWLIST: Record<string, Set<string>> = {
   ai: new Set([
-    "ANTHROPIC_API_KEY",
+    // Free-tier LLM providers (see server/_core/llm.ts).
+    "GROQ_API_KEY",
+    "GOOGLE_AI_API_KEY",
+    "OPENROUTER_API_KEY",
     "CLOUDFLARE_WORKERS_AI_TOKEN",
     "CLOUDFLARE_ACCOUNT_ID",
   ]),

@@ -21,7 +21,9 @@ affected keys immediately so the historical fragments are worthless.
 | Key                      | Action                           | URL                                         |
 | ------------------------ | -------------------------------- | ------------------------------------------- |
 | `OPENAI_API_KEY`         | Delete old key; generate new one | https://platform.openai.com/api-keys        |
-| `ANTHROPIC_API_KEY`      | Delete old key; generate new one | https://console.anthropic.com/settings/keys |
+| `GROQ_API_KEY`           | Delete old key; generate new one | https://console.groq.com/keys               |
+| `GOOGLE_AI_API_KEY`      | Delete old key; generate new one | https://aistudio.google.com/app/apikey      |
+| `OPENROUTER_API_KEY`     | Delete old key; generate new one | https://openrouter.ai/keys                  |
 | `OPENWEATHERMAP_API_KEY` | Regenerate key                   | https://home.openweathermap.org/api_keys    |
 
 After generating new keys, add them to the Netlify dashboard (Phase 3, Step 5
@@ -95,7 +97,9 @@ write actual keys into this document.
 | **Netlify**          | Hosting + functions                  | netlify.com (business email)  | Site transfers to Eric's team             |
 | **Supabase**         | Database + auth                      | supabase.com                  | Project transfers to Eric's org           |
 | **OpenAI**           | Whisper voice transcription          | platform.openai.com           | Generate fresh key (rotate existing)      |
-| **Anthropic**        | Claude AI (estimator, chat, reports) | console.anthropic.com         | Generate fresh key (rotate existing)      |
+| **Groq**             | Free-tier AI (estimator, chat, reports) — primary | console.groq.com/keys | Generate fresh key (rotate existing)      |
+| **Google Gemini**    | Free-tier AI fallback                | aistudio.google.com/app/apikey | Generate fresh key (rotate existing)     |
+| **OpenRouter**       | Free-tier AI fallback                | openrouter.ai/keys            | Generate fresh key (rotate existing)      |
 | **OpenWeatherMap**   | Weather scheduling                   | openweathermap.org            | Regenerate key (rotate existing)          |
 | **Stripe**           | Milestone billing (Phase 5)          | dashboard.stripe.com          | Eric creates account; use test keys first |
 | **n8n**              | Automation workflows (Phase 4)       | n8n.io or self-hosted         | Eric creates account                      |
@@ -107,7 +111,9 @@ After all services are under Eric's ownership, confirm every variable is set in
 **Netlify → Site → Environment variables**:
 
 ```
-ANTHROPIC_API_KEY          ← Anthropic (rotated)
+GROQ_API_KEY               ← Groq (rotated) — primary free-tier AI
+GOOGLE_AI_API_KEY          ← Google Gemini (rotated) — AI fallback
+OPENROUTER_API_KEY         ← OpenRouter (rotated) — AI fallback
 OPENAI_API_KEY             ← OpenAI (rotated)
 OPENWEATHERMAP_API_KEY     ← OpenWeatherMap (rotated)
 DATABASE_URL               ← Supabase (from transferred project)
@@ -192,7 +198,9 @@ After all services are under Eric's control, rotate every credential:
 | Credential                  | How to Rotate                                                                     |
 | --------------------------- | --------------------------------------------------------------------------------- |
 | `OPENAI_API_KEY`            | platform.openai.com → API Keys → Create new key → delete old                      |
-| `ANTHROPIC_API_KEY`         | console.anthropic.com → API Keys → Create new key → delete old                    |
+| `GROQ_API_KEY`              | console.groq.com/keys → Create API Key → delete old                               |
+| `GOOGLE_AI_API_KEY`         | aistudio.google.com/app/apikey → Create API key → delete old                      |
+| `OPENROUTER_API_KEY`        | openrouter.ai/keys → Create Key → delete old                                      |
 | `OPENWEATHERMAP_API_KEY`    | openweathermap.org → My API Keys → Generate                                       |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → Reveal → Regenerate                                   |
 | Supabase JWT Secret         | Supabase → Auth → Settings → JWT Secret → Generate new (invalidates all sessions) |
@@ -277,7 +285,7 @@ Run this checklist with Eric logged in under his own accounts:
 
 ### Security
 
-- [ ] All three rotated keys (OpenAI, Anthropic, OpenWeatherMap) are active in Netlify
+- [ ] All rotated keys (OpenAI, Groq, Google Gemini, OpenRouter, OpenWeatherMap) are active in Netlify
 - [ ] Old keys are deleted from the previous developer's accounts
 - [ ] No console errors on any core page (open browser DevTools → Console)
 
@@ -317,7 +325,9 @@ Document answers to these questions before completing the handover:
 - Netlify status: https://www.netlifystatus.com
 - Supabase status: https://status.supabase.com
 - OpenAI status: https://status.openai.com
-- Anthropic status: https://status.anthropic.com
+- Groq status: https://groqstatus.com
+- Google AI status: https://status.cloud.google.com
+- OpenRouter status: https://status.openrouter.ai
 
 ---
 

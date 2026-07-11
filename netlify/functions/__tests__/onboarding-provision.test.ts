@@ -97,7 +97,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-test" },
+          vars: { GROQ_API_KEY: "gsk-test" },
         }) as any,
         {} as any
       );
@@ -112,7 +112,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: "whatever",
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-test" },
+          vars: { GROQ_API_KEY: "gsk-test" },
         }) as any,
         {} as any
       );
@@ -127,7 +127,7 @@ describe("onboarding-provision function", () => {
       const res = await handler(
         mockEvent("POST", {
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-test" },
+          vars: { GROQ_API_KEY: "gsk-test" },
         }) as any,
         {} as any
       );
@@ -140,7 +140,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: "wrong-token-but-exact-right-length",
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-test" },
+          vars: { GROQ_API_KEY: "gsk-test" },
         }) as any,
         {} as any
       );
@@ -153,7 +153,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: "short",
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-test" },
+          vars: { GROQ_API_KEY: "gsk-test" },
         }) as any,
         {} as any
       );
@@ -166,7 +166,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: 12345,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-test" },
+          vars: { GROQ_API_KEY: "gsk-test" },
         }) as any,
         {} as any
       );
@@ -207,7 +207,7 @@ describe("onboarding-provision function", () => {
       const phases = [
         {
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-test" },
+          vars: { GROQ_API_KEY: "gsk-test" },
         },
         { phase: "weather", vars: { OPENWEATHERMAP_API_KEY: "abc123" } },
         {
@@ -272,7 +272,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "   " }, // whitespace only
+          vars: { GROQ_API_KEY: "   " }, // whitespace only
         }) as any,
         {} as any
       );
@@ -286,7 +286,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "x".repeat(3000) },
+          vars: { GROQ_API_KEY: "x".repeat(3000) },
         }) as any,
         {} as any
       );
@@ -310,7 +310,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-api03-abc" },
+          vars: { GROQ_API_KEY: "gsk-api03-abc" },
         }) as any,
         {} as any
       );
@@ -318,10 +318,10 @@ describe("onboarding-provision function", () => {
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body!);
       expect(body.ok).toBe(true);
-      expect(body.written).toEqual(["ANTHROPIC_API_KEY"]);
+      expect(body.written).toEqual(["GROQ_API_KEY"]);
       // Verify GET (exists check) then POST (create) were called
       expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/env/ANTHROPIC_API_KEY"),
+        expect.stringContaining("/env/GROQ_API_KEY"),
         expect.objectContaining({ method: "GET" })
       );
       expect(fetchMock).toHaveBeenCalledWith(
@@ -344,7 +344,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-new" },
+          vars: { GROQ_API_KEY: "gsk-new" },
         }) as any,
         {} as any
       );
@@ -357,7 +357,7 @@ describe("onboarding-provision function", () => {
 
     it("does not overwrite an existing env var", async () => {
       const fetchMock = vi.fn().mockResolvedValueOnce(
-        new Response(JSON.stringify({ key: "ANTHROPIC_API_KEY" }), {
+        new Response(JSON.stringify({ key: "GROQ_API_KEY" }), {
           status: 200,
         })
       );
@@ -368,7 +368,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant-existing" },
+          vars: { GROQ_API_KEY: "gsk-existing" },
         }) as any,
         {} as any
       );
@@ -377,7 +377,7 @@ describe("onboarding-provision function", () => {
       const body = JSON.parse(res.body!);
       expect(body.ok).toBe(true);
       expect(body.written).toEqual([]);
-      expect(body.skippedExisting).toEqual(["ANTHROPIC_API_KEY"]);
+      expect(body.skippedExisting).toEqual(["GROQ_API_KEY"]);
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock.mock.calls[0][1].method).toBe("GET");
     });
@@ -399,7 +399,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant" },
+          vars: { GROQ_API_KEY: "gsk" },
           triggerDeploy: true,
         }) as any,
         {} as any
@@ -427,7 +427,7 @@ describe("onboarding-provision function", () => {
         mockEvent("POST", {
           onboardingToken: VALID_TOKEN,
           phase: "ai",
-          vars: { ANTHROPIC_API_KEY: "sk-ant" },
+          vars: { GROQ_API_KEY: "gsk" },
         }) as any,
         {} as any
       );

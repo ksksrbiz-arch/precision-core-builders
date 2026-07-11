@@ -130,37 +130,6 @@ async function checkCloudflareAI(): Promise<ServiceStatus> {
   }
 }
 
-async function checkAnthropicAI(): Promise<ServiceStatus> {
-  const key = process.env.ANTHROPIC_API_KEY;
-
-  if (!key) {
-    return {
-      id: "anthropic_ai",
-      name: "Anthropic Claude (Fallback)",
-      status: "not_configured",
-      message: "ANTHROPIC_API_KEY not set",
-    };
-  }
-
-  // Just verify the key format, don't make a real call to save quota
-  if (!key.startsWith("sk-ant-")) {
-    return {
-      id: "anthropic_ai",
-      name: "Anthropic Claude (Fallback)",
-      status: "error",
-      message: "Invalid key format (should start with sk-ant-)",
-    };
-  }
-
-  return {
-    id: "anthropic_ai",
-    name: "Anthropic Claude (Fallback)",
-    status: "healthy",
-    message: "API key configured (format valid)",
-    details: { keyLength: key.length },
-  };
-}
-
 async function checkWeather(): Promise<ServiceStatus> {
   const key = process.env.OPENWEATHERMAP_API_KEY;
 
@@ -587,7 +556,6 @@ export const handler: Handler = async event => {
   const [
     supabase,
     cloudflareAI,
-    anthropicAI,
     geminiAI,
     groqAI,
     openrouterAI,
@@ -601,7 +569,6 @@ export const handler: Handler = async event => {
   ] = await Promise.all([
     checkSupabase(),
     checkCloudflareAI(),
-    checkAnthropicAI(),
     checkGemini(),
     checkGroq(),
     checkOpenRouter(),
@@ -622,7 +589,6 @@ export const handler: Handler = async event => {
     geminiAI,
     openrouterAI,
     cloudflareAI,
-    anthropicAI,
     openai,
     weather,
     freePayments,
