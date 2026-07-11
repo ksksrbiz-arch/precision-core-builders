@@ -191,10 +191,8 @@ precision-core-builders/
 │   │   ├── systemRouter.ts      # health, notifyOwner endpoints
 │   │   ├── llm.ts               # LLM types (stubbed)
 │   │   ├── voiceTranscription.ts # Voice-to-text interface (stubbed)
-│   │   ├── imageGeneration.ts   # Image generation (stubbed)
 │   │   ├── notification.ts      # Notification delivery (stubbed)
-│   │   ├── map.ts               # Map utilities
-│   │   └── dataApi.ts           # Manus data API (LEGACY — remove)
+│   │   └── map.ts               # Map utilities
 │   ├── routers.ts               # appRouter definition
 │   ├── db.ts                    # Drizzle ORM, user queries (adapt to Netlify DB extension)
 │   ├── storage.ts               # AWS S3 helpers (LEGACY — replace with Netlify Blobs)
