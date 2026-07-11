@@ -1,7 +1,14 @@
 /**
- * LLM-Powered Operational Search — POST /api/search
- * Semantic search across projects, clients, field reports, materials,
- * and schedule items using Claude for intent extraction + Supabase full-text search.
+ * Operational Search — POST /api/search
+ * Ranked search across projects, clients, field reports, materials, and
+ * schedule items.
+ *
+ * Primary path: Postgres full-text search via the `search_all` RPC
+ * (drizzle/migrations/0006_search_fts.sql) — stemming, multi-word AND, and
+ * ts_rank relevance ordering. If that RPC is unavailable (migration not yet
+ * applied, or any error) the handler transparently falls back to the original
+ * LLM intent extraction + PostgREST ILIKE implementation, so behavior never
+ * regresses.
  */
 import { invokeLLM } from "../../server/_core/llm";
 import { db } from "../../server/db";
@@ -52,6 +59,59 @@ interface SearchResult {
   subtitle: string;
   href: string;
   meta?: string;
+}
+
+// ─── FTS (primary) path ───────────────────────────────────────────────
+// Ranked Postgres full-text search via the `search_all` RPC (see
+// drizzle/migrations/0006_search_fts.sql). If the function/indexes aren't
+// present the RPC errors and the handler falls back to the ILIKE path below,
+// so behavior is identical until the migration is applied.
+
+/** Uniform row shape returned by the `search_all(q)` Postgres function. */
+interface FtsRow {
+  entity: string;
+  id: number;
+  title: string;
+  subtitle: string;
+  rank: number;
+  created_at: string;
+}
+
+/** Maps a `search_all` entity to the frontend `type` + detail-page href. */
+const FTS_ENTITY_ROUTE: Record<
+  string,
+  { type: string; href: (id: number) => string }
+> = {
+  project: { type: "project", href: id => `/admin/projects/${id}` },
+  client: { type: "client", href: id => `/admin/clients/${id}` },
+  field_report: { type: "field_report", href: () => `/admin/field-reports` },
+  material: { type: "material", href: () => `/admin/materials` },
+  schedule_item: { type: "schedule_item", href: () => `/admin/schedule` },
+};
+
+/**
+ * Primary search path: calls the `search_all` RPC for ranked FTS. Rows come
+ * back already ordered by rank descending with title/subtitle pre-formatted to
+ * match the ILIKE path, so mapping is a straight projection into SearchResult.
+ * Throws on any RPC error so the caller can fall back to ILIKE.
+ */
+async function searchViaFts(query: string): Promise<SearchResult[]> {
+  const { data, error } = await db.rpc("search_all", { q: query });
+  if (error) throw error;
+  const rows = (data ?? []) as FtsRow[];
+  return rows.flatMap(row => {
+    const route = FTS_ENTITY_ROUTE[row.entity];
+    if (!route) return [];
+    return [
+      {
+        type: route.type,
+        id: row.id,
+        title: row.title,
+        subtitle: row.subtitle ?? "",
+        href: route.href(row.id),
+      },
+    ];
+  });
 }
 
 async function searchProjects(
@@ -167,6 +227,78 @@ async function searchSchedule(keywords: string[]): Promise<SearchResult[]> {
   }));
 }
 
+// ─── ILIKE (fallback) path ────────────────────────────────────────────
+/**
+ * Legacy search path: LLM intent extraction + per-entity PostgREST ILIKE
+ * matching. Used verbatim as the fallback whenever the FTS RPC is unavailable
+ * (function/indexes not yet applied, or any RPC error), so search behavior is
+ * identical to before this feature until the migration is in place.
+ */
+async function ilikeSearch(
+  query: string
+): Promise<{ results: SearchResult[]; summary: string }> {
+  // Extract intent via LLM
+  let intent: {
+    entities: string[];
+    keywords: string[];
+    filters: Record<string, string | null>;
+    summary: string;
+  };
+  try {
+    const raw = await invokeLLM({
+      feature: "search",
+      messages: [
+        { role: "system", content: PROMPTS.searchIntent },
+        { role: "user", content: query },
+      ],
+      jsonMode: true,
+      maxTokens: 300,
+      temperature: 0,
+    });
+    intent = JSON.parse(raw.text);
+  } catch {
+    // Fallback: treat entire query as keyword search across all entities
+    intent = {
+      entities: [
+        "projects",
+        "clients",
+        "field_reports",
+        "materials",
+        "schedule_items",
+      ],
+      keywords: query.split(/\s+/).slice(0, 3),
+      filters: {},
+      summary: query,
+    };
+  }
+
+  const entities = intent.entities?.length
+    ? intent.entities
+    : ["projects", "clients", "field_reports", "materials"];
+  const keywords = intent.keywords?.length ? intent.keywords : [query];
+
+  // Run parallel searches across requested entities
+  const searches: Promise<SearchResult[]>[] = [];
+  if (entities.includes("projects"))
+    searches.push(searchProjects(keywords, intent.filters ?? {}));
+  if (entities.includes("clients")) searches.push(searchClients(keywords));
+  if (entities.includes("field_reports"))
+    searches.push(searchFieldReports(keywords));
+  if (entities.includes("materials")) searches.push(searchMaterials(keywords));
+  if (entities.includes("schedule_items"))
+    searches.push(searchSchedule(keywords));
+
+  const resultSets = await Promise.allSettled(searches);
+  const results: SearchResult[] = resultSets
+    .filter(
+      (r): r is PromiseFulfilledResult<SearchResult[]> =>
+        r.status === "fulfilled"
+    )
+    .flatMap(r => r.value);
+
+  return { results, summary: intent.summary };
+}
+
 export const handler = withGuards(
   // Operational search reads private business data (clients, budgets, field
   // reports, vendor pricing) via the service-role DB — require an authenticated
@@ -192,69 +324,31 @@ export const handler = withGuards(
         return error(400, "Query must be at least 2 characters.");
       }
 
-      // Extract intent via LLM
-      let intent: {
-        entities: string[];
-        keywords: string[];
-        filters: Record<string, string | null>;
-        summary: string;
-      };
+      // Primary path: ranked Postgres full-text search via the `search_all`
+      // RPC. websearch_to_tsquery already handles multi-word / phrase /
+      // negation, so the raw query is passed straight through (no LLM intent
+      // extraction needed here).
       try {
-        const raw = await invokeLLM({
-          feature: "search",
-          messages: [
-            { role: "system", content: PROMPTS.searchIntent },
-            { role: "user", content: query },
-          ],
-          jsonMode: true,
-          maxTokens: 300,
-          temperature: 0,
-        });
-        intent = JSON.parse(raw.text);
-      } catch {
-        // Fallback: treat entire query as keyword search across all entities
-        intent = {
-          entities: [
-            "projects",
-            "clients",
-            "field_reports",
-            "materials",
-            "schedule_items",
-          ],
-          keywords: query.split(/\s+/).slice(0, 3),
-          filters: {},
+        const results = await searchViaFts(query);
+        return json(200, {
+          results,
           summary: query,
-        };
+          total: results.length,
+        });
+      } catch (ftsErr) {
+        // FTS objects not present (PGRST202 / 42883) or any RPC failure:
+        // degrade to the original LLM + ILIKE implementation so search never
+        // regresses before the migration is applied.
+        console.warn(
+          "[search] FTS unavailable, falling back to ILIKE:",
+          ftsErr
+        );
       }
 
-      const entities = intent.entities?.length
-        ? intent.entities
-        : ["projects", "clients", "field_reports", "materials"];
-      const keywords = intent.keywords?.length ? intent.keywords : [query];
-
-      // Run parallel searches across requested entities
-      const searches: Promise<SearchResult[]>[] = [];
-      if (entities.includes("projects"))
-        searches.push(searchProjects(keywords, intent.filters ?? {}));
-      if (entities.includes("clients")) searches.push(searchClients(keywords));
-      if (entities.includes("field_reports"))
-        searches.push(searchFieldReports(keywords));
-      if (entities.includes("materials"))
-        searches.push(searchMaterials(keywords));
-      if (entities.includes("schedule_items"))
-        searches.push(searchSchedule(keywords));
-
-      const resultSets = await Promise.allSettled(searches);
-      const results: SearchResult[] = resultSets
-        .filter(
-          (r): r is PromiseFulfilledResult<SearchResult[]> =>
-            r.status === "fulfilled"
-        )
-        .flatMap(r => r.value);
-
+      const { results, summary } = await ilikeSearch(query);
       return json(200, {
         results,
-        summary: intent.summary,
+        summary,
         total: results.length,
       });
     } catch (err) {
