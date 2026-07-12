@@ -220,6 +220,9 @@ export const fieldReports = pgTable(
     publishedToClient: boolean("published_to_client").default(false),
     publishedAt: timestamp("published_at"),
     photoUrls: text("photo_urls"),
+    // AI vision tags for each attached photo (JSON string). Produced by the
+    // free-tier vision model and populated automatically — see visionTagging.ts.
+    photoTags: text("photo_tags"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

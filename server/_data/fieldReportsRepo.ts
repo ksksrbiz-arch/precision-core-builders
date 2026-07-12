@@ -93,6 +93,29 @@ export async function getFieldReportProjectId(id: number) {
   return data.from("field_reports").select("project_id").eq("id", id).single();
 }
 
+/** Fetch just the photo columns needed to run / persist vision tagging. */
+export async function getFieldReportPhotos(id: number) {
+  return unwrapOne(
+    await data
+      .from("field_reports")
+      .select("id,photo_urls,photo_tags")
+      .eq("id", id)
+      .single()
+  );
+}
+
+/** Persist the AI vision tags (JSON string) for a report's photos. */
+export async function saveFieldReportPhotoTags(id: number, photoTags: string) {
+  return unwrapOne(
+    await data
+      .from("field_reports")
+      .update({ photo_tags: photoTags })
+      .eq("id", id)
+      .select()
+      .single()
+  );
+}
+
 export async function deleteFieldReport(id: number) {
   return unwrapVoid(await data.from("field_reports").delete().eq("id", id));
 }
