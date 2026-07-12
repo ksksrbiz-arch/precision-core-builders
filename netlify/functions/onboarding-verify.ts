@@ -264,11 +264,12 @@ export const handler: Handler = async event => {
       body: JSON.stringify({ ...result, service }),
     };
   } catch (err) {
+    console.error("[onboarding-verify]", err);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: "Verification failed to run. Please try again.",
       }),
     };
   }

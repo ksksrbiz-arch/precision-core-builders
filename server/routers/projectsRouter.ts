@@ -286,7 +286,12 @@ export const projectsRouter = router({
       const basis = contracted || estimated;
       const profit = basis - actualCost;
       const marginPct = basis > 0 ? (profit / basis) * 100 : 0;
-      const variance = estimated > 0 ? actualCost - estimated : 0;
+      // Variance is measured against the SAME basis as profit/margin
+      // (contracted-or-estimate), not the estimate alone — otherwise a project
+      // with a contracted budget reports profit and variance against different
+      // denominators. Positive = actual cost over budget (i.e. variance
+      // === -profit), matching the ProfitabilityView "over estimate" display.
+      const variance = basis > 0 ? actualCost - basis : 0;
       return {
         id: p.id as number,
         name: p.name as string,

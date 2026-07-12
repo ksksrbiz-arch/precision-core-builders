@@ -353,7 +353,7 @@ export const handler = withGuards(
       });
     } catch (err) {
       console.error("[search]", err);
-      return error(500, String(err));
+      return error(500, "Search is temporarily unavailable. Please try again.");
     }
   }
 );

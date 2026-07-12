@@ -81,6 +81,28 @@ export const handler = withGuards(
         );
       }
 
+      // Whitelist + map the model's cost fields onto the real snake_case
+      // columns. Never spread raw LLM JSON into the insert: unexpected keys
+      // fail (or pollute) the row, and the camelCase keys don't match the
+      // columns anyway.
+      const toNum = (v: unknown): number | null => {
+        const n = typeof v === "number" ? v : parseFloat(String(v ?? ""));
+        return Number.isFinite(n) ? n : null;
+      };
+      const estimateColumns = {
+        estimated_low: toNum(estimate.estimatedLow),
+        estimated_mid: toNum(estimate.estimatedMid),
+        estimated_high: toNum(estimate.estimatedHigh),
+        labor_cost: toNum(estimate.laborCost),
+        materials_cost: toNum(estimate.materialsCost),
+        permits_cost: toNum(estimate.permitsCost),
+        contingency: toNum(estimate.contingency),
+        ai_reasoning:
+          typeof estimate.aiReasoning === "string"
+            ? estimate.aiReasoning
+            : null,
+      };
+
       // Save to estimates table if projectId or clientId provided
       let savedEstimate = null;
       const db = getSupabaseAdmin();
@@ -96,7 +118,7 @@ export const handler = withGuards(
             materials: materials ? JSON.stringify(materials) : null,
             location: location ?? "Eugene, OR",
             additional_notes: additionalNotes,
-            ...estimate,
+            ...estimateColumns,
             expires_at: new Date(
               Date.now() + 30 * 24 * 60 * 60 * 1000
             ).toISOString(),
@@ -109,7 +131,10 @@ export const handler = withGuards(
       return json(200, { ...estimate, savedEstimate });
     } catch (err) {
       console.error("[estimate-project]", err);
-      return error(500, err instanceof Error ? err.message : "Internal error");
+      return error(
+        500,
+        "Unable to generate the estimate right now. Please try again."
+      );
     }
   }
 );
