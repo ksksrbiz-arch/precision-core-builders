@@ -53,6 +53,7 @@ import {
   Settings,
   Shield,
   Sparkles,
+  TrendingUp,
   Truck,
   Users,
   Wrench,
@@ -101,6 +102,11 @@ const BASE_NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
     label: "Insights & Platform",
     items: [
       { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+      {
+        icon: TrendingUp,
+        label: "Profitability",
+        path: "/admin/profitability",
+      },
       { icon: Search, label: "Search", path: "/admin/search", badge: "⌘K" },
       { icon: Bell, label: "Notifications", path: "/admin/notifications" },
       { icon: Sparkles, label: "Finish Selections", path: "/admin/finishes" },

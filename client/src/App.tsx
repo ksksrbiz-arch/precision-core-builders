@@ -102,6 +102,7 @@ const FinishSelectionsAdmin = lazy(
   () => import("./pages/admin/FinishSelectionsAdmin")
 );
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
+const ProfitabilityView = lazy(() => import("./pages/admin/ProfitabilityView"));
 const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
 const NotificationsView = lazy(() => import("./pages/admin/NotificationsView"));
 const BlueprintTools = lazy(() => import("./pages/admin/BlueprintTools"));
@@ -242,6 +243,10 @@ function Router() {
           component={adminPage(FinishSelectionsAdmin)}
         />
         <Route path="/admin/analytics" component={adminPage(Analytics)} />
+        <Route
+          path="/admin/profitability"
+          component={adminPage(ProfitabilityView)}
+        />
         <Route path="/admin/activity-log" component={adminPage(ActivityLog)} />
         <Route
           path="/admin/notifications"
