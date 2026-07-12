@@ -3,7 +3,7 @@
  * Reads /api/ai-usage (admin) and shows totals, free-vs-paid split, and
  * per-provider / per-feature breakdowns so spend stays visible.
  */
-import { useAuth } from "@/_core/hooks/useAuth";
+import { getAuthHeader } from "@/lib/authHeader";
 import { Brain, Cpu, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -21,7 +21,6 @@ type UsageData = {
 const fmt = (n: number) => n.toLocaleString();
 
 export default function AiUsagePanel() {
-  const { accessToken } = useAuth();
   const [data, setData] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,9 +29,7 @@ export default function AiUsagePanel() {
     (async () => {
       try {
         const res = await fetch("/api/ai-usage?days=30", {
-          headers: accessToken
-            ? { Authorization: `Bearer ${accessToken}` }
-            : {},
+          headers: await getAuthHeader(),
         });
         const json = await res.json();
         if (!cancelled) setData(json);
@@ -45,7 +42,7 @@ export default function AiUsagePanel() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, []);
 
   const totalCalls = data?.totals?.calls ?? 0;
   const free = data?.freeVsPaid?.freeCalls ?? 0;

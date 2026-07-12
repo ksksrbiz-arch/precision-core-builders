@@ -14,7 +14,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { getAuthHeader } from "@/lib/authHeader";
 import { trpc } from "@/lib/trpc";
 import { PROJECT_TYPES } from "@/config/projects";
 import { ArrowLeft, Calculator, Loader2, Sparkles } from "lucide-react";
@@ -101,7 +101,6 @@ export default function EstimateEditor() {
   const estimateId = id ? parseInt(id, 10) : null;
   const isEdit = estimateId != null && !Number.isNaN(estimateId);
 
-  const { accessToken } = useAuth();
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [prefilling, setPrefilling] = useState(false);
   const [prefillError, setPrefillError] = useState("");
@@ -212,7 +211,7 @@ export default function EstimateEditor() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...(await getAuthHeader()),
         },
         body: JSON.stringify({
           projectType: form.projectType,
