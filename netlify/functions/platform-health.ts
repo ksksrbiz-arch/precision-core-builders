@@ -4,7 +4,8 @@
  *
  * GET /api/platform-health?adminToken=xxx
  *
- * Returns status of: Supabase, Cloudflare AI, Weather API, Stripe, n8n
+ * Returns status of: Supabase, Groq, OpenRouter, LLM routing, Weather API,
+ * Stripe, n8n.
  */
 import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
@@ -65,65 +66,6 @@ async function checkSupabase(): Promise<ServiceStatus> {
     return {
       id: "supabase",
       name: "Supabase Database",
-      status: "error",
-      message: String(err),
-      latencyMs: Date.now() - start,
-    };
-  }
-}
-
-async function checkCloudflareAI(): Promise<ServiceStatus> {
-  const token = process.env.CF_API_TOKEN;
-  const accountId = process.env.CF_ACCOUNT_ID;
-
-  if (!token || !accountId) {
-    return {
-      id: "cloudflare_ai",
-      name: "Cloudflare Workers AI",
-      status: "not_configured",
-      message: "CF_API_TOKEN or CF_ACCOUNT_ID not set",
-    };
-  }
-
-  const start = Date.now();
-  try {
-    // Simple test call to the AI
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: "Say OK" }],
-          max_tokens: 10,
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`HTTP ${res.status}: ${text.slice(0, 100)}`);
-    }
-
-    const data = (await res.json()) as any;
-    const hasResponse = data?.result?.response || data?.response;
-
-    return {
-      id: "cloudflare_ai",
-      name: "Cloudflare Workers AI",
-      status: hasResponse ? "healthy" : "degraded",
-      message: hasResponse
-        ? "AI responding normally"
-        : "AI returned empty response",
-      latencyMs: Date.now() - start,
-    };
-  } catch (err) {
-    return {
-      id: "cloudflare_ai",
-      name: "Cloudflare Workers AI",
       status: "error",
       message: String(err),
       latencyMs: Date.now() - start,
@@ -264,36 +206,6 @@ async function checkN8n(): Promise<ServiceStatus> {
   }
 }
 
-async function checkGemini(): Promise<ServiceStatus> {
-  const key = process.env.GOOGLE_AI_API_KEY;
-
-  if (!key) {
-    return {
-      id: "google_ai",
-      name: "Google Gemini (Free LLM + Voice)",
-      status: "not_configured",
-      message: "GOOGLE_AI_API_KEY not set",
-    };
-  }
-
-  if (!key.startsWith("AIza")) {
-    return {
-      id: "google_ai",
-      name: "Google Gemini (Free LLM + Voice)",
-      status: "error",
-      message: "Invalid key format (should start with AIza)",
-    };
-  }
-
-  return {
-    id: "google_ai",
-    name: "Google Gemini (Free LLM + Voice)",
-    status: "healthy",
-    message: "Free tier configured (LLM + audio transcription)",
-    details: { keyLength: key.length },
-  };
-}
-
 async function checkGroq(): Promise<ServiceStatus> {
   const key = process.env.GROQ_API_KEY;
   if (!key) {
@@ -362,10 +274,10 @@ async function checkLLMRouting(): Promise<ServiceStatus> {
       name: "AI Routing (Free-First Fallback)",
       status: "not_configured",
       message:
-        "No LLM provider configured. Set GROQ_API_KEY or GOOGLE_AI_API_KEY (both free).",
+        "No LLM provider configured. Set GROQ_API_KEY or OPENROUTER_API_KEY (both free).",
     };
   }
-  const usingFreeFirst = ["groq", "gemini", "openrouter"].includes(order[0]);
+  const usingFreeFirst = ["groq", "openrouter"].includes(order[0]);
   return {
     id: "llm_routing",
     name: "AI Routing (Free-First Fallback)",
@@ -410,15 +322,15 @@ async function checkOpenAI(): Promise<ServiceStatus> {
   const key = process.env.OPENAI_API_KEY;
 
   if (!key) {
-    // OpenAI is now a legacy/optional transcription provider. The free-tier
-    // stack (Gemini + Groq Whisper) covers transcription, so a missing
-    // OPENAI_API_KEY is expected and must not surface as degraded/failed.
+    // OpenAI is now a legacy/optional transcription provider. Free-tier Groq
+    // Whisper covers transcription, so a missing OPENAI_API_KEY is expected and
+    // must not surface as degraded/failed.
     return {
       id: "openai",
       name: "OpenAI (Whisper, legacy)",
       status: "not_configured",
       message:
-        "OpenAI not used — free-tier transcription active (Gemini + Groq)",
+        "OpenAI not used — free-tier transcription active (Groq Whisper)",
     };
   }
 
@@ -553,8 +465,6 @@ export const handler: Handler = async event => {
   // Run all checks in parallel
   const [
     supabase,
-    cloudflareAI,
-    geminiAI,
     groqAI,
     openrouterAI,
     llmRouting,
@@ -566,8 +476,6 @@ export const handler: Handler = async event => {
     dbTables,
   ] = await Promise.all([
     checkSupabase(),
-    checkCloudflareAI(),
-    checkGemini(),
     checkGroq(),
     checkOpenRouter(),
     checkLLMRouting(),
@@ -584,9 +492,7 @@ export const handler: Handler = async event => {
     dbTables,
     llmRouting,
     groqAI,
-    geminiAI,
     openrouterAI,
-    cloudflareAI,
     openai,
     weather,
     freePayments,

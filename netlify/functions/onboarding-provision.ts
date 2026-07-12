@@ -41,7 +41,6 @@ const PHASE_ALLOWLIST: Record<string, Set<string>> = {
   ai: new Set([
     // Free-tier LLM providers (see server/_core/llm.ts).
     "GROQ_API_KEY",
-    "GOOGLE_AI_API_KEY",
     "OPENROUTER_API_KEY",
     "CLOUDFLARE_WORKERS_AI_TOKEN",
     "CLOUDFLARE_ACCOUNT_ID",

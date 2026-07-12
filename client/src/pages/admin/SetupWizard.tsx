@@ -130,38 +130,42 @@ const SERVICES: ServiceKey[] = [
     prefix: "",
   },
   {
-    id: "google_ai",
-    label: "Google Gemini (Free LLM + Voice)",
-    envKey: "GOOGLE_AI_API_KEY",
+    id: "groq",
+    label: "Groq (Free LLM + Voice)",
+    envKey: "GROQ_API_KEY",
     icon: Sparkles,
     description:
-      "Recommended free-tier brain for estimates, chat, field reports, and voice transcription — no credit card required.",
+      "Recommended free-tier brain for estimates, chat, field reports, and voice transcription (Whisper) — ultra-fast, no credit card required.",
     optional: false,
     guideSteps: [
-      "Go to aistudio.google.com and sign in with any Google account.",
-      "Click Get API key in the left sidebar, then Create API key.",
-      "Select Create API key in new project — the free tier is automatically enabled.",
-      "Copy the key (starts with AIza...) and paste it below.",
-      "Done. The platform will use Gemini for both LLM responses and voice transcription with no setup beyond this.",
+      "Go to console.groq.com and sign in (Google/GitHub or email).",
+      "Open API Keys in the left sidebar, then Create API Key.",
+      "Name it (e.g. 'precision-core') and copy the key (starts with gsk_).",
+      "Paste it below. The platform uses Groq for both LLM responses and voice transcription with no further setup.",
     ],
-    guideUrl: "https://aistudio.google.com/app/apikey",
-    urlLabel: "Open Google AI Studio",
-    placeholder: "AIza...",
-    prefix: "AIza",
+    guideUrl: "https://console.groq.com/keys",
+    urlLabel: "Open Groq Console",
+    placeholder: "gsk_...",
+    prefix: "gsk_",
   },
   {
-    id: "cloudflare_ai",
-    label: "Cloudflare Workers AI (Legacy)",
-    envKey: "CF_API_TOKEN",
+    id: "openrouter",
+    label: "OpenRouter (Free Vision + LLM fallback)",
+    envKey: "OPENROUTER_API_KEY",
     icon: Sparkles,
     description:
-      "Legacy free-tier AI option. Not used by the LLM router anymore (Gemini is preferred). Safe to leave blank.",
-    optional: true,
-    guideSteps: [],
-    guideUrl: "",
-    urlLabel: "",
-    placeholder: "Optional",
-    prefix: "",
+      "Powers Vision Studio photo analysis (free vision model) and serves as the automatic LLM fallback if Groq is unavailable.",
+    optional: false,
+    guideSteps: [
+      "Go to openrouter.ai and sign in.",
+      "Open Keys (openrouter.ai/keys), then Create Key.",
+      "Copy the key (starts with sk-or-) and paste it below.",
+      "Vision Studio and the LLM fallback will use OpenRouter's free models automatically.",
+    ],
+    guideUrl: "https://openrouter.ai/keys",
+    urlLabel: "Open OpenRouter Keys",
+    placeholder: "sk-or-...",
+    prefix: "sk-or-",
   },
   {
     id: "openai",
@@ -169,12 +173,12 @@ const SERVICES: ServiceKey[] = [
     envKey: "OPENAI_API_KEY",
     icon: Mic,
     description:
-      "Optional paid voice transcription. When set, replaces Gemini audio transcription. Leave blank to stay on the free tier.",
+      "Optional paid voice transcription. When set, replaces free Groq Whisper audio transcription. Leave blank to stay on the free tier.",
     optional: true,
     guideSteps: [],
     guideUrl: "",
     urlLabel: "",
-    placeholder: "Optional — leave blank for free Gemini audio",
+    placeholder: "Optional — leave blank for free Groq Whisper audio",
     prefix: "sk-",
   },
   {
@@ -770,8 +774,12 @@ function QuickActionsPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: "Say 'AI is working!' in exactly those words.",
-          context: "system_test",
+          messages: [
+            {
+              role: "user",
+              content: "Say 'AI is working!' in exactly those words.",
+            },
+          ],
         }),
       });
       const data = await res.json();
@@ -779,7 +787,7 @@ function QuickActionsPanel({
       addToast({
         type: "success",
         title: "AI Ready",
-        message: `AI Response: ${data.reply?.slice(0, 50) ?? "OK"}...`,
+        message: `AI Response: ${data.text?.slice(0, 50) ?? "OK"}...`,
         duration: 4000,
       });
     } catch (err) {
@@ -924,7 +932,7 @@ const MCP_ACTIONS: MCPAction[] = [
   {
     id: "test-ai",
     name: "Test AI Endpoint",
-    description: "Send a test prompt to Cloudflare Workers AI",
+    description: "Send a test prompt through the free-tier LLM router (Groq)",
     icon: Sparkles,
     category: "test",
   },

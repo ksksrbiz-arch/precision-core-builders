@@ -4,10 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("./env", () => ({
   ENV: {
     groqApiKey: "",
-    googleAiApiKey: "",
     openrouterApiKey: "",
     groqModel: "",
-    geminiModel: "",
     openrouterModel: "",
     llmProviderOrder: "",
     siteUrl: "",
@@ -49,10 +47,8 @@ async function collect(gen: AsyncGenerator<LLMStreamChunk>) {
 
 function resetEnv() {
   ENV.groqApiKey = "";
-  ENV.googleAiApiKey = "";
   ENV.openrouterApiKey = "";
   ENV.groqModel = "";
-  ENV.geminiModel = "";
   ENV.openrouterModel = "";
   ENV.llmProviderOrder = "";
   ENV.siteUrl = "";
@@ -65,19 +61,6 @@ const okOpenAI = (content: string, model = "test-model") => ({
     choices: [{ message: { content } }],
     model,
     usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 },
-  }),
-});
-
-const okGemini = (content: string) => ({
-  ok: true,
-  status: 200,
-  json: async () => ({
-    candidates: [{ content: { parts: [{ text: content }] } }],
-    usageMetadata: {
-      promptTokenCount: 1,
-      candidatesTokenCount: 2,
-      totalTokenCount: 3,
-    },
   }),
 });
 
@@ -113,10 +96,9 @@ describe("resolveProviderOrder", () => {
   it("honors LLM_PROVIDER_ORDER override", () => {
     ENV.groqApiKey = "g";
     ENV.openrouterApiKey = "o";
-    ENV.googleAiApiKey = "ge";
     ENV.llmProviderOrder = "openrouter,groq";
     // Override comes first; remaining configured providers appended.
-    expect(resolveProviderOrder()).toEqual(["openrouter", "groq", "gemini"]);
+    expect(resolveProviderOrder()).toEqual(["openrouter", "groq"]);
   });
 
   it("ignores unknown providers in the override list", () => {
@@ -181,24 +163,24 @@ describe("invokeLLM", () => {
 
   it("falls back to the next provider when the first errors", async () => {
     ENV.groqApiKey = "g";
-    ENV.googleAiApiKey = "ge";
+    ENV.openrouterApiKey = "o";
     const mock = fetch as ReturnType<typeof vi.fn>;
-    // Groq fails with a non-retryable 401, then Gemini succeeds.
+    // Groq fails with a non-retryable 401, then OpenRouter succeeds.
     mock.mockResolvedValueOnce(errResponse(401, "unauthorized"));
-    mock.mockResolvedValueOnce(okGemini("from gemini"));
+    mock.mockResolvedValueOnce(okOpenAI("from openrouter"));
 
     const result = await invokeLLM({
       messages: [{ role: "user", content: "hi" }],
     });
 
-    expect(result.provider).toBe("gemini");
-    expect(result.text).toBe("from gemini");
+    expect(result.provider).toBe("openrouter");
+    expect(result.text).toBe("from openrouter");
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it("throws an aggregated error when all providers fail", async () => {
     ENV.groqApiKey = "g";
-    ENV.googleAiApiKey = "ge";
+    ENV.openrouterApiKey = "o";
     const mock = fetch as ReturnType<typeof vi.fn>;
     mock.mockResolvedValue(errResponse(401, "unauthorized"));
 
@@ -254,32 +236,23 @@ describe("streamLLM", () => {
 
   it("falls back to the next provider when the first errors pre-stream", async () => {
     ENV.groqApiKey = "g";
-    ENV.googleAiApiKey = "ge";
+    ENV.openrouterApiKey = "o";
     const mock = fetch as ReturnType<typeof vi.fn>;
-    // Groq fails non-retryably, then Gemini (buffered) succeeds.
+    // Groq fails non-retryably, then OpenRouter streams successfully.
     mock.mockResolvedValueOnce(errResponse(401, "unauthorized"));
-    mock.mockResolvedValueOnce(okGemini("from gemini"));
-
-    const { text, done } = await collect(
-      streamLLM({ messages: [{ role: "user", content: "hi" }] })
-    );
-
-    expect(text).toBe("from gemini");
-    expect(done?.done.provider).toBe("gemini");
-  });
-
-  it("buffers Gemini into a single text chunk", async () => {
-    ENV.googleAiApiKey = "ge";
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      okGemini("buffered reply")
+    mock.mockResolvedValueOnce(
+      sseResponse([
+        'data: {"choices":[{"delta":{"content":"from openrouter"}}],"model":"or1"}\n\n',
+        "data: [DONE]\n\n",
+      ])
     );
 
     const { text, done } = await collect(
       streamLLM({ messages: [{ role: "user", content: "hi" }] })
     );
 
-    expect(text).toBe("buffered reply");
-    expect(done?.done.provider).toBe("gemini");
+    expect(text).toBe("from openrouter");
+    expect(done?.done.provider).toBe("openrouter");
   });
 
   it("throws an aggregated error when all providers fail pre-stream", async () => {

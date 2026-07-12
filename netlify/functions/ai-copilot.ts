@@ -163,7 +163,7 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
       return errorBody(
         isConfigError ? 503 : 500,
         isConfigError
-          ? "AI is not configured yet. Add a free GROQ_API_KEY or GOOGLE_AI_API_KEY."
+          ? "AI is not configured yet. Add a free GROQ_API_KEY or OPENROUTER_API_KEY."
           : "Co-pilot is temporarily unavailable. Please try again."
       );
     }

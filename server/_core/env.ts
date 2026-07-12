@@ -13,29 +13,24 @@ export const ENV = {
     "",
 
   // AI / LLM (free-tier providers only)
+  // OpenAI — legacy/optional paid Whisper transcription (free Groq Whisper is
+  // the default; this is only used when GROQ_API_KEY is unset).
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
-  // Google Gemini — free tier via Google AI Studio (no credit card required)
-  // Get a free key at: https://aistudio.google.com/app/apikey
-  // Free Google AI (Gemini) key. Accept GEMINI_API_KEY as an alias — some
-  // Netlify setups store the key under that name, and without this the whole
-  // free Gemini path (LLM fallback, Vision, transcription) silently no-ops.
-  googleAiApiKey:
-    process.env.GOOGLE_AI_API_KEY ?? process.env.GEMINI_API_KEY ?? "",
-  // Groq — free tier, ultra-fast LPU inference (OpenAI-compatible)
+  // Groq — free tier, ultra-fast LPU inference (OpenAI-compatible). Primary
+  // provider for both the LLM router and voice (Whisper) transcription.
   // Get a free key (no credit card) at: https://console.groq.com/keys
   groqApiKey: process.env.GROQ_API_KEY ?? "",
-  // OpenRouter — one key, 400+ models incl. many free (:free) models
+  // OpenRouter — one key, 400+ models incl. many free (:free) models. LLM
+  // fallback and the Vision Studio provider.
   // Get a key at: https://openrouter.ai/keys
   openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
   // Optional per-provider model overrides
   groqModel: process.env.GROQ_MODEL ?? "",
-  geminiModel: process.env.GEMINI_MODEL ?? "",
   openrouterModel: process.env.OPENROUTER_MODEL ?? "",
-  // Free vision-capable OpenRouter model used as the Vision Studio fallback
-  // when no Google AI (Gemini) key is set.
+  // Free vision-capable OpenRouter model used by Vision Studio.
   openrouterVisionModel: process.env.OPENROUTER_VISION_MODEL ?? "",
-  // Comma-separated provider priority override, e.g. "gemini,groq,openrouter".
-  // All providers are free-tier; default order is groq → gemini → openrouter.
+  // Comma-separated provider priority override, e.g. "openrouter,groq".
+  // All providers are free-tier; default order is groq → openrouter.
   llmProviderOrder: process.env.LLM_PROVIDER_ORDER ?? "",
 
   // External APIs

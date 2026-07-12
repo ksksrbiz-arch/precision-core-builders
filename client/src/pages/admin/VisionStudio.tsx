@@ -42,7 +42,7 @@ interface AnalysisResult {
   imagePreview: string;
 }
 
-// Media types accepted by Claude Vision / Gemini Vision.
+// Media types accepted by the OpenRouter vision model.
 const SUPPORTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const MODES: {

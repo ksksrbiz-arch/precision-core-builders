@@ -3,15 +3,17 @@ import { withGuards } from "./_lib/http";
 
 /**
  * Vision Studio — AI photo analysis endpoint.
- * Free-tier only: Gemini Vision (Google AI) when configured, with a free
- * OpenRouter vision model as the fallback.
- * Accepts base64-encoded images and returns AI analysis
- * for construction site photos, material inspection, progress tracking, etc.
+ * Free-tier only: served by a free OpenRouter vision model. Accepts
+ * base64-encoded images and returns AI analysis for construction site photos,
+ * material inspection, progress tracking, etc.
  */
 
-/** Free OpenRouter vision model used when no Google AI (Gemini) key is set. */
-const DEFAULT_OPENROUTER_VISION_MODEL =
-  "meta-llama/llama-3.2-11b-vision-instruct:free";
+/**
+ * Free OpenRouter vision model. Overridable via OPENROUTER_VISION_MODEL.
+ * Nemotron Nano 12B (NVIDIA) is a free, 128K-context vision model available in
+ * the OpenRouter free catalog.
+ */
+const DEFAULT_OPENROUTER_VISION_MODEL = "nvidia/nemotron-nano-12b-v2-vl:free";
 
 const SYSTEM_PROMPT = `You are the Vision AI for Precision Core Builders, owned by Eric Tadlock (CCB #246527), a master builder in Eugene, OR with 20+ years of experience.
 
@@ -104,7 +106,7 @@ export const handler = withGuards(
         );
       }
 
-      if (!ENV.googleAiApiKey && !ENV.openrouterApiKey) {
+      if (!ENV.openrouterApiKey) {
         return error(
           500,
           "Vision AI is not configured. Please contact the site administrator."
@@ -114,154 +116,81 @@ export const handler = withGuards(
       const userPrompt =
         customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
 
-      // ── Gemini Vision (primary — free tier) ──────────────────────────────────
-      // Free-first: prefer the free Google AI key when configured. The free
-      // OpenRouter vision model is only used when no Google AI key is available.
-      if (ENV.googleAiApiKey) {
-        const geminiModel = "gemini-2.0-flash";
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${ENV.googleAiApiKey}`;
+      // ── OpenRouter Vision (free tier) ────────────────────────────────────────
+      // OpenRouter is OpenAI-compatible; the image is passed as a base64 `data:`
+      // URI on an image_url content part.
+      const openrouterModel =
+        ENV.openrouterVisionModel || DEFAULT_OPENROUTER_VISION_MODEL;
 
-        const geminiRes = await fetch(geminiUrl, {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ENV.openrouterApiKey}`,
+        "X-Title": "Precision Core Builders",
+      };
+      if (ENV.siteUrl) headers["HTTP-Referer"] = ENV.siteUrl;
+
+      const openrouterRes = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
-            contents: [
+            model: openrouterModel,
+            max_tokens: 4096,
+            temperature: 0.2,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
               {
-                parts: [
-                  { text: `${SYSTEM_PROMPT}\n\n${userPrompt}` },
-                  { inline_data: { mime_type: mediaType, data: image } },
+                role: "user",
+                content: [
+                  { type: "text", text: userPrompt },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:${mediaType};base64,${image}`,
+                    },
+                  },
                 ],
               },
             ],
-            generationConfig: { maxOutputTokens: 4096, temperature: 0.2 },
           }),
-        });
-
-        type GeminiVisionResponse = {
-          candidates?: Array<{
-            content?: { parts?: Array<{ text?: string }> };
-          }>;
-          usageMetadata?: {
-            promptTokenCount?: number;
-            candidatesTokenCount?: number;
-            totalTokenCount?: number;
-          };
-          error?: { message?: string };
-        };
-
-        const geminiData = (await geminiRes.json()) as GeminiVisionResponse;
-        if (!geminiRes.ok || geminiData.error) {
-          throw new Error(
-            `Vision analysis failed: ${geminiData.error?.message ?? geminiRes.statusText}`
-          );
         }
-
-        const analysisText =
-          geminiData.candidates
-            ?.flatMap(c => c.content?.parts ?? [])
-            .map(p => p.text ?? "")
-            .join("") ?? "";
-
-        return json(200, {
-          analysis: analysisText,
-          mode,
-          model: geminiModel,
-          usage: geminiData.usageMetadata
-            ? {
-                promptTokens: geminiData.usageMetadata.promptTokenCount ?? 0,
-                completionTokens:
-                  geminiData.usageMetadata.candidatesTokenCount ?? 0,
-                totalTokens: geminiData.usageMetadata.totalTokenCount ?? 0,
-              }
-            : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      // ── OpenRouter Vision (free fallback) ────────────────────────────────────
-      // Used only when no Google AI key is set. OpenRouter is OpenAI-compatible;
-      // images are passed as base64 `data:` URIs on an image_url content part.
-      if (ENV.openrouterApiKey) {
-        const openrouterModel =
-          ENV.openrouterVisionModel || DEFAULT_OPENROUTER_VISION_MODEL;
-
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${ENV.openrouterApiKey}`,
-          "X-Title": "Precision Core Builders",
-        };
-        if (ENV.siteUrl) headers["HTTP-Referer"] = ENV.siteUrl;
-
-        const openrouterRes = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              model: openrouterModel,
-              max_tokens: 4096,
-              temperature: 0.2,
-              messages: [
-                { role: "system", content: SYSTEM_PROMPT },
-                {
-                  role: "user",
-                  content: [
-                    { type: "text", text: userPrompt },
-                    {
-                      type: "image_url",
-                      image_url: {
-                        url: `data:${mediaType};base64,${image}`,
-                      },
-                    },
-                  ],
-                },
-              ],
-            }),
-          }
-        );
-
-        type OpenRouterVisionResponse = {
-          choices?: Array<{ message?: { content?: string } }>;
-          model?: string;
-          usage?: {
-            prompt_tokens?: number;
-            completion_tokens?: number;
-            total_tokens?: number;
-          };
-          error?: { message?: string };
-        };
-
-        const openrouterData =
-          (await openrouterRes.json()) as OpenRouterVisionResponse;
-        if (!openrouterRes.ok || openrouterData.error) {
-          throw new Error(
-            `Vision analysis failed: ${openrouterData.error?.message ?? openrouterRes.statusText}`
-          );
-        }
-
-        const analysisText =
-          openrouterData.choices?.[0]?.message?.content ?? "";
-
-        return json(200, {
-          analysis: analysisText,
-          mode,
-          model: openrouterData.model ?? openrouterModel,
-          usage: openrouterData.usage
-            ? {
-                promptTokens: openrouterData.usage.prompt_tokens ?? 0,
-                completionTokens: openrouterData.usage.completion_tokens ?? 0,
-                totalTokens: openrouterData.usage.total_tokens ?? 0,
-              }
-            : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      // Neither provider configured (already guarded above) — safety net.
-      return error(
-        500,
-        "Vision AI is not configured. Please contact the site administrator."
       );
+
+      type OpenRouterVisionResponse = {
+        choices?: Array<{ message?: { content?: string } }>;
+        model?: string;
+        usage?: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
+        };
+        error?: { message?: string };
+      };
+
+      const openrouterData =
+        (await openrouterRes.json()) as OpenRouterVisionResponse;
+      if (!openrouterRes.ok || openrouterData.error) {
+        throw new Error(
+          `Vision analysis failed: ${openrouterData.error?.message ?? openrouterRes.statusText}`
+        );
+      }
+
+      const analysisText = openrouterData.choices?.[0]?.message?.content ?? "";
+
+      return json(200, {
+        analysis: analysisText,
+        mode,
+        model: openrouterData.model ?? openrouterModel,
+        usage: openrouterData.usage
+          ? {
+              promptTokens: openrouterData.usage.prompt_tokens ?? 0,
+              completionTokens: openrouterData.usage.completion_tokens ?? 0,
+              totalTokens: openrouterData.usage.total_tokens ?? 0,
+            }
+          : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        timestamp: new Date().toISOString(),
+      });
     } catch (err: unknown) {
       console.error("[vision-studio] Error:", err);
       const isConfigError =
