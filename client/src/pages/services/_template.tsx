@@ -10,6 +10,7 @@ import {
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
 import { PROJECTS, photoUrl, type ProjectCategory } from "@/data/projects";
+import { netlifySrcSet } from "@/lib/netlifyImage";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Phone } from "lucide-react";
@@ -146,6 +147,8 @@ export function ServicePage(p: ServicePageProps) {
         <section className="relative h-[55vh] min-h-[380px] flex items-end pb-12 overflow-hidden">
           <img
             src={p.heroImage}
+            srcSet={netlifySrcSet(p.heroImage)}
+            sizes="100vw"
             alt={p.heroImageAlt}
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
@@ -389,7 +392,7 @@ export function ServicePage(p: ServicePageProps) {
               <div>
                 <div
                   id="service-form"
-                  className="bg-card border border-border/60 p-7 lg:sticky lg:top-24"
+                  className="bg-card border border-border/60 p-7 lg:sticky lg:top-24 scroll-mt-24"
                 >
                   {status === "success" ? (
                     <div className="text-center py-10">

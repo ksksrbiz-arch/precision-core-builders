@@ -235,7 +235,7 @@ export function SiteNav() {
                   key={n.label}
                   href={n.href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative text-[12px] font-semibold tracking-[0.08em] uppercase transition-colors duration-200 hover:text-primary ${
+                  className={`relative text-[12px] font-semibold tracking-[0.08em] uppercase transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none ${
                     active ? "text-primary" : "text-muted-foreground"
                   }`}
                   style={{ fontFamily: "var(--font-condensed)" }}
@@ -416,7 +416,7 @@ export function SiteFooter() {
             />
             <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">
               Precision Construction, Core Values. Serving Eugene, Oregon and
-              surrounding Lane County since 2004.
+              surrounding Lane County since 2014.
             </p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <Shield
@@ -460,16 +460,15 @@ export function SiteFooter() {
             <ul className="space-y-2.5">
               {[
                 { label: "About Us", href: "/about" },
-                { label: "Our Team", href: "/about" },
+                { label: "Our Team", href: "/about#team" },
                 { label: "Our Work", href: "/portfolio" },
                 { label: "FAQ", href: "/faq" },
                 { label: "Contact", href: "/contact" },
-                { label: "Eric Login", href: "/auth/login" },
               ].map(l => (
                 <li key={l.href}>
                   <a
                     href={l.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    className="text-sm text-muted-foreground hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:underline transition-colors"
                   >
                     {l.label}
                   </a>

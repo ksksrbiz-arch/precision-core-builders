@@ -16,6 +16,7 @@ import {
 import { BeforeAfterSlider } from "@/components/portfolio/BeforeAfterSlider";
 import { PhotoGrid } from "@/components/portfolio/PhotoGrid";
 import { getProject, PROJECTS, photoUrl } from "@/data/projects";
+import { netlifySrcSet } from "@/lib/netlifyImage";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
@@ -102,8 +103,9 @@ export default function PortfolioDetail() {
         <section className="relative min-h-[65vh] md:min-h-[75vh] flex items-end overflow-hidden">
           <img
             src={photoUrl(project.hero)}
-            alt=""
-            aria-hidden="true"
+            srcSet={netlifySrcSet(photoUrl(project.hero))}
+            sizes="100vw"
+            alt={`${project.title} — ${project.category}`}
             loading="eager"
             decoding="sync"
             {...({ fetchpriority: "high" } as Record<string, string>)}

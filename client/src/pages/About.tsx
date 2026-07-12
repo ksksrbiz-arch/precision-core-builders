@@ -356,7 +356,10 @@ export default function About() {
         </section>
 
         {/* Team */}
-        <section className="py-20 sm:py-28 bg-card/30 border-y border-border/40">
+        <section
+          id="team"
+          className="py-20 sm:py-28 bg-card/30 border-y border-border/40 scroll-mt-24"
+        >
           <div className="container">
             <div className="text-center mb-14">
               <span

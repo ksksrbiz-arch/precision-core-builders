@@ -74,6 +74,8 @@ export default function Estimator() {
   const [leadEmail, setLeadEmail] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [leadSent, setLeadSent] = useState(false);
+  const [leadSending, setLeadSending] = useState(false);
+  const [leadError, setLeadError] = useState("");
 
   const toggleMaterial = (m: string) =>
     setMaterials(prev =>
@@ -89,7 +91,10 @@ export default function Estimator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectType,
-          squareFootage: sqft ? parseInt(sqft) : undefined,
+          squareFootage: (() => {
+            const n = Number.parseInt(sqft, 10);
+            return Number.isFinite(n) ? n : undefined;
+          })(),
           complexity,
           materials,
           location: "Eugene, OR",
@@ -116,7 +121,12 @@ export default function Estimator() {
     }
   };
 
-  const submitLead = async () => {
+  const submitLead = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!leadName || !leadEmail || leadSending) return;
+    setLeadSending(true);
+    setLeadError("");
+
     const formData = new FormData();
     formData.append("form-name", "estimator-lead");
     formData.append("name", leadName);
@@ -127,35 +137,44 @@ export default function Estimator() {
     formData.append("sqft", sqft);
     formData.append("estimatedMid", String(result?.estimatedMid ?? 0));
 
-    // 1. Submit to Netlify Forms for CRM
-    await fetch("/", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(formData as any).toString(),
-    });
+    try {
+      // 1. Submit to Netlify Forms for CRM — verify it was accepted.
+      const res = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(formData as any).toString(),
+      });
+      if (!res.ok) throw new Error(`Form submission failed (${res.status})`);
 
-    // 2. Fire lead_captured n8n event (non-blocking)
-    fetch("/api/n8n-webhook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event: "lead_captured",
-        payload: {
-          name: leadName,
-          email: leadEmail,
-          phone: leadPhone,
-          projectType,
-          complexity,
-          squareFootage: sqft,
-          estimatedMid: result?.estimatedMid,
-          estimatedLow: result?.estimatedLow,
-          estimatedHigh: result?.estimatedHigh,
-          source: "estimator",
-        },
-      }),
-    }).catch(() => {});
+      // 2. Fire lead_captured n8n event (non-blocking).
+      fetch("/api/n8n-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "lead_captured",
+          payload: {
+            name: leadName,
+            email: leadEmail,
+            phone: leadPhone,
+            projectType,
+            complexity,
+            squareFootage: sqft,
+            estimatedMid: result?.estimatedMid,
+            estimatedLow: result?.estimatedLow,
+            estimatedHigh: result?.estimatedHigh,
+            source: "estimator",
+          },
+        }),
+      }).catch(() => {});
 
-    setLeadSent(true);
+      setLeadSent(true);
+    } catch {
+      setLeadError(
+        `We couldn't submit that just now. Please call Eric directly at ${SITE.phone}, or try again in a moment.`
+      );
+    } finally {
+      setLeadSending(false);
+    }
   };
 
   return (
@@ -576,11 +595,13 @@ export default function Estimator() {
                     Ready for a real, on-site estimate? Eric will come to you —
                     free.
                   </p>
-                  <div className="space-y-3">
+                  <form onSubmit={submitLead} className="space-y-3">
                     <input
                       value={leadName}
                       onChange={e => setLeadName(e.target.value)}
                       placeholder="Your name *"
+                      required
+                      autoComplete="name"
                       className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
                     />
                     <div className="grid sm:grid-cols-2 gap-3">
@@ -589,6 +610,8 @@ export default function Estimator() {
                         onChange={e => setLeadEmail(e.target.value)}
                         placeholder="Email *"
                         type="email"
+                        required
+                        autoComplete="email"
                         className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
                       />
                       <input
@@ -596,22 +619,34 @@ export default function Estimator() {
                         onChange={e => setLeadPhone(e.target.value)}
                         placeholder="Phone"
                         type="tel"
+                        autoComplete="tel"
                         className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
                       />
                     </div>
                     <button
-                      onClick={submitLead}
-                      disabled={!leadName || !leadEmail}
+                      type="submit"
+                      disabled={!leadName || !leadEmail || leadSending}
                       className="w-full py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      Request Free On-Site Estimate{" "}
-                      <ArrowRight className="inline h-3.5 w-3.5 ml-1" />
+                      {leadSending ? (
+                        "Sending…"
+                      ) : (
+                        <>
+                          Request Free On-Site Estimate{" "}
+                          <ArrowRight className="inline h-3.5 w-3.5 ml-1" />
+                        </>
+                      )}
                     </button>
+                    {leadError && (
+                      <p className="text-xs text-destructive text-center">
+                        {leadError}
+                      </p>
+                    )}
                     <p className="text-[10px] text-center text-muted-foreground/50">
                       No obligation · {SITE.license}
                     </p>
-                  </div>
+                  </form>
                 </div>
               ) : (
                 <div className="bg-card border border-border/60 p-8 text-center">

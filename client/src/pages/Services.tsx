@@ -9,6 +9,7 @@ import {
 import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
+import { Link } from "wouter";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -347,13 +348,13 @@ export default function ServicesPage() {
                 >
                   <Phone className="h-3.5 w-3.5" /> {SITE.phone}
                 </a>
-                <a
-                  href="/contact"
+                <Link
+                  href="/estimator"
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 hover:gap-3 transition-all min-h-[48px]"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
                   Free Estimate <ArrowRight className="h-3.5 w-3.5" />
-                </a>
+                </Link>
               </div>
             </div>
           </div>
