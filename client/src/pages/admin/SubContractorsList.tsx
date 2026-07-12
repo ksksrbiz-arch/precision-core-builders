@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -85,6 +86,12 @@ export default function SubContractorsList() {
     refetch,
   } = trpc.subContractors.list.useQuery();
   const { data: projectsData } = trpc.projects.list.useQuery({ pageSize: 100 });
+
+  // Live updates: roster changes from another device refresh the list.
+  useRealtimeTable({
+    table: "sub_contractors",
+    onUpdate: () => utils.subContractors.list.invalidate(),
+  });
   const activeProjects = (projectsData?.data ?? []).filter(
     (p: any) => p.status !== "complete" && p.status !== "archived"
   );

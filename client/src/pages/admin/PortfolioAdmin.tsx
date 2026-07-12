@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { SkeletonCard } from "@/components/Skeletons";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -77,6 +78,12 @@ export default function PortfolioAdmin() {
   }, [form.coverImageUrl]);
   const utils = trpc.useUtils();
   const { data: projects, isLoading } = trpc.portfolio.listAdmin.useQuery();
+
+  // Live updates: portfolio edits from another device refresh the list.
+  useRealtimeTable({
+    table: "portfolio_projects",
+    onUpdate: () => utils.portfolio.listAdmin.invalidate(),
+  });
 
   const create = useMutationWithToast(trpc.portfolio.create.useMutation(), {
     success: "Project Created",
