@@ -290,7 +290,7 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
 
 const testAIEndpoint: ActionHandler = async () => {
   // Exercise the same LLM router the app actually uses (free-tier: Groq
-  // primary, Gemini + OpenRouter fallback) rather than a deprecated provider —
+  // primary, OpenRouter fallback) rather than a deprecated provider —
   // otherwise this check can report failure while the real AI features work
   // fine. invokeLLM throws a clear error when no key is set.
   const result = await invokeLLM({
@@ -453,13 +453,13 @@ const createAdminProfile: ActionHandler = async params => {
 const testVoiceEndpoint: ActionHandler = async () => {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
-    // OpenAI is legacy/optional — the free-tier transcription stack
-    // (Gemini + Groq Whisper) handles voice. A missing key is not a setup
-    // failure, so report success with a skipped note instead of throwing.
+    // OpenAI is legacy/optional — free-tier Groq Whisper handles voice. A
+    // missing key is not a setup failure, so report success with a skipped
+    // note instead of throwing.
     return {
       success: true,
       message:
-        "OpenAI not configured — free-tier transcription (Gemini + Groq) is active. OpenAI is optional/legacy.",
+        "OpenAI not configured — free-tier transcription (Groq Whisper) is active. OpenAI is optional/legacy.",
       data: { skipped: true, reason: "OPENAI_API_KEY not set" },
     };
   }

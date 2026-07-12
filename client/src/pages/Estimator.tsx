@@ -1,6 +1,6 @@
 /**
  * Public-facing AI Project Estimator — no auth required.
- * Multi-step form → Gemini AI cost estimate → lead capture.
+ * Multi-step form → AI cost estimate → lead capture.
  */
 import {
   SiteNav,

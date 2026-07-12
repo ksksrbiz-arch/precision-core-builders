@@ -9,13 +9,11 @@
  * Providers are all free-tier (free-first priority):
  *   1. Groq          — free, ultra-fast LPU.  GROQ_API_KEY
  *                      https://console.groq.com/keys
- *   2. Google Gemini — free tier (no credit card).  GOOGLE_AI_API_KEY
- *                      https://aistudio.google.com/app/apikey
- *   3. OpenRouter    — free (:free) models.  OPENROUTER_API_KEY
+ *   2. OpenRouter    — free (:free) models.  OPENROUTER_API_KEY
  *                      https://openrouter.ai/keys
  *
- * Override the order with LLM_PROVIDER_ORDER (e.g. "gemini,groq,openrouter").
- * Override any model with GROQ_MODEL / GEMINI_MODEL / OPENROUTER_MODEL.
+ * Override the order with LLM_PROVIDER_ORDER (e.g. "openrouter,groq").
+ * Override any model with GROQ_MODEL / OPENROUTER_MODEL.
  */
 import { ENV } from "./env";
 import { logAiUsage } from "./aiUsage";
@@ -39,7 +37,7 @@ export type LLMInvokeParams = {
   userId?: string | null;
 };
 
-export type LLMProvider = "groq" | "gemini" | "openrouter";
+export type LLMProvider = "groq" | "openrouter";
 
 export type LLMResult = {
   text: string;
@@ -61,16 +59,13 @@ type ResolvedParams = LLMInvokeParams & {
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
-const DEFAULT_ORDER: LLMProvider[] = ["groq", "gemini", "openrouter"];
+const DEFAULT_ORDER: LLMProvider[] = ["groq", "openrouter"];
 
 const DEFAULT_MODELS: Record<LLMProvider, string> = {
   groq: "llama-3.3-70b-versatile",
-  gemini: "gemini-2.0-flash",
   openrouter: "meta-llama/llama-3.3-70b-instruct:free",
 };
 
-const GEMINI_API_BASE =
-  "https://generativelanguage.googleapis.com/v1beta/models";
 const GROQ_API_BASE = "https://api.groq.com/openai/v1";
 const OPENROUTER_API_BASE = "https://openrouter.ai/api/v1";
 
@@ -81,8 +76,6 @@ function apiKeyFor(provider: LLMProvider): string {
   switch (provider) {
     case "groq":
       return ENV.groqApiKey;
-    case "gemini":
-      return ENV.googleAiApiKey;
     case "openrouter":
       return ENV.openrouterApiKey;
   }
@@ -91,7 +84,6 @@ function apiKeyFor(provider: LLMProvider): string {
 function modelFor(provider: LLMProvider): string {
   const override = {
     groq: ENV.groqModel,
-    gemini: ENV.geminiModel,
     openrouter: ENV.openrouterModel,
   }[provider];
   return override || DEFAULT_MODELS[provider];
@@ -243,102 +235,6 @@ async function invokeOpenAICompatible(
   };
 }
 
-// ─── Google Gemini ──────────────────────────────────────────────────────────
-
-type GeminiContent = {
-  role: "user" | "model";
-  parts: Array<{ text: string }>;
-};
-
-type GeminiResponse = {
-  candidates?: Array<{
-    content?: { parts?: Array<{ text?: string }> };
-    finishReason?: string;
-  }>;
-  usageMetadata?: {
-    promptTokenCount?: number;
-    candidatesTokenCount?: number;
-    totalTokenCount?: number;
-  };
-  error?: { message?: string; status?: string };
-};
-
-async function invokeGemini(params: ResolvedParams): Promise<LLMResult> {
-  const {
-    system,
-    conversationMsgs,
-    maxTokens = 4096,
-    temperature = 0.3,
-  } = params;
-  const model = modelFor("gemini");
-
-  // Build Gemini contents array (no "system" role — prepend to first user msg)
-  const contents: GeminiContent[] = [];
-  let systemInjected = false;
-
-  for (const msg of conversationMsgs) {
-    if (msg.role === "user") {
-      const text =
-        !systemInjected && system ? `${system}\n\n${msg.content}` : msg.content;
-      if (!systemInjected) systemInjected = true;
-      contents.push({ role: "user", parts: [{ text }] });
-    } else if (msg.role === "assistant") {
-      contents.push({ role: "model", parts: [{ text: msg.content }] });
-    }
-  }
-
-  // Gemini requires alternating user/model turns; ensure starts with user
-  if (contents.length === 0 || contents[0].role !== "user") {
-    if (!system)
-      throw new ProviderError(
-        "gemini: no messages and no system prompt",
-        false
-      );
-    contents.unshift({ role: "user", parts: [{ text: system }] });
-  }
-
-  const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKeyFor("gemini")}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents,
-      generationConfig: { maxOutputTokens: maxTokens, temperature },
-    }),
-  });
-
-  const data = (await res.json().catch(() => ({}))) as GeminiResponse;
-
-  if (!res.ok || data.error) {
-    throw new ProviderError(
-      `gemini error: ${data.error?.message ?? res.statusText}`,
-      isRetryableStatus(res.status)
-    );
-  }
-
-  const text =
-    data.candidates
-      ?.flatMap(c => c.content?.parts ?? [])
-      .map(p => p.text ?? "")
-      .join("") ?? "";
-  if (!text) {
-    throw new ProviderError("gemini returned an empty response", true);
-  }
-
-  return {
-    text,
-    model,
-    provider: "gemini",
-    usage: data.usageMetadata
-      ? {
-          promptTokens: data.usageMetadata.promptTokenCount ?? 0,
-          completionTokens: data.usageMetadata.candidatesTokenCount ?? 0,
-          totalTokens: data.usageMetadata.totalTokenCount ?? 0,
-        }
-      : undefined,
-  };
-}
-
 // ─── Dispatch ─────────────────────────────────────────────────────────────
 
 function callProvider(
@@ -350,8 +246,6 @@ function callProvider(
       return invokeOpenAICompatible("groq", GROQ_API_BASE, params);
     case "openrouter":
       return invokeOpenAICompatible("openrouter", OPENROUTER_API_BASE, params);
-    case "gemini":
-      return invokeGemini(params);
   }
 }
 
@@ -384,8 +278,7 @@ export async function invokeLLM(params: LLMInvokeParams): Promise<LLMResult> {
   if (order.length === 0) {
     throw new Error(
       "No LLM API key configured. Set a free key — GROQ_API_KEY " +
-        "(https://console.groq.com/keys), GOOGLE_AI_API_KEY " +
-        "(https://aistudio.google.com/app/apikey), or OPENROUTER_API_KEY " +
+        "(https://console.groq.com/keys) or OPENROUTER_API_KEY " +
         "(https://openrouter.ai/keys) — in your Netlify environment variables."
     );
   }
@@ -566,27 +459,6 @@ async function* streamOpenAICompatible(
   };
 }
 
-/**
- * Gemini has a streaming endpoint, but to keep the surface small and reliable
- * we fall back to the buffered call and emit its text as a single chunk. This
- * still works end-to-end behind the SSE plumbing; the response simply arrives
- * in one piece rather than token-by-token.
- */
-async function* streamGeminiBuffered(
-  params: ResolvedParams
-): AsyncGenerator<LLMStreamChunk> {
-  const result = await invokeGemini(params);
-  if (result.text) yield { type: "text", text: result.text };
-  yield {
-    type: "done",
-    done: {
-      model: result.model,
-      provider: result.provider,
-      usage: result.usage,
-    },
-  };
-}
-
 function streamProvider(
   provider: LLMProvider,
   params: ResolvedParams
@@ -596,8 +468,6 @@ function streamProvider(
       return streamOpenAICompatible("groq", GROQ_API_BASE, params);
     case "openrouter":
       return streamOpenAICompatible("openrouter", OPENROUTER_API_BASE, params);
-    case "gemini":
-      return streamGeminiBuffered(params);
   }
 }
 
@@ -665,8 +535,7 @@ export async function* streamLLM(
   if (order.length === 0) {
     throw new Error(
       "No LLM API key configured. Set a free key — GROQ_API_KEY " +
-        "(https://console.groq.com/keys), GOOGLE_AI_API_KEY " +
-        "(https://aistudio.google.com/app/apikey), or OPENROUTER_API_KEY " +
+        "(https://console.groq.com/keys) or OPENROUTER_API_KEY " +
         "(https://openrouter.ai/keys) — in your Netlify environment variables."
     );
   }

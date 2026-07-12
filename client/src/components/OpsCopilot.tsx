@@ -17,7 +17,7 @@ function errorFor(status: number, fallback?: string): string {
   if (status === 429)
     return "⚠️ Too many questions too quickly — give it a moment.";
   if (status === 503)
-    return "⚠️ AI isn't configured yet. Add a free GROQ_API_KEY or GOOGLE_AI_API_KEY in Netlify.";
+    return "⚠️ AI isn't configured yet. Add a free GROQ_API_KEY or OPENROUTER_API_KEY in Netlify.";
   return fallback ?? "⚠️ Co-pilot temporarily unavailable. Please try again.";
 }
 
