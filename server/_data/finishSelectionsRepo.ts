@@ -63,6 +63,19 @@ export async function createFinishSelection(input: CreateFinishSelectionInput) {
   return row;
 }
 
+/** The project a finish selection belongs to (for ownership checks). */
+export async function getFinishSelectionProjectId(
+  id: number
+): Promise<number | null> {
+  const { data: row, error } = await data
+    .from("finish_selections")
+    .select("project_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (row?.project_id as number | undefined) ?? null;
+}
+
 export async function clientApproveFinishSelection(id: number) {
   const { data: row, error } = await data
     .from("finish_selections")
@@ -108,6 +121,7 @@ export async function insertClientSelection(input: {
   selection: string;
   category?: string;
   budgetImpact?: number;
+  clientId?: number | null;
 }) {
   const { data: row, error } = await data
     .from("finish_selections")
@@ -116,7 +130,7 @@ export async function insertClientSelection(input: {
       item_name: input.selection,
       category: input.category,
       budget_delta: input.budgetImpact,
-      client_id: null,
+      client_id: input.clientId ?? null,
     })
     .select()
     .single();

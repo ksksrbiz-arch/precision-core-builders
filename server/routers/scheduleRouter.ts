@@ -1,4 +1,5 @@
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { assertProjectAccess } from "../_core/access";
 import {
   createScheduleItem,
   deleteScheduleItem,
@@ -54,7 +55,9 @@ const ScheduleItemInput = z.object({
 export const scheduleRouter = router({
   list: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // A portal client may only read their own project's schedule.
+      await assertProjectAccess(ctx, input.projectId);
       return listScheduleItems(input.projectId);
     }),
 
