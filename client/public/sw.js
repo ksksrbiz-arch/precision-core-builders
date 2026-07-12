@@ -7,9 +7,9 @@
 // Bump these version numbers whenever we ship a client change that users
 // must pick up immediately. On activate, any cache whose name is not in the
 // current list is deleted, purging stale HTML/JS/CSS from returning users.
-const CACHE_NAME = "pcb-v4";
-const STATIC_CACHE = "pcb-static-v4";
-const API_CACHE = "pcb-api-v4";
+const CACHE_NAME = "pcb-v5";
+const STATIC_CACHE = "pcb-static-v5";
+const API_CACHE = "pcb-api-v5";
 
 // Shell files to precache on install
 const PRECACHE_URLS = ["/", "/admin", "/offline.html"];
@@ -58,21 +58,20 @@ self.addEventListener("fetch", event => {
   // Skip chrome-extension and other non-http
   if (!url.protocol.startsWith("http")) return;
 
-  // API calls — network first, cache fallback.
-  // Auth endpoints are never cached: stale auth state is the leading cause of
-  // "I tapped Sign In and nothing happened" reports.
+  // Never intercept cross-origin requests (Google Fonts, Netlify RUM, Supabase,
+  // maps, etc.). Passing them through the SW added no value and — when a
+  // response was CSP-blocked and uncached — the handler resolved to `undefined`,
+  // throwing "Failed to convert value to 'Response'" and failing the request.
+  if (url.origin !== self.location.origin) return;
+
+  // API calls (tRPC + Netlify Functions) — DO NOT intercept. Serving these from
+  // the SW cached stale/partial responses and, on a cache miss, could return a
+  // corrupted response. Let the browser fetch them directly so every API call
+  // hits the live function fresh.
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/.netlify/")
   ) {
-    if (
-      url.pathname.startsWith("/api/auth/") ||
-      url.pathname.startsWith("/.netlify/functions/auth")
-    ) {
-      event.respondWith(fetch(request));
-      return;
-    }
-    event.respondWith(networkFirstStrategy(request));
     return;
   }
 
@@ -165,7 +164,9 @@ async function staleWhileRevalidate(request) {
       if (response.ok) cache.put(request, response.clone());
       return response;
     })
-    .catch(() => cached);
+    // Never resolve to `undefined` — respondWith() throws
+    // "Failed to convert value to 'Response'" if it isn't a Response.
+    .catch(() => cached || new Response("Offline", { status: 503 }));
 
   return cached || fetchPromise;
 }
