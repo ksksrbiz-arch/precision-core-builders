@@ -34,7 +34,18 @@ function netlifyEventToRequest(event: Parameters<Handler>[0]): Request {
     event.headers["x-forwarded-protocol"] ??
     "https";
   const host = event.headers["host"] ?? "localhost";
-  const url = `${protocol}://${host}${event.rawUrl ?? event.path}`;
+  // `event.rawUrl` is ALREADY an absolute URL on Netlify. Prefixing it with the
+  // origin again produced a doubled URL (e.g.
+  // `https://host` + `https://host/api/trpc/clients.list`), which parsed to a
+  // pathname of `//host/api/trpc/...`. The fetch adapter then stripped its
+  // 9-char `/api/trpc` endpoint off the front, mangling the procedure path into
+  // `on-core.netlify.app/api/trpc/clients.list` → "No procedure found" (404) on
+  // every uncached request. Use the absolute rawUrl as-is; only synthesize an
+  // origin when we have just a path (older runtimes / local dev).
+  const rawUrl = event.rawUrl ?? event.path;
+  const url = /^https?:\/\//i.test(rawUrl)
+    ? rawUrl
+    : `${protocol}://${host}${rawUrl}`;
 
   const body =
     event.body == null
