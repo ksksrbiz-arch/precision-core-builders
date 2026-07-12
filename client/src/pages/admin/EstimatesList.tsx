@@ -68,8 +68,11 @@ export default function EstimatesList() {
     onUpdate: () => utils.estimates.list.invalidate(),
   });
 
-  const fmt = (n: number | string | null | undefined) =>
-    n ? `$${Number(n).toLocaleString()}` : "—";
+  const fmt = (n: number | string | null | undefined) => {
+    if (n === null || n === undefined || n === "") return "—";
+    const v = Number(n);
+    return Number.isFinite(v) ? `$${v.toLocaleString()}` : "—";
+  };
   const fmtDate = (d: string | null) =>
     d
       ? new Date(d).toLocaleDateString("en-US", {
