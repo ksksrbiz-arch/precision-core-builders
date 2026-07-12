@@ -121,8 +121,8 @@ const PHASES: Phase[] = [
       },
       {
         label: "Gantt chart with drag-and-drop",
-        status: "pending",
-        note: "Critical blocker",
+        status: "done",
+        note: "Drag-to-reschedule wired into ScheduleView",
       },
       {
         label: "Field report review & publish workflow",
@@ -132,7 +132,7 @@ const PHASES: Phase[] = [
       {
         label: "Real-time admin updates (Supabase Realtime)",
         status: "partial",
-        note: "Architecture ready, pages pending",
+        note: "Live in all portal + several admin pages; rollout in progress",
       },
     ],
   },

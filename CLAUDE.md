@@ -40,6 +40,7 @@ This document primes AI assistants with the codebase structure, development work
 
 - ✅ **Voice-to-Report:** Recording → Whisper transcription → AI report generation → DB save
 - ✅ **Estimator:** Project details → AI cost calculation → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI
+- ✅ **Gantt Chart:** Drag-and-drop task rescheduling with optimistic updates, wired into ScheduleView via `schedule.update`
 - ✅ **Weather Scheduling:** OpenWeatherMap forecast → weather-sensitive task identification
 - ✅ **AI Chat:** Free-tier LLM conversation interface
 - ✅ **Vision Studio:** Photo analysis with multiple modes
@@ -54,8 +55,7 @@ This document primes AI assistants with the codebase structure, development work
 
 ⏳ **Remaining Work:**
 
-- Gantt chart with drag-and-drop
-- Real-time updates in remaining portal/admin pages (architecture ready, rollout in progress)
+- Real-time updates in remaining portal/admin pages (live in all portal pages and several admin pages — ScheduleView, ProjectDetail, MaterialsView, CommandCenter, NotificationsView, FieldReportsList; rollout to the rest in progress)
 - Client portal dashboard polish (structure and data live, UX refinement pending)
 - Digital finish showroom product catalog population
 - n8n automation workflow authoring (functions and webhook wiring in place)
@@ -345,9 +345,9 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 ### Phase 2: Core Operations (Field Reporting + Scheduling)
 
 - [x] Voice-to-report system (Whisper + free-tier LLM via Netlify Functions)
-- [ ] Gantt chart component with weather-responsive logic
+- [x] Gantt chart component with drag-and-drop rescheduling and weather-responsive logic
 - [x] Field report UI for Eric to review and publish
-- [ ] Real-time updates to client portal
+- [ ] Real-time updates to client portal (live in all portal pages + several admin pages; rollout to remaining pages in progress)
 
 ### Phase 3: Client Experience (Portal + Estimator)
 
