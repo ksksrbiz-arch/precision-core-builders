@@ -7,13 +7,15 @@
  * then a per-project breakdown with margin, variance, and on-budget status.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { QueryError } from "@/components/QueryError";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/formatters";
 import { trpc } from "@/lib/trpc";
 import { TrendingUp } from "lucide-react";
 
-// Local currency formatter — mirrors the inline `$${n.toLocaleString()}`
-// pattern used across the admin pages. Zero / nullish render as an em dash.
-const fmt = (n?: number) => (n ? `$${Number(n).toLocaleString()}` : "—");
+// Null-aware USD formatter. A real $0 renders as "$0" (not an em dash); only
+// null/undefined/NaN fall back to "—".
+const fmt = (n?: number) => formatCurrency(n);
 
 const pct = (n?: number) =>
   n === undefined || n === null || Number.isNaN(n) ? "—" : `${n.toFixed(1)}%`;
@@ -59,7 +61,8 @@ function KPITile({
 }
 
 export default function ProfitabilityView() {
-  const { data, isLoading } = trpc.projects.profitabilitySummary.useQuery();
+  const { data, isLoading, isError, refetch } =
+    trpc.projects.profitabilitySummary.useQuery();
 
   const projects = (data?.projects ?? [])
     .filter(p => p.hasData)
@@ -96,6 +99,11 @@ export default function ProfitabilityView() {
           <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
             Loading profitability data…
           </div>
+        ) : isError ? (
+          <QueryError
+            message="We couldn't load profitability data. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         ) : projects.length === 0 ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <TrendingUp className="h-8 w-8 text-primary/50 mx-auto mb-3" />

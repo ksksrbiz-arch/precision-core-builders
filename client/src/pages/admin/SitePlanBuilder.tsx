@@ -1,5 +1,16 @@
 import "@excalidraw/excalidraw/index.css";
 import DashboardLayout from "@/components/DashboardLayout";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -1143,14 +1154,38 @@ export default function SitePlanBuilder() {
                           {new Date(plan.updated_at).toLocaleDateString()}
                         </p>
                       </button>
-                      <button
-                        onClick={() => handleDeletePlan(plan.id)}
-                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 p-2 text-muted-foreground hover:text-destructive hover:bg-muted/80 transition-all mr-1 flex-shrink-0 rounded"
-                        title="Delete plan"
-                        aria-label={`Delete ${plan.name}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            disabled={deletePlan.isPending}
+                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 p-2 text-muted-foreground hover:text-destructive hover:bg-muted/80 transition-all mr-1 flex-shrink-0 rounded disabled:opacity-50"
+                            title="Delete plan"
+                            aria-label={`Delete ${plan.name}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Delete “{plan.name}”?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This permanently deletes the site plan and its
+                              drawing. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeletePlan(plan.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   ))}
                   <button

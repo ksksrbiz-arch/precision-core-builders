@@ -15,7 +15,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -263,41 +263,53 @@ export default function ActivityLog() {
 
   // ── Supabase Realtime subscription ──────────────────────────────────────
   useEffect(() => {
-    const channel = supabase
-      .channel("activity-log-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "ledger_entries",
-        },
-        payload => {
-          const row = payload.new as Record<string, unknown>;
-          // Only handle [AUDIT] entries
-          const title = String(row.title ?? "");
-          if (!title.startsWith("[AUDIT]")) return;
+    // Subscribing against the placeholder client (unconfigured Supabase, e.g.
+    // dev-bypass) throws synchronously and would bubble to the ErrorBoundary,
+    // taking the whole page down. Skip realtime entirely in that case.
+    if (!isSupabaseConfigured) return;
 
-          const entry = parseAuditEntry(row);
-          entry.source = "realtime";
-          setEntries(prev => [...prev, entry]);
-          setNewIds(prev => new Set(prev).add(entry.id));
-          setTimeout(() => {
-            setNewIds(prev => {
-              const next = new Set(prev);
-              next.delete(entry.id);
-              return next;
-            });
-          }, 3000);
-        }
-      )
-      .subscribe(status => {
-        setRealtimeOn(status === "SUBSCRIBED");
-      });
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel("activity-log-realtime")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "ledger_entries",
+          },
+          payload => {
+            const row = payload.new as Record<string, unknown>;
+            // Only handle [AUDIT] entries
+            const title = String(row.title ?? "");
+            if (!title.startsWith("[AUDIT]")) return;
 
-    channelRef.current = channel;
+            const entry = parseAuditEntry(row);
+            entry.source = "realtime";
+            setEntries(prev => [...prev, entry]);
+            setNewIds(prev => new Set(prev).add(entry.id));
+            setTimeout(() => {
+              setNewIds(prev => {
+                const next = new Set(prev);
+                next.delete(entry.id);
+                return next;
+              });
+            }, 3000);
+          }
+        )
+        .subscribe(status => {
+          setRealtimeOn(status === "SUBSCRIBED");
+        });
+
+      channelRef.current = channel;
+    } catch (err) {
+      console.warn("[ActivityLog] realtime subscribe failed:", err);
+      return;
+    }
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
   }, []);
 

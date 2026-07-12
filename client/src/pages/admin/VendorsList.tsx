@@ -66,6 +66,16 @@ const FIELDS: Array<{ key: keyof VendorForm; label: string; type: string }> = [
   { key: "paymentTerms", label: "Payment Terms", type: "text" },
 ];
 
+/**
+ * Normalize a stored website into an absolute external URL. A value like
+ * "acme.com" (no scheme) would otherwise resolve as an in-app relative link, so
+ * default to https:// when no http(s) scheme is present.
+ */
+function externalHref(website: string): string {
+  const trimmed = website.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 export default function VendorsList() {
   const [showNew, setShowNew] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -347,7 +357,7 @@ export default function VendorsList() {
                   )}
                   {vendor.website && (
                     <a
-                      href={vendor.website}
+                      href={externalHref(vendor.website)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 hover:text-primary transition-colors"

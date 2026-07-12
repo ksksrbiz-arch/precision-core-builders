@@ -435,7 +435,8 @@ export default function VisionStudioAdmin() {
                 <div className="px-4 py-2 bg-muted/20 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
                   <span>{activeResult.model}</span>
                   <span>
-                    {activeResult.usage.totalTokens.toLocaleString()} tokens
+                    {(activeResult.usage?.totalTokens ?? 0).toLocaleString()}{" "}
+                    tokens
                   </span>
                 </div>
               </div>
