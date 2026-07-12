@@ -214,11 +214,11 @@ const clearDemoData: ActionHandler = async () => {
     "materials cleanup",
     materialsDeleteErr
   );
-  const { error: invoicesDeleteErr } = await supabase
-    .from("invoices")
+  const { error: billingDeleteErr } = await supabase
+    .from("billing_events")
     .delete()
     .in("project_id", projectIds);
-  throwIfActionError("clear-demo-data", "invoice cleanup", invoicesDeleteErr);
+  throwIfActionError("clear-demo-data", "billing cleanup", billingDeleteErr);
   const { error: projectsDeleteErr } = await supabase
     .from("projects")
     .delete()
@@ -256,8 +256,8 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
     "clients",
     "field_reports",
     "materials",
-    "invoices",
-    "subcontractors",
+    "billing_events",
+    "sub_contractors",
   ];
 
   for (const table of tables) {
@@ -355,23 +355,29 @@ const testWeatherAPI: ActionHandler = async () => {
 const getPlatformStats: ActionHandler = async () => {
   const supabase = getSupabase();
 
-  const [projects, clients, reports, invoices] = await Promise.all([
+  const [projects, clients, reports, billing] = await Promise.all([
     supabase.from("projects").select("id, status", { count: "exact" }),
     supabase.from("clients").select("id", { count: "exact" }),
     supabase.from("field_reports").select("id", { count: "exact" }),
-    supabase.from("invoices").select("id, status, amount", { count: "exact" }),
+    // Billing lives in `billing_events` (Stripe webhook records) — there is no
+    // `invoices` table. Amounts are stored in cents.
+    supabase
+      .from("billing_events")
+      .select("id, event_type, amount_cents", { count: "exact" }),
   ]);
   throwIfActionError("get-stats", "projects query", projects.error);
   throwIfActionError("get-stats", "clients query", clients.error);
   throwIfActionError("get-stats", "field reports query", reports.error);
-  throwIfActionError("get-stats", "invoices query", invoices.error);
+  throwIfActionError("get-stats", "billing query", billing.error);
 
   const activeProjects =
     projects.data?.filter(p => p.status === "in_progress").length ?? 0;
   const totalInvoiced =
-    invoices.data?.reduce((sum, inv) => sum + (inv.amount || 0), 0) ?? 0;
+    (billing.data?.reduce((sum, e) => sum + (e.amount_cents || 0), 0) ?? 0) /
+    100;
   const paidInvoices =
-    invoices.data?.filter(i => i.status === "paid").length ?? 0;
+    billing.data?.filter(e => (e.event_type ?? "").includes("paid")).length ??
+    0;
 
   return {
     success: true,
@@ -388,7 +394,7 @@ const getPlatformStats: ActionHandler = async () => {
         total: reports.count ?? 0,
       },
       invoices: {
-        total: invoices.count ?? 0,
+        total: billing.count ?? 0,
         paid: paidInvoices,
         totalAmount: totalInvoiced,
       },

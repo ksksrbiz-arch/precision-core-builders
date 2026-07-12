@@ -462,7 +462,7 @@ async function checkDatabaseTables(): Promise<ServiceStatus> {
       "clients",
       "field_reports",
       "materials",
-      "invoices",
+      "billing_events",
     ];
     const results: Record<string, boolean> = {};
 
