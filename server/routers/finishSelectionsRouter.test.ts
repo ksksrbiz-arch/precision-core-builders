@@ -22,13 +22,22 @@ vi.mock("../_data/finishSelectionsRepo", () => ({
   deleteFinishSelection: vi.fn(async () => ({ success: true })),
   insertClientSelection: vi.fn(async () => ({ id: 2 })),
   listFinishSelectionBudgetFields: vi.fn(async () => []),
+  getFinishSelectionProjectId: vi.fn(async () => 1),
+}));
+
+// Ownership is covered by its own tests; default it to "allowed" here so the
+// delegation/aggregation assertions exercise the router's own logic.
+vi.mock("../_core/access", () => ({
+  assertProjectAccess: vi.fn(async () => ({ clients: { id: 1 } })),
 }));
 
 import { appRouter } from "../routers";
 import type { TrpcContext } from "../_core/context";
 import * as repo from "../_data/finishSelectionsRepo";
+import { assertProjectAccess } from "../_core/access";
 
 const mockRepo = vi.mocked(repo);
+const mockAssertAccess = vi.mocked(assertProjectAccess);
 
 function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
   return {
@@ -153,6 +162,7 @@ describe("finishSelections router — repo delegation", () => {
       selection: "White Oak Hardwood",
       category: "Flooring",
       budgetImpact: 1200,
+      clientId: 1,
     });
   });
 });
@@ -226,5 +236,34 @@ describe("finishSelections router — input validation", () => {
       user().finishSelections.select({ projectId: 1, selection: "" })
     ).rejects.toThrow();
     expect(mockRepo.insertClientSelection).not.toHaveBeenCalled();
+  });
+});
+
+describe("finishSelections router — project ownership", () => {
+  it("list rejects when the caller does not own the project", async () => {
+    mockAssertAccess.mockRejectedValueOnce(
+      new Error("You do not have access to this project.")
+    );
+    await expect(
+      user().finishSelections.list({ projectId: 999 })
+    ).rejects.toThrow(/access/i);
+    expect(mockRepo.listFinishSelections).not.toHaveBeenCalled();
+  });
+
+  it("clientApprove rejects when the selection's project isn't the caller's", async () => {
+    mockAssertAccess.mockRejectedValueOnce(
+      new Error("You do not have access to this project.")
+    );
+    await expect(
+      user().finishSelections.clientApprove({ id: 5 })
+    ).rejects.toThrow(/access/i);
+    expect(mockRepo.clientApproveFinishSelection).not.toHaveBeenCalled();
+  });
+
+  it("select attributes the write to the caller's client id", async () => {
+    await user().finishSelections.select({ projectId: 1, selection: "Quartz" });
+    expect(mockRepo.insertClientSelection).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: 1, clientId: 1 })
+    );
   });
 });

@@ -57,6 +57,13 @@ vi.mock("./db", () => {
     paginate: () => ({ from: 0, to: 19 }),
   };
 });
+
+// Portal project-ownership is covered in the per-router test files; allow it
+// here so the integration cases exercise each procedure's own logic.
+vi.mock("./_core/access", () => ({
+  assertProjectAccess: vi.fn(async () => ({ clients: { id: 1 } })),
+}));
+
 import { appRouter } from "./routers";
 import { createContext } from "./_core/context";
 import type { TRPCContext } from "./_core/context";

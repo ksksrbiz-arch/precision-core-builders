@@ -49,8 +49,15 @@ vi.mock("../_data/scheduleRepo", () => ({
   updateScheduleItemOrder: vi.fn(),
 }));
 
+// Project ownership has its own coverage; default it to "allowed" so these
+// tests exercise the router's validation/delegation.
+vi.mock("../_core/access", () => ({
+  assertProjectAccess: vi.fn(async () => ({ clients: { id: 1 } })),
+}));
+
 import { appRouter } from "../routers";
 import type { TrpcContext } from "../_core/context";
+import { assertProjectAccess } from "../_core/access";
 import {
   createScheduleItem,
   deleteScheduleItem,
@@ -86,11 +93,21 @@ describe("Schedule Router — authorization", () => {
     expect(listScheduleItems).not.toHaveBeenCalled();
   });
 
-  it("list works for any authenticated user", async () => {
+  it("list works for the project's owner", async () => {
     vi.mocked(listScheduleItems).mockResolvedValue([{ id: 1 }] as any);
     const res = await user().schedule.list({ projectId: 42 });
     expect(listScheduleItems).toHaveBeenCalledWith(42);
     expect(res).toEqual([{ id: 1 }]);
+  });
+
+  it("list rejects a caller who doesn't own the project", async () => {
+    vi.mocked(assertProjectAccess).mockRejectedValueOnce(
+      new Error("You do not have access to this project.")
+    );
+    await expect(user().schedule.list({ projectId: 999 })).rejects.toThrow(
+      /access/i
+    );
+    expect(listScheduleItems).not.toHaveBeenCalled();
   });
 
   it("create requires authentication", async () => {
