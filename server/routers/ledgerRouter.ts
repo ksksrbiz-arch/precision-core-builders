@@ -18,8 +18,11 @@ const EntryTypeEnum = z.enum([
 ]);
 
 export const ledgerRouter = router({
-  // All authenticated users can read ledger entries for their projects
-  list: protectedProcedure
+  // Admin-only: returns the full internal ledger for a project, including
+  // entries with visible_to_client = false. Portal clients must use
+  // `listVisible` instead (this used to be protectedProcedure, which any
+  // logged-in client could call for an arbitrary projectId).
+  list: adminProcedure
     .input(
       z.object({
         projectId: z.number().int().positive(),

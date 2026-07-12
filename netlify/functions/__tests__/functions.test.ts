@@ -67,9 +67,20 @@ describe("weather-schedule function", () => {
     expect(response.statusCode).toBe(405);
   });
 
-  it("returns forecast for Eugene, OR", async () => {
+  it("requires admin auth (401 without a token)", async () => {
     const { handler } = await import("../weather-schedule");
     const event = mockEvent("GET");
+    event.queryStringParameters = { projectId: "1" };
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("returns forecast for Eugene, OR (admin)", async () => {
+    const { handler } = await import("../weather-schedule");
+    const event = mockEvent("GET", undefined, {
+      authorization: "Bearer dev-admin-token",
+    });
     event.queryStringParameters = { projectId: "1" };
     const response = await handler(event as any, {} as any);
 

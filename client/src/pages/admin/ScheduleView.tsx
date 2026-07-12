@@ -3,6 +3,7 @@
  * Calls /api/weather-schedule for Eugene OR forecast and task recommendations.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { GanttChart } from "@/components/GanttChart";
 import { SkeletonCard } from "@/components/Skeletons";
@@ -283,7 +284,7 @@ export default function ScheduleView() {
       const url = projectId
         ? `/api/weather-schedule?projectId=${projectId}`
         : "/api/weather-schedule";
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: await getAuthHeader() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setWeather(data);

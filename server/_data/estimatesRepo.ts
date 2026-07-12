@@ -168,7 +168,7 @@ export async function listEstimatesForClient(params: {
 }) {
   let q = data
     .from("estimates")
-    .select("*, projects(id,name,status,progress_percent)", {
+    .select("*, projects(id,name,status,completion_percent)", {
       count: "exact",
     })
     .eq("client_id", params.clientId)

@@ -6,11 +6,8 @@
 import type { Handler } from "@netlify/functions";
 import { ENV } from "../../server/_core/env";
 import { checkOrigin, corsHeaders } from "./_utils/corsGuard";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitHeaders,
-} from "./_utils/rateLimiter";
+import { verifyAdmin } from "./_utils/authGuard";
+import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
@@ -63,9 +60,20 @@ export const handler: Handler = async event => {
       body: JSON.stringify({ error: "Method not allowed" }),
     };
 
-  // Rate limit: 20 billing requests per minute per IP (Stripe is idempotent enough).
-  const ip = getClientIp(event.headers);
-  const rl = checkRateLimit(`stripe-billing:${ip}`, {
+  // Admin-only: these actions create Stripe charges/payment links, send
+  // invoices, and list invoices with customer PII. Must never be reachable
+  // unauthenticated (previously only CORS + IP rate limiting gated it).
+  const auth = await verifyAdmin(event.headers);
+  if (!auth.ok) {
+    return {
+      statusCode: auth.statusCode,
+      headers,
+      body: JSON.stringify({ error: auth.message }),
+    };
+  }
+
+  // Rate limit: 20 billing requests per minute per admin.
+  const rl = checkRateLimit(`stripe-billing:${auth.user.id}`, {
     maxRequests: 20,
     windowMs: 60_000,
   });

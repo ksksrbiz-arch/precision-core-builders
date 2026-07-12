@@ -38,9 +38,10 @@ export const handler = withGuards(
       return json(200, score);
     } catch (err) {
       console.error("[lead-score]", err);
+      const configError = isLLMConfigError(err);
       return error(
-        500,
-        isLLMConfigError(err)
+        configError ? 503 : 500,
+        configError
           ? "AI service is not configured. Please contact the site administrator."
           : "Lead scoring temporarily unavailable. Please try again."
       );

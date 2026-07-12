@@ -327,13 +327,21 @@ describe("Ledger Router (Immutable)", () => {
     expect(procedures).not.toContain("ledger.delete");
   });
 
-  it("ledger.list is available to authenticated users", async () => {
-    const caller = appRouter.createCaller(
+  it("ledger.list is admin-only (internal ledger, not client-visible)", async () => {
+    const userCaller = appRouter.createCaller(
       createMockContext("user-123", "user")
     );
+    // Non-admins must not reach the full internal ledger — they use listVisible.
+    await expect(userCaller.ledger.list({ projectId: 1 })).rejects.toThrow(
+      /forbidden/i
+    );
 
-    // Should not throw - users can read ledger entries for their projects
-    await expect(caller.ledger.list({ projectId: 1 })).resolves.toBeDefined();
+    const adminCaller = appRouter.createCaller(
+      createMockContext("admin-1", "admin")
+    );
+    await expect(
+      adminCaller.ledger.list({ projectId: 1 })
+    ).resolves.toBeDefined();
   });
 });
 

@@ -17,7 +17,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const fieldReportsRouter = router({
-  list: protectedProcedure
+  // Admin-only: returns all reports (including unpublished drafts) for any
+  // project. Portal clients must use `listPublished`. Previously
+  // protectedProcedure, which let any logged-in client read unpublished
+  // reports across projects by passing an arbitrary projectId.
+  list: adminProcedure
     .input(
       z.object({
         projectId: z.number().int().positive().optional(),

@@ -4,6 +4,7 @@
  * for shortages.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -180,7 +181,10 @@ export default function MaterialsView() {
     try {
       const res = await fetch("/api/material-procurement", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthHeader()),
+        },
         body: JSON.stringify({ projectId: selectedProject }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

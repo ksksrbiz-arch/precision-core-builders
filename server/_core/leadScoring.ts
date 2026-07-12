@@ -2,7 +2,7 @@
  * Lead scoring — shared logic used by the manual lead-score endpoint and the
  * automatic submission-created trigger (new website inquiries).
  */
-import { invokeLLM } from "./llm";
+import { invokeLLM, parseLlmJson } from "./llm";
 
 export const LEAD_SCORE_SYSTEM_PROMPT = `You are an AI lead scoring assistant for Precision Core Builders, a licensed Oregon contractor (CCB #246527) in Eugene, OR.
 Score incoming project leads from 0-100 based on:
@@ -82,7 +82,9 @@ export async function scoreLead(input: LeadInput): Promise<ScoredLead> {
     temperature: 0.1,
   });
 
-  const raw = JSON.parse(result.text) as Record<string, unknown>;
+  // Tolerate code fences / preamble in the model output (matches every other
+  // AI function) rather than throwing on a single stray token.
+  const raw = parseLlmJson<Record<string, unknown>>(result.text);
   const score = clampScore(raw.score);
   const priority = PRIORITIES.includes(raw.priority as LeadPriority)
     ? (raw.priority as LeadPriority)

@@ -107,9 +107,23 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
     return errorBody(400, "messages array is required");
   }
 
+  // Bound the input on this public, IP-rate-limited endpoint: keep the last few
+  // turns and cap per-message length so a caller can't inflate token cost with
+  // an unbounded prompt.
+  const MAX_MESSAGES = 12;
+  const MAX_CONTENT_CHARS = 4000;
   const fullMessages = [
     { role: "system" as const, content: PROMPTS.chat },
-    ...messages.filter(m => m.role !== "system"),
+    ...messages
+      .filter(m => m.role !== "system")
+      .slice(-MAX_MESSAGES)
+      .map(m => ({
+        ...m,
+        content:
+          typeof m.content === "string"
+            ? m.content.slice(0, MAX_CONTENT_CHARS)
+            : m.content,
+      })),
   ];
 
   // Buffered fallback — preserves the original JSON contract exactly.
@@ -132,9 +146,10 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
       };
     } catch (err) {
       console.error("[ai-chat]", err);
+      const configError = isLLMConfigError(err);
       return errorBody(
-        500,
-        isLLMConfigError(err)
+        configError ? 503 : 500,
+        configError
           ? "AI service is not configured. Please contact the site administrator."
           : "AI service temporarily unavailable. Please try again in a moment."
       );

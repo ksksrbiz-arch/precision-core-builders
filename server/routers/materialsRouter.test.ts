@@ -101,11 +101,16 @@ describe("Materials Router — authorization", () => {
     expect(listMock).not.toHaveBeenCalled();
   });
 
-  it("list allows any authenticated user (protectedProcedure)", async () => {
-    const caller = appRouter.createCaller(ctx("u1", "user"));
-    const res = await caller.materials.list({});
+  it("list is admin-only — exposes internal pricing (was protectedProcedure)", async () => {
+    const res = await admin().materials.list({});
     expect(listMock).toHaveBeenCalledTimes(1);
     expect(res).toEqual({ items: [{ id: 1, name: "2x4 Studs" }] });
+  });
+
+  it("list rejects non-admin users", async () => {
+    const caller = appRouter.createCaller(ctx("u1", "user"));
+    await expect(caller.materials.list({})).rejects.toThrow(/forbidden/i);
+    expect(listMock).not.toHaveBeenCalled();
   });
 
   it("create rejects non-admin users", async () => {
