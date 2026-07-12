@@ -8,6 +8,7 @@
 import type { Handler } from "@netlify/functions";
 import { invokeLLM } from "../../server/_core/llm";
 import { getSupabaseAdmin } from "../../server/_core/supabase";
+import { verifyAdminToken } from "../../server/_core/auth/verifyToken";
 import { timingSafeEqualStr } from "./_lib/crypto";
 
 type ActionResult = {
@@ -574,27 +575,25 @@ export const handler: Handler = async event => {
     };
   }
 
-  // Auth check — fail closed. These actions are destructive (clear/seed demo
-  // data, create-admin), so require an explicitly configured admin token and
+  // Auth — a valid admin session (Supabase JWT / admin session token / dev
+  // bypass) authorizes these actions, exactly like the rest of the admin app.
+  // These actions are destructive (clear/seed demo data, create-admin), so we
+  // still accept the dedicated SETUP_ADMIN_TOKEN as a bootstrap fallback and
   // never fall back to a hardcoded constant baked into source.
-  const expectedToken = process.env.SETUP_ADMIN_TOKEN;
-  if (!expectedToken) {
-    return {
-      statusCode: 503,
-      headers,
-      body: JSON.stringify({
-        error:
-          "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before running platform actions.",
-      }),
-    };
-  }
-
-  if (!body.adminToken || !timingSafeEqualStr(body.adminToken, expectedToken)) {
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ error: "Invalid admin token" }),
-    };
+  const verified = await verifyAdminToken(body.adminToken ?? null);
+  if (!verified.ok) {
+    const expectedToken = process.env.SETUP_ADMIN_TOKEN;
+    if (
+      !expectedToken ||
+      !body.adminToken ||
+      !timingSafeEqualStr(body.adminToken, expectedToken)
+    ) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ error: "Admin authentication required" }),
+      };
+    }
   }
 
   const action = body.action;

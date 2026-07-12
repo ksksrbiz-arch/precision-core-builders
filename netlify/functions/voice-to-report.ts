@@ -10,7 +10,7 @@
  */
 import { requireSupabaseAdmin } from "../../server/_core/supabase";
 import { transcribeAudio } from "../../server/_core/voiceTranscription";
-import { invokeLLM } from "../../server/_core/llm";
+import { invokeLLM, parseLlmJson } from "../../server/_core/llm";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { withGuards } from "./_lib/http";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
@@ -101,7 +101,7 @@ export const handler = withGuards(
       };
 
       try {
-        reportData = JSON.parse(llmResult.text);
+        reportData = parseLlmJson(llmResult.text);
       } catch {
         reportData = {
           summary: transcriptionText.slice(0, 500),

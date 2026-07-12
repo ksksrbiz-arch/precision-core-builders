@@ -10,6 +10,7 @@ import type { Handler } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
 import { resolveProviderOrder } from "../../server/_core/llm";
 import { getSupabaseAdmin } from "../../server/_core/supabase";
+import { verifyAdminToken } from "../../server/_core/auth/verifyToken";
 import { timingSafeEqualStr } from "./_lib/crypto";
 
 type ServiceStatus = {
@@ -521,35 +522,32 @@ export const handler: Handler = async event => {
     return { statusCode: 405, headers, body: "" };
   }
 
-  // Auth check - accept token from Authorization header (preferred) or query string (legacy)
+  // Auth — accept the token from the Authorization header (preferred) or the
+  // query string (legacy). Ungated for signed-in admins: a valid Supabase admin
+  // JWT / admin session token / dev bypass authorizes the health check, exactly
+  // like the rest of the admin app. The dedicated SETUP_ADMIN_TOKEN remains an
+  // optional fallback for pre-login bootstrap or external uptime monitoring.
   const authHeader =
     event.headers?.authorization ?? event.headers?.Authorization ?? "";
   const bearerToken = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7)
     : undefined;
   const adminToken = bearerToken ?? event.queryStringParameters?.adminToken;
-  const expectedToken = process.env.SETUP_ADMIN_TOKEN;
 
-  // Fail closed: require an explicitly configured admin token. No hardcoded
-  // bootstrap fallback — a known constant in source would let anyone read
-  // platform internals. Mirror setup-env.ts, which already returns 503 here.
-  if (!expectedToken) {
-    return {
-      statusCode: 503,
-      headers,
-      body: JSON.stringify({
-        error:
-          "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before using the Setup Wizard.",
-      }),
-    };
-  }
-
-  if (!adminToken || !timingSafeEqualStr(adminToken, expectedToken)) {
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ error: "Invalid admin token" }),
-    };
+  const verified = await verifyAdminToken(adminToken ?? null);
+  if (!verified.ok) {
+    const expectedToken = process.env.SETUP_ADMIN_TOKEN;
+    if (
+      !expectedToken ||
+      !adminToken ||
+      !timingSafeEqualStr(adminToken, expectedToken)
+    ) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ error: "Admin authentication required" }),
+      };
+    }
   }
 
   // Run all checks in parallel

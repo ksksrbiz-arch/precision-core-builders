@@ -270,17 +270,22 @@ describe("platform-health function", () => {
     expect(response.statusCode).toBe(401);
   });
 
-  it("fails closed with 503 when SETUP_ADMIN_TOKEN is not configured", async () => {
+  it("returns 401 (not the old bootstrap value) with no valid admin session", async () => {
     delete process.env.SETUP_ADMIN_TOKEN;
-    const { handler } = await import("../platform-health");
-    // Even presenting the old hardcoded bootstrap value must not authenticate.
-    const event = {
-      ...mockEvent("GET"),
-      headers: { authorization: "Bearer pcb-bootstrap-2026" },
-    };
-    const response = await handler(event as any, {} as any);
-    expect(response.statusCode).toBe(503);
-    process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+    try {
+      const { handler } = await import("../platform-health");
+      // Ungated for real admin sessions, but the old hardcoded bootstrap value
+      // — with no session and no configured SETUP_ADMIN_TOKEN — must not
+      // authenticate.
+      const event = {
+        ...mockEvent("GET"),
+        headers: { authorization: "Bearer pcb-bootstrap-2026" },
+      };
+      const response = await handler(event as any, {} as any);
+      expect(response.statusCode).toBe(401);
+    } finally {
+      process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+    }
   });
 });
 
@@ -304,17 +309,22 @@ describe("platform-actions function", () => {
     expect(response.statusCode).toBe(401);
   });
 
-  it("fails closed with 503 when SETUP_ADMIN_TOKEN is not configured", async () => {
+  it("returns 401 (not the old bootstrap value) with no valid admin session", async () => {
     delete process.env.SETUP_ADMIN_TOKEN;
-    const { handler } = await import("../platform-actions");
-    // The removed hardcoded bootstrap token must no longer grant access.
-    const event = mockEvent("POST", {
-      action: "get-stats",
-      adminToken: "pcb-bootstrap-2026",
-    });
-    const response = await handler(event as any, {} as any);
-    expect(response.statusCode).toBe(503);
-    process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+    try {
+      const { handler } = await import("../platform-actions");
+      // Ungated for real admin sessions; the removed hardcoded bootstrap token
+      // — with no session and no configured SETUP_ADMIN_TOKEN — must not grant
+      // access.
+      const event = mockEvent("POST", {
+        action: "get-stats",
+        adminToken: "pcb-bootstrap-2026",
+      });
+      const response = await handler(event as any, {} as any);
+      expect(response.statusCode).toBe(401);
+    } finally {
+      process.env.SETUP_ADMIN_TOKEN = "test-admin-token";
+    }
   });
 
   it("returns normalized action errors", async () => {
