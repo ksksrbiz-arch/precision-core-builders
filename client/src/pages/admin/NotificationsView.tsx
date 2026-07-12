@@ -651,7 +651,7 @@ export default function NotificationsView() {
               />
             </div>
             <select
-              value={statusFilter}
+              value={statusFilter ?? ""}
               onChange={e => {
                 setStatusFilter(
                   (e.target.value || undefined) as
@@ -673,7 +673,7 @@ export default function NotificationsView() {
               ))}
             </select>
             <select
-              value={channelFilter}
+              value={channelFilter ?? ""}
               onChange={e => {
                 setChannelFilter(
                   (e.target.value || undefined) as Channel | undefined

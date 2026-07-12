@@ -205,11 +205,15 @@ function LeadScoringPanel() {
   );
   const saved: SavedLead[] = (leadsQuery.data ?? []).map(rowToSavedLead);
 
-  const createLead = useMutationWithToast(trpc.leads.create.useMutation(), {
-    success: "Lead saved",
-    successMessage: "Added to the prioritization board.",
-    error: "Could not save lead",
-    invalidate: () => utils.leads.list.invalidate(),
+  // Best-effort background persist of the scored lead. It runs automatically
+  // after every successful score, so it must NOT toast — a failure here (e.g.
+  // the leads table isn't migrated yet) shouldn't surface a "Could not save
+  // lead" error when scoring itself succeeded and the result is on screen.
+  const createLead = trpc.leads.create.useMutation({
+    onSuccess: () => utils.leads.list.invalidate(),
+    onError: () => {
+      /* silent — persistence is best-effort */
+    },
   });
   const deleteLead = useMutationWithToast(trpc.leads.delete.useMutation(), {
     success: "Lead removed",

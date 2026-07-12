@@ -295,9 +295,13 @@ export default function LedgerView() {
                     entryType: form.entryType,
                     title: form.title,
                     description: form.description,
-                    amountDelta: form.amountDelta
-                      ? Number(form.amountDelta)
-                      : undefined,
+                    amountDelta: (() => {
+                      // Strip commas/whitespace; only send a finite number.
+                      const n = Number(form.amountDelta.replace(/[,\s]/g, ""));
+                      return form.amountDelta.trim() && Number.isFinite(n)
+                        ? n
+                        : undefined;
+                    })(),
                     visibleToClient: form.visibleToClient,
                   })
                 }

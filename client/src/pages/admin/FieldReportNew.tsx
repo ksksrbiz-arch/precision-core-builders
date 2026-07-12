@@ -113,6 +113,29 @@ export default function FieldReportNew() {
     }
   );
 
+  const updateMutation = trpc.fieldReports.update.useMutation();
+
+  /**
+   * Persist any edits the user made to the AI-generated summary before
+   * publishing or saving. Without this, corrections typed into the review
+   * textarea are silently discarded and the client sees the original AI text.
+   */
+  const persistSummaryEdits = async () => {
+    if (
+      report?.id &&
+      editedSummary.trim() &&
+      editedSummary !== (report.summary ?? "")
+    ) {
+      await updateMutation.mutateAsync({
+        id: report.id,
+        summary: editedSummary,
+      });
+      setReport((prev: any) =>
+        prev ? { ...prev, summary: editedSummary } : prev
+      );
+    }
+  };
+
   const startRecording = async () => {
     setError("");
     setLiveTranscript("");
@@ -320,6 +343,7 @@ export default function FieldReportNew() {
 
   const publishReport = async () => {
     if (!report?.id) return;
+    await persistSummaryEdits();
     await publishMutation.mutateAsync({ id: report.id });
 
     // Fire field_report_created n8n event to notify client
@@ -672,15 +696,19 @@ export default function FieldReportNew() {
             })}
             <div className="flex gap-3">
               <button
-                onClick={() => setLocation(`/admin/field-reports/${report.id}`)}
-                className="flex-1 py-3 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                onClick={async () => {
+                  await persistSummaryEdits();
+                  setLocation(`/admin/field-reports/${report.id}`);
+                }}
+                disabled={updateMutation.isPending}
+                className="flex-1 py-3 min-h-11 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 transition-colors disabled:opacity-50"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 Save as Draft
               </button>
               <button
                 onClick={publishReport}
-                disabled={publishMutation.isPending}
+                disabled={publishMutation.isPending || updateMutation.isPending}
                 className="flex-1 flex min-h-11 items-center justify-center gap-2 py-3 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >

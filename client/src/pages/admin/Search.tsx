@@ -103,8 +103,9 @@ export default function SearchView() {
     runSearch(q);
   };
 
-  // Group results by type
-  const grouped = response?.results.reduce(
+  // Group results by type. Guard `results` in case a 200 body omits it, so a
+  // malformed response can't throw on `.reduce`.
+  const grouped = (response?.results ?? []).reduce(
     (acc, r) => {
       if (!acc[r.type]) acc[r.type] = [];
       acc[r.type].push(r);

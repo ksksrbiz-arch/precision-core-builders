@@ -104,6 +104,7 @@ export default function EstimateEditor() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [prefilling, setPrefilling] = useState(false);
   const [prefillError, setPrefillError] = useState("");
+  const [formError, setFormError] = useState("");
 
   const utils = trpc.useUtils();
   const { data: projectsData } = trpc.projects.list.useQuery({ pageSize: 100 });
@@ -190,6 +191,28 @@ export default function EstimateEditor() {
 
   const handleSubmit = () => {
     const payload = buildPayload();
+
+    // Guard against persisting an empty estimate row: require at least a
+    // project type or one cost figure.
+    const hasCost =
+      payload.estimatedLow != null ||
+      payload.estimatedMid != null ||
+      payload.estimatedHigh != null;
+    if (!payload.projectType && !hasCost) {
+      setFormError(
+        "Add a project type or at least one estimate amount before saving."
+      );
+      return;
+    }
+
+    // Sanity-check the tier ordering when all three are provided.
+    const { estimatedLow: lo, estimatedMid: mid, estimatedHigh: hi } = payload;
+    if (lo != null && mid != null && hi != null && !(lo <= mid && mid <= hi)) {
+      setFormError("Estimate amounts must be ordered low ≤ mid ≤ high.");
+      return;
+    }
+
+    setFormError("");
     if (isEdit) {
       updateMut.mutate({ id: estimateId!, ...payload });
     } else {
@@ -488,6 +511,11 @@ export default function EstimateEditor() {
               {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Estimate"}
             </button>
           </div>
+          {formError && (
+            <p className="text-xs text-destructive text-right mt-2">
+              {formError}
+            </p>
+          )}
         </div>
       </div>
     </DashboardLayout>

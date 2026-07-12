@@ -116,10 +116,15 @@ export default function Analytics() {
 
   const totalEstimated = stats?.totalEstimated ?? 0;
   const totalActual = stats?.totalActual ?? 0;
+  // Source the headline margin from the same server profitability summary that
+  // backs the ProfitabilityTable below (contracted-or-estimate basis), so the
+  // two margin figures on this page never disagree. Fall back to the
+  // estimated-basis calc only until that query resolves.
   const grossMargin =
-    totalEstimated > 0 && totalActual > 0
+    profitability?.totals?.marginPct ??
+    (totalEstimated > 0 && totalActual > 0
       ? ((totalEstimated - totalActual) / totalEstimated) * 100
-      : null;
+      : null);
 
   // Pipeline by status
   const statusData = stats

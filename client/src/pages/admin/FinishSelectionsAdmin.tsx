@@ -3,6 +3,18 @@
  * Add items, approve, track budget impact, and manage client-facing selections.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { QueryError } from "@/components/QueryError";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
@@ -74,7 +86,12 @@ export default function FinishSelectionsAdmin() {
   const utils = trpc.useUtils();
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
-  const { data: selections, isLoading } = trpc.finishSelections.list.useQuery(
+  const {
+    data: selections,
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.finishSelections.list.useQuery(
     { projectId: selectedProject! },
     { enabled: !!selectedProject }
   );
@@ -391,6 +408,11 @@ export default function FinishSelectionsAdmin() {
           <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
             Loading…
           </div>
+        ) : isError ? (
+          <QueryError
+            message="We couldn't load finish selections for this project. Try again."
+            onRetry={() => refetch()}
+          />
         ) : !selections?.length ? (
           <div className="bg-card border border-border/60 p-12 text-center">
             <Sparkles className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
@@ -493,12 +515,37 @@ export default function FinishSelectionsAdmin() {
                               <Check className="h-2.5 w-2.5" /> Eric Approved
                             </span>
                           )}
-                          <button
-                            onClick={() => del.mutate({ id: sel.id })}
-                            className="text-[9px] text-muted-foreground/40 hover:text-red-400 transition-colors ml-auto"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                aria-label="Delete selection"
+                                disabled={del.isPending}
+                                className="text-[9px] text-muted-foreground/40 hover:text-red-400 transition-colors ml-auto disabled:opacity-50"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Delete this selection?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This permanently removes “{sel.item_name}”
+                                  from this project's finish selections.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => del.mutate({ id: sel.id })}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </div>

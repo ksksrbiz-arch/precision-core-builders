@@ -397,7 +397,16 @@ export default function BillingView() {
     }
   };
 
-  const totalBilled = invoices.reduce((sum, inv) => sum + inv.amountCents, 0);
+  // "Total Invoiced" should reflect real receivables — exclude void, draft, and
+  // uncollectible invoices, which Stripe still returns in the list.
+  const EXCLUDED_BILLING_STATUSES = new Set(["void", "draft", "uncollectible"]);
+  const totalBilled = invoices.reduce(
+    (sum, inv) =>
+      EXCLUDED_BILLING_STATUSES.has(inv.status ?? "")
+        ? sum
+        : sum + inv.amountCents,
+    0
+  );
 
   return (
     <DashboardLayout>

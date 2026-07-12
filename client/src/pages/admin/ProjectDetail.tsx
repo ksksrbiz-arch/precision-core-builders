@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { QueryError } from "@/components/QueryError";
 import { trpc } from "@/lib/trpc";
 import { getAuthHeader } from "@/lib/authHeader";
 import { formatCurrency } from "@/lib/formatters";
@@ -100,7 +101,12 @@ export default function ProjectDetail() {
     { projectId },
     { enabled: activeTab === "ledger" }
   );
-  const { data: profitability } = trpc.projects.profitability.useQuery(
+  const {
+    data: profitability,
+    isLoading: profitabilityLoading,
+    isError: profitabilityError,
+    refetch: refetchProfitability,
+  } = trpc.projects.profitability.useQuery(
     { id: projectId },
     { enabled: activeTab === "profitability" }
   );
@@ -137,6 +143,8 @@ export default function ProjectDetail() {
       } | null;
       if (row?.project_id !== projectId) return;
       utils.materials.list.invalidate({ projectId });
+      // Projected/materials cost in profitability is derived from materials.
+      utils.projects.profitability.invalidate({ id: projectId });
     },
   });
 
@@ -804,7 +812,12 @@ export default function ProjectDetail() {
 
         {activeTab === "profitability" && (
           <div className="space-y-5">
-            {!profitability ? (
+            {profitabilityError ? (
+              <QueryError
+                message="We couldn't load profitability for this project. Try again."
+                onRetry={() => refetchProfitability()}
+              />
+            ) : profitabilityLoading || !profitability ? (
               <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
                 Loading profitability data…
               </div>

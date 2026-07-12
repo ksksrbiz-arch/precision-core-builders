@@ -38,7 +38,7 @@ import {
   Wind,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 type WeatherDay = {
@@ -199,7 +199,6 @@ export default function ScheduleView() {
     { projectId: selectedProject! },
     { enabled: !!selectedProject }
   );
-  const lastStatusRef = useRef("");
   const updateStatus = useMutationWithToast(
     trpc.schedule.updateStatus.useMutation(),
     {
@@ -207,19 +206,31 @@ export default function ScheduleView() {
       successMessage: "Task status updated.",
       error: "Update Failed",
       errorMessage: "Failed to update task status. Please try again.",
-      onSuccess: () => {
+      // Key the milestone event off the row the server actually returned — not a
+      // shared ref that any status change (e.g. Defer) could leave stale and
+      // misfire on. Include identifiers so downstream automation can act.
+      onSuccess: data => {
         refetch();
-        // Fire milestone_complete n8n event when task is marked complete
-        if (lastStatusRef.current === "complete") {
+        const task = data as {
+          id?: number;
+          project_id?: number;
+          title?: string;
+          status?: string;
+        } | null;
+        if (task?.status === "complete") {
           fetch("/api/n8n-webhook", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               event: "milestone_complete",
-              payload: { status: "complete" },
+              payload: {
+                projectId: task.project_id,
+                taskId: task.id,
+                title: task.title,
+                status: "complete",
+              },
             }),
           }).catch(() => {});
-          lastStatusRef.current = "";
         }
       },
     }
@@ -658,11 +669,9 @@ export default function ScheduleView() {
                   {/* Status toggle — large touch target on mobile */}
                   <button
                     onClick={() => {
-                      const nextStatus = cycleStatus(item.status);
-                      lastStatusRef.current = nextStatus;
                       updateStatus.mutate({
                         id: item.id,
-                        status: nextStatus,
+                        status: cycleStatus(item.status),
                       });
                     }}
                     className={`shrink-0 transition-all active:scale-95 ${cfg.color} ${
