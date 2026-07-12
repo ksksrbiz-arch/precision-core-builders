@@ -26,6 +26,7 @@ export default defineConfig({
       "netlify/functions/__tests__/onboarding-*.test.ts",
       "netlify/functions/__tests__/stripe-*.test.ts",
       "netlify/functions/__tests__/vision-studio.test.ts",
+      "netlify/functions/__tests__/ai-draft.test.ts",
       "netlify/functions/__tests__/lib-*.test.ts",
       "client/src/components/**/*.test.{ts,tsx}",
       "client/src/pages/**/*.test.{ts,tsx}",

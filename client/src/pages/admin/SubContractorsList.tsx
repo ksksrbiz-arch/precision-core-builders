@@ -16,6 +16,7 @@ import {
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { getAuthHeader } from "@/lib/authHeader";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -35,6 +36,7 @@ import {
   Plus,
   Send,
   Shield,
+  Sparkles,
   Star,
   Trash2,
   Wrench,
@@ -61,6 +63,7 @@ export default function SubContractorsList() {
   const [briefingTarget, setBriefingTarget] = useState<{
     id: number;
     name: string;
+    trade: string | null;
   } | null>(null);
   const [briefingProjectId, setBriefingProjectId] = useState<number | null>(
     null
@@ -68,6 +71,44 @@ export default function SubContractorsList() {
   const [briefingSchedule, setBriefingSchedule] = useState("See schedule");
   const [briefingAccess, setBriefingAccess] = useState("");
   const [briefingSafety, setBriefingSafety] = useState("");
+  const [briefingDrafting, setBriefingDrafting] = useState(false);
+  const [briefingDraftError, setBriefingDraftError] = useState("");
+
+  const draftBriefing = async () => {
+    if (!briefingTarget || !briefingProjectId) return;
+    setBriefingDrafting(true);
+    setBriefingDraftError("");
+    try {
+      const res = await fetch("/api/ai-draft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthHeader()),
+        },
+        body: JSON.stringify({
+          kind: "sub-briefing",
+          projectId: briefingProjectId,
+          trade: briefingTarget.trade ?? undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Drafting failed. Please try again.");
+      }
+      if (data.scheduleDetails)
+        setBriefingSchedule(String(data.scheduleDetails));
+      if (typeof data.safetyNotes === "string")
+        setBriefingSafety(data.safetyNotes);
+    } catch (err) {
+      setBriefingDraftError(
+        err instanceof Error
+          ? err.message
+          : "Drafting failed. Please try again."
+      );
+    } finally {
+      setBriefingDrafting(false);
+    }
+  };
   const [form, setForm] = useState({
     name: "",
     company: "",
@@ -388,7 +429,11 @@ export default function SubContractorsList() {
                 <div className="flex items-center gap-2 pt-3 border-t border-border/40">
                   <button
                     onClick={() =>
-                      setBriefingTarget({ id: sub.id, name: sub.name })
+                      setBriefingTarget({
+                        id: sub.id,
+                        name: sub.name,
+                        trade: sub.trade ?? null,
+                      })
                     }
                     disabled={briefMut.isPending}
                     className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-primary hover:text-primary/70 disabled:opacity-50 transition-colors"
@@ -486,12 +531,29 @@ export default function SubContractorsList() {
                 )}
               </div>
               <div>
-                <label
-                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Schedule Details *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label
+                    className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground block"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Schedule Details *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={draftBriefing}
+                    disabled={!briefingProjectId || briefingDrafting}
+                    title={
+                      briefingProjectId
+                        ? "Fill schedule & safety from the project's live plan"
+                        : "Select a project first"
+                    }
+                    className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-primary hover:text-primary/70 disabled:opacity-40 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {briefingDrafting ? "Drafting…" : "Draft with AI"}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={briefingSchedule}
@@ -499,6 +561,11 @@ export default function SubContractorsList() {
                   placeholder="e.g. Mon-Wed 7am-3pm framing"
                   className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
                 />
+                {briefingDraftError && (
+                  <p className="text-[11px] text-destructive mt-1">
+                    {briefingDraftError}
+                  </p>
+                )}
               </div>
               <div>
                 <label

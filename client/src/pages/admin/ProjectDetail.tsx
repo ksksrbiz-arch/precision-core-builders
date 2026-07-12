@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
+import { getAuthHeader } from "@/lib/authHeader";
 import { formatCurrency } from "@/lib/formatters";
 import { fmtDate, fmtDateTime } from "@/lib/utils";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
@@ -9,10 +10,13 @@ import {
   ArrowLeft,
   Plus,
   Calendar,
+  Check,
+  Copy,
   DollarSign,
   MapPin,
   Pencil,
   Save,
+  Sparkles,
   TrendingUp,
   TrendingDown,
   X,
@@ -627,6 +631,9 @@ export default function ProjectDetail() {
                 </div>
               </>
             )}
+            {/* AI: draft a client-facing progress update from live data */}
+            <ClientUpdateDrafter projectId={projectId} />
+
             {/* Status update control */}
             <ProjectStatusUpdate
               projectId={projectId}
@@ -927,6 +934,118 @@ export default function ProjectDetail() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+/**
+ * ClientUpdateDrafter — Eric taps "Draft with AI" and Groq writes a warm,
+ * client-ready progress update from the project's live data. Optional steer
+ * lets him nudge the focus; the result is copy-to-clipboard ready to send.
+ */
+function ClientUpdateDrafter({ projectId }: { projectId: number }) {
+  const [steer, setSteer] = useState("");
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const generate = async () => {
+    setLoading(true);
+    setErrorMsg("");
+    setCopied(false);
+    try {
+      const res = await fetch("/api/ai-draft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthHeader()),
+        },
+        body: JSON.stringify({
+          kind: "client-update",
+          projectId,
+          instruction: steer.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Drafting failed. Please try again.");
+      }
+      setDraft(String(data.draft ?? ""));
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Drafting failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(draft);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable — the textarea is selectable as a fallback.
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border/60 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="h-3.5 w-3.5 text-primary" />
+        <p className="text-xs font-semibold text-muted-foreground">
+          Draft Client Update
+        </p>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-2 mb-3">
+        <input
+          value={steer}
+          onChange={e => setSteer(e.target.value)}
+          placeholder="Optional focus — e.g. 'reassure about the rain delay'"
+          className="flex-1 px-3 py-2 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+        />
+        <button
+          onClick={generate}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: "var(--font-condensed)" }}
+        >
+          <Sparkles className="h-3 w-3" />
+          {loading ? "Drafting…" : "Draft with AI"}
+        </button>
+      </div>
+      {errorMsg && <p className="text-xs text-destructive mb-2">{errorMsg}</p>}
+      {draft && (
+        <div className="space-y-2">
+          <textarea
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            rows={7}
+            className="w-full px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60 resize-y"
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={copy}
+              className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3 w-3 text-green-400" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" /> Copy
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
