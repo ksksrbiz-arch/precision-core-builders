@@ -10,7 +10,7 @@
  * LLM intent extraction + PostgREST ILIKE implementation, so behavior never
  * regresses.
  */
-import { invokeLLM } from "../../server/_core/llm";
+import { invokeLLM, parseLlmJson } from "../../server/_core/llm";
 import { db } from "../../server/db";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { withGuards } from "./_lib/http";
@@ -255,7 +255,7 @@ async function ilikeSearch(
       maxTokens: 300,
       temperature: 0,
     });
-    intent = JSON.parse(raw.text);
+    intent = parseLlmJson(raw.text);
   } catch {
     // Fallback: treat entire query as keyword search across all entities
     intent = {

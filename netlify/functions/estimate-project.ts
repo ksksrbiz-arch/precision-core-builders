@@ -1,4 +1,4 @@
-import { invokeLLM } from "../../server/_core/llm";
+import { invokeLLM, parseLlmJson } from "../../server/_core/llm";
 import { getSupabaseAdmin } from "../../server/_core/supabase";
 import {
   checkRateLimit,
@@ -70,7 +70,16 @@ export const handler = withGuards(
         temperature: 0.1,
       });
 
-      const estimate = JSON.parse(result.text);
+      let estimate: Record<string, unknown>;
+      try {
+        estimate = parseLlmJson<Record<string, unknown>>(result.text);
+      } catch (parseErr) {
+        console.error("[estimate-project] JSON parse failed:", parseErr);
+        return error(
+          502,
+          "The AI returned an unexpected response format. Please try again."
+        );
+      }
 
       // Save to estimates table if projectId or clientId provided
       let savedEstimate = null;

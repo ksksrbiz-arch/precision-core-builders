@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 // ─── Admin Token Hook ────────────────────────────────────────────────────────
 
@@ -46,7 +47,8 @@ function safeRead(): string {
 }
 
 function useAdminToken() {
-  const [token, setTokenState] = useState(safeRead);
+  const { accessToken, isAdmin } = useAuth();
+  const [manualToken, setTokenState] = useState(safeRead);
   const setToken = (t: string) => {
     try {
       sessionStorage.setItem(TOKEN_KEY, t);
@@ -63,6 +65,12 @@ function useAdminToken() {
     }
     setTokenState("");
   };
+  // Ungated for signed-in admins: use the current admin session as the token so
+  // the health section works without pasting SETUP_ADMIN_TOKEN. An explicitly
+  // entered setup token still takes precedence (first-time bootstrap, before a
+  // Supabase admin session exists). The server accepts either.
+  const sessionToken = isAdmin && accessToken ? accessToken : "";
+  const token = manualToken || sessionToken;
   return { token, setToken, clear, isSet: !!token };
 }
 

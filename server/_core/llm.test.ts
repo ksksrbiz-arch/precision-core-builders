@@ -18,6 +18,7 @@ import { ENV } from "./env";
 import {
   invokeLLM,
   isLLMConfigured,
+  parseLlmJson,
   resolveProviderOrder,
   streamLLM,
   type LLMStreamChunk,
@@ -122,6 +123,36 @@ describe("resolveProviderOrder", () => {
     ENV.groqApiKey = "g";
     ENV.llmProviderOrder = "bogus,groq";
     expect(resolveProviderOrder()).toEqual(["groq"]);
+  });
+});
+
+describe("parseLlmJson", () => {
+  it("parses raw JSON", () => {
+    expect(parseLlmJson('{"a":1,"b":"x"}')).toEqual({ a: 1, b: "x" });
+  });
+
+  it("strips a ```json fence", () => {
+    const text = '```json\n{"a":1}\n```';
+    expect(parseLlmJson(text)).toEqual({ a: 1 });
+  });
+
+  it("strips a bare ``` fence", () => {
+    expect(parseLlmJson("```\n[1,2,3]\n```")).toEqual([1, 2, 3]);
+  });
+
+  it("extracts an object embedded in prose", () => {
+    const text = 'Sure! Here is your estimate:\n{"low":100,"high":200} Enjoy.';
+    expect(parseLlmJson(text)).toEqual({ low: 100, high: 200 });
+  });
+
+  it("ignores braces inside string values when extracting", () => {
+    const text = 'note: {"msg":"use } carefully","n":2}';
+    expect(parseLlmJson(text)).toEqual({ msg: "use } carefully", n: 2 });
+  });
+
+  it("throws a clear error on empty or unparseable input", () => {
+    expect(() => parseLlmJson("")).toThrow(/empty/i);
+    expect(() => parseLlmJson("no json here")).toThrow(/parse JSON/i);
   });
 });
 

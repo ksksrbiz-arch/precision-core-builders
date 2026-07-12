@@ -710,3 +710,62 @@ export async function* streamLLM(
     `All LLM providers failed (${order.join(", ")}): ${errors.join(" | ")}`
   );
 }
+
+// ─── Robust JSON parsing of model output ─────────────────────────────────────
+
+/**
+ * Parse JSON from an LLM response, tolerating the ways free-tier models deviate
+ * from `jsonMode` even when asked for raw JSON: markdown code fences
+ * (```json … ```), a leading/trailing sentence, or the object embedded in prose.
+ *
+ * Strategy: strip a surrounding code fence, try a direct parse, then fall back
+ * to extracting the first balanced `{…}` / `[…]` block (quote- and
+ * escape-aware). Throws a clear error if nothing parses so callers can return a
+ * graceful message instead of leaking `Unexpected token … in JSON`.
+ */
+export function parseLlmJson<T = unknown>(text: string): T {
+  if (typeof text !== "string" || !text.trim()) {
+    throw new Error("LLM response was empty");
+  }
+  let s = text.trim();
+
+  // Strip a wrapping markdown code fence, with or without a language tag.
+  const fenced = s.match(/^```(?:json|javascript|js)?\s*([\s\S]*?)\s*```$/i);
+  if (fenced) s = fenced[1].trim();
+
+  // Fast path: the whole (de-fenced) string is valid JSON.
+  try {
+    return JSON.parse(s) as T;
+  } catch {
+    // fall through to extraction
+  }
+
+  // Extract the first balanced object/array, ignoring braces inside strings.
+  const start = s.search(/[{[]/);
+  if (start !== -1) {
+    const open = s[start];
+    const close = open === "{" ? "}" : "]";
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    for (let i = start; i < s.length; i++) {
+      const c = s[i];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === "\\") esc = true;
+        else if (c === '"') inStr = false;
+      } else if (c === '"') {
+        inStr = true;
+      } else if (c === open) {
+        depth++;
+      } else if (c === close) {
+        depth--;
+        if (depth === 0) {
+          return JSON.parse(s.slice(start, i + 1)) as T;
+        }
+      }
+    }
+  }
+
+  throw new Error("Could not parse JSON from the AI response");
+}

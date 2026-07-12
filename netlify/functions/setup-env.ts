@@ -17,6 +17,7 @@ import {
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
 import { timingSafeEqualStr } from "./_lib/crypto";
+import { verifyAdminToken } from "../../server/_core/auth/verifyToken";
 
 // Allowed keys that Eric is permitted to self-configure
 const ALLOWED_KEYS = new Set([
@@ -69,31 +70,29 @@ export const handler: Handler = async event => {
         }),
       };
     }
-    if (!ADMIN_TOKEN) {
-      return {
-        statusCode: 503,
-        headers,
-        body: JSON.stringify({
-          error:
-            "SETUP_ADMIN_TOKEN not configured. Set a strong secret in Netlify environment variables before using the Setup Wizard.",
-        }),
-      };
-    }
-
     const { key, value, adminToken } = JSON.parse(event.body ?? "{}");
 
-    // Auth check — timing-safe comparison to prevent timing attacks
-    if (
-      !adminToken ||
-      typeof adminToken !== "string" ||
-      adminToken.length !== ADMIN_TOKEN.length ||
-      !timingSafeEqualStr(adminToken, ADMIN_TOKEN)
-    ) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: "Invalid admin token" }),
-      };
+    // Auth — a valid admin session (Supabase JWT / admin session token / dev
+    // bypass) authorizes the write, exactly like the rest of the admin app.
+    // SETUP_ADMIN_TOKEN stays as a bootstrap fallback for first-time setup,
+    // before a Supabase admin session exists.
+    const verified = await verifyAdminToken(
+      typeof adminToken === "string" ? adminToken : null
+    );
+    if (!verified.ok) {
+      if (
+        !ADMIN_TOKEN ||
+        !adminToken ||
+        typeof adminToken !== "string" ||
+        adminToken.length !== ADMIN_TOKEN.length ||
+        !timingSafeEqualStr(adminToken, ADMIN_TOKEN)
+      ) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: "Admin authentication required" }),
+        };
+      }
     }
 
     // Key allowlist guard
