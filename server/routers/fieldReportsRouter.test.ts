@@ -46,14 +46,28 @@ vi.mock("../_data/fieldReportsRepo", () => ({
   publishFieldReport: vi.fn(),
   unpublishFieldReport: vi.fn(),
   getFieldReportProjectId: vi.fn(),
+  getFieldReportPhotos: vi.fn(),
+  saveFieldReportPhotoTags: vi.fn(),
   deleteFieldReport: vi.fn(),
   listPublishedFieldReports: vi.fn(),
   getWeeklyStatsRows: vi.fn(),
 }));
 
+vi.mock("../_core/visionTagging", () => ({
+  isVisionTaggingConfigured: vi.fn(() => true),
+  tagFieldReportPhotos: vi.fn(),
+  VisionConfigError: class VisionConfigError extends Error {
+    constructor() {
+      super("Vision AI is not configured.");
+      this.name = "VisionConfigError";
+    }
+  },
+}));
+
 import { appRouter } from "../routers";
 import type { TrpcContext } from "../_core/context";
 import * as repo from "../_data/fieldReportsRepo";
+import * as vision from "../_core/visionTagging";
 
 function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
   return {
@@ -97,6 +111,22 @@ beforeEach(() => {
   vi.mocked(repo.deleteFieldReport).mockResolvedValue(undefined as any);
   vi.mocked(repo.listPublishedFieldReports).mockResolvedValue([] as any);
   vi.mocked(repo.getWeeklyStatsRows).mockResolvedValue([] as any);
+  vi.mocked(repo.getFieldReportPhotos).mockResolvedValue({
+    id: 10,
+    photo_urls: JSON.stringify(["https://cdn.example/a.jpg"]),
+    photo_tags: null,
+  } as any);
+  vi.mocked(repo.saveFieldReportPhotoTags).mockResolvedValue({ id: 10 } as any);
+  vi.mocked(vision.isVisionTaggingConfigured).mockReturnValue(true);
+  vi.mocked(vision.tagFieldReportPhotos).mockResolvedValue([
+    {
+      url: "https://cdn.example/a.jpg",
+      category: "progress",
+      headline: "Framing underway",
+      tags: ["framing"],
+      safetyConcerns: [],
+    },
+  ] as any);
 });
 
 describe("Field Reports Router — authorization", () => {
@@ -338,5 +368,55 @@ describe("Field Reports Router — input validation", () => {
       admin().fieldReports.list({ pageSize: 500 })
     ).rejects.toThrow();
     expect(repo.listFieldReports).not.toHaveBeenCalled();
+  });
+});
+
+describe("Field Reports Router — tagPhotos (AI vision)", () => {
+  it("requires admin role", async () => {
+    const userCaller = appRouter.createCaller(ctx("u1", "user"));
+    await expect(
+      userCaller.fieldReports.tagPhotos({ id: 1 })
+    ).rejects.toThrow(/forbidden/i);
+    expect(vision.tagFieldReportPhotos).not.toHaveBeenCalled();
+  });
+
+  it("throws PRECONDITION_FAILED when vision is not configured", async () => {
+    vi.mocked(vision.isVisionTaggingConfigured).mockReturnValue(false);
+    await expect(admin().fieldReports.tagPhotos({ id: 10 })).rejects.toThrow(
+      /not configured/i
+    );
+    expect(repo.getFieldReportPhotos).not.toHaveBeenCalled();
+  });
+
+  it("returns empty tags without calling the model when there are no photos", async () => {
+    vi.mocked(repo.getFieldReportPhotos).mockResolvedValue({
+      id: 10,
+      photo_urls: null,
+      photo_tags: null,
+    } as any);
+    const res = await admin().fieldReports.tagPhotos({ id: 10 });
+    expect(res.tags).toEqual([]);
+    expect(vision.tagFieldReportPhotos).not.toHaveBeenCalled();
+    expect(repo.saveFieldReportPhotoTags).not.toHaveBeenCalled();
+  });
+
+  it("tags photos and persists the result as JSON", async () => {
+    const res = await admin().fieldReports.tagPhotos({ id: 10 });
+    expect(vision.tagFieldReportPhotos).toHaveBeenCalledWith(
+      ["https://cdn.example/a.jpg"],
+      "admin-1"
+    );
+    expect(repo.saveFieldReportPhotoTags).toHaveBeenCalledWith(
+      10,
+      expect.stringContaining("progress")
+    );
+    expect(res.tags[0].headline).toBe("Framing underway");
+  });
+
+  it("throws NOT_FOUND when the report does not exist", async () => {
+    vi.mocked(repo.getFieldReportPhotos).mockResolvedValue(null as any);
+    await expect(admin().fieldReports.tagPhotos({ id: 10 })).rejects.toThrow(
+      /not found/i
+    );
   });
 });

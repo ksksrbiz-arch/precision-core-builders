@@ -3,8 +3,9 @@
  *
  * Accepts two input modes:
  *  1. JSON body: { projectId, transcript } — pre-transcribed text (from Web Speech API)
- *  2. JSON body: { projectId, audio, mimeType } — base64-encoded audio, transcribed
- *     server-side via OpenAI Whisper (requires OPENAI_API_KEY)
+ *  2. JSON body: { projectId, audio, mimeType } — base64-encoded audio,
+ *     transcribed server-side via the free-first Whisper router (Groq Whisper
+ *     when GROQ_API_KEY is set; legacy OpenAI Whisper only as a fallback)
  *
  * Generates a structured field report via the free-tier LLM router and saves to field_reports table.
  */

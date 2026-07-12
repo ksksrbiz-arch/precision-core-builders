@@ -2,7 +2,8 @@
  * New Field Report — voice recording UI + AI report generation.
  * Transcription priority:
  *   1. Web Speech API (browser-native, free) — used when available
- *   2. OpenAI Whisper (server-side, requires OPENAI_API_KEY) — fallback
+ *   2. Server-side Whisper router (free Groq Whisper first, legacy OpenAI
+ *      Whisper only as a fallback) — used when Web Speech is unavailable
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";

@@ -22,11 +22,51 @@ import {
   Eye,
   EyeOff,
   FileX,
+  Loader2,
   Mic,
   Package,
+  RefreshCw,
+  ShieldAlert,
+  Sparkles,
   Wrench,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useLocation, useParams } from "wouter";
+
+/** Structured AI tag for a single field-report photo (see visionTagging.ts). */
+type PhotoTag = {
+  url: string;
+  category: "progress" | "safety" | "defect" | "material" | "general";
+  headline: string;
+  tags: string[];
+  safetyConcerns: string[];
+  progressNote?: string;
+  error?: string;
+};
+
+const CATEGORY_STYLES: Record<PhotoTag["category"], string> = {
+  progress: "text-green-500 border-green-500/30 bg-green-500/5",
+  safety: "text-red-400 border-red-400/30 bg-red-400/5",
+  defect: "text-yellow-400 border-yellow-400/30 bg-yellow-400/5",
+  material: "text-primary border-primary/30 bg-primary/5",
+  general: "text-muted-foreground border-border/60 bg-muted/20",
+};
+
+// These columns are stored as JSON strings (fieldReportsRouter JSON.stringify's
+// them on write; getById returns them raw). Parse to arrays before rendering —
+// calling .map() on the raw string would crash the page.
+function parseList<T = string>(v: unknown): T[] {
+  if (Array.isArray(v)) return v as T[];
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 export default function FieldReportDetail() {
   const { id } = useParams<{ id: string }>();
@@ -72,6 +112,34 @@ export default function FieldReportDetail() {
       },
     }
   );
+
+  // AI photo tagging — runs the free-tier vision model over attached photos.
+  const tagPhotosMut = trpc.fieldReports.tagPhotos.useMutation({
+    onSuccess: () => utils.fieldReports.getById.invalidate({ id: reportId }),
+  });
+
+  // Guard so the auto-run fires at most once per report id (never loops).
+  const autoTaggedRef = useRef<number | null>(null);
+  const photoUrls = parseList(report?.photo_urls);
+  const photoTags = parseList<PhotoTag>(report?.photo_tags);
+  const hasPhotos = photoUrls.length > 0;
+  const tagsMissing = hasPhotos && photoTags.length === 0;
+
+  // Auto-analyze the first time a report with photos but no tags is opened, so
+  // Eric never has to open Vision Studio manually. Only fires when vision is
+  // reachable (mutation surfaces a config error otherwise, which we don't loop).
+  useEffect(() => {
+    if (
+      report &&
+      tagsMissing &&
+      autoTaggedRef.current !== reportId &&
+      !tagPhotosMut.isPending
+    ) {
+      autoTaggedRef.current = reportId;
+      tagPhotosMut.mutate({ id: reportId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report, tagsMissing, reportId]);
 
   if (isLoading) {
     return (
@@ -160,26 +228,10 @@ export default function FieldReportDetail() {
   const projectName = (report as any).projects?.name ?? "Unknown Project";
   const isPublished = report.published_to_client;
 
-  // These columns are stored as JSON strings (see fieldReportsRouter — they are
-  // JSON.stringify'd on write and getById returns them raw). Parse to arrays
-  // before rendering; calling .map() on the raw string would crash the page.
-  const parseList = (v: unknown): string[] => {
-    if (Array.isArray(v)) return v as string[];
-    if (typeof v === "string") {
-      try {
-        const parsed = JSON.parse(v);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  };
   const tasksCompleted = parseList(report.tasks_completed);
   const materialsUsed = parseList(report.materials_used);
   const issuesFlagged = parseList(report.issues_flagged);
   const materialShortages = parseList(report.material_shortages);
-  const photoUrls = parseList(report.photo_urls);
   const fmtDate = (d: string) =>
     fmtDateSafe(d, {
       weekday: "long",
@@ -387,37 +439,137 @@ export default function FieldReportDetail() {
           </div>
         )}
 
-        {/* Photo URLs */}
-        {photoUrls.length > 0 && (
-          <div className="bg-card border border-border/60 p-5 mb-5">
-            <p
-              className="text-[9px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60 mb-3"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Photos ({photoUrls.length})
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {photoUrls.map((url: string, i: number) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block aspect-video bg-input border border-border/60 overflow-hidden hover:border-primary/40 transition-colors"
-                >
-                  <img
-                    src={url}
-                    alt={`Photo ${i + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={e => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Photos + AI vision tags */}
+        {photoUrls.length > 0 &&
+          (() => {
+            // Map tags by URL so ordering/count mismatches never misalign.
+            const tagByUrl = new Map(photoTags.map(t => [t.url, t]));
+            const analyzing = tagPhotosMut.isPending;
+            const configError =
+              tagPhotosMut.error?.data?.code === "PRECONDITION_FAILED";
+
+            return (
+              <div className="bg-card border border-border/60 p-5 mb-5">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <p
+                      className="text-[9px] font-bold tracking-[0.2em] uppercase text-muted-foreground/60"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Photos ({photoUrls.length}) · AI Analyzed
+                    </p>
+                  </div>
+                  {!configError && (
+                    <button
+                      onClick={() => tagPhotosMut.mutate({ id: reportId })}
+                      disabled={analyzing}
+                      className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary disabled:opacity-50 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      {analyzing ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                      {analyzing
+                        ? "Analyzing…"
+                        : photoTags.length > 0
+                          ? "Re-analyze"
+                          : "Analyze"}
+                    </button>
+                  )}
+                </div>
+
+                {configError && (
+                  <p className="text-xs text-muted-foreground mb-3 font-light">
+                    Vision AI is not configured. Add a free OPENROUTER_API_KEY
+                    to enable automatic photo analysis.
+                  </p>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {photoUrls.map((url: string, i: number) => {
+                    const tag = tagByUrl.get(url);
+                    return (
+                      <div
+                        key={i}
+                        className="border border-border/60 overflow-hidden flex flex-col"
+                      >
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block aspect-video bg-input overflow-hidden hover:opacity-90 transition-opacity"
+                        >
+                          <img
+                            src={url}
+                            alt={`Photo ${i + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={e => {
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
+                            }}
+                          />
+                        </a>
+                        <div className="p-3 space-y-2">
+                          {tag && !tag.error ? (
+                            <>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.5 border font-bold tracking-widest uppercase ${CATEGORY_STYLES[tag.category]}`}
+                                  style={{
+                                    fontFamily: "var(--font-condensed)",
+                                  }}
+                                >
+                                  {tag.category}
+                                </span>
+                                <span className="text-xs font-medium text-foreground">
+                                  {tag.headline}
+                                </span>
+                              </div>
+                              {tag.progressNote && (
+                                <p className="text-xs text-muted-foreground font-light">
+                                  {tag.progressNote}
+                                </p>
+                              )}
+                              {tag.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {tag.tags.map((t, ti) => (
+                                    <span
+                                      key={ti}
+                                      className="text-[10px] px-1.5 py-0.5 bg-muted/40 text-muted-foreground rounded"
+                                    >
+                                      {t}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {tag.safetyConcerns.length > 0 && (
+                                <div className="flex items-start gap-1.5 text-[11px] text-red-400">
+                                  <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                  <span>{tag.safetyConcerns.join("; ")}</span>
+                                </div>
+                              )}
+                            </>
+                          ) : tag?.error ? (
+                            <p className="text-[11px] text-muted-foreground/70 font-light">
+                              Analysis unavailable for this photo.
+                            </p>
+                          ) : analyzing ? (
+                            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-light">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Analyzing…
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
         {/* Meta footer */}
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground/50 pb-8">

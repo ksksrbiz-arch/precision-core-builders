@@ -5,16 +5,37 @@ import {
   createFieldReport,
   deleteFieldReport,
   getFieldReportById,
+  getFieldReportPhotos,
   getFieldReportProjectId,
   getWeeklyStatsRows,
   listFieldReports,
   listPublishedFieldReports,
   publishFieldReport,
+  saveFieldReportPhotoTags,
   unpublishFieldReport,
   updateFieldReport,
 } from "../_data/fieldReportsRepo";
+import {
+  isVisionTaggingConfigured,
+  tagFieldReportPhotos,
+  VisionConfigError,
+} from "../_core/visionTagging";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+
+/** Parse a JSON-string array column, tolerating null / malformed values. */
+function parseJsonArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value as string[];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 export const fieldReportsRouter = router({
   // Admin-only: returns all reports (including unpublished drafts) for any
@@ -129,6 +150,44 @@ export const fieldReportsRouter = router({
           material_shortages: JSON.stringify(materialShortages),
         }),
       });
+    }),
+
+  // Run the free-tier vision model over a report's attached photos and persist
+  // the structured tags. Idempotent by design: safe to re-run to refresh tags
+  // (e.g. after adding photos). Returns the tags for immediate rendering.
+  //
+  // The client auto-invokes this the first time a report with photos but no
+  // tags is opened, so site photos are analyzed without a manual Vision Studio
+  // visit — but it's an explicit mutation (not baked into `create`) so report
+  // creation stays instant and a slow/rate-limited vision call never blocks it.
+  tagPhotos: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      if (!isVisionTaggingConfigured()) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: new VisionConfigError().message,
+        });
+      }
+
+      const report = await getFieldReportPhotos(input.id);
+      if (!report) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Field report not found.",
+        });
+      }
+
+      const urls = parseJsonArray(
+        (report as { photo_urls?: unknown }).photo_urls
+      );
+      if (urls.length === 0) {
+        return { tags: [] as Awaited<ReturnType<typeof tagFieldReportPhotos>> };
+      }
+
+      const tags = await tagFieldReportPhotos(urls, ctx.user!.id);
+      await saveFieldReportPhotoTags(input.id, JSON.stringify(tags));
+      return { tags };
     }),
 
   publish: adminProcedure
