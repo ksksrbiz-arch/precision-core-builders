@@ -39,104 +39,82 @@ function getOrCreateLink(selector: string, rel: string): HTMLLinkElement {
 
 export function useSEO({ title, description, canonical, image }: SEOOptions) {
   useEffect(() => {
+    // Snapshot every tag this hook mutates and restore it on unmount, so
+    // navigating to a page that doesn't set description / canonical / og:image
+    // never inherits stale values from the previous route.
+    const restores: Array<() => void> = [];
+
+    const setMeta = (
+      selector: string,
+      attrName: string,
+      attrValue: string,
+      content: string
+    ) => {
+      const el = getOrCreateMeta(selector, attrName, attrValue);
+      const prev = el.content;
+      el.content = content;
+      restores.push(() => {
+        el.content = prev;
+      });
+    };
+
+    const setLink = (selector: string, rel: string, href: string) => {
+      const el = getOrCreateLink(selector, rel);
+      const prev = el.href;
+      el.href = href;
+      restores.push(() => {
+        el.href = prev;
+      });
+    };
+
     const fullTitle = `${title} | ${SITE_NAME}`;
-
-    // Document title
+    const prevTitle = document.title;
     document.title = fullTitle;
+    restores.push(() => {
+      document.title = prevTitle;
+    });
 
-    // Meta description
-    if (description) {
-      const metaDesc = getOrCreateMeta(
-        'meta[name="description"]',
-        "name",
-        "description"
-      );
-      metaDesc.content = description;
-    }
-
-    // OG type (default website)
-    const ogType = getOrCreateMeta(
-      'meta[property="og:type"]',
-      "property",
-      "og:type"
-    );
-    ogType.content = "website";
-
-    // Twitter card
-    const twitterCard = getOrCreateMeta(
+    setMeta('meta[property="og:type"]', "property", "og:type", "website");
+    setMeta(
       'meta[name="twitter:card"]',
       "name",
-      "twitter:card"
+      "twitter:card",
+      "summary_large_image"
     );
-    twitterCard.content = "summary_large_image";
+    setMeta('meta[property="og:title"]', "property", "og:title", fullTitle);
+    setMeta('meta[name="twitter:title"]', "name", "twitter:title", fullTitle);
 
-    // OG title
-    const ogTitle = getOrCreateMeta(
-      'meta[property="og:title"]',
-      "property",
-      "og:title"
-    );
-    ogTitle.content = fullTitle;
-
-    // Twitter title
-    const twitterTitle = getOrCreateMeta(
-      'meta[name="twitter:title"]',
-      "name",
-      "twitter:title"
-    );
-    twitterTitle.content = fullTitle;
-
-    // OG / Twitter description
     if (description) {
-      const ogDesc = getOrCreateMeta(
+      setMeta('meta[name="description"]', "name", "description", description);
+      setMeta(
         'meta[property="og:description"]',
         "property",
-        "og:description"
+        "og:description",
+        description
       );
-      ogDesc.content = description;
-
-      const twitterDesc = getOrCreateMeta(
+      setMeta(
         'meta[name="twitter:description"]',
         "name",
-        "twitter:description"
+        "twitter:description",
+        description
       );
-      twitterDesc.content = description;
     }
 
-    // Canonical + og:url
     if (canonical) {
-      const canonicalEl = getOrCreateLink('link[rel="canonical"]', "canonical");
-      canonicalEl.href = canonical;
-
-      const ogUrl = getOrCreateMeta(
-        'meta[property="og:url"]',
-        "property",
-        "og:url"
-      );
-      ogUrl.content = canonical;
+      setLink('link[rel="canonical"]', "canonical", canonical);
+      setMeta('meta[property="og:url"]', "property", "og:url", canonical);
     }
 
-    // OG / Twitter image (only when explicitly provided; otherwise keep the
-    // static homepage image from index.html)
+    // Only override og:image when explicitly provided; otherwise the static
+    // homepage image from index.html is kept.
     if (image) {
-      const ogImage = getOrCreateMeta(
-        'meta[property="og:image"]',
-        "property",
-        "og:image"
-      );
-      ogImage.content = image;
-
-      const twitterImage = getOrCreateMeta(
-        'meta[name="twitter:image"]',
-        "name",
-        "twitter:image"
-      );
-      twitterImage.content = image;
+      setMeta('meta[property="og:image"]', "property", "og:image", image);
+      setMeta('meta[name="twitter:image"]', "name", "twitter:image", image);
     }
 
-    // Reset to default on unmount
     return () => {
-      document.title = `${SITE_NAME} | Precision Construction, Core Values | Eugene, OR`;
+      // Restore in reverse so the DOM is left exactly as this effect found it.
+      for (const restore of restores.reverse()) restore();
     };
   }, [title, description, canonical, image]);
 }

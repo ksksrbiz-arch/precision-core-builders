@@ -12,6 +12,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { netlifySrcSet } from "@/lib/netlifyImage";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { Reveal } from "@/components/ui/Reveal";
 import {
@@ -98,6 +99,8 @@ export default function Portfolio() {
            */}
           <img
             src={heroImage}
+            srcSet={netlifySrcSet(heroImage)}
+            sizes="100vw"
             alt=""
             aria-hidden="true"
             loading="eager"

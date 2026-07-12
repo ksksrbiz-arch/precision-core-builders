@@ -53,7 +53,7 @@ function protectedPage<P extends object>(Component: ComponentType<P>) {
     </ErrorBoundary>
   );
 }
-import Home from "./pages/Home";
+const Home = lazy(() => import("./pages/Home"));
 
 // Public pages
 const Portfolio = lazy(() => import("./pages/Portfolio"));

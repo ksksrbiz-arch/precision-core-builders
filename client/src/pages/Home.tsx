@@ -102,6 +102,7 @@ export default function Home() {
     title: "Precision Core Builders — Precision Construction, Core Values.",
     description:
       "Master carpenters serving Eugene, Oregon and Lane County. 20+ years of experience in residential construction, remodels, restoration, custom cabinets, and more. CCB #246527.",
+    canonical: SITE.website,
   });
 
   // LocalBusiness (GeneralContractor) + breadcrumb structured data for SEO.
@@ -118,7 +119,7 @@ export default function Home() {
     telephone: SITE.phone,
     email: SITE.email,
     image: `${SITE.website}/logo.svg`,
-    foundingDate: "2004",
+    foundingDate: "2014",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Eugene",
@@ -206,8 +207,8 @@ const HERO_SLIDES = [
     animation: "hero-zoom-out",
   },
   {
-    url: "/portfolio/signature-outdoor-01.jpg",
-    alt: "Backyard pergola over composite deck with horizontal cedar privacy fence — outdoor living by Precision Core Builders",
+    url: "/portfolio/signature-kitchen-01.jpg",
+    alt: "Custom kitchen remodel with tailored cabinetry and stone counters — interior craftsmanship by Precision Core Builders",
     animation: "hero-drift-left",
   },
   {
@@ -389,7 +390,7 @@ function Hero() {
             style={{ fontFamily: "var(--font-condensed)" }}
           >
             <span className="w-8 h-px bg-primary" aria-hidden />
-            Eugene, Oregon · Since 2004
+            Eugene, Oregon · Since 2014
           </span>
         </motion.div>
 
@@ -679,7 +680,7 @@ function ServicesTeaser() {
             className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-5 font-medium text-center"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
-            All Service Areas
+            All Services
           </div>
           <div className="flex flex-wrap justify-center gap-3">
             {ALL_SERVICES_ICONS.map(({ Icon, label, href }) => (
@@ -918,6 +919,15 @@ function SuperSplatTeaser() {
       cancelled = true;
     };
   }, []);
+
+  // Only surface the 3D section once a REAL project splat is configured (via
+  // the supersplat-config function). Until then the default demo is a generic
+  // third-party office scene, which is off-brand on the homepage — so hide the
+  // section rather than show placeholder content. It reappears automatically
+  // once a genuine `demoUrl` is set.
+  if (!config.demoUrl || config.demoUrl === DEFAULT_SUPER_SPLAT_DEMO_URL) {
+    return null;
+  }
 
   return (
     <section
