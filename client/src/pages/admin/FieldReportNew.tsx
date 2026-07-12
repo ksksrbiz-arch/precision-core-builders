@@ -8,7 +8,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { getAuthHeader } from "@/lib/authHeader";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   Mic,
@@ -81,7 +81,6 @@ const SPEECH_ERROR_MESSAGES: Record<string, string> = {
 
 export default function FieldReportNew() {
   const [, setLocation] = useLocation();
-  const { accessToken } = useAuth();
   const isMobile = useIsMobile();
   const [step, setStep] = useState<Step>("select");
   const [projectId, setProjectId] = useState<number | null>(null);
@@ -230,7 +229,7 @@ export default function FieldReportNew() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            ...(await getAuthHeader()),
           },
           body: JSON.stringify({ projectId, transcript }),
         });
@@ -283,7 +282,7 @@ export default function FieldReportNew() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            ...(await getAuthHeader()),
           },
           body: JSON.stringify({
             projectId,

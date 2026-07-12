@@ -37,8 +37,12 @@ export type RetryOptions = {
 export type UseStreamingChatOptions = {
   /** Function endpoint to POST to, e.g. "/api/ai-chat". */
   endpoint: string;
-  /** Extra headers to merge in (e.g. an Authorization bearer for the copilot). */
-  headers?: () => Record<string, string>;
+  /**
+   * Extra headers to merge in (e.g. an Authorization bearer for the copilot).
+   * May be async so callers can fetch a FRESH auth token per request rather
+   * than reusing a cached one that may have expired.
+   */
+  headers?: () => Record<string, string> | Promise<Record<string, string>>;
   /** Translate an error HTTP status into a message shown in the bubble. */
   formatError: ErrorFormatter;
   /** Called once per response with the resolving provider id, when known. */
@@ -158,12 +162,13 @@ export function useStreamingChat(options: UseStreamingChatOptions) {
       const attemptOnce = async (): Promise<Outcome> => {
         let res: Response;
         try {
+          const extraHeaders = headers ? await headers() : {};
           res = await fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Accept: "text/event-stream",
-              ...(headers ? headers() : {}),
+              ...extraHeaders,
             },
             body: JSON.stringify({ messages: history }),
           });

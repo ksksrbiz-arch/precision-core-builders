@@ -9,7 +9,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatComposer } from "@/components/ai/ChatComposer";
 import { useStreamingChat } from "@/hooks/useStreamingChat";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { getAuthHeader } from "@/lib/authHeader";
 import { Brain, Sparkles, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -29,12 +29,12 @@ const QUICK_PROMPTS = [
 ];
 
 export default function OpsCopilot() {
-  const { accessToken } = useAuth();
   const [provider, setProvider] = useState<string | null>(null);
   const { messages, loading, send } = useStreamingChat({
     endpoint: "/api/ai-copilot",
-    headers: (): Record<string, string> =>
-      accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    // Fetch a fresh token per request — a cached one can expire mid-session and
+    // the server would reject it with "Invalid or expired token".
+    headers: getAuthHeader,
     formatError: errorFor,
     onProvider: setProvider,
   });

@@ -1,5 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { getAuthHeader } from "@/lib/authHeader";
 import { useState, useCallback, useRef } from "react";
 import {
   Camera,
@@ -90,7 +90,6 @@ const MODES: {
 ];
 
 export default function VisionStudioAdmin() {
-  const { accessToken } = useAuth();
   const [image, setImage] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<string>("image/jpeg");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -157,7 +156,7 @@ export default function VisionStudioAdmin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...(await getAuthHeader()),
         },
         body: JSON.stringify(payload),
       });

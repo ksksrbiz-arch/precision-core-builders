@@ -5,7 +5,7 @@
  */
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { getAuthHeader } from "@/lib/authHeader";
 import { ArrowUp, MessageCircle, Send, Sparkles, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -43,7 +43,6 @@ export default function PortalAssistant({
   title = "Project Assistant",
   quickPrompts = DEFAULT_PROMPTS,
 }: PortalAssistantProps = {}) {
-  const { accessToken } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,7 +60,7 @@ export default function PortalAssistant({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...(await getAuthHeader()),
         },
         body: JSON.stringify({ message: text }),
       });
@@ -119,7 +118,7 @@ export default function PortalAssistant({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...(await getAuthHeader()),
         },
         body: JSON.stringify({ messages: history }),
       });
