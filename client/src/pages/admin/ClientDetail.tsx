@@ -4,6 +4,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useEntityForm } from "@/hooks/useEntityForm";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatCurrency } from "@/lib/formatters";
 import { fmtDate } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
@@ -66,6 +67,16 @@ export default function ClientDetail() {
     errorMessage: "Failed to update client. Please try again.",
     invalidate: () => utils.clients.getById.invalidate({ id: Number(id) }),
     onSuccess: () => setEditing(false),
+  });
+
+  // Live updates: edits from another device refresh this client record.
+  useRealtimeTable({
+    table: "clients",
+    onUpdate: payload => {
+      const row = (payload.new ?? payload.old) as { id?: number } | null;
+      if (row?.id !== Number(id)) return;
+      utils.clients.getById.invalidate({ id: Number(id) });
+    },
   });
 
   const startEdit = () => {

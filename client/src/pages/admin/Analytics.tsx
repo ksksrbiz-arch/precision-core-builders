@@ -5,6 +5,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import AiUsagePanel from "@/components/AiUsagePanel";
 import ProfitabilityTable from "@/components/ProfitabilityTable";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import { formatCompactCurrency, formatPercent } from "@/lib/formatters";
 import { motion } from "framer-motion";
@@ -87,6 +88,7 @@ function KPICard({
 
 export default function Analytics() {
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
   const { data: stats, isError: statsError } = trpc.projects.stats.useQuery();
   const { data: allProjects, isError: projectsError } =
     trpc.projects.list.useQuery({ pageSize: 100 });
@@ -105,6 +107,12 @@ export default function Analytics() {
     reportsError ||
     shortagesError ||
     profitabilityError;
+
+  // Live updates: project changes refresh portfolio-wide analytics.
+  useRealtimeTable({
+    table: "projects",
+    onUpdate: () => utils.projects.invalidate(),
+  });
 
   const totalEstimated = stats?.totalEstimated ?? 0;
   const totalActual = stats?.totalActual ?? 0;
