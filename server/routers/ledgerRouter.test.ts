@@ -100,14 +100,21 @@ describe("Ledger Router — authorization", () => {
 });
 
 describe("Ledger Router — read delegation", () => {
-  it("list forwards pagination params to the repo", async () => {
-    await user().ledger.list({ projectId: 7, page: 2, pageSize: 25 });
+  it("list forwards pagination params to the repo (admin only)", async () => {
+    await admin().ledger.list({ projectId: 7, page: 2, pageSize: 25 });
     expect(listLedgerEntries).toHaveBeenCalledTimes(1);
     expect(listLedgerEntries).toHaveBeenCalledWith({
       projectId: 7,
       page: 2,
       pageSize: 25,
     });
+  });
+
+  it("list is forbidden for non-admin users (internal ledger)", async () => {
+    await expect(user().ledger.list({ projectId: 7 })).rejects.toThrow(
+      /forbidden/i
+    );
+    expect(listLedgerEntries).not.toHaveBeenCalled();
   });
 
   it("listVisible resolves to the project id scalar, not the input object", async () => {

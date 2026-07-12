@@ -2,7 +2,10 @@ import { getSupabaseAdmin } from "../../server/_core/supabase";
 import { withGuards } from "./_lib/http";
 
 export const handler = withGuards(
-  { methods: ["POST"] },
+  // Admin-only: this uses the service-role client to create purchase orders and
+  // mutate inventory (quantity_ordered, po_number, is_shortage) for an
+  // arbitrary projectId, so it must never be reachable unauthenticated.
+  { methods: ["POST"], auth: "admin" },
   async ({ event, json, error }) => {
     const db = getSupabaseAdmin();
     if (!db) {

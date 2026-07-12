@@ -30,7 +30,9 @@ function wmoCodeToDescription(code: number): string {
 }
 
 export const handler = withGuards(
-  { methods: ["GET"] },
+  // Admin-only: the forecast is public, but this reads schedule_items (task
+  // titles/types/dates) for a client-supplied projectId via the service role.
+  { methods: ["GET"], auth: "admin" },
   async ({ event, json, error }) => {
     try {
       const projectId = parseInt(event.queryStringParameters?.projectId ?? "0");

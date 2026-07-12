@@ -6,6 +6,7 @@
  * attempts to list recent invoices from Stripe and merges them with the cache.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { useToast } from "@/components/ToastProvider";
 import { Spinner } from "@/components/ui/spinner";
@@ -187,7 +188,10 @@ export default function BillingView() {
     try {
       const res = await fetch("/api/stripe-billing", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthHeader()),
+        },
         body: JSON.stringify({ action: "list_invoices", limit: 30 }),
       });
       if (!res.ok) return; // Stripe not configured — cached data is fine
@@ -326,7 +330,10 @@ export default function BillingView() {
 
       const res = await fetch("/api/stripe-billing", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthHeader()),
+        },
         body: JSON.stringify(payload),
       });
 

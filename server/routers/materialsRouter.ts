@@ -35,7 +35,11 @@ const MaterialInput = z.object({
 });
 
 export const materialsRouter = router({
-  list: protectedProcedure
+  // Admin-only: exposes internal pricing (unit_price_current /
+  // unit_price_budgeted) and vendor cost/SKU across every project. Previously
+  // protectedProcedure with projectId optional, so any logged-in client could
+  // dump the entire materials table. No portal page consumes this.
+  list: adminProcedure
     .input(
       z.object({
         projectId: z.number().int().positive().optional(),

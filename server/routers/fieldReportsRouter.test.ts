@@ -177,14 +177,21 @@ describe("Field Reports Router — client scoping (getById)", () => {
 });
 
 describe("Field Reports Router — repo delegation & field mapping", () => {
-  it("list delegates the raw input to the repo", async () => {
-    const caller = appRouter.createCaller(ctx("u1", "user"));
-    await caller.fieldReports.list({ projectId: 7, page: 2, pageSize: 10 });
+  it("list delegates the raw input to the repo (admin only)", async () => {
+    await admin().fieldReports.list({ projectId: 7, page: 2, pageSize: 10 });
     expect(repo.listFieldReports).toHaveBeenCalledWith({
       projectId: 7,
       page: 2,
       pageSize: 10,
     });
+  });
+
+  it("list is forbidden for non-admins (exposes unpublished drafts)", async () => {
+    const caller = appRouter.createCaller(ctx("u1", "user"));
+    await expect(caller.fieldReports.list({ projectId: 7 })).rejects.toThrow(
+      /forbidden/i
+    );
+    expect(repo.listFieldReports).not.toHaveBeenCalled();
   });
 
   it("create maps camelCase input to snake_case columns and JSON-encodes arrays", async () => {
