@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { useLocation, useParams, useSearch } from "wouter";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StatusBadge } from "./CommandCenter";
 
 type TabId =
@@ -85,19 +85,39 @@ export default function ProjectDetail() {
   } = trpc.projects.getById.useQuery({
     id: projectId,
   });
-  const { data: reports } = trpc.fieldReports.list.useQuery(
+  const {
+    data: reports,
+    isLoading: reportsLoading,
+    isError: reportsError,
+    refetch: refetchReports,
+  } = trpc.fieldReports.list.useQuery(
     { projectId, pageSize: 10 },
     { enabled: activeTab === "reports" }
   );
-  const { data: schedule } = trpc.schedule.list.useQuery(
+  const {
+    data: schedule,
+    isLoading: scheduleLoading,
+    isError: scheduleError,
+    refetch: refetchSchedule,
+  } = trpc.schedule.list.useQuery(
     { projectId },
     { enabled: activeTab === "schedule" }
   );
-  const { data: materials } = trpc.materials.list.useQuery(
+  const {
+    data: materials,
+    isLoading: materialsLoading,
+    isError: materialsError,
+    refetch: refetchMaterials,
+  } = trpc.materials.list.useQuery(
     { projectId },
     { enabled: activeTab === "materials" }
   );
-  const { data: ledger } = trpc.ledger.list.useQuery(
+  const {
+    data: ledger,
+    isLoading: ledgerLoading,
+    isError: ledgerError,
+    refetch: refetchLedger,
+  } = trpc.ledger.list.useQuery(
     { projectId },
     { enabled: activeTab === "ledger" }
   );
@@ -165,6 +185,14 @@ export default function ProjectDetail() {
       updateProgress.mutate({ id: projectId, completionPercent: next });
     }
     setDraftProgress(null);
+  };
+
+  // Keyboard adjustment (arrow keys) fires onKeyUp per press; debounce so a run
+  // of key presses coalesces into a single mutation instead of one per step.
+  const keyCommitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commitProgressDebounced = (raw: string) => {
+    if (keyCommitTimer.current) clearTimeout(keyCommitTimer.current);
+    keyCommitTimer.current = setTimeout(() => commitProgress(raw), 400);
   };
 
   const updateProject = useMutationWithToast(
@@ -303,6 +331,19 @@ export default function ProjectDetail() {
     "profitability",
   ] as const;
 
+  // Shared loading/error guard for the lazy tab queries. Returns an element to
+  // render in place of the tab body while loading or on error, or null when the
+  // data is ready (so the caller renders its normal empty/list content).
+  const tabGuard = (loading: boolean, error: boolean, retry: () => void) =>
+    loading ? (
+      <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
+    ) : error ? (
+      <QueryError
+        message="We couldn't load this tab. Try again."
+        onRetry={retry}
+      />
+    ) : null;
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
@@ -386,7 +427,7 @@ export default function ProjectDetail() {
             onChange={e => setDraftProgress(parseInt(e.target.value))}
             onMouseUp={e => commitProgress(e.currentTarget.value)}
             onTouchEnd={e => commitProgress(e.currentTarget.value)}
-            onKeyUp={e => commitProgress(e.currentTarget.value)}
+            onKeyUp={e => commitProgressDebounced(e.currentTarget.value)}
             className="w-full accent-primary"
           />
         </div>
@@ -652,122 +693,125 @@ export default function ProjectDetail() {
 
         {activeTab === "reports" && (
           <div className="space-y-3">
-            {reports?.data.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                No field reports yet.
-              </p>
-            ) : (
-              reports?.data.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => setLocation(`/admin/field-reports/${r.id}`)}
-                  className="w-full text-left bg-card border border-border/60 p-4 hover:border-primary/30 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      {fmtDate(r.report_date)}
-                    </p>
-                    <span
-                      className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase ${
-                        r.published_to_client
-                          ? "text-green-400 border-green-400/30"
-                          : "text-muted-foreground border-border/60"
-                      }`}
-                      style={{ fontFamily: "var(--font-condensed)" }}
-                    >
-                      {r.published_to_client ? "Published" : "Draft"}
-                    </span>
-                  </div>
-                  {r.summary && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {r.summary}
-                    </p>
-                  )}
-                </button>
-              ))
-            )}
+            {tabGuard(reportsLoading, reportsError, refetchReports) ??
+              (reports?.data.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  No field reports yet.
+                </p>
+              ) : (
+                reports?.data.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => setLocation(`/admin/field-reports/${r.id}`)}
+                    className="w-full text-left bg-card border border-border/60 p-4 hover:border-primary/30 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">
+                        {fmtDate(r.report_date)}
+                      </p>
+                      <span
+                        className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase ${
+                          r.published_to_client
+                            ? "text-green-400 border-green-400/30"
+                            : "text-muted-foreground border-border/60"
+                        }`}
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {r.published_to_client ? "Published" : "Draft"}
+                      </span>
+                    </div>
+                    {r.summary && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {r.summary}
+                      </p>
+                    )}
+                  </button>
+                ))
+              ))}
           </div>
         )}
 
         {activeTab === "schedule" && (
           <div className="space-y-2">
-            {schedule?.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                No schedule items yet.
-              </p>
-            ) : (
-              schedule?.map(item => (
-                <div
-                  key={item.id}
-                  className="bg-card border border-border/60 p-4 flex items-center gap-4"
-                >
+            {tabGuard(scheduleLoading, scheduleError, refetchSchedule) ??
+              (schedule?.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  No schedule items yet.
+                </p>
+              ) : (
+                schedule?.map(item => (
                   <div
-                    className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                      item.status === "complete"
-                        ? "bg-green-400"
-                        : item.status === "in_progress"
-                          ? "bg-primary"
-                          : item.status === "deferred"
-                            ? "bg-red-400"
-                            : "bg-muted-foreground"
-                    }`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{item.title}</p>
-                    {item.planned_start && (
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(item.planned_start).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className="text-[9px] text-muted-foreground border border-border/60 px-2 py-1 uppercase tracking-wider flex-shrink-0"
-                    style={{ fontFamily: "var(--font-condensed)" }}
+                    key={item.id}
+                    className="bg-card border border-border/60 p-4 flex items-center gap-4"
                   >
-                    {item.task_type}
-                  </span>
-                </div>
-              ))
-            )}
+                    <div
+                      className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                        item.status === "complete"
+                          ? "bg-green-400"
+                          : item.status === "in_progress"
+                            ? "bg-primary"
+                            : item.status === "deferred"
+                              ? "bg-red-400"
+                              : "bg-muted-foreground"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{item.title}</p>
+                      {item.planned_start && (
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(item.planned_start).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className="text-[9px] text-muted-foreground border border-border/60 px-2 py-1 uppercase tracking-wider flex-shrink-0"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      {item.task_type}
+                    </span>
+                  </div>
+                ))
+              ))}
           </div>
         )}
 
         {activeTab === "materials" && (
           <div className="space-y-2">
-            {materials?.data.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                No materials tracked yet.
-              </p>
-            ) : (
-              materials?.data.map(m => (
-                <div
-                  key={m.id}
-                  className={`bg-card border p-4 flex items-center gap-4 ${
-                    m.is_shortage
-                      ? "border-red-400/40 bg-red-400/5"
-                      : "border-border/60"
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{m.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {m.vendor_name ?? "No vendor"} · {m.unit ?? "units"}
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xs">
-                      {m.quantity_received ?? 0}/{m.quantity_needed ?? "?"}{" "}
-                      {m.unit ?? ""}
-                    </p>
-                    {m.is_shortage && (
-                      <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider">
-                        Shortage
+            {tabGuard(materialsLoading, materialsError, refetchMaterials) ??
+              (materials?.data.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  No materials tracked yet.
+                </p>
+              ) : (
+                materials?.data.map(m => (
+                  <div
+                    key={m.id}
+                    className={`bg-card border p-4 flex items-center gap-4 ${
+                      m.is_shortage
+                        ? "border-red-400/40 bg-red-400/5"
+                        : "border-border/60"
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{m.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {m.vendor_name ?? "No vendor"} · {m.unit ?? "units"}
                       </p>
-                    )}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs">
+                        {m.quantity_received ?? 0}/{m.quantity_needed ?? "?"}{" "}
+                        {m.unit ?? ""}
+                      </p>
+                      {m.is_shortage && (
+                        <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider">
+                          Shortage
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              ))}
           </div>
         )}
 
@@ -782,31 +826,35 @@ export default function ProjectDetail() {
                 onSuccess={() => utils.ledger.list.invalidate({ projectId })}
               />
             </div>
-            {ledger?.data.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No ledger entries yet.
-              </p>
-            ) : (
-              ledger?.data.map(e => (
-                <div key={e.id} className="bg-card border border-border/60 p-4">
-                  <div className="flex items-start justify-between gap-3 mb-1">
-                    <p className="text-sm font-medium">{e.title}</p>
-                    <span
-                      className="text-[9px] border border-border/60 px-2 py-0.5 text-muted-foreground uppercase tracking-wider flex-shrink-0"
-                      style={{ fontFamily: "var(--font-condensed)" }}
-                    >
-                      {e.entry_type}
-                    </span>
+            {tabGuard(ledgerLoading, ledgerError, refetchLedger) ??
+              (ledger?.data.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No ledger entries yet.
+                </p>
+              ) : (
+                ledger?.data.map(e => (
+                  <div
+                    key={e.id}
+                    className="bg-card border border-border/60 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-1">
+                      <p className="text-sm font-medium">{e.title}</p>
+                      <span
+                        className="text-[9px] border border-border/60 px-2 py-0.5 text-muted-foreground uppercase tracking-wider flex-shrink-0"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        {e.entry_type}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {e.description}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/50 mt-2">
+                      {fmtDateTime(e.created_at)}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {e.description}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/50 mt-2">
-                    {fmtDateTime(e.created_at)}
-                  </p>
-                </div>
-              ))
-            )}
+                ))
+              ))}
           </div>
         )}
 

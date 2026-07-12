@@ -606,9 +606,11 @@ export default function CommandCenter() {
   const { isLive } = useRealtimeTable({
     table: "projects",
     onUpdate: () => {
-      // Refetch stats and projects list on any change
+      // Refetch every panel derived from project data on any change.
       refetchStats();
       refetchProjects();
+      utils.materials.list.invalidate();
+      utils.fieldReports.weeklyStats.invalidate();
       setRealtimeFlash(true);
       setTimeout(() => setRealtimeFlash(false), 1500);
     },
@@ -788,9 +790,9 @@ export default function CommandCenter() {
           />
           <StatCard
             icon={DollarSign}
-            label="Contracted"
+            label="Pipeline (Est.)"
             value={stats ? fmt(stats.totalEstimated) : "—"}
-            sub="Total pipeline"
+            sub="Total estimated value"
           />
           <StatCard
             icon={AlertTriangle}

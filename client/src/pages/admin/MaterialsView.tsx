@@ -268,9 +268,14 @@ export default function MaterialsView() {
       (m.vendor_name ?? "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const shortageCount = (materials?.data ?? []).filter(
-    m => m.is_shortage
-  ).length;
+  // Accurate shortage count from the server (the paged `materials.data` above is
+  // capped at pageSize, so filtering it would undercount for large projects).
+  const { data: shortageStats } = trpc.materials.list.useQuery({
+    projectId: selectedProject ?? undefined,
+    shortagesOnly: true,
+    pageSize: 1,
+  });
+  const shortageCount = shortageStats?.total ?? 0;
 
   return (
     <DashboardLayout>
