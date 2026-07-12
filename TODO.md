@@ -2,52 +2,58 @@
 
 **Last Updated:** July 11, 2026
 **Overall Progress:** ~70% complete (Foundation ✅ | Operations ~60% | Portal/Features ~40% | Estimator UI, Lead Scoring, Stripe billing, Purchase Orders, Full-Text Search, Blueprint ✅ shipped)
-**Next Milestone:** Complete Phase 2 (Gantt chart + real-time updates)
+**Next Milestone:** Finish Phase 2 real-time rollout to remaining pages (Gantt drag-and-drop ✅ shipped)
 
 ---
 
 ## CRITICAL PATH: Next 48 Hours
 
-### [CRITICAL-1] Complete Gantt Chart Component
+### [CRITICAL-1] Complete Gantt Chart Component ✅ _Shipped_
+
+Drag-and-drop Gantt is live in `client/src/components/GanttChart.tsx`, wired
+into `ScheduleView.tsx` via `schedule.update` with optimistic updates.
 
 - **Why Critical:** Unlocks schedule management, weather integration, field reporting workflow
 - **Files:**
-  - [ ] Create `client/src/components/GanttChart.tsx` (Recharts-based)
-  - [ ] Implement task bar rendering with date ranges
-  - [ ] Add drag-and-drop for task reordering via `react-beautiful-dnd`
-  - [ ] Highlight weather-dependent tasks (yellow background)
+  - [x] Create `client/src/components/GanttChart.tsx` (Recharts-based)
+  - [x] Implement task bar rendering with date ranges
+  - [x] Add drag-and-drop rescheduling (custom mousedown/mousemove drag-to-reschedule)
+  - [x] Highlight weather-dependent tasks
   - [ ] Show dependencies as connecting lines
   - [ ] Add task edit modal on click
 - **Integration:**
-  - [ ] Wire up to `scheduleRouter.getGantt()` procedure
-  - [ ] Implement optimistic updates on drag-end
-  - [ ] Call `scheduleRouter.updateOrder()` on drop
-  - [ ] Show loading state during update
+  - [x] Wire up to the schedule router (`schedule.list` / `schedule.update`)
+  - [x] Implement optimistic updates on drag-end
+  - [x] Call `schedule.update` on drop
+  - [x] Show loading state during update
 - **Testing:**
-  - [ ] Manual test: drag task, verify Supabase update
-  - [ ] Manual test: weather-dependent highlighting
-  - [ ] Verify date range calculations
+  - [x] Manual test: drag task, verify Supabase update
+  - [x] Manual test: weather-dependent highlighting
+  - [x] Verify date range calculations
 - **Acceptance Criteria:**
-  - Gantt renders tasks with correct dates
-  - Drag-and-drop reordering works smoothly
-  - Weather-dependent tasks visually distinct
-  - Real-time updates reflected in UI
+  - Gantt renders tasks with correct dates ✅
+  - Drag-and-drop rescheduling works smoothly ✅
+  - Weather-dependent tasks visually distinct ✅
+  - Real-time updates reflected in UI ✅
 
-### [CRITICAL-2] Implement Real-Time Updates via Supabase Realtime
+### [CRITICAL-2] Implement Real-Time Updates via Supabase Realtime — _Live, rollout in progress_
+
+Realtime is live via `client/src/hooks/useRealtimeTable.ts` across all portal
+pages and several admin pages; rollout to the remaining pages continues.
 
 - **Why Critical:** Portal and admin pages need live data; clients see progress in real-time
 - **Pages to Update:**
-  - [ ] `PortalDashboard.tsx` — Real-time project timeline
-  - [ ] `ProjectDetail.tsx` — Real-time budget/milestone updates
-  - [ ] `FieldReportsList.tsx` — New reports appear instantly
-  - [ ] `CommandCenter.tsx` — Dashboard metrics update live
-  - [ ] `ScheduleView.tsx` — Gantt updates propagate to all viewers
+  - [x] `PortalDashboard.tsx` — Real-time project timeline
+  - [x] `ProjectDetail.tsx` — Real-time budget/milestone updates
+  - [x] `FieldReportsList.tsx` — New reports appear instantly
+  - [x] `CommandCenter.tsx` — Dashboard metrics update live
+  - [x] `ScheduleView.tsx` — Gantt updates propagate to all viewers
 - **Implementation:**
-  - [ ] Create `useRealtimeSubscription()` hook in `client/src/_core/hooks/`
-  - [ ] Subscribe to `projects` table changes in ProjectDetail
-  - [ ] Subscribe to `field_reports` table for new reports
-  - [ ] Subscribe to `schedule_items` for Gantt updates
-  - [ ] Unsubscribe on component unmount (cleanup)
+  - [x] Create the realtime subscription hook (`client/src/hooks/useRealtimeTable.ts`)
+  - [x] Subscribe to `projects` table changes in ProjectDetail
+  - [x] Subscribe to `field_reports` table for new reports
+  - [x] Subscribe to `schedule_items` for Gantt updates
+  - [x] Unsubscribe on component unmount (cleanup)
   - [ ] Handle reconnection logic
 - **Testing:**
   - [ ] Open same project in 2 browser windows
@@ -671,15 +677,15 @@ integration and delivery tracking remain pending.
 
 ## KNOWN BLOCKERS & DEPENDENCIES
 
-| Blocker                              | Impact               | Owner       | Status                                  |
-| ------------------------------------ | -------------------- | ----------- | --------------------------------------- |
-| Supabase Realtime setup              | Real-time features   | Claude      | ⏳ Ready, pending implementation        |
-| n8n workflow creation                | Automation           | Eric/Claude | ⏳ Pending                              |
-| Stripe API integration               | Billing              | Claude      | ✅ Shipped (invoicing + webhook)        |
-| Vendor API keys (Home Depot, Lowe's) | Material procurement | Eric        | ⏳ Pending                              |
-| Supabase Auth setup                  | Authentication       | Claude      | ✅ Shipped (single JWT verifier)        |
-| Project photography                  | Portfolio            | Eric        | ⏳ Waiting for completed projects       |
-| Blueprint.am API credentials         | Blueprint OAuth      | Eric        | ⏳ Contact Blueprint for partner access |
+| Blocker                              | Impact               | Owner       | Status                                                                       |
+| ------------------------------------ | -------------------- | ----------- | ---------------------------------------------------------------------------- |
+| Supabase Realtime setup              | Real-time features   | Claude      | ✅ Live (all portal + several admin); rollout to remaining pages in progress |
+| n8n workflow creation                | Automation           | Eric/Claude | ⏳ Pending                                                                   |
+| Stripe API integration               | Billing              | Claude      | ✅ Shipped (invoicing + webhook)                                             |
+| Vendor API keys (Home Depot, Lowe's) | Material procurement | Eric        | ⏳ Pending                                                                   |
+| Supabase Auth setup                  | Authentication       | Claude      | ✅ Shipped (single JWT verifier)                                             |
+| Project photography                  | Portfolio            | Eric        | ⏳ Waiting for completed projects                                            |
+| Blueprint.am API credentials         | Blueprint OAuth      | Eric        | ⏳ Contact Blueprint for partner access                                      |
 
 ---
 
