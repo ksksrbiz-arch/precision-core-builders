@@ -257,10 +257,18 @@ export const handler: Handler = async event => {
     }
   } catch (err) {
     console.error("[stripe-billing]", err);
+    const message = err instanceof Error ? err.message : String(err);
+    // Preserve the not-configured signal the client keys on; mask everything
+    // else (raw Stripe/DB error text) behind a generic message.
+    const notConfigured = message.includes("STRIPE_SECRET_KEY");
     return {
-      statusCode: 500,
+      statusCode: notConfigured ? 503 : 500,
       headers,
-      body: JSON.stringify({ error: String(err) }),
+      body: JSON.stringify({
+        error: notConfigured
+          ? "STRIPE_SECRET_KEY not configured."
+          : "Billing action failed. Please try again.",
+      }),
     };
   }
 };

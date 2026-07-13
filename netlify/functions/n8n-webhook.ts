@@ -74,10 +74,23 @@ export const handler: Handler = async event => {
         body: JSON.stringify({ error: "Unauthorized" }),
       };
     }
+  } else if (ENV.isProduction) {
+    // Fail closed in production: an unset secret must not leave platform-event
+    // injection open (checkOrigin permits no-Origin server-to-server calls).
+    console.error(
+      "[n8n-webhook] N8N_WEBHOOK_SECRET is not set in production — refusing " +
+        "inbound requests. Configure the secret to enable request signing."
+    );
+    return {
+      statusCode: 503,
+      headers,
+      body: JSON.stringify({ error: "Webhook not configured" }),
+    };
   } else {
     console.warn(
       "[n8n-webhook] N8N_WEBHOOK_SECRET not set — inbound endpoint is " +
-        "UNAUTHENTICATED. Configure the secret to require request signing."
+        "UNAUTHENTICATED (non-production). Configure the secret to require " +
+        "request signing."
     );
   }
 

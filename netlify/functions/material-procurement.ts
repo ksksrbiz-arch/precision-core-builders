@@ -184,7 +184,10 @@ export const handler = withGuards(
       });
     } catch (err) {
       console.error("[material-procurement]", err);
-      return error(500, String(err));
+      return error(
+        500,
+        "Unable to generate purchase orders right now. Please try again."
+      );
     }
   }
 );

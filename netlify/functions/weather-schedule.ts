@@ -180,7 +180,10 @@ export const handler = withGuards(
       });
     } catch (err) {
       console.error("[weather-schedule]", err);
-      return error(500, String(err));
+      return error(
+        500,
+        "Unable to load the weather schedule right now. Please try again."
+      );
     }
   }
 );
