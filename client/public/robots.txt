@@ -1,36 +1,186 @@
 # Precision Core Builders — crawler policy
-# Public marketing pages are open to search engines and AI assistants.
-# Private app surfaces (/admin, /portal, /auth, /api) stay blocked.
+# Production domain: https://precisioncorebuilders.com (www 301-redirects to apex)
+#
+# Intent: the public marketing site (/, /about, /services, /portfolio, /faq,
+# /contact, /estimator) is open to search engines AND AI assistants — the
+# business explicitly wants AI discoverability. Private app surfaces stay
+# blocked for every crawler: /admin, /portal, /auth, /api, /onboarding,
+# /dev-login, /callback.
 
+# ==========================================================================
+# Default policy — every crawler not matched by a group below.
+# Public pages allowed; private app surfaces blocked.
+# ==========================================================================
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /admin/
 Disallow: /portal
-Disallow: /portal/
-Disallow: /auth/
-Disallow: /api/
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
 
-# AI assistants & AI search crawlers — explicitly welcome on public pages.
-# Same private-surface rules as the catch-all group above.
+# ==========================================================================
+# AI crawlers — explicitly ALLOWED.
+# Precision Core Builders wants to be cited by AI assistants and AI search,
+# so reputable AI crawlers get full access to public pages. Private app
+# surfaces remain blocked in every group.
+# ==========================================================================
+
+# OpenAI GPTBot — crawls the public web to improve OpenAI models (ChatGPT).
 User-agent: GPTBot
-User-agent: OAI-SearchBot
-User-agent: ChatGPT-User
-User-agent: ClaudeBot
-User-agent: Claude-User
-User-agent: anthropic-ai
-User-agent: PerplexityBot
-User-agent: Perplexity-User
-User-agent: Google-Extended
-User-agent: Applebot-Extended
-User-agent: Meta-ExternalAgent
-User-agent: CCBot
-User-agent: cohere-ai
+Allow: /
 Disallow: /admin
-Disallow: /admin/
 Disallow: /portal
-Disallow: /portal/
-Disallow: /auth/
-Disallow: /api/
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
 
-Sitemap: https://precision-core.netlify.app/sitemap.xml
+# OpenAI OAI-SearchBot — indexes pages so ChatGPT search can cite them.
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# OpenAI ChatGPT-User — fetches a page live when a ChatGPT user asks about it.
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Anthropic ClaudeBot — crawls the public web for Claude model training.
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Anthropic Claude-User — fetches a page live for a Claude user request.
+User-agent: Claude-User
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Anthropic anthropic-ai — legacy Anthropic crawler identifier.
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Perplexity PerplexityBot — indexes pages for the Perplexity answer engine.
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Perplexity Perplexity-User — fetches a page live for a Perplexity user.
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Google Google-Extended — controls use of site content for Gemini/AI model
+# training. (Does NOT affect Google Search ranking.)
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Microsoft Bingbot — Bing search index; also grounds Microsoft Copilot answers.
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Apple Applebot-Extended — controls use of content for Apple Intelligence.
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Meta Meta-ExternalAgent — fetches pages for Meta AI assistants.
+User-agent: Meta-ExternalAgent
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Common Crawl CCBot — open web-crawl dataset used to train many AI models.
+User-agent: CCBot
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+# Cohere cohere-ai — crawls the public web for Cohere's AI models.
+User-agent: cohere-ai
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /auth
+Disallow: /api
+Disallow: /onboarding
+Disallow: /dev-login
+Disallow: /callback
+
+Sitemap: https://precisioncorebuilders.com/sitemap.xml
