@@ -12,6 +12,7 @@ import { SITE } from "@/const";
 import { PROJECTS, photoUrl, type ProjectCategory } from "@/data/projects";
 import { netlifySrcSet } from "@/lib/netlifyImage";
 import { useSEO } from "@/hooks/useSEO";
+import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Phone } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -49,7 +50,12 @@ export type ServicePageProps = {
 type FormStatus = "idle" | "submitting" | "success" | "error";
 
 export function ServicePage(p: ServicePageProps) {
-  useSEO({ title: p.metaTitle, description: p.metaDescription });
+  const [location] = useLocation();
+  useSEO({
+    title: p.metaTitle,
+    description: p.metaDescription,
+    canonical: `${SITE.website}${location}`,
+  });
   const [status, setStatus] = useState<FormStatus>("idle");
   const [fields, setFields] = useState({
     name: "",

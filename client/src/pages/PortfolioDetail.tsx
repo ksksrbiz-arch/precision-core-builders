@@ -84,6 +84,34 @@ export default function PortfolioDetail() {
       : "https://precision-core.netlify.app/portfolio",
   });
 
+  // BreadcrumbList JSON-LD — Home > Portfolio > this project.
+  const breadcrumbJsonLd = project
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: SITE.website,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Portfolio",
+            item: `${SITE.website}/portfolio`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: project.title,
+            item: `${SITE.website}/portfolio/${project.slug}`,
+          },
+        ],
+      }
+    : null;
+
   if (!project) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
@@ -122,6 +150,12 @@ export default function PortfolioDetail() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        />
+      )}
       <SiteNav />
 
       <main id="main-content" className="flex-1">

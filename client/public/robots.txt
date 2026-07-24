@@ -1,7 +1,31 @@
+# Precision Core Builders — crawler policy
+# Public marketing pages are open to search engines and AI assistants.
+# Private app surfaces (/admin, /portal, /auth, /api) stay blocked.
+
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /portal
+Disallow: /portal/
+Disallow: /auth/
+Disallow: /api/
 
-# Admin and portal — private, block crawlers
+# AI assistants & AI search crawlers — explicitly welcome on public pages.
+# Same private-surface rules as the catch-all group above.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Meta-ExternalAgent
+User-agent: CCBot
+User-agent: cohere-ai
 Disallow: /admin
 Disallow: /admin/
 Disallow: /portal
