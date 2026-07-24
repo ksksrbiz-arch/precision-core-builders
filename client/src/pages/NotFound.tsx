@@ -137,6 +137,7 @@ export default function NotFound() {
     title: "Page Not Found",
     description:
       "We couldn't find that page. Browse our work, services, or get in touch with Precision Core Builders.",
+    robots: "noindex, follow",
   });
 
   return (

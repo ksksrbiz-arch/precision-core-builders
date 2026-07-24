@@ -58,12 +58,12 @@
 - [ ] Report before/after coverage % in the PR description
 - **Acceptance:** `pnpm test` green; no snapshot-only tests
 
-### [BOT-7] SEO + social meta (POLISH-2 subset)
+### [BOT-7] SEO + social meta (POLISH-2 subset) ? _PR #208_
 
 - **Files:** `client/index.html` and/or the app's head/SEO component
-- [ ] Unique `<title>` + meta description per public page (home, estimator, portfolio)
-- [ ] Open Graph + Twitter card tags (site name, image from `/public`)
-- [ ] JSON-LD `GeneralContractor`/`LocalBusiness` schema (Precision Core Builders, Eugene OR, CCB #246527)
+- [x] Unique `<title>` + meta description per public page (home, estimator, portfolio)
+- [x] Open Graph + Twitter card tags (site name, image from `/public`)
+- [x] JSON-LD `GeneralContractor`/`LocalBusiness` schema (Precision Core Builders, Eugene OR, CCB #246527)
 - **Acceptance:** `pnpm check` + `pnpm build` pass; tags verifiable in built page source
 
 ### [BOT-8] Bundle diet: lazy-load Mermaid + KaTeX (POLISH-1 subset)

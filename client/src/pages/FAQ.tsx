@@ -4,8 +4,10 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
+import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { TextReveal } from "@/components/ui/TextReveal";
@@ -140,8 +142,8 @@ export default function FAQ() {
   useSEO({
     title: "FAQ — Licensing, Permits & Process",
     description:
-      "Answers to common questions about working with Precision Core Builders — licensing, permits, costs, timelines, and how we operate in Eugene, Oregon.",
-    canonical: "https://precision-core.netlify.app/faq",
+      "Answers to common questions about working with Precision Core Builders — licensing, permits, costs, timelines, and process. Eugene, Oregon — CCB #246527.",
+    canonical: canonicalUrl("/faq"),
   });
 
   const [query, setQuery] = useState("");
@@ -195,10 +197,8 @@ export default function FAQ() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
+      <JsonLd data={faqSchema} />
+      <JsonLd data={breadcrumbJsonLd([{ name: "FAQ", path: "/faq" }])} />
       <SiteNav />
       <MobileCTABar />
       <main id="main-content" className="pt-[68px]">

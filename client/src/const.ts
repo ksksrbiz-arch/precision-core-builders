@@ -8,6 +8,8 @@ export const SITE = {
   email: "erictadlock@precisioncorebuilders.com",
   emailHref: "mailto:erictadlock@precisioncorebuilders.com",
   website: "https://precision-core.netlify.app",
+  /** Production/canonical domain — used for all SEO metadata and JSON-LD. */
+  url: "https://precisioncorebuilders.com",
   license: "CCB #246527",
   owner: "Eric Tadlock",
   location: "Eugene, Oregon",

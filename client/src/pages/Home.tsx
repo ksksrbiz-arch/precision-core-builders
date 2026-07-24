@@ -25,6 +25,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextReveal } from "@/components/ui/TextReveal";
 import { netlifySrcSet } from "@/lib/netlifyImage";
+import { canonicalUrl } from "@/lib/seo";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import {
@@ -108,63 +109,17 @@ function useCounter(target: number, inView: boolean) {
 ══════════════════════════════════════════════════════════════ */
 export default function Home() {
   useSEO({
-    title: "Precision Core Builders — Precision Construction, Core Values.",
+    title: "Custom Homes & Remodeling in Eugene, OR",
     description:
-      "Master carpenters serving Eugene, Oregon and Lane County. 20+ years of experience in residential construction, remodels, restoration, custom cabinets, and more. CCB #246527.",
-    canonical: SITE.website,
+      "Precision Core Builders designs and builds custom homes, remodels, and additions in Eugene, OR. Licensed CCB #246527. Free on-site estimates — 541-852-5144.",
+    canonical: canonicalUrl("/"),
   });
 
-  // LocalBusiness (GeneralContractor) + breadcrumb structured data for SEO.
-  const businessJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "GeneralContractor",
-    "@id": `${SITE.website}/#business`,
-    name: SITE.name,
-    description:
-      "Master carpenters serving Eugene, Oregon and Lane County — " +
-      "residential construction, remodels, restoration, custom cabinets, " +
-      "and outdoor living. CCB #246527.",
-    url: SITE.website,
-    telephone: SITE.phone,
-    email: SITE.email,
-    image: `${SITE.website}/logo.svg`,
-    foundingDate: "2014",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Eugene",
-      addressRegion: "OR",
-      addressCountry: "US",
-    },
-    areaServed: [
-      { "@type": "City", name: "Eugene, Oregon" },
-      { "@type": "AdministrativeArea", name: "Lane County, Oregon" },
-    ],
-    sameAs: [SITE.facebook],
-  };
-
-  const breadcrumbJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: SITE.website,
-      },
-    ],
-  };
+  // Sitewide GeneralContractor JSON-LD lives statically in index.html so it
+  // is present on every route before hydration — no per-page duplicate here.
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(businessJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
       <SiteNav />
       <MobileCTABar />
       <main id="main-content">

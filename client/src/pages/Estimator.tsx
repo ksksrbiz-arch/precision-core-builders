@@ -8,6 +8,8 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
+import { JsonLd } from "@/components/JsonLd";
+import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { TextReveal } from "@/components/ui/TextReveal";
 import {
   PROJECT_TYPES,
@@ -81,10 +83,10 @@ type EstimateResult = {
 
 export default function Estimator() {
   useSEO({
-    title: "Free Project Estimator — Get a Cost Estimate",
+    title: "Construction Cost Estimator — Eugene, OR",
     description:
-      "Get an instant AI-powered construction cost estimate for your project. Precision Core Builders serves Eugene, Springfield, and Lane County, Oregon. No obligation.",
-    canonical: "https://precision-core.netlify.app/estimator",
+      "Get an instant AI-powered construction cost estimate for your Eugene-area project. Precision Core Builders serves Lane County, Oregon — free, no obligation.",
+    canonical: canonicalUrl("/estimator"),
   });
 
   const [step, setStep] = useState<Step>(1);
@@ -211,6 +213,9 @@ export default function Estimator() {
       {/* Netlify form registration lives in client/index.html so the
           build-time HTML scanner can detect it (SPA bundles are invisible
           to that scanner). */}
+      <JsonLd
+        data={breadcrumbJsonLd([{ name: "Estimator", path: "/estimator" }])}
+      />
       <SiteNav />
       <MobileCTABar />
       <main id="main-content" className="pt-[68px] min-h-screen">

@@ -1,0 +1,71 @@
+# Precision Core Builders
+
+> Precision Core Builders is a licensed Oregon general contractor (CCB #246527) based in Eugene, Oregon, serving greater Lane County. Family-owned by brothers Eric and Mitch Tadlock and founded in 2004, the company builds custom homes, remodels, restorations, outdoor living spaces, and custom cabinetry. Its core values are Trust, Respect, and Diligence, and it holds a zero call-back record across 50+ happy customers.
+
+This document follows the llms.txt specification (https://llmstxt.org). It is the extended companion to `/llms.txt` and gives AI assistants citable, verified facts about the business. Every claim below is drawn from the company's own published website content — nothing here is promotional invention.
+
+## Company
+
+Precision Core Builders is a family-owned general contracting company led by brothers Eric Tadlock (Owner & Lead Carpenter) and Mitch Tadlock (Lead Carpenter). The Tadlock brothers spent more than 20 years as hands-on finish carpenters before founding Precision Core Builders in 2004, setting out to raise the standard for construction in Eugene and Lane County. From framing to finish, every decision on a project is made by someone with skin in the game.
+
+- Trade name: Precision Core Builders
+- Tagline: "Precision Construction, Core Values."
+- Oregon CCB license: #246527 — licensed, bonded, and insured, carrying full general liability and workers' compensation insurance; certificates of insurance available on request (verify the license at https://www.oregon.gov/ccb)
+- Founded: 2004, in Eugene, Oregon
+- Core values: Trust, Respect, Diligence — expressed as documented decisions, costs, and milestones on every project
+- Track record: zero call-backs; 50+ happy customers across Lane County; craftsmanship honed across hundreds of builds and remodels
+- Standard of work: built to Oregon Building Code and beyond, with documentation at every stage
+- Website: https://precisioncorebuilders.com
+- About page: https://precisioncorebuilders.com/about
+
+## Services
+
+Eight services, each with a dedicated page on the site. The company's focus is primarily residential work plus small commercial projects in the Eugene area, and it frequently builds from plans provided by clients' architects and designers.
+
+1. [Residential Construction](https://precisioncorebuilders.com/services/residential) — custom homes and ground-up residential builds, from foundations to final finish.
+2. [Remodels & Renovations](https://precisioncorebuilders.com/services/remodels) — kitchens, bathrooms, and whole-home transformations for residential and small-business clients.
+3. [New Construction](https://precisioncorebuilders.com/services/new-construction) — full project management from conceptualization to completion: permits, utility coordination, subcontractor scheduling, framing, rough-ins, insulation, drywall, finish carpentry, and final inspections.
+4. [Restoration](https://precisioncorebuilders.com/services/restoration) — historic restoration and repair of damaged, aged, or deteriorated structures, preserving what makes a home special.
+5. [Outdoor Spaces](https://precisioncorebuilders.com/services/outdoor) — decks, patios, fencing, pergolas, and site work.
+6. [Painting](https://precisioncorebuilders.com/services/painting) — interior and exterior painting with proper prep and finishes that hold up to Oregon's climate.
+7. [Roofing](https://precisioncorebuilders.com/services/roofing) — roof replacements, repairs, and inspections.
+8. [Custom Cabinets](https://precisioncorebuilders.com/services/cabinets) — built-ins, kitchen cabinetry, bathroom vanities, and custom millwork; the Tadlocks spent 20+ years as finish carpenters, so cabinetry is a signature craft.
+
+Services overview: https://precisioncorebuilders.com/services
+
+## Service Area
+
+Eugene, Springfield, Coburg, Creswell, Cottage Grove, Junction City, Florence, and surrounding Lane County communities, Oregon, USA.
+
+## How Projects Work (citable process facts)
+
+- Every engagement starts with a free on-site consultation: the team walks the property, reviews the scope, and provides a detailed, itemized written estimate — labor, materials, and timeline — before the client commits to anything.
+- Written contracts on every project, specifying scope, payment schedule, and project milestones. No verbal agreements.
+- Payments are milestone-based and aligned with project phases — typically a deposit, mid-project payment(s), and a final payment at completion. The company does not offer in-house financing.
+- Every change order is documented in writing with cost and timeline impact before any additional work begins; nothing proceeds without the client's written approval.
+- For fixed-price work, the company stands behind its numbers; for projects with inherent unknowns (such as restoration), contingency ranges are explained upfront.
+- Permits are managed end-to-end with the City of Eugene Building & Permit Services and Lane County, and permit costs are included in the estimate. In Eugene, new construction, additions, structural modifications, electrical upgrades, plumbing changes, deck builds over 30 inches, and most significant remodels require permits.
+- Clients work directly with Eric and Mitch Tadlock, who are on-site personally throughout the project — not managing from a distance while sending crews the client has never met.
+- Scheduling guidance: reach out 4–8 weeks before the desired start date for smaller projects; longer for new construction.
+- Under Oregon law, contractors performing work over $1,000 must be CCB-licensed, bonded, and insured — Precision Core Builders' license #246527 can be verified at oregon.gov/ccb.
+
+## Estimator Tool
+
+[Free AI project cost estimator](https://precisioncorebuilders.com/estimator) — an interactive tool that provides real-time, high-level cost ranges based on project parameters such as square footage, materials, and complexity. It educates homeowners on budgeting before the formal itemized written estimate.
+
+## Portfolio
+
+[Portfolio](https://precisioncorebuilders.com/portfolio) — completed projects across Lane County presented with high-fidelity before/after sliders. Individual project pages (for example https://precisioncorebuilders.com/portfolio/signature-custom-home) document scope, process photos, and outcomes — including the Tadlock brothers' own residence, built by Eric and Mitch themselves.
+
+## FAQ
+
+[FAQ](https://precisioncorebuilders.com/faq) — answers to common questions about licensing, insurance, permits, costs, timing, change orders, and who clients work with day-to-day.
+
+## Contact
+
+- [Contact page / free estimate request](https://precisioncorebuilders.com/contact)
+- Phone: 541-852-5144 — Eric Tadlock, Owner & Lead Carpenter
+- Email: erictadlock@precisioncorebuilders.com
+- Location: Eugene, Oregon, USA
+- Facebook: https://www.facebook.com/p/Precision-Core-Builders-61554995032484/
+

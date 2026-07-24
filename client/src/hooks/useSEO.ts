@@ -9,6 +9,8 @@ interface SEOOptions {
   description?: string;
   canonical?: string;
   image?: string;
+  /** Override the static "index, follow" directive — e.g. "noindex, follow" on 404. */
+  robots?: string;
 }
 
 const SITE_NAME = "Precision Core Builders";
@@ -37,7 +39,13 @@ function getOrCreateLink(selector: string, rel: string): HTMLLinkElement {
   return el;
 }
 
-export function useSEO({ title, description, canonical, image }: SEOOptions) {
+export function useSEO({
+  title,
+  description,
+  canonical,
+  image,
+  robots,
+}: SEOOptions) {
   useEffect(() => {
     // Snapshot every tag this hook mutates and restore it on unmount, so
     // navigating to a page that doesn't set description / canonical / og:image
@@ -67,7 +75,11 @@ export function useSEO({ title, description, canonical, image }: SEOOptions) {
       });
     };
 
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    // Append the brand once — titles that already carry it (e.g. service
+    // pages) are used verbatim so it never renders twice.
+    const fullTitle = title.includes(SITE_NAME)
+      ? title
+      : `${title} | ${SITE_NAME}`;
     const prevTitle = document.title;
     document.title = fullTitle;
     restores.push(() => {
@@ -105,6 +117,10 @@ export function useSEO({ title, description, canonical, image }: SEOOptions) {
       setMeta('meta[property="og:url"]', "property", "og:url", canonical);
     }
 
+    if (robots) {
+      setMeta('meta[name="robots"]', "name", "robots", robots);
+    }
+
     // Only override og:image when explicitly provided; otherwise the static
     // homepage image from index.html is kept.
     if (image) {
@@ -116,5 +132,5 @@ export function useSEO({ title, description, canonical, image }: SEOOptions) {
       // Restore in reverse so the DOM is left exactly as this effect found it.
       for (const restore of restores.reverse()) restore();
     };
-  }, [title, description, canonical, image]);
+  }, [title, description, canonical, image, robots]);
 }

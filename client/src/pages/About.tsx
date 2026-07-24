@@ -8,8 +8,10 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { JsonLd } from "@/components/JsonLd";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
+import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { motion, useInView } from "framer-motion";
 import { TextReveal } from "@/components/ui/TextReveal";
 import {
@@ -102,10 +104,10 @@ const MILESTONES = [
 
 export default function About() {
   useSEO({
-    title: "About Us — Eric & Mitch Tadlock",
+    title: "Meet Eric & Mitch Tadlock — Eugene, OR Contractors",
     description:
       "Meet the Tadlock brothers — Eric and Mitch — the veteran carpenters behind Precision Core Builders. 20+ years of construction experience in Eugene, Oregon.",
-    canonical: "https://precision-core.netlify.app/about",
+    canonical: canonicalUrl("/about"),
   });
 
   const heroRef = useRef(null);
@@ -114,6 +116,7 @@ export default function About() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <JsonLd data={breadcrumbJsonLd([{ name: "About", path: "/about" }])} />
       <SiteNav />
       <MobileCTABar />
 
@@ -264,12 +267,12 @@ export default function About() {
                         </div>
                       </div>
                       <div>
-                        <h3
+                        <h2
                           className="text-lg font-bold tracking-[0.06em] uppercase mb-1.5"
                           style={{ fontFamily: "var(--font-condensed)" }}
                         >
                           {v.title}
-                        </h3>
+                        </h2>
                         <p
                           className="text-[11px] font-semibold tracking-[0.16em] uppercase text-primary mb-3"
                           style={{ fontFamily: "var(--font-condensed)" }}

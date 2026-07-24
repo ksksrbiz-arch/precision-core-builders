@@ -1,0 +1,16 @@
+/* TEAM */
+Owner & Lead Carpenter: Eric Tadlock
+Lead Carpenter: Mitch Tadlock
+Location: Eugene, Oregon, USA
+Contact: erictadlock@precisioncorebuilders.com — 541-852-5144
+
+/* SITE */
+Company: Precision Core Builders — Oregon general contractor, CCB #246527
+Tagline: Precision Construction, Core Values.
+Values: Trust, Respect, Diligence
+Founded: 2004, Eugene, Oregon
+URL: https://precisioncorebuilders.com
+Stack: React 19 + Vite + TypeScript, hosted on Netlify
+
+/* THANKS */
+To the homeowners of Lane County who trust us with their homes.
