@@ -22,7 +22,9 @@ import {
   photoUrl,
 } from "@/data/projects";
 import { SITE } from "@/const";
+import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
+import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import {
   motion,
   useMotionValue,
@@ -39,10 +41,10 @@ const FILTERS: Filter[] = ["All", ...CATEGORIES];
 
 export default function Portfolio() {
   useSEO({
-    title: "Portfolio — Custom Homes, Remodels & Restoration",
+    title: "Portfolio — Custom Homes & Remodels in Eugene, OR",
     description:
-      "Real work from Precision Core Builders in Eugene and Lane County, Oregon. Custom homes, full restorations, kitchens, baths, decks, and structures — built by Eric Tadlock and crew. CCB #246527.",
-    canonical: "https://precision-core.netlify.app/portfolio",
+      "Real projects by Precision Core Builders in Eugene and Lane County, OR — custom homes, restorations, kitchens, baths, decks, and structures. CCB #246527.",
+    canonical: canonicalUrl("/portfolio"),
   });
 
   const [filter, setFilter] = useState<Filter>("All");
@@ -93,7 +95,7 @@ export default function Portfolio() {
       "Custom homes, full restorations, kitchens, baths, decks, and " +
       "structures built by Precision Core Builders in Eugene and Lane " +
       "County, Oregon.",
-    url: "https://precision-core.netlify.app/portfolio",
+    url: canonicalUrl("/portfolio"),
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: PROJECTS.length,
@@ -101,16 +103,16 @@ export default function Portfolio() {
         "@type": "ListItem",
         position: i + 1,
         name: project.title,
-        url: `https://precision-core.netlify.app/portfolio/${project.slug}`,
+        url: canonicalUrl(`/portfolio/${project.slug}`),
       })),
     },
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      <JsonLd data={collectionSchema} />
+      <JsonLd
+        data={breadcrumbJsonLd([{ name: "Portfolio", path: "/portfolio" }])}
       />
       <SiteNav />
 

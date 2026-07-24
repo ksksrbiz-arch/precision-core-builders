@@ -47,8 +47,8 @@ export function Residential() {
         "The Tadlock Residence",
         "Interior Remodels",
       ]}
-      metaTitle="Residential Contractor Eugene OR | Precision Core Builders | CCB #246527"
-      metaDescription="Licensed residential contractor in Eugene, Oregon (CCB #246527). Custom homes, renovations, and residential construction by Eric Tadlock with 20+ years experience. Free estimates."
+      metaTitle="Residential Contractor Eugene OR | CCB #246527"
+      metaDescription="Licensed residential contractor in Eugene, Oregon (CCB #246527). Custom homes, renovations & additions by Eric Tadlock, 20+ years in the trade. Free estimates."
       intro={withBudget(
         "$50,000 – $500,000+",
         "With over 20 years of hands-on residential construction experience in Eugene, our lead carpenters have built the expertise to handle every dimension of home construction — from the foundation pour to the final coat of paint."
@@ -112,8 +112,8 @@ export function Remodels() {
       heroImage={ASSETS.services.remodels}
       heroImageAlt="Kitchen and bathroom remodel Eugene Oregon"
       projectCategories={["Interior Remodels", "Bath & Kitchen"]}
-      metaTitle="Home Remodeling Contractor Eugene OR | Precision Core Builders | CCB #246527"
-      metaDescription="Expert home remodeling in Eugene, Oregon. Kitchen remodels, bathroom renovations, whole-home updates. Licensed contractor CCB #246527 with 20+ years experience. Free estimates."
+      metaTitle="Home Remodeling Contractor Eugene OR | CCB #246527"
+      metaDescription="Expert home remodeling in Eugene, Oregon — kitchens, baths, and whole-home renovations. Licensed CCB #246527, 20+ years of experience. Free estimates."
       intro={withBudget(
         "$25,000 – $150,000+",
         "We transform outdated Eugene homes into modern, functional spaces that match how you actually live. Kitchens, bathrooms, living spaces, basements — we tackle remodels and renovations of every scale with the same level of craftsmanship."
@@ -177,8 +177,8 @@ export function NewConstruction() {
       heroImage={ASSETS.services.newConstruction}
       heroImageAlt="New home construction Eugene Oregon"
       projectCategories={["Custom Homes", "The Tadlock Residence"]}
-      metaTitle="Custom Home Builder Eugene OR | New Construction | Precision Core Builders CCB #246527"
-      metaDescription="Custom home builder in Eugene, Oregon. Ground-up new construction by licensed contractor CCB #246527 with 20+ years of experience. From permits to final walkthrough. Free estimates."
+      metaTitle="Custom Home Builder Eugene OR | New Construction"
+      metaDescription="Custom home builder in Eugene, Oregon. Ground-up construction from permits to final walkthrough. Licensed CCB #246527, 20+ years of experience. Free estimates."
       intro={withBudget(
         "$350,000 – $1,500,000+",
         "Building a new home in Eugene is one of the most significant investments you'll make. We manage every phase — site prep, permits, foundation, framing, systems, and finish — so you get the home you envisioned, built correctly from the ground up."
@@ -242,8 +242,8 @@ export function Restoration() {
       heroImage={ASSETS.services.restoration}
       heroImageAlt="Home restoration project Eugene Oregon — before and after"
       projectCategories={["Exterior & Restoration"]}
-      metaTitle="Home Restoration Contractor Eugene OR | Precision Core Builders | CCB #246527"
-      metaDescription="Professional home restoration in Eugene, Oregon. Water damage, fire damage, structural restoration, and historic home preservation. Licensed CCB #246527. Free estimates."
+      metaTitle="Home Restoration Contractor Eugene OR | CCB #246527"
+      metaDescription="Professional home restoration in Eugene, Oregon — water and fire damage, structural repairs, historic preservation. Licensed CCB #246527. Free estimates."
       intro={withBudget(
         "$15,000 – $200,000+",
         "Restoration work demands a contractor with deep structural knowledge and a respect for what makes a home worth preserving. We bring both — restoring Eugene homes from damage, deterioration, or decades of deferred maintenance back to their full potential."
@@ -303,8 +303,8 @@ export function Outdoor() {
       heroImage={ASSETS.services.outdoor}
       heroImageAlt="Custom deck and outdoor living space Eugene Oregon"
       projectCategories={["Decks & Outdoor", "Fencing & Structures"]}
-      metaTitle="Deck Builder & Outdoor Contractor Eugene OR | Precision Core Builders | CCB #246527"
-      metaDescription="Custom decks, patios, pergolas, and outdoor living spaces in Eugene, Oregon. Licensed contractor CCB #246527. Designed and built to handle Oregon's climate. Free estimates."
+      metaTitle="Deck Builder & Outdoor Contractor Eugene OR"
+      metaDescription="Custom decks, patios, pergolas, and outdoor living spaces in Eugene, Oregon. Designed and built for Oregon's climate. Licensed CCB #246527. Free estimates."
       intro={withBudget(
         "$10,000 – $100,000+",
         "Eugene's outdoor lifestyle deserves spaces built to match — and to last through Oregon's seasons. We design and build decks, patios, pergolas, fencing, and full outdoor living environments that hold up to the wet winters and shine in the dry summers."
@@ -364,8 +364,8 @@ export function Painting() {
       heroImage={ASSETS.services.painting}
       heroImageAlt="Professional interior and exterior painting Eugene Oregon"
       projectCategories={["Exterior & Restoration", "Interior Remodels"]}
-      metaTitle="Painting Contractor Eugene OR | Interior & Exterior | Precision Core Builders CCB #246527"
-      metaDescription="Professional interior and exterior painting in Eugene, Oregon. Proper prep, quality materials, clean results that last. Licensed contractor CCB #246527. Free estimates."
+      metaTitle="Painting Contractor Eugene OR | Interior & Exterior"
+      metaDescription="Professional interior and exterior painting in Eugene, Oregon. Proper prep, quality materials, clean results that last. Licensed CCB #246527. Free estimates."
       intro={withBudget(
         "$3,000 – $30,000+",
         "Painting done right starts with preparation — not the brush. We take the time to properly prep every surface before a drop of paint goes on, which is why our finishes hold up to Eugene's climate for years without peeling, fading, or cracking."
@@ -425,8 +425,8 @@ export function Roofing() {
       heroImage={ASSETS.services.roofing}
       heroImageAlt="Roof replacement and roofing services Eugene Oregon"
       projectCategories={["Exterior & Restoration"]}
-      metaTitle="Roofing Contractor Eugene OR | Roof Replacement & Repair | Precision Core Builders CCB #246527"
-      metaDescription="Expert roofing services in Eugene, Oregon. Roof replacements, repairs, and inspections. Licensed contractor CCB #246527. Built for Oregon's climate. Free estimates."
+      metaTitle="Roofing Contractor Eugene OR | Replacement & Repair"
+      metaDescription="Expert roofing in Eugene, Oregon — replacements, repairs, and inspections built for Oregon's climate. Licensed contractor CCB #246527. Free estimates."
       intro={withBudget(
         "$8,000 – $40,000+",
         "A roof in Eugene, Oregon has to perform. With 48+ inches of annual rainfall, your roof is your home's first and most critical line of defense. We install, repair, and replace roofs built to handle what Oregon throws at them."
@@ -486,8 +486,8 @@ export function Cabinets() {
       heroImage={ASSETS.services.cabinets}
       heroImageAlt="Custom cabinetry and millwork Eugene Oregon"
       projectCategories={["Bath & Kitchen", "Interior Remodels"]}
-      metaTitle="Custom Cabinet Builder Eugene OR | Built-Ins & Millwork | Precision Core Builders CCB #246527"
-      metaDescription="Custom cabinetry, built-ins, and finish millwork in Eugene, Oregon. Designed for your space, built by hand. Licensed contractor CCB #246527 with 20+ years carpentry experience. Free estimates."
+      metaTitle="Custom Cabinet Builder Eugene OR | Built-Ins & Millwork"
+      metaDescription="Custom cabinetry, built-ins, and finish millwork in Eugene, Oregon. Designed for your space and built by hand. Licensed CCB #246527. Free on-site estimates."
       intro={withBudget(
         "$12,000 – $60,000+",
         "Eric and Mitch Tadlock spent 20+ years as finish carpenters before founding Precision Core Builders. Custom cabinetry is in their DNA — built for your specific space, proportioned correctly, and crafted to outlast stock cabinet alternatives by decades."

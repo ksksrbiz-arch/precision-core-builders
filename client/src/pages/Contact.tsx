@@ -7,8 +7,10 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
+import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { motion } from "framer-motion";
 import { TextReveal } from "@/components/ui/TextReveal";
 import {
@@ -49,10 +51,10 @@ const inputCls =
 
 export default function Contact() {
   useSEO({
-    title: "Contact Us — Free Estimate",
+    title: "Contact Us — Free Estimates in Eugene, OR",
     description:
-      "Contact Precision Core Builders for a free on-site estimate. Call Eric Tadlock at 541-852-5144 or fill out our form. Serving Eugene, Springfield, and Lane County, Oregon.",
-    canonical: "https://precision-core.netlify.app/contact",
+      "Contact Precision Core Builders for a free on-site estimate. Call Eric Tadlock at 541-852-5144 or send a message. Serving Eugene, Springfield & Lane County, OR.",
+    canonical: canonicalUrl("/contact"),
   });
 
   const [status, setStatus] = useState<Status>("idle");
@@ -100,6 +102,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Contact", path: "/contact" }])} />
       <SiteNav />
       <MobileCTABar />
 

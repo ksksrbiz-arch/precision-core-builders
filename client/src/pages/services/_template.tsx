@@ -11,6 +11,8 @@ import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
 import { PROJECTS, photoUrl, type ProjectCategory } from "@/data/projects";
 import { netlifySrcSet } from "@/lib/netlifyImage";
+import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -54,7 +56,7 @@ export function ServicePage(p: ServicePageProps) {
   useSEO({
     title: p.metaTitle,
     description: p.metaDescription,
-    canonical: `${SITE.website}${location}`,
+    canonical: canonicalUrl(location),
   });
   const [status, setStatus] = useState<FormStatus>("idle");
   const [fields, setFields] = useState({
@@ -109,6 +111,7 @@ export function ServicePage(p: ServicePageProps) {
     provider: {
       "@type": "GeneralContractor",
       name: "Precision Core Builders",
+      url: SITE.url,
       telephone: SITE.phone,
       areaServed: p.serviceAreas,
     },
@@ -129,21 +132,15 @@ export function ServicePage(p: ServicePageProps) {
 
   return (
     <>
-      {/* Dynamic SEO head */}
-      <title>{p.metaTitle}</title>
-      <meta name="description" content={p.metaDescription} />
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      {/* Head metadata is managed by the useSEO hook above. */}
+      <JsonLd data={serviceJsonLd} />
+      {faqJsonLd && <JsonLd data={faqJsonLd} />}
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Services", path: "/services" },
+          { name: p.title, path: location },
+        ])}
       />
-      {faqJsonLd && (
-        <script
-          type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-        />
-      )}
 
       <SiteNav />
       <MobileCTABar />

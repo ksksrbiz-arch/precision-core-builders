@@ -7,8 +7,10 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { JsonLd } from "@/components/JsonLd";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
+import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { TextReveal } from "@/components/ui/TextReveal";
@@ -141,12 +143,15 @@ export default function ServicesPage() {
   useSEO({
     title: "Construction Services — Eugene, Oregon",
     description:
-      "Precision Core Builders offers residential construction, remodels, new builds, restoration, outdoor spaces, painting, roofing, and custom cabinets in Eugene, OR.",
-    canonical: "https://precision-core.netlify.app/services",
+      "Residential construction, remodels, new builds, restoration, outdoor living, painting, roofing, and custom cabinets in Eugene, OR — licensed CCB #246527.",
+    canonical: canonicalUrl("/services"),
   });
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <JsonLd
+        data={breadcrumbJsonLd([{ name: "Services", path: "/services" }])}
+      />
       <SiteNav />
       <MobileCTABar />
 

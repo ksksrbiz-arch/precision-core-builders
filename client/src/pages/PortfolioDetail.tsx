@@ -20,6 +20,8 @@ import { TiltCard } from "@/components/ui/TiltCard";
 import { PhotoGrid } from "@/components/portfolio/PhotoGrid";
 import { getProject, PROJECTS, photoUrl } from "@/data/projects";
 import { netlifySrcSet } from "@/lib/netlifyImage";
+import { absoluteAssetUrl, breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import {
@@ -80,36 +82,17 @@ export default function PortfolioDetail() {
       ? `${project.summary} Built by Precision Core Builders in ${project.location || "Lane County, Oregon"}.`
       : "The project you're looking for could not be found.",
     canonical: project
-      ? `https://precision-core.netlify.app/portfolio/${project.slug}`
-      : "https://precision-core.netlify.app/portfolio",
+      ? canonicalUrl(`/portfolio/${project.slug}`)
+      : canonicalUrl("/portfolio"),
+    image: project ? absoluteAssetUrl(photoUrl(project.hero)) : undefined,
   });
 
   // BreadcrumbList JSON-LD — Home > Portfolio > this project.
-  const breadcrumbJsonLd = project
-    ? {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          {
-            "@type": "ListItem",
-            position: 1,
-            name: "Home",
-            item: SITE.website,
-          },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "Portfolio",
-            item: `${SITE.website}/portfolio`,
-          },
-          {
-            "@type": "ListItem",
-            position: 3,
-            name: project.title,
-            item: `${SITE.website}/portfolio/${project.slug}`,
-          },
-        ],
-      }
+  const breadcrumbLd = project
+    ? breadcrumbJsonLd([
+        { name: "Portfolio", path: "/portfolio" },
+        { name: project.title, path: `/portfolio/${project.slug}` },
+      ])
     : null;
 
   if (!project) {
@@ -150,12 +133,7 @@ export default function PortfolioDetail() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {breadcrumbJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-        />
-      )}
+      {breadcrumbLd && <JsonLd data={breadcrumbLd} />}
       <SiteNav />
 
       <main id="main-content" className="flex-1">
