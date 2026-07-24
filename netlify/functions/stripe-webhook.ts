@@ -13,6 +13,7 @@
  * - invoice.paid → record payment in billing_events
  * - checkout.session.completed → record payment link completion
  * - invoice.payment_failed → flag for follow-up
+ * - charge.refunded → record refund + post negative ledger reversal
  */
 import type { Handler } from "@netlify/functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -306,6 +307,63 @@ export const handler: Handler = async event => {
           },
         });
         if (error) console.error("[stripe-webhook] Insert error:", error);
+        break;
+      }
+
+      case "charge.refunded": {
+        const projectId =
+          parseProjectId(data.metadata?.project_id) ??
+          parseProjectId(data.metadata?.projectId);
+        const alreadyRecorded =
+          projectId !== null ? await eventAlreadyRecorded(db, body.id) : false;
+
+        // Amount of THIS refund: prefer the newest refund object's amount.
+        // data.amount_refunded is cumulative across all refunds on the
+        // charge, so it would double-count on repeated partial-refund events.
+        const latestRefund = data.refunds?.data?.[0];
+        const refundCents: number =
+          latestRefund?.amount ?? data.amount_refunded ?? 0;
+
+        const { error } = await db.from("billing_events").insert({
+          stripe_event_id: body.id,
+          event_type: "charge.refunded",
+          amount_cents: refundCents,
+          currency: data.currency ?? "usd",
+          client_email:
+            data.billing_details?.email ?? data.receipt_email ?? null,
+          client_name: data.billing_details?.name ?? null,
+          description: `Refund issued: ${latestRefund?.reason ?? "requested_by_customer"}`,
+          project_id: projectId,
+          metadata: {
+            charge_id: data.id,
+            refund_id: latestRefund?.id ?? null,
+            payment_intent: data.payment_intent,
+            amount_refunded_cumulative: data.amount_refunded ?? 0,
+          },
+        });
+        if (error) console.error("[stripe-webhook] Insert error:", error);
+
+        // Post a negative ledger entry so the immutable ledger and the portal
+        // financials reflect the reversal. Same idempotency guard as payments.
+        if (projectId !== null && !alreadyRecorded && refundCents > 0) {
+          const dollars = (-(refundCents / 100)).toFixed(2);
+          const currency = (data.currency || "usd").toUpperCase();
+          const { error: ledgerError } = await db
+            .from("ledger_entries")
+            .insert({
+              project_id: projectId,
+              author_id: null,
+              entry_type: "milestone",
+              title: "Refund issued",
+              description: `Refund of ${(refundCents / 100).toFixed(2)} ${currency} issued via Stripe (charge ${data.id}).`,
+              amount_delta: dollars,
+              document_url: null,
+              document_name: null,
+              visible_to_client: true,
+            });
+          if (ledgerError)
+            console.error("[stripe-webhook] Ledger insert error:", ledgerError);
+        }
         break;
       }
 

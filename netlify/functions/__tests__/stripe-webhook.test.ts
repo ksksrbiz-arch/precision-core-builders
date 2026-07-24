@@ -41,7 +41,10 @@ function mockEvent(opts: {
 }
 
 const insertMock = vi.fn(() => Promise.resolve({ error: null }));
-const fromMock = vi.fn(() => ({ insert: insertMock }));
+// Kept as a named impl so refund tests can restore it after swapping in a
+// richer per-table mock.
+const defaultFromImpl = () => ({ insert: insertMock });
+const fromMock = vi.fn(defaultFromImpl);
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({ from: fromMock })),
@@ -274,5 +277,98 @@ describe("stripe-webhook handler", () => {
     expect(insertMock).not.toHaveBeenCalled();
     const parsed = JSON.parse(res!.body as string);
     expect(parsed.ignored).toBe("customer.created");
+  });
+});
+
+describe("charge.refunded", () => {
+  const billingInsert = vi.fn(() => Promise.resolve({ error: null }));
+  const ledgerInsert = vi.fn(() => Promise.resolve({ error: null }));
+  const limitMock = vi.fn(() => Promise.resolve({ data: [], error: null }));
+
+  beforeEach(() => {
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", WEBHOOK_SECRET);
+    vi.stubEnv("SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+    billingInsert.mockClear();
+    ledgerInsert.mockClear();
+    limitMock.mockClear();
+    fromMock.mockImplementation(((table: string) => ({
+      insert: table === "ledger_entries" ? ledgerInsert : billingInsert,
+      select: () => ({ eq: () => ({ limit: limitMock }) }),
+    })) as any);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    fromMock.mockImplementation(defaultFromImpl);
+  });
+
+  function refundEvent(overrides: Record<string, unknown> = {}) {
+    const body = JSON.stringify({
+      id: "evt_ref_1",
+      type: "charge.refunded",
+      data: {
+        object: {
+          id: "ch_1",
+          amount: 250000,
+          amount_refunded: 25000,
+          currency: "usd",
+          payment_intent: "pi_1",
+          metadata: { project_id: "42" },
+          billing_details: {
+            email: "client@example.com",
+            name: "Test Client",
+          },
+          refunds: {
+            data: [
+              { id: "re_1", amount: 25000, reason: "requested_by_customer" },
+            ],
+          },
+          ...overrides,
+        },
+      },
+    });
+    return { body, sig: signPayload(body) };
+  }
+
+  it("records the refund and posts a negative ledger reversal", async () => {
+    const handler = await loadHandler();
+    const { body, sig } = refundEvent();
+    const res = await handler(
+      mockEvent({ body, signature: sig }) as any,
+      {} as any
+    );
+
+    expect(res!.statusCode).toBe(200);
+    expect(billingInsert).toHaveBeenCalledTimes(1);
+    const evt = billingInsert.mock.calls[0]![0] as Record<string, unknown>;
+    expect(evt.event_type).toBe("charge.refunded");
+    expect(evt.amount_cents).toBe(25000);
+    expect(evt.project_id).toBe(42);
+
+    expect(ledgerInsert).toHaveBeenCalledTimes(1);
+    const ledger = ledgerInsert.mock.calls[0]![0] as Record<string, unknown>;
+    expect(ledger.project_id).toBe(42);
+    expect(ledger.amount_delta).toBe("-250.00");
+    expect(ledger.title).toBe("Refund issued");
+  });
+
+  it("skips the ledger reversal when the event was already recorded", async () => {
+    limitMock.mockResolvedValueOnce({ data: [{ id: 7 }], error: null });
+    const handler = await loadHandler();
+    const { body, sig } = refundEvent();
+    await handler(mockEvent({ body, signature: sig }) as any, {} as any);
+
+    expect(billingInsert).toHaveBeenCalledTimes(1);
+    expect(ledgerInsert).not.toHaveBeenCalled();
+  });
+
+  it("skips the ledger reversal when no project id is resolvable", async () => {
+    const handler = await loadHandler();
+    const { body, sig } = refundEvent({ metadata: {} });
+    await handler(mockEvent({ body, signature: sig }) as any, {} as any);
+
+    expect(billingInsert).toHaveBeenCalledTimes(1);
+    expect(ledgerInsert).not.toHaveBeenCalled();
   });
 });
