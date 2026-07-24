@@ -49,6 +49,7 @@
 - [ ] Print-friendly result layout (`@media print` rules: hide nav/buttons, clean single-column breakdown)
 - **Acceptance:** `pnpm check` + `pnpm test` pass; verify with browser print preview
 
+
 ### [BOT-6] Test coverage push: shared libs + hooks (moves SUCCESS METRICS coverage off ~10%)
 
 - **Files:** new `*.test.ts(x)` beside `client/src/hooks/`, `client/src/lib/`, `shared/`, `server/_core/` utilities
@@ -163,217 +164,569 @@ Public estimator form plus admin estimate authoring/edit UI are live.
   - [x] Additional Notes textarea
   - [x] Submit button
 - **Integration:**
-  - [x] Call `estimator.generate` mutation on submit
-  - [x] Show loading state during calculation
-  - [x] Display results with cost breakdown
-  - [x] Add "Request Detailed Quote" CTA → stores lead + opens contact modal with reference
-  - [x] Admin authoring: `EstimateEditor.tsx` + `estimate.saveDraft` / `estimate.send`
+  - [x] Call `/api/estimate-project` function on submit
+  - [x] Display loading spinner while processing
+  - [x] Show 3-tier results (Low/Mid/High)
+  - [x] Render cost breakdown by category (Labor, Materials, Permits, Contingency)
+  - [x] Show Claude's reasoning
+  - [x] "Save Estimate" button (for authenticated users)
+- **UI/UX:**
+  - [x] Responsive design (mobile-first)
+  - [x] Error messages for validation
+  - [x] Success message after estimate
+  - [ ] Share estimate via email (optional)
+  - [ ] Print-friendly format
 - **Testing:**
-  - [x] Test all project types generate estimates
-  - [x] Test edge cases (0 sq ft, 10000+ sq ft)
-  - [x] Verify cost calculations are reasonable
+  - [x] Submit estimator form; verify API call succeeds
+  - [x] Verify 3-tier pricing displays correctly
+  - [x] Test with missing fields (should validate)
+  - [x] Save estimate; verify stored in database
 - **Acceptance Criteria:**
-  - Form submits successfully ✅
-  - Estimate displays in <5 seconds ✅
-  - Results are itemized and professional ✅
-  - Mobile responsive ✅
-
-### [CRITICAL-4] Add Lead Scoring to Estimate Submissions ✅ _Shipped_
-
-AI lead scoring is live in the Command Center Leads tab.
-
-- **Why Critical:** Prioritizes high-value leads automatically
-- **File:** `client/src/pages/admin/LeadsView.tsx` (in Command Center)
-- **Implementation:**
-  - [x] Fetch all estimates from `estimates` table
-  - [x] Score each estimate (budget range, timeline, project type)
-  - [x] Display score as badge (Hot 🔥, Warm ⚡, Cold ❄️)
-  - [x] Sort by score (highest first)
-  - [x] Add filter by score
-- **Scoring Logic (already in `server/routers/estimator.ts`):**
-  - Budget >$500K: +30 points
-  - Timeline <3 months: +20 points
-  - New Home construction: +25 points
-  - High-end materials: +15 points
-  - Decision-maker contact: +10 points
-- **Acceptance Criteria:**
-  - All estimates appear in leads view ✅
-  - Scores calculated correctly ✅
-  - Hot leads sorted to top ✅
+  - Form submits and returns estimate within 5 seconds
+  - Cost breakdown totals match overall estimate
+  - Form is mobile-friendly and accessible
 
 ---
 
-## PHASE 2: Core Operations (Week 2-3)
+## PHASE 2: Core Operations (Priority 1 — Week 1)
 
-### [PHASE2-1] Enhance Field Report Workflow
+### [PHASE2-1] Implement Field Report Publishing Workflow
 
-- **Current:** Voice memo → transcription → structured report
-- **Enhancements:**
-  - [ ] Add photo upload to field reports (before/after shots)
-  - [ ] Auto-tag photos with project/date via AI vision
-  - [ ] Add "Client Visible" toggle per report (default: true)
-  - [ ] Email notification to client when new report published
-  - [ ] PDF export of daily report
-- **Files:**
-  - `client/src/pages/admin/FieldReports.tsx`
-  - `client/src/pages/portal/FieldReportsList.tsx`
-  - `server/routers/fieldReports.ts`
+- **File:** `client/src/pages/admin/FieldReportNew.tsx`
+- **UI Flow:**
+  - [ ] Show VoiceRecorder component
+  - [ ] Display transcription after recording
+  - [ ] Auto-generate report via Claude
+  - [ ] Show report preview (tasks, materials, issues)
+  - [ ] Allow manual edits to report
+  - [ ] "Publish to Client Portal" button
+  - [ ] Confirmation dialog
+- **Backend:**
+  - [ ] Call `/api/voice-to-report` on audio upload
+  - [ ] Get report from database
+  - [ ] Allow edits via `fieldReportsRouter.update()`
+  - [ ] Publish via `fieldReportsRouter.publish()`
+- **Testing:**
+  - [ ] Record audio → transcription appears
+  - [ ] Report generates from transcription
+  - [ ] Edit report → save changes
+  - [ ] Publish → appears on client portal instantly
+- **Acceptance Criteria:**
+  - End-to-end voice→transcription→report→publish works
+  - Report edits are saved correctly
+  - Client portal updates in real-time
 
-### [PHASE2-2] Weather Integration & Smart Scheduling
+### [PHASE2-2] Build Client Portal Dashboard
 
-- **Current:** Placeholder for weather API
-- **Implementation:**
-  - [ ] Integrate OpenWeatherMap API (free tier: 1000 calls/day)
-  - [ ] Add weather forecast widget to `ScheduleView.tsx`
-  - [ ] Create `weather.getForecast` endpoint
-  - [ ] Add "Weather Alert" banner when rain predicted
-  - [ ] Auto-suggest task rescheduling based on forecast
+- **File:** `client/src/pages/portal/PortalDashboard.tsx`
+- **Components:**
+  - [ ] Project timeline (vertical or horizontal)
+  - [ ] Current milestone status
+  - [ ] Budget tracker with % complete
+  - [ ] Next 3 upcoming tasks
+  - [ ] Latest field reports (3 most recent)
+  - [ ] Document section (contracts, permits, inspections)
+  - [ ] Quick contact button to Eric
+- **Integration:**
+  - [ ] Fetch project via `projectsRouter.get()`
+  - [ ] Fetch latest field reports via `fieldReportsRouter.list()`
+  - [ ] Fetch schedule via `scheduleRouter.list()`
+  - [ ] Real-time updates (Supabase Realtime)
+- **Testing:**
+  - [ ] Verify correct project data displays
+  - [ ] Real-time updates when Eric publishes report
+  - [ ] Budget calculations accurate
+  - [ ] Mobile responsive
+- **Acceptance Criteria:**
+  - Dashboard loads in <2 seconds
+  - All data is real-time synchronized
+  - Mobile and desktop layouts work
+
+### [PHASE2-3] Complete Schedule View Admin Page
+
+- **File:** `client/src/pages/admin/ScheduleView.tsx`
+- **Components:**
+  - [ ] GanttChart component (from CRITICAL-1)
+  - [ ] Weather forecast widget (showing 7-day forecast for Eugene, OR)
+  - [ ] Task detail panel (on task click)
+  - [ ] Add new task form
+  - [ ] Task dependency editor
+  - [ ] Weather alert banner (if rain predicted)
+- **Features:**
+  - [ ] Drag tasks to reschedule
+  - [ ] Auto-reschedule indoor tasks if rain predicted
+  - [ ] Show crew availability (if tracking)
+  - [ ] Show material availability
+- **Testing:**
+  - [ ] Add new task; verify in Gantt
+  - [ ] Drag task; verify date update
+  - [ ] Check weather alerts trigger
+  - [ ] Verify dependencies display correctly
+- **Acceptance Criteria:**
+  - Gantt displays all project tasks
+  - Weather-responsive rescheduling works
+  - Crew/material constraints respected
+
+### [PHASE2-4] Implement Material Shortage Alerts
+
+- **File:** Extend `netlify/functions/voice-to-report.ts`
 - **Logic:**
-  - If precipitation >50% on outdoor task date, highlight in red
-  - Suggest moving to next clear day
-  - Update Gantt automatically (with Eric's approval)
-- **Files:**
-  - `server/routers/weather.ts`
-  - `client/src/components/WeatherWidget.tsx`
+  - [ ] After report generation, check `materialsUsed` array
+  - [ ] Query `materials` table for current stock
+  - [ ] Flag shortages (stock < usage)
+  - [ ] Insert notification via `notificationsRouter.send()`
+  - [ ] Send SMS/email via n8n webhook
+- **Testing:**
+  - [ ] Record field report mentioning "10 bags of concrete"
+  - [ ] If stock < 10, verify shortage alert created
+  - [ ] Verify notification sent to Eric
+- **Acceptance Criteria:**
+  - Shortages detected automatically
+  - Notifications sent within 1 minute
+  - Alert includes quantity gap
 
-### [PHASE2-3] Schedule Management
+### [PHASE2-5] Build Sub-Contractor Notification Workflow
 
-- [ ] Add new task form in `ScheduleView.tsx`
-- [ ] Edit task details (title, dates, status, dependencies)
-- [ ] Delete task with confirmation
-- [ ] Add task dependencies (e.g., "Foundation" must complete before "Framing")
-- [ ] Visualize dependencies in Gantt (connecting lines)
-- [ ] Weather forecast widget showing 7-day forecast for Eugene, OR
-- [ ] Weather alert banner when precipitation >50% and outdoor tasks scheduled
-- [ ] Add weather-sensitive task flag to task creation/edit form
-
-### [PHASE2-4] Weather Dashboard Integration ✅ _Core logic shipped_
-
-Implemented in `client/src/components/WeatherImpactDashboard.tsx`:
-
-- [x] Weather-sensitive task indicators (weather icon on outdoor tasks)
-- [x] Weather alert dashboard component
-- [x] Integrate OpenWeatherMap API (fetch forecast for next 7 days)
-- [x] Display weather alerts when precipitation >50% probability
-- [x] Show suggested schedule adjustments (postpone outdoor tasks to next clear day)
-- [x] Create notifications when weather affects multiple tasks
-- [ ] Verify end-to-end behavior against live forecast data in production
-
----
-
-## PHASE 3: Client Portal & Communication (Week 3-4)
-
-### [PHASE3-1] Client Portal Dashboard
-
-- [ ] Project progress bar (% complete based on milestones)
-- [ ] Latest field reports (last 3)
-- [ ] Upcoming milestones (next 30 days)
-- [ ] Budget summary (spent vs. remaining)
-- [ ] Photo gallery (latest site photos)
-- [ ] Message center (client ↔ Eric communication)
-
-### [PHASE3-2] Client Notifications
-
-- [ ] Email when new field report published
-- [ ] Email when milestone completed
-- [ ] Email when invoice ready
-- [ ] SMS option for urgent updates (via n8n/Twilio)
-- [ ] Notification preferences in client settings
-
-### [PHASE3-3] Document Sharing
-
-- [ ] Upload contracts, permits, change orders
-- [ ] Client can view/download (PDF viewer)
-- [ ] E-signature integration (DocuSign or HelloSign)
-- [ ] Version history for documents
+- **File:** New utility `server/_core/notifications.ts`
+- **Integration:**
+  - [ ] When task assigned to sub-contractor, trigger n8n webhook
+  - [ ] n8n sends SMS with task details + site access code
+  - [ ] n8n sends site plan (PDF or image)
+  - [ ] n8n sends safety briefing (link or document)
+- **Testing:**
+  - [ ] Assign task to sub-contractor
+  - [ ] Verify SMS sent (via n8n logs)
+  - [ ] Verify correct task details in message
+  - [ ] Verify sub-contractor can access site plan
+- **Acceptance Criteria:**
+  - Notifications sent automatically
+  - All required info included in message
+  - No duplicates or missed notifications
 
 ---
 
-## PHASE 4: Financial Management (Week 4-5)
+## PHASE 3: Client Experience (Priority 2 — Week 1-2)
 
-### [PHASE4-1] Invoicing System
+### [PHASE3-1] Build Digital Finish Showroom
 
-- [ ] Create invoice from milestone
-- [ ] Line items with cost codes
-- [ ] Tax calculation (Oregon has no sales tax, but track for subs)
-- [ ] PDF generation
-- [ ] Email to client
-- [ ] Track payment status (sent, viewed, paid, overdue)
-- [ ] Stripe payment link integration
+- **File:** `client/src/pages/portal/PortalFinishes.tsx`
+- **Components:**
+  - [ ] Product catalog (kitchen, bathroom, flooring, paint, fixtures)
+  - [ ] Image gallery for each product
+  - [ ] Cost for each option
+  - [ ] Budget impact calculator (shows delta from baseline)
+  - [ ] Selection workflow (add to cart, confirm)
+  - [ ] Saved selections list
+- **Database:**
+  - [ ] Populate `finish_selections` table with sample products
+  - [ ] Link to project budget
+- **Integration:**
+  - [ ] Fetch available finishes via `finishSelectionsRouter.list()`
+  - [ ] Calculate budget impact via `finishSelectionsRouter.calcBudgetImpact()`
+  - [ ] Save selection via `finishSelectionsRouter.create()`
+  - [ ] Notify Eric of selection via n8n
+- **Testing:**
+  - [ ] Select finish; verify budget delta calculation
+  - [ ] Confirm selection; verify saved to database
+  - [ ] Verify Eric receives notification
+- **Acceptance Criteria:**
+  - Selections update project budget in real-time
+  - Budget impact shown before confirmation
+  - Selections visible to Eric immediately
 
-### [PHASE4-2] Expense Tracking
+### [PHASE3-2] Implement Core Values Ledger
 
-- [ ] Receipt photo upload
-- [ ] OCR to extract vendor, amount, date
-- [ ] Categorize by cost code (labor, materials, permits, subs)
-- [ ] Link to project
-- [ ] Monthly expense report
+- **File:** `client/src/pages/portal/PortalLedger.tsx` & admin version
+- **Components:**
+  - [ ] Timeline of all decisions (chronological)
+  - [ ] Decision type badges (Change Order, Approval, Deviation, etc.)
+  - [ ] Cost impact display
+  - [ ] Stakeholder info (who approved, when)
+  - [ ] Notes/comments from Eric
+- **Database:**
+  - [ ] Fetch ledger entries via `ledgerRouter.list()`
+- **Integration:**
+  - [ ] Auto-create ledger entry for every significant action
+    - [ ] Finish selection
+    - [ ] Change order approval
+    - [ ] Milestone completion
+    - [ ] Budget adjustment
+- **Testing:**
+  - [ ] Select finish → verify ledger entry created
+  - [ ] Approve change order → verify entry logged
+  - [ ] Ledger visible to client
+- **Acceptance Criteria:**
+  - All project decisions tracked immutably
+  - Client sees transparent decision history
+  - Entries cannot be modified or deleted
 
-### [PHASE4-3] Profitability Dashboard
+### [PHASE3-3] Build Stripe Billing Integration
 
-- [ ] Estimated vs. actual costs per project
-- [ ] Profit margin by project type
-- [ ] Labor hours tracking (crew check-in/out)
-- [ ] Subcontractor cost tracking
-- [ ] Cash flow projection
+- **File:** `netlify/functions/stripe-billing.ts` + `BillingView.tsx`
+- **Features:**
+  - [ ] Milestone-based invoice generation
+  - [ ] Invoice PDF download
+  - [ ] Payment form (Stripe Elements)
+  - [ ] Recurring payment setup (if retainer)
+  - [ ] Payment status tracking
+  - [ ] Automatic receipt email
+- **Database:**
+  - [ ] Store invoices in new `invoices` table (project_id, amount, status, paid_at)
+- **Integration:**
+  - [ ] Call Stripe API to create payment intent
+  - [ ] On successful payment, mark invoice as paid
+  - [ ] Create ledger entry for payment
+- **Testing:**
+  - [ ] Create invoice for completed milestone
+  - [ ] Client submits payment via Stripe
+  - [ ] Payment processed; invoice marked paid
+  - [ ] Receipt emailed to client
+- **Acceptance Criteria:**
+  - Invoices generated and sent to clients
+  - Payments processed securely via Stripe
+  - No manual invoice entry required
 
 ---
 
-## PHASE 5: AI & Automation (Week 5-6)
+## PHASE 3.5: Blueprint.am Integration ✅ _Shipped — gated by `VITE_FEATURE_BLUEPRINT=true`_
 
-### [PHASE5-1] LLM-Powered Search
+See [`docs/integrations/blueprint.md`](docs/integrations/blueprint.md) for full setup and troubleshooting.
 
-- [ ] Natural language query: "What was the total spend on Spyglass?"
-- [ ] Search across projects, expenses, field reports
-- [ ] Generate summary reports on demand
-- [ ] "Ask the Foreman" chatbot in Command Center
+### [BLUEPRINT-1] Connection management — ✅ Done
 
-### [PHASE5-2] Automated Purchase Orders
+- [x] `blueprint_connections` table in `drizzle/schema.ts` (tokens AES-256-GCM encrypted at rest)
+- [x] `blueprint_artifacts` table for project-scoped Blueprint resource references
+- [x] `server/_core/crypto.ts` — AES-256-GCM encrypt/decrypt + HMAC OAuth `state` signing
+- [x] `blueprintRouter` — `getConnectionStatus`, `startOAuth`, `completeOAuth`, `saveApiKey`, `disconnect`
+- [x] `BLUEPRINT_ENCRYPTION_KEY` env var in `server/_core/env.ts` and `.env.example`
+- [x] Admin page `/admin/blueprint` (OAuth + API-key connect, status indicator, disconnect)
+- [x] Client portal page `/portal/blueprint` (onboarding guard + read-only artifact list)
+- [x] Nav entry in `DashboardLayout` + portal nav link in `PortalLayout` (both flag-gated)
 
-- [ ] Generate PO when materials low (based on schedule)
-- [ ] Draft email to vendor with PO attached
-- [ ] Track PO status (drafted, sent, confirmed, delivered)
-- [ ] Integration with supplier APIs (Home Depot, Lowe's)
+### [BLUEPRINT-2] Netlify Functions — ✅ Done
 
-### [PHASE5-3] Sub-Contractor Orchestration
+- [x] `blueprint-oauth-callback` — verifies signed state, exchanges code, persists encrypted tokens
+- [x] `blueprint-proxy` — PCB-JWT auth, strict path allowlist, per-IP rate limit, tokens stay server-side
 
-- [ ] Sub-contractor database (contact, trade, insurance, rates)
-- [ ] Automated scheduling emails/SMS
-- [ ] Site access codes (generate unique codes per sub)
-- [ ] Safety briefing PDF auto-sent before first day
-- [ ] Track sub performance (on-time %, quality rating)
+### [BLUEPRINT-3] Artifact sharing — ✅ Done
+
+- [x] `attachArtifact` / `removeArtifact` admin procedures (ledger-logged)
+- [x] `listArtifacts` — admins see all; clients see only `visible_to_client = true` rows
+- [x] 16 Vitest tests covering auth, crypto round-trip, state tamper/expiry, input validation
+
+### [BLUEPRINT-4] Pending / Future
+
+- [ ] Activate OAuth button once Blueprint publishes `BLUEPRINT_CLIENT_ID` / `_SECRET`
+- [ ] Token-refresh flow in `blueprint-proxy` (exchange refresh token when access token expires)
+- [ ] Expand `ALLOWED_PATH_PATTERNS` in `blueprint-proxy.ts` as API surface is documented
+- [ ] Write-back / sync actions (import Blueprint plans as PCB schedule items) — read path must be stable first
+- [ ] Client portal E2E test: connect → view artifact → disconnect → verify cleanup
 
 ---
 
-## TECHNICAL DEBT & INFRASTRUCTURE
+## PHASE 4: Automation & Procurement (Priority 2 — Week 2)
 
-### [INFRA-1] Testing
+### [PHASE4-1] Implement AI Lead Scoring ✅ _Shipped_
 
-- [ ] Unit tests for `estimator.ts` calculations
-- [ ] Integration tests for tRPC routers
-- [ ] E2E tests for critical flows (submit estimate, create field report, update schedule)
-- [ ] Test coverage target: >80%
+AI lead scoring + capture is live; scored leads persist in the `leads` table.
 
-### [INFRA-2] Performance
+- **File:** `netlify/functions/lead-score.ts`
+- **Algorithm:**
+  - [x] Score based on project type (residential > commercial)
+  - [x] Score based on budget (higher budget = higher priority)
+  - [x] Score based on timeline (urgent = higher priority)
+  - [x] Score based on complexity (high-end = higher priority)
+  - [ ] Score based on Eric's past success with similar projects
+- **Integration:**
+  - [x] Call `lead-score` function when lead intake form submitted
+  - [x] Store score in database (`leads` table)
+  - [x] Sort leads by score in Command Center
+- **Testing:**
+  - [x] Submit lead → verify score calculated
+  - [x] Scores sort correctly (high to low)
+  - [x] Score reasonably reflects lead quality
+- **Acceptance Criteria:**
+  - Leads automatically prioritized by score
+  - Scoring algorithm transparent (show reasoning)
+  - High-value leads highlighted for Eric
 
-- [ ] Image optimization (lazy loading, WebP format)
+### [PHASE4-2] Build Material Procurement UI — _PO generation shipped_
+
+Shortage detection and persisted, vendor-bucketed purchase orders are live
+(`purchase_orders` / `purchase_order_items` tables). Live vendor-pricing API
+integration and delivery tracking remain pending.
+
+- **File:** `client/src/pages/admin/MaterialsView.tsx`
+- **Components:**
+  - [x] Inventory table (item, quantity, unit cost, vendor, status)
+  - [x] Add new material form
+  - [ ] Vendor multi-select
+  - [ ] Bulk import from project estimate
+  - [x] Generate Purchase Order (persisted, vendor-bucketed)
+  - [ ] Delivery tracking (expected vs actual)
+- **Integration:**
+  - [x] Fetch materials via `materialsRouter.list()`
+  - [x] Create new material via `materialsRouter.create()`
+  - [x] Call `/api/material-procurement` to generate PO
+  - [ ] Track delivery status in database
+- **Testing:**
+  - [ ] Add material → saves to database
+  - [ ] Generate PO → creates PDF or email
+  - [ ] Verify PO includes quantity, cost, vendor
+- **Acceptance Criteria:**
+  - Materials tracked from purchase to delivery
+  - Vendors contacted automatically
+  - POs generated without manual data entry
+
+### [PHASE4-3] Create n8n Workflows
+
+- **Workflows to Build:**
+  - [ ] **Lead Intake:** Contact form → lead score → email to Eric
+  - [ ] **Project Milestone:** Milestone reached → invoice generated → email sent
+  - [ ] **Sub-Contractor Assignment:** Task assigned → SMS with details
+  - [ ] **Material Shortage:** Shortage detected → vendor contact → PO generation
+  - [ ] **Client Approval Request:** Change order → email to client → approval → ledger entry
+  - [ ] **Weekly Summary:** Friday summary email → all projects status
+- **Testing:**
+  - [ ] Trigger each workflow; verify execution
+  - [ ] Verify correct recipients receive notifications
+  - [ ] Verify data accuracy in outgoing messages
+- **Acceptance Criteria:**
+  - All core workflows automated
+  - No manual email/SMS required
+  - Workflows handle errors gracefully
+
+### [PHASE4-4] Implement Vendor Pricing API Integration
+
+- **File:** Extend `netlify/functions/material-procurement.ts`
+- **Integrations:**
+  - [ ] Home Depot API (inventory + pricing)
+  - [ ] Lowe's API (inventory + pricing)
+  - [ ] Supplier APIs (if applicable)
+- **Features:**
+  - [ ] Auto-fetch current prices
+  - [ ] Alert if prices spike >10%
+  - [ ] Suggest alternative vendors if price drops
+  - [ ] Track price history for cost tracking
+- **Testing:**
+  - [ ] Query material pricing → returns current rates
+  - [ ] Verify price alerts trigger
+  - [ ] Verify alternative vendors suggested
+- **Acceptance Criteria:**
+  - Material pricing always current
+  - Cost estimates accurate within 5%
+  - Vendor suggestions data-driven
+
+---
+
+## PHASE 5: Analytics & Portfolio (Priority 3 — Week 2-3)
+
+### [PHASE5-1] Complete Command Center Dashboard
+
+- **File:** `client/src/pages/admin/CommandCenter.tsx`
+- **Widgets:**
+  - [ ] Active projects count + revenue
+  - [ ] YTD revenue + margin %
+  - [ ] Average project duration
+  - [ ] Client satisfaction score (if tracking reviews)
+  - [ ] Lead pipeline (by stage)
+  - [ ] Team utilization (crew availability)
+  - [ ] Material costs vs budget
+  - [ ] Upcoming milestones (next 30 days)
+- **Charts (Recharts):**
+  - [ ] Revenue trend (monthly)
+  - [ ] Project status pie chart
+  - [ ] Lead conversion funnel
+  - [ ] Crew utilization heatmap
+- **Integration:**
+  - [ ] Fetch data via multiple tRPC procedures
+  - [ ] Real-time updates (Supabase Realtime)
+  - [ ] Drill-down to detailed views
+- **Testing:**
+  - [ ] Verify all widgets populate correctly
+  - [ ] Charts render without errors
+  - [ ] Real-time updates work
+- **Acceptance Criteria:**
+  - Dashboard loads in <2 seconds
+  - All metrics accurate
+  - Mobile responsive
+
+### [PHASE5-2] Build Profitability Tracking Dashboard
+
+- **File:** New page `client/src/pages/admin/ProfitabilityView.tsx`
+- **Metrics:**
+  - [ ] Estimated vs Actual cost comparison
+  - [ ] Project margin % (by project)
+  - [ ] Labor productivity (hours vs cost)
+  - [ ] Material waste tracking
+  - [ ] Crew efficiency (cost per task)
+  - [ ] Profitability trend (monthly)
+- **Integration:**
+  - [ ] Calculate estimated costs from estimates table
+  - [ ] Calculate actual costs from ledger entries
+  - [ ] Track labor hours from schedule items
+- **Testing:**
+  - [ ] Verify margin calculations accurate
+  - [ ] Trend shows realistic data
+  - [ ] Drill-down to project level
+- **Acceptance Criteria:**
+  - Profitability transparent at all levels
+  - Variance analysis highlights problem areas
+  - Actionable insights for pricing adjustments
+
+### [PHASE5-3] Build Portfolio Showcase
+
+- **File:** `client/src/pages/Portfolio.tsx` + `PortfolioAdmin.tsx`
+- **Features:**
+  - [ ] Project gallery (grid layout)
+  - [ ] Filter by project type
+  - [ ] Sort by date, rating, cost
+  - [ ] Detailed project page with:
+    - [ ] Before/after image slider
+    - [ ] Project details (duration, budget, scope)
+    - [ ] Client testimonial (if available)
+    - [ ] Material list
+    - [ ] Timeline of work phases
+  - [ ] Admin: upload images, write description, publish
+- **Database:**
+  - [ ] Populate `portfolio_projects` with completed projects
+  - [ ] Link to original project for cost/timeline data
+- **Integration:**
+  - [ ] Fetch portfolio via `portfolioRouter.list()`
+  - [ ] Get project details via `projectsRouter.get()`
+- **Testing:**
+  - [ ] Portfolio loads all projects
+  - [ ] Filters work correctly
+  - [ ] Project detail page displays all info
+  - [ ] Before/after sliders work smoothly
+- **Acceptance Criteria:**
+  - Portfolio showcases Eric's best work
+  - Loads quickly with images optimized
+  - Generates high-quality leads
+
+### [PHASE5-4] Implement Client Testimonials
+
+- **File:** New component `client/src/components/TestimonialSlider.tsx`
+- **Features:**
+  - [ ] Testimonial form for clients (post-project)
+  - [ ] Rating system (1-5 stars)
+  - [ ] Photo upload (optional)
+  - [ ] Approval workflow (Eric approves before publishing)
+  - [ ] Display on portfolio + home page
+- **Database:**
+  - [ ] New `testimonials` table (client_id, project_id, rating, text, photo_url, approved_at)
+- **Integration:**
+  - [ ] Show testimonial form in portal post-completion
+  - [ ] Send approval request to Eric via n8n
+  - [ ] Display approved testimonials on public site
+- **Testing:**
+  - [ ] Client submits testimonial → saved to database
+  - [ ] Unapproved testimonials not visible publicly
+  - [ ] Approved testimonials display on portfolio
+- **Acceptance Criteria:**
+  - Testimonials automatically collected
+  - Social proof visible to potential clients
+  - Improves conversion rate
+
+---
+
+## POLISH & OPTIMIZATION (Priority 3 — Week 3)
+
+### [POLISH-1] Performance Optimization
+
+- [ ] Dynamic import for Mermaid diagram library (500KB reduction)
+- [ ] Dynamic import for KaTeX math library (76KB reduction)
+- [ ] Image lazy loading for portfolio
 - [ ] Code splitting for admin routes
-- [ ] Database query optimization (N+1 queries)
-- [ ] Add Redis cache for weather API responses
+- [ ] Service worker caching strategy (stale-while-revalidate)
+- [ ] Bundle analysis and optimization
+- **Target:** Lighthouse 85+ across all metrics
 
-### [INFRA-3] Security
+### [POLISH-2] Accessibility & SEO Audit
 
-- [ ] Rate limiting on public endpoints
-- [ ] CORS configuration review
-- [ ] Environment variable audit
-- [ ] Supabase RLS policy testing
+- [ ] WCAG 2.1 AA audit using axe DevTools
+- [ ] Fix any accessibility issues
+- [ ] Add meta tags (title, description) to all pages
+- [ ] Add structured data (JSON-LD) for projects
+- [ ] Add Open Graph tags for social sharing
+- [ ] Verify mobile responsiveness on actual devices
+- [ ] Test keyboard navigation on all forms
+- [ ] **Target:** 100% WCAG AA compliance
 
-### [INFRA-4] Deployment
+### [POLISH-3] Error Tracking & Monitoring
 
-- [ ] Set up staging environment on Netlify
-- [ ] Configure custom domain (precisioncorebuilders.com)
-- [ ] SSL certificate
-- [ ] Database backups (daily)
+- [ ] Set up Sentry for error tracking
+- [ ] Add Sentry to Netlify environment
+- [ ] Log all Netlify Function errors
+- [ ] Set up alerts for critical errors
+- [ ] Create runbook for common errors
+
+### [POLISH-4] Testing & Documentation
+
+- [ ] Write E2E tests for:
+  - [ ] Voice recording → field report → publish
+  - [ ] Estimator form → quote → save
+  - [ ] Field report publication → client portal real-time update
+  - [ ] Finish selection → budget impact → ledger entry
+- [ ] Write API documentation (tRPC procedures)
+- [ ] Create user guides:
+  - [ ] Eric (admin) guide
+  - [ ] Client portal guide
+  - [ ] Estimator guide
+- [ ] Create deployment runbook
+
+### [POLISH-5] Cross-Browser & Mobile Testing
+
+- [ ] Test on Chrome, Safari, Firefox, Edge
+- [ ] Test on iOS (iPhone 12+, iPhone SE)
+- [ ] Test on Android (Pixel 6+, Samsung S21+)
+- [ ] Fix any layout/functionality issues
+- [ ] Verify PWA installation on mobile
+- [ ] Test offline functionality
+
+---
+
+## INFRASTRUCTURE & DEVOPS
+
+### [INFRA-1] Database Maintenance
+
+- [ ] Review RLS policies for security
+- [ ] Add indexes to frequently queried columns
+- [ ] Set up automated backups
+- [ ] Test data restore procedures
+- [ ] Document schema and migration process
+
+### [INFRA-2] Environment Variables
+
+- [ ] Verify all required env vars in Netlify dashboard:
+  - [ ] SUPABASE_URL
+  - [ ] SUPABASE_ANON_KEY
+  - [ ] SUPABASE_SERVICE_ROLE_KEY
+  - [ ] ANTHROPIC_API_KEY
+  - [ ] OPENAI_API_KEY
+  - [ ] OPENWEATHERMAP_API_KEY
+  - [ ] STRIPE_SECRET_KEY
+  - [ ] N8N_WEBHOOK_URL
+  - [ ] BLUEPRINT*ENCRYPTION_KEY *(required to enable Blueprint integration)\_
+  - [ ] BLUEPRINT*CLIENT_ID / BLUEPRINT_CLIENT_SECRET *(optional — enables OAuth button)\_
+- [ ] Rotate secrets quarterly
+- [ ] Document env var purpose and retrieval
+
+### [INFRA-3] CI/CD Pipeline Enhancement
+
+- [ ] Add pre-commit hooks (prettier, eslint)
+- [ ] Add automated unit test execution in GitHub Actions
+- [ ] Add E2E tests to CI/CD (Playwright or Cypress)
+- [ ] Add security scanning (Snyk, OWASP)
+- [ ] Add lighthouse performance check
+- [ ] Add staging environment deployment
+
+### [INFRA-4] Domain & SSL Setup
+
+- [ ] Verify domain points to Netlify
+- [ ] SSL certificate auto-generated by Netlify
+- [ ] Set up www redirect (www.precisioncorebuilders.com → precisioncorebuilders.com)
+- [ ] Configure DNS records if needed
 
 ---
 
