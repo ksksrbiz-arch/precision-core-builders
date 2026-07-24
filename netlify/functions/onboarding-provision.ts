@@ -25,12 +25,13 @@
  * Security:
  * - Token-gated with timing-safe comparison (same as setup-env)
  * - Allowlist-gated per phase (can't write arbitrary keys)
- * - Rate-limited per IP via the shared sliding-window limiter
- *   (10 req / 5 min). Defense-in-depth on top of the token gate.
+ * - Rate-limited per IP (10 req / 5 min) — distributed via Upstash Redis
+ *   when configured, in-memory sliding window otherwise. Defense-in-depth
+ *   on top of the token gate.
  */
 import type { Handler } from "@netlify/functions";
 import {
-  checkRateLimit,
+  checkRateLimitDistributed,
   getClientIp,
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
@@ -88,7 +89,7 @@ export const handler: Handler = async event => {
 
   // Rate-limit by IP before doing any auth or parsing work.
   const ip = getClientIp(event.headers as Record<string, string | undefined>);
-  const rl = checkRateLimit(`onboarding-provision:${ip}`, {
+  const rl = await checkRateLimitDistributed(`onboarding-provision:${ip}`, {
     maxRequests: 10,
     windowMs: 5 * 60_000,
   });

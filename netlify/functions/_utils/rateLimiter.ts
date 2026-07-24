@@ -100,3 +100,67 @@ export function getClientIp(
     "unknown"
   );
 }
+
+/**
+ * checkRateLimitDistributed — cross-invocation rate limiting via Upstash
+ * Redis REST. Active only when UPSTASH_REDIS_REST_URL and
+ * UPSTASH_REDIS_REST_TOKEN are configured; otherwise falls back to the
+ * in-memory sliding-window limiter. Fails OPEN on Redis errors (logs and
+ * falls back) so a Redis outage never takes public endpoints down with it.
+ *
+ * Uses a fixed window: INCR the key, then PEXPIRE NX on the first hit.
+ */
+export async function checkRateLimitDistributed(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return checkRateLimit(identifier, config);
+
+  const { maxRequests, windowMs = 60_000 } = config;
+  const key = `rl:${identifier}`;
+  try {
+    const res = await fetch(`${url}/pipeline`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        ["INCR", key],
+        ["PEXPIRE", key, windowMs, "NX"],
+      ]),
+    });
+    if (!res.ok) throw new Error(`Upstash pipeline ${res.status}`);
+    const results = (await res.json()) as Array<{
+      result?: number;
+      error?: string;
+    }>;
+    const cmdError = results.find(r => r.error);
+    if (cmdError) throw new Error(`Upstash: ${cmdError.error}`);
+
+    const count = Number(results[0]?.result ?? 1);
+    if (count > maxRequests) {
+      // Fetch the real TTL for an accurate Retry-After.
+      const ttlRes = await fetch(`${url}/pttl/${encodeURIComponent(key)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const ttlJson = ttlRes.ok
+        ? ((await ttlRes.json()) as { result?: number })
+        : null;
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((ttlJson?.result ?? windowMs) / 1_000)
+      );
+      return { allowed: false, remaining: 0, retryAfter };
+    }
+    return { allowed: true, remaining: maxRequests - count };
+  } catch (err) {
+    console.warn(
+      "[rateLimiter] distributed check failed, using in-memory fallback:",
+      err
+    );
+    return checkRateLimit(identifier, config);
+  }
+}

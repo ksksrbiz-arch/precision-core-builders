@@ -21,13 +21,9 @@ export default defineConfig({
     include: [
       "server/**/*.test.ts",
       "server/**/*.spec.ts",
-      "netlify/functions/__tests__/functions.test.ts",
-      "netlify/functions/__tests__/auth-sync-role.test.ts",
-      "netlify/functions/__tests__/onboarding-*.test.ts",
-      "netlify/functions/__tests__/stripe-*.test.ts",
-      "netlify/functions/__tests__/vision-studio.test.ts",
-      "netlify/functions/__tests__/ai-draft.test.ts",
-      "netlify/functions/__tests__/lib-*.test.ts",
+      // All Netlify function tests — one glob so new suites (e.g.
+      // rate-limiter, admin-auth) run without having to be registered here.
+      "netlify/functions/__tests__/**/*.test.ts",
       "client/src/components/**/*.test.{ts,tsx}",
       "client/src/pages/**/*.test.{ts,tsx}",
       "client/src/lib/**/*.test.ts",
