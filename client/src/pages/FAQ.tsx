@@ -8,6 +8,7 @@ import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { TextReveal } from "@/components/ui/TextReveal";
 import {
   ArrowRight,
   Phone,
@@ -215,9 +216,19 @@ export default function FAQ() {
                 className="text-4xl sm:text-5xl font-semibold leading-tight mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Questions we hear
-                <br />
-                <em className="text-primary italic">all the time.</em>
+                <TextReveal
+                  text="Questions we hear"
+                  className="block"
+                  delay={0.1}
+                  stagger={0.08}
+                />
+                <TextReveal
+                  text="all the time."
+                  className="block"
+                  wordClassName="text-primary italic"
+                  delay={0.45}
+                  stagger={0.08}
+                />
               </h1>
               <p className="text-muted-foreground text-lg font-light leading-relaxed mb-8">
                 Straight answers about working with Precision Core Builders —

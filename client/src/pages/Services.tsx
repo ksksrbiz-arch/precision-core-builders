@@ -11,6 +11,8 @@ import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { TextReveal } from "@/components/ui/TextReveal";
+import { TiltCard } from "@/components/ui/TiltCard";
 import {
   ArrowRight,
   Hammer,
@@ -173,17 +175,24 @@ export default function ServicesPage() {
               >
                 What We Build
               </motion.span>
-              <motion.h1
-                variants={fadeUp}
+              <h1
                 className="text-5xl sm:text-6xl font-semibold leading-tight mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Every trade.
-                <br />
-                <em className="text-primary italic">
-                  One standard of quality.
-                </em>
-              </motion.h1>
+                <TextReveal
+                  text="Every trade."
+                  className="block"
+                  delay={0.1}
+                  stagger={0.08}
+                />
+                <TextReveal
+                  text="One standard of quality."
+                  className="block"
+                  wordClassName="text-primary italic"
+                  delay={0.4}
+                  stagger={0.08}
+                />
+              </h1>
               <motion.p
                 variants={fadeUp}
                 className="text-muted-foreground text-lg leading-relaxed font-light"
@@ -228,93 +237,98 @@ export default function ServicesPage() {
                     {category.services.map((service, i) => {
                       const Icon = service.icon;
                       return (
-                        <motion.a
+                        <TiltCard
                           key={service.href}
-                          href={service.href}
-                          initial={{ opacity: 0, y: 24 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true, margin: "-40px" }}
-                          transition={{
-                            delay: i * 0.07,
-                            duration: 0.6,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
-                          className="group relative bg-card border border-border/60 overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-black/20 transition-all duration-300 flex"
+                          className="h-full"
+                          maxTilt={4}
                         >
-                          {/* Photo */}
-                          <div className="relative w-32 sm:w-40 flex-shrink-0 overflow-hidden">
-                            <img
-                              src={service.photo}
-                              alt={service.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
-                            {/* Icon callout */}
-                            <div className="absolute bottom-2 left-2 flex h-9 w-9 items-center justify-center bg-background/85 text-primary ring-1 ring-primary/30 backdrop-blur-sm">
-                              <Icon className="h-4 w-4" aria-hidden />
+                          <motion.a
+                            href={service.href}
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-40px" }}
+                            transition={{
+                              delay: i * 0.07,
+                              duration: 0.6,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="group relative bg-card border border-border/60 overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-black/20 transition-all duration-300 flex"
+                          >
+                            {/* Photo */}
+                            <div className="relative w-32 sm:w-40 flex-shrink-0 overflow-hidden">
+                              <img
+                                src={service.photo}
+                                alt={service.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
+                              {/* Icon callout */}
+                              <div className="absolute bottom-2 left-2 flex h-9 w-9 items-center justify-center bg-background/85 text-primary ring-1 ring-primary/30 backdrop-blur-sm">
+                                <Icon className="h-4 w-4" aria-hidden />
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Content */}
-                          <div className="flex-1 p-5 sm:p-6">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <h3
-                                className="text-base font-semibold group-hover:text-primary transition-colors duration-200 leading-snug"
-                                style={{ fontFamily: "var(--font-heading)" }}
-                              >
-                                {service.title}
-                              </h3>
-                              {service.tag && (
-                                <span
-                                  className="text-[8px] px-1.5 py-0.5 bg-primary/20 text-primary font-bold tracking-widest uppercase flex-shrink-0"
-                                  style={{
-                                    fontFamily: "var(--font-condensed)",
-                                  }}
+                            {/* Content */}
+                            <div className="flex-1 p-5 sm:p-6">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h3
+                                  className="text-base font-semibold group-hover:text-primary transition-colors duration-200 leading-snug"
+                                  style={{ fontFamily: "var(--font-heading)" }}
                                 >
-                                  {service.tag}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">
-                              {service.desc}
-                            </p>
-
-                            {service.pairedWith &&
-                              service.pairedWith.length > 0 && (
-                                <div className="mb-4">
+                                  {service.title}
+                                </h3>
+                                {service.tag && (
                                   <span
-                                    className="block text-[9px] text-muted-foreground/70 font-semibold tracking-widest uppercase mb-1.5"
+                                    className="text-[8px] px-1.5 py-0.5 bg-primary/20 text-primary font-bold tracking-widest uppercase flex-shrink-0"
                                     style={{
                                       fontFamily: "var(--font-condensed)",
                                     }}
                                   >
-                                    Often paired with
+                                    {service.tag}
                                   </span>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {service.pairedWith.map(paired => (
-                                      <span
-                                        key={paired}
-                                        className="text-[10px] px-2 py-0.5 bg-muted/60 text-muted-foreground"
-                                      >
-                                        {paired}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">
+                                {service.desc}
+                              </p>
 
-                            <span
-                              className="inline-flex items-center gap-1.5 text-[10px] text-primary font-bold tracking-widest uppercase group-hover:gap-2.5 transition-all duration-200"
-                              style={{
-                                fontFamily: "var(--font-condensed)",
-                              }}
-                            >
-                              Learn More <ArrowRight className="h-3 w-3" />
-                            </span>
-                          </div>
-                        </motion.a>
+                              {service.pairedWith &&
+                                service.pairedWith.length > 0 && (
+                                  <div className="mb-4">
+                                    <span
+                                      className="block text-[9px] text-muted-foreground/70 font-semibold tracking-widest uppercase mb-1.5"
+                                      style={{
+                                        fontFamily: "var(--font-condensed)",
+                                      }}
+                                    >
+                                      Often paired with
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {service.pairedWith.map(paired => (
+                                        <span
+                                          key={paired}
+                                          className="text-[10px] px-2 py-0.5 bg-muted/60 text-muted-foreground"
+                                        >
+                                          {paired}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                              <span
+                                className="inline-flex items-center gap-1.5 text-[10px] text-primary font-bold tracking-widest uppercase group-hover:gap-2.5 transition-all duration-200"
+                                style={{
+                                  fontFamily: "var(--font-condensed)",
+                                }}
+                              >
+                                Learn More <ArrowRight className="h-3 w-3" />
+                              </span>
+                            </div>
+                          </motion.a>
+                        </TiltCard>
                       );
                     })}
                   </div>

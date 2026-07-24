@@ -11,6 +11,7 @@ import { TrustBar } from "@/components/layout/TrustBar";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion, useInView } from "framer-motion";
+import { TextReveal } from "@/components/ui/TextReveal";
 import {
   ArrowRight,
   Award,
@@ -137,14 +138,21 @@ export default function About() {
               >
                 About Us
               </motion.span>
-              <motion.h1
-                variants={fadeUp}
-                className="display-hero font-semibold mb-5"
-              >
-                Reliable hands.
-                <br />
-                <em className="text-primary italic">Crafting your world.</em>
-              </motion.h1>
+              <h1 className="display-hero font-semibold mb-5">
+                <TextReveal
+                  text="Reliable hands."
+                  className="block"
+                  delay={0.1}
+                  stagger={0.08}
+                />
+                <TextReveal
+                  text="Crafting your world."
+                  className="block"
+                  wordClassName="text-primary italic"
+                  delay={0.4}
+                  stagger={0.08}
+                />
+              </h1>
               <motion.span
                 variants={fadeUp}
                 className="heading-bar mb-5"
@@ -281,8 +289,15 @@ export default function About() {
         </section>
 
         {/* Company Timeline */}
-        <section className="py-20 sm:py-28 cv-auto">
-          <div className="container">
+        <section className="py-20 sm:py-28 cv-auto relative overflow-hidden">
+          <span
+            aria-hidden
+            className="text-outline pointer-events-none select-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[20vw] leading-none font-semibold"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Since 2004
+          </span>
+          <div className="container relative">
             <div className="text-center mb-14">
               <span
                 className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
@@ -294,8 +309,13 @@ export default function About() {
                 className="text-4xl sm:text-5xl font-semibold"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Two decades of{" "}
-                <em className="text-primary italic">proven craft.</em>
+                <TextReveal text="Two decades of" stagger={0.07} />{" "}
+                <TextReveal
+                  text="proven craft."
+                  wordClassName="text-primary italic"
+                  delay={0.35}
+                  stagger={0.07}
+                />
               </h2>
               <span className="heading-bar mx-auto mt-5" aria-hidden />
             </div>

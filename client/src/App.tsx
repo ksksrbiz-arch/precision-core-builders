@@ -16,6 +16,7 @@ import {
   StickyEstimateCTA,
 } from "./components/SiteEnhancements";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { PageTransition } from "./components/ui/PageTransition";
 import { AdminRoute, ProtectedRoute } from "./components/RouteGuards";
 import type { ComponentType } from "react";
 
@@ -156,162 +157,182 @@ function Router() {
   const blueprintEnabled = import.meta.env.VITE_FEATURE_BLUEPRINT === "true";
   return (
     <Suspense fallback={<PageLoader />}>
-      <Switch>
-        {/* Public */}
-        <Route path="/" component={withBoundary(Home)} />
-        <Route path="/about" component={withBoundary(About)} />
-        <Route path="/services" component={withBoundary(Services)} />
-        <Route path="/portfolio" component={withBoundary(Portfolio)} />
-        <Route
-          path="/portfolio/:slug"
-          component={withBoundary(PortfolioDetail)}
-        />
-        <Route path="/faq" component={withBoundary(FAQ)} />
-        <Route path="/contact" component={withBoundary(Contact)} />
-        <Route path="/estimator" component={withBoundary(Estimator)} />
+      <PageTransition>
+        <Switch>
+          {/* Public */}
+          <Route path="/" component={withBoundary(Home)} />
+          <Route path="/about" component={withBoundary(About)} />
+          <Route path="/services" component={withBoundary(Services)} />
+          <Route path="/portfolio" component={withBoundary(Portfolio)} />
+          <Route
+            path="/portfolio/:slug"
+            component={withBoundary(PortfolioDetail)}
+          />
+          <Route path="/faq" component={withBoundary(FAQ)} />
+          <Route path="/contact" component={withBoundary(Contact)} />
+          <Route path="/estimator" component={withBoundary(Estimator)} />
 
-        {/* Auth */}
-        <Route path="/auth/login" component={withBoundary(AuthLogin)} />
-        <Route path="/auth/callback" component={withBoundary(AuthCallback)} />
-        <Route path="/callback" component={withBoundary(AuthCallback)} />
-        <Route path="/auth/resend" component={withBoundary(ResendLink)} />
-        <Route path="/dev-login" component={withBoundary(DevLogin)} />
+          {/* Auth */}
+          <Route path="/auth/login" component={withBoundary(AuthLogin)} />
+          <Route path="/auth/callback" component={withBoundary(AuthCallback)} />
+          <Route path="/callback" component={withBoundary(AuthCallback)} />
+          <Route path="/auth/resend" component={withBoundary(ResendLink)} />
+          <Route path="/dev-login" component={withBoundary(DevLogin)} />
 
-        {/* Admin — all routes require role=admin via AdminRoute guard.
+          {/* Admin — all routes require role=admin via AdminRoute guard.
             /admin/setup is intentionally NOT wrapped because it has its
             own bootstrapping token flow used before an admin exists. */}
-        <Route path="/admin" component={adminPage(CommandCenter)} />
-        <Route path="/admin/projects" component={adminPage(ProjectsList)} />
-        <Route path="/admin/projects/new" component={adminPage(ProjectNew)} />
-        <Route
-          path="/admin/projects/:id"
-          component={adminPage(ProjectDetail)}
-        />
-        <Route
-          path="/admin/field-reports/new"
-          component={adminPage(FieldReportNew)}
-        />
-        <Route
-          path="/admin/field-reports/:id"
-          component={adminPage(FieldReportDetail)}
-        />
-        <Route
-          path="/admin/field-reports"
-          component={adminPage(FieldReportsList)}
-        />
-        <Route path="/admin/clients/:id" component={adminPage(ClientDetail)} />
-        <Route path="/admin/clients" component={adminPage(ClientsList)} />
-        <Route
-          path="/admin/estimates/new"
-          component={adminPage(EstimateEditor)}
-        />
-        <Route
-          path="/admin/estimates/:id/edit"
-          component={adminPage(EstimateEditor)}
-        />
-        <Route path="/admin/estimates" component={adminPage(EstimatesList)} />
-        <Route
-          path="/admin/sub-contractors"
-          component={adminPage(SubContractorsList)}
-        />
-        <Route path="/admin/vendors" component={adminPage(VendorsList)} />
-        <Route path="/admin/ledger" component={adminPage(LedgerView)} />
-        <Route
-          path="/admin/site-plans"
-          component={adminPage(SitePlanBuilder)}
-        />
-        <Route path="/admin/guides" component={adminPage(Guides)} />
-        <Route path="/admin/schedule" component={adminPage(ScheduleView)} />
-        <Route path="/admin/materials" component={adminPage(MaterialsView)} />
-        <Route path="/admin/billing" component={adminPage(BillingView)} />
-        <Route
-          path="/admin/portfolio-cms"
-          component={adminPage(PortfolioAdmin)}
-        />
-        {/* Bootstrapping wizard — guarded by its own token, not AdminRoute. */}
-        <Route path="/admin/setup" component={withBoundary(SetupWizard)} />
-
-        {/* Public token-gated onboarding wizard for new account owner */}
-        <Route path="/onboarding" component={withBoundary(OnboardingWizard)} />
-        <Route
-          path="/admin/vision-studio"
-          component={adminPage(VisionStudioAdmin)}
-        />
-        <Route path="/admin/search" component={adminPage(SearchView)} />
-        <Route
-          path="/admin/finishes"
-          component={adminPage(FinishSelectionsAdmin)}
-        />
-        <Route path="/admin/analytics" component={adminPage(Analytics)} />
-        <Route
-          path="/admin/profitability"
-          component={adminPage(ProfitabilityView)}
-        />
-        <Route path="/admin/activity-log" component={adminPage(ActivityLog)} />
-        <Route
-          path="/admin/notifications"
-          component={adminPage(NotificationsView)}
-        />
-        {blueprintEnabled && (
+          <Route path="/admin" component={adminPage(CommandCenter)} />
+          <Route path="/admin/projects" component={adminPage(ProjectsList)} />
+          <Route path="/admin/projects/new" component={adminPage(ProjectNew)} />
           <Route
-            path="/admin/blueprint"
-            component={adminPage(BlueprintTools)}
+            path="/admin/projects/:id"
+            component={adminPage(ProjectDetail)}
           />
-        )}
-
-        {/* Client portal — auth required */}
-        <Route path="/portal" component={protectedPage(PortalDashboard)} />
-        <Route
-          path="/portal/reports"
-          component={protectedPage(PortalReports)}
-        />
-        <Route
-          path="/portal/finishes"
-          component={protectedPage(PortalFinishes)}
-        />
-        <Route path="/portal/ledger" component={protectedPage(PortalLedger)} />
-        <Route
-          path="/portal/payments"
-          component={protectedPage(PortalPayments)}
-        />
-        {blueprintEnabled && (
           <Route
-            path="/portal/blueprint"
-            component={protectedPage(PortalBlueprint)}
+            path="/admin/field-reports/new"
+            component={adminPage(FieldReportNew)}
           />
-        )}
+          <Route
+            path="/admin/field-reports/:id"
+            component={adminPage(FieldReportDetail)}
+          />
+          <Route
+            path="/admin/field-reports"
+            component={adminPage(FieldReportsList)}
+          />
+          <Route
+            path="/admin/clients/:id"
+            component={adminPage(ClientDetail)}
+          />
+          <Route path="/admin/clients" component={adminPage(ClientsList)} />
+          <Route
+            path="/admin/estimates/new"
+            component={adminPage(EstimateEditor)}
+          />
+          <Route
+            path="/admin/estimates/:id/edit"
+            component={adminPage(EstimateEditor)}
+          />
+          <Route path="/admin/estimates" component={adminPage(EstimatesList)} />
+          <Route
+            path="/admin/sub-contractors"
+            component={adminPage(SubContractorsList)}
+          />
+          <Route path="/admin/vendors" component={adminPage(VendorsList)} />
+          <Route path="/admin/ledger" component={adminPage(LedgerView)} />
+          <Route
+            path="/admin/site-plans"
+            component={adminPage(SitePlanBuilder)}
+          />
+          <Route path="/admin/guides" component={adminPage(Guides)} />
+          <Route path="/admin/schedule" component={adminPage(ScheduleView)} />
+          <Route path="/admin/materials" component={adminPage(MaterialsView)} />
+          <Route path="/admin/billing" component={adminPage(BillingView)} />
+          <Route
+            path="/admin/portfolio-cms"
+            component={adminPage(PortfolioAdmin)}
+          />
+          {/* Bootstrapping wizard — guarded by its own token, not AdminRoute. */}
+          <Route path="/admin/setup" component={withBoundary(SetupWizard)} />
 
-        {/* Service pages */}
-        <Route
-          path="/services/residential"
-          component={withBoundary(LazyResidential)}
-        />
-        <Route
-          path="/services/remodels"
-          component={withBoundary(LazyRemodels)}
-        />
-        <Route
-          path="/services/new-construction"
-          component={withBoundary(LazyNewConstruction)}
-        />
-        <Route
-          path="/services/restoration"
-          component={withBoundary(LazyRestoration)}
-        />
-        <Route path="/services/outdoor" component={withBoundary(LazyOutdoor)} />
-        <Route
-          path="/services/painting"
-          component={withBoundary(LazyPainting)}
-        />
-        <Route path="/services/roofing" component={withBoundary(LazyRoofing)} />
-        <Route
-          path="/services/cabinets"
-          component={withBoundary(LazyCabinets)}
-        />
+          {/* Public token-gated onboarding wizard for new account owner */}
+          <Route
+            path="/onboarding"
+            component={withBoundary(OnboardingWizard)}
+          />
+          <Route
+            path="/admin/vision-studio"
+            component={adminPage(VisionStudioAdmin)}
+          />
+          <Route path="/admin/search" component={adminPage(SearchView)} />
+          <Route
+            path="/admin/finishes"
+            component={adminPage(FinishSelectionsAdmin)}
+          />
+          <Route path="/admin/analytics" component={adminPage(Analytics)} />
+          <Route
+            path="/admin/profitability"
+            component={adminPage(ProfitabilityView)}
+          />
+          <Route
+            path="/admin/activity-log"
+            component={adminPage(ActivityLog)}
+          />
+          <Route
+            path="/admin/notifications"
+            component={adminPage(NotificationsView)}
+          />
+          {blueprintEnabled && (
+            <Route
+              path="/admin/blueprint"
+              component={adminPage(BlueprintTools)}
+            />
+          )}
 
-        <Route path="/404" component={withBoundary(NotFound)} />
-        <Route component={withBoundary(NotFound)} />
-      </Switch>
+          {/* Client portal — auth required */}
+          <Route path="/portal" component={protectedPage(PortalDashboard)} />
+          <Route
+            path="/portal/reports"
+            component={protectedPage(PortalReports)}
+          />
+          <Route
+            path="/portal/finishes"
+            component={protectedPage(PortalFinishes)}
+          />
+          <Route
+            path="/portal/ledger"
+            component={protectedPage(PortalLedger)}
+          />
+          <Route
+            path="/portal/payments"
+            component={protectedPage(PortalPayments)}
+          />
+          {blueprintEnabled && (
+            <Route
+              path="/portal/blueprint"
+              component={protectedPage(PortalBlueprint)}
+            />
+          )}
+
+          {/* Service pages */}
+          <Route
+            path="/services/residential"
+            component={withBoundary(LazyResidential)}
+          />
+          <Route
+            path="/services/remodels"
+            component={withBoundary(LazyRemodels)}
+          />
+          <Route
+            path="/services/new-construction"
+            component={withBoundary(LazyNewConstruction)}
+          />
+          <Route
+            path="/services/restoration"
+            component={withBoundary(LazyRestoration)}
+          />
+          <Route
+            path="/services/outdoor"
+            component={withBoundary(LazyOutdoor)}
+          />
+          <Route
+            path="/services/painting"
+            component={withBoundary(LazyPainting)}
+          />
+          <Route
+            path="/services/roofing"
+            component={withBoundary(LazyRoofing)}
+          />
+          <Route
+            path="/services/cabinets"
+            component={withBoundary(LazyCabinets)}
+          />
+
+          <Route path="/404" component={withBoundary(NotFound)} />
+          <Route component={withBoundary(NotFound)} />
+        </Switch>
+      </PageTransition>
     </Suspense>
   );
 }

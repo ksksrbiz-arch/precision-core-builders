@@ -23,7 +23,14 @@ import {
 } from "@/data/projects";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
-import { motion } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
+import { Magnetic } from "@/components/ui/Magnetic";
+import { TextReveal } from "@/components/ui/TextReveal";
 import { ArrowRight, PackageOpen, Phone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -57,6 +64,23 @@ export default function Portfolio() {
 
   // Use real hero photo as page backdrop
   const heroImage = photoUrl("signature-home-01.jpg");
+
+  // Cursor parallax on the editorial hero backdrop.
+  const reduceMotion = useReducedMotion();
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const parallaxX = useSpring(mx, { stiffness: 55, damping: 18, mass: 0.6 });
+  const parallaxY = useSpring(my, { stiffness: 55, damping: 18, mass: 0.6 });
+
+  function onHeroMouseMove(e: React.MouseEvent<HTMLElement>) {
+    if (reduceMotion) return;
+    mx.set((e.clientX / window.innerWidth - 0.5) * 22);
+    my.set((e.clientY / window.innerHeight - 0.5) * 14);
+  }
+  function onHeroMouseLeave() {
+    mx.set(0);
+    my.set(0);
+  }
 
   // CollectionPage + ItemList JSON-LD — built from the full catalog (never the
   // filtered subset) so search engines index every project regardless of UI
@@ -92,23 +116,33 @@ export default function Portfolio() {
 
       <main id="main-content" className="flex-1">
         {/* Editorial hero */}
-        <section className="relative min-h-[60vh] md:min-h-[65vh] flex items-end overflow-hidden">
+        <section
+          className="relative min-h-[60vh] md:min-h-[65vh] flex items-end overflow-hidden"
+          onMouseMove={onHeroMouseMove}
+          onMouseLeave={onHeroMouseLeave}
+        >
           {/*
            * Use a real <img> (not CSS background) so the browser preloads it
            * as the LCP and we get explicit eager + high fetchpriority.
            */}
-          <img
-            src={heroImage}
-            srcSet={netlifySrcSet(heroImage)}
-            sizes="100vw"
-            alt=""
-            aria-hidden="true"
-            loading="eager"
-            decoding="sync"
-            {...({ fetchpriority: "high" } as Record<string, string>)}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <motion.div
+            className="absolute inset-0 scale-[1.07]"
+            style={reduceMotion ? undefined : { x: parallaxX, y: parallaxY }}
+          >
+            <img
+              src={heroImage}
+              srcSet={netlifySrcSet(heroImage)}
+              sizes="100vw"
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="sync"
+              {...({ fetchpriority: "high" } as Record<string, string>)}
+              className="h-full w-full object-cover"
+            />
+          </motion.div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+          <div className="film-grain" aria-hidden />
           <div className="relative container mx-auto px-5 md:px-8 pb-14 md:pb-20 text-white">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -120,9 +154,18 @@ export default function Portfolio() {
                 Selected Work — {SITE.license}
               </p>
               <h1 className="display-hero font-heading text-white">
-                Twenty years,
-                <br />
-                one standard.
+                <TextReveal
+                  text="Twenty years,"
+                  className="block"
+                  delay={0.15}
+                  stagger={0.08}
+                />
+                <TextReveal
+                  text="one standard."
+                  className="block"
+                  delay={0.45}
+                  stagger={0.08}
+                />
               </h1>
               <span className="heading-bar" aria-hidden />
               <p className="mt-5 md:mt-6 text-base md:text-lg text-white/85 max-w-xl leading-relaxed">
@@ -190,20 +233,24 @@ export default function Portfolio() {
                 time.
               </p>
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
-                <a
-                  href="/contact"
-                  className="flex items-center justify-center gap-2 bg-[#C8A84B] text-neutral-900 px-8 py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#d4b866] transition-all hover:gap-3 min-h-[52px]"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Request an Estimate <ArrowRight className="h-3.5 w-3.5" />
-                </a>
-                <a
-                  href={SITE.phoneHref}
-                  className="flex items-center justify-center gap-2 border border-white/30 text-white px-8 py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-[#C8A84B] hover:text-[#C8A84B] transition-colors min-h-[52px]"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <Phone className="h-4 w-4" /> {SITE.phone}
-                </a>
+                <Magnetic strength={0.3}>
+                  <a
+                    href="/contact"
+                    className="flex items-center justify-center gap-2 bg-[#C8A84B] text-neutral-900 px-8 py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#d4b866] transition-all hover:gap-3 min-h-[52px]"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Request an Estimate <ArrowRight className="h-3.5 w-3.5" />
+                  </a>
+                </Magnetic>
+                <Magnetic strength={0.3}>
+                  <a
+                    href={SITE.phoneHref}
+                    className="flex items-center justify-center gap-2 border border-white/30 text-white px-8 py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-[#C8A84B] hover:text-[#C8A84B] transition-colors min-h-[52px]"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Phone className="h-4 w-4" /> {SITE.phone}
+                  </a>
+                </Magnetic>
               </div>
             </Reveal>
           </div>

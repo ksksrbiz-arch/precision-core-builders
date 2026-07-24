@@ -19,12 +19,21 @@ import {
 } from "@/components/layout/SiteShell";
 import { SectionTeaser } from "@/components/layout/SectionTeaser";
 import { TrustBar } from "@/components/layout/TrustBar";
+import { Magnetic } from "@/components/ui/Magnetic";
+import { Marquee } from "@/components/ui/Marquee";
 import { Reveal } from "@/components/ui/Reveal";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
+import { TextReveal } from "@/components/ui/TextReveal";
 import { netlifySrcSet } from "@/lib/netlifyImage";
 import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
 import {
   ArrowRight,
   Award,
@@ -161,6 +170,7 @@ export default function Home() {
       <main id="main-content">
         <Hero />
         <StatsBar />
+        <CraftMarquee />
         <div className="cv-auto">
           <AboutTeaser />
         </div>
@@ -362,12 +372,36 @@ function HeroSlideshow() {
 }
 
 function Hero() {
+  const reduceMotion = useReducedMotion();
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const parallaxX = useSpring(mx, { stiffness: 55, damping: 18, mass: 0.6 });
+  const parallaxY = useSpring(my, { stiffness: 55, damping: 18, mass: 0.6 });
+
+  // Cursor parallax — the backdrop drifts gently against the pointer.
+  function onMouseMove(e: React.MouseEvent<HTMLElement>) {
+    if (reduceMotion) return;
+    mx.set((e.clientX / window.innerWidth - 0.5) * 22);
+    my.set((e.clientY / window.innerHeight - 0.5) * 14);
+  }
+  function onMouseLeave() {
+    mx.set(0);
+    my.set(0);
+  }
+
   return (
     <section
       className="relative min-h-[70svh] md:min-h-[85svh] lg:min-h-[100svh] flex items-center overflow-hidden"
       aria-labelledby="hero-heading"
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
     >
-      <HeroSlideshow />
+      <motion.div
+        className="absolute inset-0 scale-[1.07]"
+        style={reduceMotion ? undefined : { x: parallaxX, y: parallaxY }}
+      >
+        <HeroSlideshow />
+      </motion.div>
       {/* Dark vignette for text legibility */}
       <div
         className="absolute inset-0 bg-gradient-to-br from-black/75 via-black/55 to-black/30 z-[1]"
@@ -377,6 +411,8 @@ function Hero() {
         className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/70 to-transparent z-[1]"
         aria-hidden
       />
+      {/* Cinematic film grain over the backdrop */}
+      <div className="film-grain z-[1]" aria-hidden />
 
       <motion.div
         initial="hidden"
@@ -394,15 +430,24 @@ function Hero() {
           </span>
         </motion.div>
 
-        <motion.h1
+        <h1
           id="hero-heading"
-          variants={fadeUp}
           className="display-hero font-semibold text-white max-w-4xl mb-5 md:mb-6"
         >
-          Precision Construction.
-          <br />
-          <span className="text-gradient-gold">Core Values.</span>
-        </motion.h1>
+          <TextReveal
+            text="Precision Construction."
+            className="block"
+            delay={0.2}
+            stagger={0.09}
+          />
+          <TextReveal
+            text="Core Values."
+            className="block"
+            wordClassName="text-gradient-gold"
+            delay={0.55}
+            stagger={0.09}
+          />
+        </h1>
 
         <motion.p
           variants={fadeUp}
@@ -417,30 +462,36 @@ function Hero() {
           variants={fadeUp}
           className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start"
         >
-          <Link
-            href="/estimator"
-            className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 font-medium hover:bg-primary/90 transition-all group rounded-sm uppercase text-sm min-h-[48px] min-w-[160px] w-full sm:w-auto"
-            style={{
-              fontFamily: "var(--font-condensed)",
-              letterSpacing: "0.1em",
-            }}
-          >
-            Get a Free Estimate
-            <ArrowRight
-              className="w-4 h-4 transition-transform group-hover:translate-x-1"
-              aria-hidden="true"
-            />
-          </Link>
-          <Link
-            href="/portfolio"
-            className="inline-flex items-center justify-center gap-2 border border-white/30 text-white px-8 py-4 font-medium hover:bg-white/10 transition-all rounded-sm uppercase text-sm min-h-[48px] min-w-[160px] w-full sm:w-auto"
-            style={{
-              fontFamily: "var(--font-condensed)",
-              letterSpacing: "0.1em",
-            }}
-          >
-            See Our Work
-          </Link>
+          <Magnetic className="w-full sm:w-auto">
+            <Link
+              href="/estimator"
+              className="btn-shimmer inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 font-medium hover:bg-primary/90 transition-all group rounded-sm uppercase text-sm min-h-[48px] min-w-[160px] w-full sm:w-auto"
+              style={{
+                fontFamily: "var(--font-condensed)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              <span className="inline-flex items-center justify-center gap-2">
+                Get a Free Estimate
+                <ArrowRight
+                  className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                  aria-hidden="true"
+                />
+              </span>
+            </Link>
+          </Magnetic>
+          <Magnetic className="w-full sm:w-auto">
+            <Link
+              href="/portfolio"
+              className="inline-flex items-center justify-center gap-2 border border-white/30 text-white px-8 py-4 font-medium hover:bg-white/10 transition-all rounded-sm uppercase text-sm min-h-[48px] min-w-[160px] w-full sm:w-auto"
+              style={{
+                fontFamily: "var(--font-condensed)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              See Our Work
+            </Link>
+          </Magnetic>
         </motion.div>
 
         <motion.p variants={fadeUp} className="mt-5 text-sm text-white/70">
@@ -485,6 +536,45 @@ function Hero() {
         className="scroll-indicator hidden md:inline-flex z-[2]"
         aria-hidden
       />
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CRAFT MARQUEE — slow-scrolling values strip (decorative)
+══════════════════════════════════════════════════════════════ */
+const CRAFT_WORDS = [
+  "On Time",
+  "On Budget",
+  "Built to Last",
+  "Master Carpenters",
+  "Licensed · Bonded · Insured",
+  "Family Owned",
+  "Eugene, Oregon",
+  "20+ Years of Craft",
+] as const;
+
+function CraftMarquee() {
+  return (
+    <section
+      aria-hidden
+      className="relative border-b border-border/40 bg-background py-9 md:py-12 overflow-hidden"
+    >
+      <Marquee duration={38}>
+        {CRAFT_WORDS.map((word, i) => (
+          <span key={word} className="flex items-center">
+            <span
+              className={`whitespace-nowrap px-7 md:px-12 text-2xl md:text-4xl font-semibold ${
+                i % 2 === 1 ? "text-outline" : "text-foreground/75"
+              }`}
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {word}
+            </span>
+            <span className="h-1.5 w-1.5 rotate-45 bg-primary/60 shrink-0" />
+          </span>
+        ))}
+      </Marquee>
     </section>
   );
 }

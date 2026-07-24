@@ -3,6 +3,7 @@
  * Keeps brand consistency and ensures CTAs are always visible.
  */
 import { DEV_BYPASS_KEY } from "@/_core/hooks/useAuth";
+import { Magnetic } from "@/components/ui/Magnetic";
 import { ASSETS, SITE } from "@/const";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -242,9 +243,15 @@ export function SiteNav() {
                 >
                   {n.label}
                   {active && (
-                    <span
+                    <motion.span
+                      layoutId="site-nav-underline"
                       aria-hidden
-                      className="absolute -bottom-1.5 left-0 right-0 mx-auto h-[2px] w-4 rounded-full bg-primary"
+                      className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 34,
+                      }}
                     />
                   )}
                 </a>
@@ -263,13 +270,15 @@ export function SiteNav() {
               <Phone className="h-3.5 w-3.5" />
               {SITE.phone}
             </a>
-            <a
-              href="/contact"
-              className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Free Estimate <ArrowRight className="h-3.5 w-3.5" />
-            </a>
+            <Magnetic className="hidden sm:inline-block" strength={0.25}>
+              <a
+                href="/contact"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            </Magnetic>
             <button
               onClick={() => setOpen(o => !o)}
               className="lg:hidden p-2 text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -468,7 +477,7 @@ export function SiteFooter() {
                 <li key={l.href}>
                   <a
                     href={l.href}
-                    className="text-sm text-muted-foreground hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:underline transition-colors"
+                    className="link-underline text-sm text-muted-foreground hover:text-primary focus-visible:text-primary focus-visible:outline-none transition-colors"
                   >
                     {l.label}
                   </a>

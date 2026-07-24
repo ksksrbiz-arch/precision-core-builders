@@ -11,6 +11,8 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import type { ComponentType } from "react";
+import { Parallax } from "@/components/ui/Parallax";
+import { TiltCard } from "@/components/ui/TiltCard";
 
 interface TeaserProps {
   eyebrow: string;
@@ -60,13 +62,15 @@ export function SectionTeaser({
           <div
             className={`relative overflow-hidden rounded-sm ${imageAspect} bg-muted`}
           >
-            <img
-              src={image}
-              alt={imageAlt}
-              loading="lazy"
-              decoding="async"
-              className={`w-full h-full object-cover ${imagePosition} transition-transform duration-[2s] ease-out hover:scale-105`}
-            />
+            <Parallax amount={26} className="h-full w-full scale-[1.12]">
+              <img
+                src={image}
+                alt={imageAlt}
+                loading="lazy"
+                decoding="async"
+                className={`w-full h-full object-cover ${imagePosition} transition-transform duration-[2s] ease-out hover:scale-105`}
+              />
+            </Parallax>
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 pointer-events-none" />
           </div>
         )}
@@ -107,47 +111,49 @@ export function SectionTeaser({
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className={className}
     >
-      <Link
-        href={href}
-        className="card-lift group block bg-card border border-border/60 rounded-sm overflow-hidden hover:border-primary/60 h-full"
-      >
-        {image && (
-          <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-            <img
-              src={image}
-              alt={imageAlt}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-          </div>
-        )}
-        <div className="p-6 md:p-7">
-          {Icon && !image && (
-            <Icon className="w-8 h-8 text-primary mb-4" aria-hidden="true" />
+      <TiltCard className="h-full" maxTilt={5}>
+        <Link
+          href={href}
+          className="card-lift group block bg-card border border-border/60 rounded-sm overflow-hidden hover:border-primary/60 h-full"
+        >
+          {image && (
+            <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+              <img
+                src={image}
+                alt={imageAlt}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+            </div>
           )}
-          <div
-            className="text-[10px] tracking-[0.3em] uppercase text-primary mb-2 font-medium"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            {eyebrow}
+          <div className="p-6 md:p-7">
+            {Icon && !image && (
+              <Icon className="w-8 h-8 text-primary mb-4" aria-hidden="true" />
+            )}
+            <div
+              className="text-[10px] tracking-[0.3em] uppercase text-primary mb-2 font-medium"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              {eyebrow}
+            </div>
+            <h3
+              className="text-xl md:text-2xl font-semibold text-foreground mb-3 leading-snug"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {title}
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              {body}
+            </p>
+            <span className="inline-flex items-center gap-1.5 text-sm text-primary font-medium group-hover:gap-2.5 transition-all">
+              {ctaLabel}
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </span>
           </div>
-          <h3
-            className="text-xl md:text-2xl font-semibold text-foreground mb-3 leading-snug"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            {title}
-          </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-            {body}
-          </p>
-          <span className="inline-flex items-center gap-1.5 text-sm text-primary font-medium group-hover:gap-2.5 transition-all">
-            {ctaLabel}
-            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-          </span>
-        </div>
-      </Link>
+        </Link>
+      </TiltCard>
     </motion.div>
   );
 }

@@ -10,6 +10,7 @@ import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { motion } from "framer-motion";
+import { TextReveal } from "@/components/ui/TextReveal";
 import {
   ArrowRight,
   CheckCircle2,
@@ -127,15 +128,24 @@ export default function Contact() {
               >
                 Get In Touch
               </motion.span>
-              <motion.h1
-                variants={fadeUp}
+              <h1
                 className="text-5xl sm:text-6xl font-semibold leading-tight mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Let&apos;s build
-                <br />
-                <em className="text-primary italic">something remarkable.</em>
-              </motion.h1>
+                <TextReveal
+                  text="Let's build"
+                  className="block"
+                  delay={0.1}
+                  stagger={0.08}
+                />
+                <TextReveal
+                  text="something remarkable."
+                  className="block"
+                  wordClassName="text-primary italic"
+                  delay={0.4}
+                  stagger={0.08}
+                />
+              </h1>
               <motion.p
                 variants={fadeUp}
                 className="text-muted-foreground text-lg leading-relaxed font-light"

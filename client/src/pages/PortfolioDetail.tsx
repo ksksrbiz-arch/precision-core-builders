@@ -14,12 +14,20 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { BeforeAfterSlider } from "@/components/portfolio/BeforeAfterSlider";
+import { Magnetic } from "@/components/ui/Magnetic";
+import { TextReveal } from "@/components/ui/TextReveal";
+import { TiltCard } from "@/components/ui/TiltCard";
 import { PhotoGrid } from "@/components/portfolio/PhotoGrid";
 import { getProject, PROJECTS, photoUrl } from "@/data/projects";
 import { netlifySrcSet } from "@/lib/netlifyImage";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
-import { motion } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
@@ -47,6 +55,24 @@ export default function PortfolioDetail() {
     const idx = PROJECTS.findIndex(p => p.slug === project.slug);
     return PROJECTS[(idx + 1) % PROJECTS.length];
   }, [project]);
+
+  // Cursor parallax on the hero backdrop (hook order is stable across the
+  // not-found early return because it runs before it).
+  const reduceMotion = useReducedMotion();
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const parallaxX = useSpring(mx, { stiffness: 55, damping: 18, mass: 0.6 });
+  const parallaxY = useSpring(my, { stiffness: 55, damping: 18, mass: 0.6 });
+
+  function onHeroMouseMove(e: React.MouseEvent<HTMLElement>) {
+    if (reduceMotion) return;
+    mx.set((e.clientX / window.innerWidth - 0.5) * 22);
+    my.set((e.clientY / window.innerHeight - 0.5) * 14);
+  }
+  function onHeroMouseLeave() {
+    mx.set(0);
+    my.set(0);
+  }
 
   useSEO({
     title: project ? project.title : "Project Not Found",
@@ -100,18 +126,28 @@ export default function PortfolioDetail() {
 
       <main id="main-content" className="flex-1">
         {/* HERO */}
-        <section className="relative min-h-[65vh] md:min-h-[75vh] flex items-end overflow-hidden">
-          <img
-            src={photoUrl(project.hero)}
-            srcSet={netlifySrcSet(photoUrl(project.hero))}
-            sizes="100vw"
-            alt={`${project.title} — ${project.category}`}
-            loading="eager"
-            decoding="sync"
-            {...({ fetchpriority: "high" } as Record<string, string>)}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+        <section
+          className="relative min-h-[65vh] md:min-h-[75vh] flex items-end overflow-hidden"
+          onMouseMove={onHeroMouseMove}
+          onMouseLeave={onHeroMouseLeave}
+        >
+          <motion.div
+            className="absolute inset-0 scale-[1.07]"
+            style={reduceMotion ? undefined : { x: parallaxX, y: parallaxY }}
+          >
+            <img
+              src={photoUrl(project.hero)}
+              srcSet={netlifySrcSet(photoUrl(project.hero))}
+              sizes="100vw"
+              alt={`${project.title} — ${project.category}`}
+              loading="eager"
+              decoding="sync"
+              {...({ fetchpriority: "high" } as Record<string, string>)}
+              className="h-full w-full object-cover"
+            />
+          </motion.div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+          <div className="film-grain" aria-hidden />
 
           <div className="relative container mx-auto px-5 md:px-8 pb-14 md:pb-20 text-white">
             <motion.button
@@ -150,7 +186,9 @@ export default function PortfolioDetail() {
                   </span>
                 )}
               </div>
-              <h1 className="display-hero font-heading">{project.title}</h1>
+              <h1 className="display-hero font-heading">
+                <TextReveal text={project.title} delay={0.2} stagger={0.07} />
+              </h1>
               <span className="heading-bar" aria-hidden />
               {project.location && (
                 <div className="mt-5 flex items-center gap-2 text-white/80">
@@ -288,21 +326,23 @@ export default function PortfolioDetail() {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="lg:col-span-5"
               >
-                <div className="bg-card/60 p-6 md:p-8 rounded-lg border border-border/40">
-                  <p className="eyebrow text-muted-foreground mb-4">
-                    Scope of Work
-                  </p>
-                  <ul className="space-y-3">
-                    {project.scope.map(item => (
-                      <li key={item} className="flex gap-3">
-                        <Check className="h-4 w-4 text-[#C8A84B] shrink-0 mt-1" />
-                        <span className="text-sm text-foreground/85 leading-relaxed">
-                          {item}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <TiltCard className="rounded-lg" maxTilt={3}>
+                  <div className="bg-card/60 p-6 md:p-8 rounded-lg border border-border/40">
+                    <p className="eyebrow text-muted-foreground mb-4">
+                      Scope of Work
+                    </p>
+                    <ul className="space-y-3">
+                      {project.scope.map(item => (
+                        <li key={item} className="flex gap-3">
+                          <Check className="h-4 w-4 text-[#C8A84B] shrink-0 mt-1" />
+                          <span className="text-sm text-foreground/85 leading-relaxed">
+                            {item}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </TiltCard>
               </motion.div>
             </div>
           </div>
@@ -350,60 +390,66 @@ export default function PortfolioDetail() {
                   time.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <a
-                    href="/contact"
-                    className="inline-flex items-center gap-2 bg-[#C8A84B] text-neutral-900 px-6 py-3 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#d4b866] transition-all hover:gap-3"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    Request an Estimate <ArrowRight className="h-3.5 w-3.5" />
-                  </a>
-                  <a
-                    href={SITE.phoneHref}
-                    className="inline-flex items-center gap-2 border border-white/30 text-white px-6 py-3 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-[#C8A84B] hover:text-[#C8A84B] transition-colors"
-                    style={{ fontFamily: "var(--font-condensed)" }}
-                  >
-                    <Phone className="h-4 w-4" /> {SITE.phone}
-                  </a>
+                  <Magnetic strength={0.3}>
+                    <a
+                      href="/contact"
+                      className="inline-flex items-center gap-2 bg-[#C8A84B] text-neutral-900 px-6 py-3 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#d4b866] transition-all hover:gap-3"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Request an Estimate <ArrowRight className="h-3.5 w-3.5" />
+                    </a>
+                  </Magnetic>
+                  <Magnetic strength={0.3}>
+                    <a
+                      href={SITE.phoneHref}
+                      className="inline-flex items-center gap-2 border border-white/30 text-white px-6 py-3 text-[11px] font-bold tracking-[0.14em] uppercase hover:border-[#C8A84B] hover:text-[#C8A84B] transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Phone className="h-4 w-4" /> {SITE.phone}
+                    </a>
+                  </Magnetic>
                 </div>
               </motion.div>
 
               {nextProject && (
-                <motion.button
-                  onClick={() => {
-                    setLocation(`/portfolio/${nextProject.slug}`);
-                    window.scrollTo({ top: 0 });
-                  }}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.15 }}
-                  className="group text-left block active:scale-[0.98] transition-transform"
-                  aria-label={`Next project: ${nextProject.title}`}
-                >
-                  <p
-                    className="text-[11px] uppercase tracking-[0.2em] text-white/60 mb-2"
-                    style={{ fontFamily: "var(--font-condensed)" }}
+                <TiltCard className="rounded-lg" maxTilt={4}>
+                  <motion.button
+                    onClick={() => {
+                      setLocation(`/portfolio/${nextProject.slug}`);
+                      window.scrollTo({ top: 0 });
+                    }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.15 }}
+                    className="group text-left block active:scale-[0.98] transition-transform"
+                    aria-label={`Next project: ${nextProject.title}`}
                   >
-                    Next Project
-                  </p>
-                  <div className="relative overflow-hidden rounded-lg">
-                    <img
-                      src={photoUrl(nextProject.hero)}
-                      alt={nextProject.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                      style={{ aspectRatio: "16 / 10" }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
-                      <h3 className="font-heading text-xl md:text-2xl text-white leading-tight">
-                        {nextProject.title}
-                      </h3>
-                      <ArrowRight className="h-5 w-5 text-white shrink-0 transition-transform group-hover:translate-x-1" />
+                    <p
+                      className="text-[11px] uppercase tracking-[0.2em] text-white/60 mb-2"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Next Project
+                    </p>
+                    <div className="relative overflow-hidden rounded-lg">
+                      <img
+                        src={photoUrl(nextProject.hero)}
+                        alt={nextProject.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                        style={{ aspectRatio: "16 / 10" }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+                        <h3 className="font-heading text-xl md:text-2xl text-white leading-tight">
+                          {nextProject.title}
+                        </h3>
+                        <ArrowRight className="h-5 w-5 text-white shrink-0 transition-transform group-hover:translate-x-1" />
+                      </div>
                     </div>
-                  </div>
-                </motion.button>
+                  </motion.button>
+                </TiltCard>
               )}
             </div>
           </div>

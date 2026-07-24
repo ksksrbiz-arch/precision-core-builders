@@ -8,6 +8,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
+import { TextReveal } from "@/components/ui/TextReveal";
 import {
   PROJECT_TYPES,
   MATERIALS_OPTIONS,
@@ -15,7 +16,7 @@ import {
 } from "@/config/projects";
 import { formatCurrency } from "@/lib/formatters";
 import { useSEO } from "@/hooks/useSEO";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Loader2,
@@ -24,7 +25,7 @@ import {
   Clock,
   AlertTriangle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function estimateTimeline(
   projectType: string,
@@ -36,6 +37,34 @@ function estimateTimeline(
   const low = Math.max(1, Math.round(base[0] * factor));
   const high = Math.max(low + 1, Math.round(base[1] * factor));
   return `${low}–${high} weeks`;
+}
+
+/** Animated currency figure — eases from 0 to value on mount (result reveal). */
+function CountCurrency({ value }: { value: number }) {
+  const reduce = useReducedMotion();
+  const [display, setDisplay] = useState(reduce ? value : 0);
+  useEffect(() => {
+    if (reduce) {
+      setDisplay(value);
+      return;
+    }
+    let raf: number;
+    const start = performance.now();
+    const duration = 1300;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(value * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, reduce]);
+  return (
+    <span aria-hidden className="tabular-nums">
+      {formatCurrency(display)}
+    </span>
+  );
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -202,9 +231,19 @@ export default function Estimator() {
               className="text-4xl sm:text-5xl font-semibold mb-4"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              What will your
-              <br />
-              <em className="text-primary italic">project cost?</em>
+              <TextReveal
+                text="What will your"
+                className="block"
+                delay={0.1}
+                stagger={0.08}
+              />
+              <TextReveal
+                text="project cost?"
+                className="block"
+                wordClassName="text-primary italic"
+                delay={0.4}
+                stagger={0.08}
+              />
             </h1>
             <p className="text-muted-foreground font-light text-lg">
               Get a real estimate for Eugene, OR construction — powered by local
@@ -218,7 +257,7 @@ export default function Estimator() {
               {[1, 2, 3].map(s => (
                 <div
                   key={s}
-                  className={`h-1 flex-1 rounded-full transition-colors duration-300 ${step >= s ? "bg-primary" : "bg-border/60"}`}
+                  className={`h-1 flex-1 rounded-full transition-colors duration-300 ${step >= s ? "progress-gold" : "bg-border/60"}`}
                 />
               ))}
             </div>
@@ -226,7 +265,11 @@ export default function Estimator() {
 
           {/* Step 1: Project type */}
           {step === 1 && (
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
               <h2
                 className="text-xl font-semibold mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
@@ -238,7 +281,7 @@ export default function Estimator() {
                   <button
                     key={pt.id}
                     onClick={() => setProjectType(pt.id)}
-                    className={`p-4 border text-left transition-all ${
+                    className={`p-4 border text-left transition-all press-scale ${
                       projectType === pt.id
                         ? "border-primary bg-primary/10"
                         : "border-border/60 bg-card hover:border-primary/40"
@@ -257,12 +300,16 @@ export default function Estimator() {
               >
                 Next: Project Details →
               </button>
-            </div>
+            </motion.div>
           )}
 
           {/* Step 2: Details */}
           {step === 2 && (
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
               <h2
                 className="text-xl font-semibold mb-5"
                 style={{ fontFamily: "var(--font-heading)" }}
@@ -346,12 +393,16 @@ export default function Estimator() {
                   Next: Materials →
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Step 3: Materials */}
           {step === 3 && (
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
               <h2
                 className="text-xl font-semibold mb-2"
                 style={{ fontFamily: "var(--font-heading)" }}
@@ -366,7 +417,7 @@ export default function Estimator() {
                   <button
                     key={m}
                     onClick={() => toggleMaterial(m)}
-                    className={`p-3 border text-left text-sm transition-all flex items-center gap-3 ${
+                    className={`p-3 border text-left text-sm transition-all press-scale flex items-center gap-3 ${
                       materials.includes(m)
                         ? "border-primary bg-primary/10"
                         : "border-border/60 text-muted-foreground hover:border-primary/40"
@@ -413,7 +464,7 @@ export default function Estimator() {
                   )}
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Step 4: Results */}
@@ -448,8 +499,9 @@ export default function Estimator() {
                     <div key={label} className="text-center">
                       <p
                         className={`text-xl sm:text-2xl font-bold mb-1 ${cls}`}
+                        aria-label={formatCurrency(value)}
                       >
-                        {formatCurrency(value)}
+                        <CountCurrency value={value} />
                       </p>
                       <p
                         className="text-[10px] tracking-widest uppercase text-muted-foreground"
@@ -506,13 +558,19 @@ export default function Estimator() {
                           )
                           .join(", ")}
                       >
-                        {parts.map(p => (
-                          <div
+                        {parts.map((p, pi) => (
+                          <motion.div
                             key={p.label}
-                            style={{
+                            initial={{ width: 0 }}
+                            animate={{
                               width: `${(p.value / total) * 100}%`,
-                              backgroundColor: p.color,
                             }}
+                            transition={{
+                              duration: 0.8,
+                              delay: 0.35 + pi * 0.12,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            style={{ backgroundColor: p.color }}
                           />
                         ))}
                       </div>

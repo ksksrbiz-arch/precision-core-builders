@@ -9,6 +9,7 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, Phone } from "lucide-react";
+import { Magnetic } from "@/components/ui/Magnetic";
 import { SITE } from "@/const";
 
 interface CTABandProps {
@@ -98,19 +99,21 @@ export function CTABand({
           </p>
         )}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link
-            href={primaryHref}
-            className="btn-shimmer inline-flex items-center gap-2 bg-primary text-primary-foreground px-7 py-4 font-medium tracking-wide hover:bg-primary/90 transition-colors rounded-sm text-sm uppercase"
-            style={{
-              fontFamily: "var(--font-condensed)",
-              letterSpacing: "0.1em",
-            }}
-          >
-            <span className="inline-flex items-center gap-2">
-              {primaryLabel}
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </span>
-          </Link>
+          <Magnetic strength={0.3}>
+            <Link
+              href={primaryHref}
+              className="btn-shimmer inline-flex items-center gap-2 bg-primary text-primary-foreground px-7 py-4 font-medium tracking-wide hover:bg-primary/90 transition-colors rounded-sm text-sm uppercase"
+              style={{
+                fontFamily: "var(--font-condensed)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              <span className="inline-flex items-center gap-2">
+                {primaryLabel}
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </span>
+            </Link>
+          </Magnetic>
           {showPhone && (
             <a
               href={SITE.phoneHref}
