@@ -126,7 +126,7 @@ if [ "$SEED_DEMO" = true ]; then
   # Call the platform-actions function to seed demo data
   ADMIN_TOKEN=${ADMIN_TOKEN:-"admin-setup-token-change-me"}
   
-  curl -X POST "https://precision-core.netlify.app/api/platform-actions" \
+  curl -X POST "https://precisioncorebuilders.com/api/platform-actions" \
     -H "Content-Type: application/json" \
     -d "{\"action\":\"seed_demo\",\"adminToken\":\"$ADMIN_TOKEN\"}" \
     --silent --show-error || echo "⚠️  Demo data seeding failed (expected if platform not yet deployed)"
@@ -150,7 +150,7 @@ echo "  2. Verify RLS policies are enabled:"
 echo "     https://supabase.com/dashboard/project/$PROJECT_REF/auth/policies"
 echo ""
 echo "  3. Test the platform health endpoint:"
-echo "     curl https://precision-core.netlify.app/api/platform-health?adminToken=\$ADMIN_TOKEN"
+echo "     curl https://precisioncorebuilders.com/api/platform-health?adminToken=\$ADMIN_TOKEN"
 echo ""
 echo "  4. Create your first admin user in Supabase Auth:"
 echo "     https://supabase.com/dashboard/project/$PROJECT_REF/auth/users"

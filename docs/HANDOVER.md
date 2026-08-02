@@ -41,14 +41,14 @@ Visit each URL and confirm it loads without errors:
 
 | URL                                            | Expected                      |
 | ---------------------------------------------- | ----------------------------- |
-| `https://precision-core.netlify.app`           | Public home page loads        |
-| `https://precision-core.netlify.app/about`     | About page loads              |
-| `https://precision-core.netlify.app/services`  | Services page loads           |
-| `https://precision-core.netlify.app/portfolio` | Portfolio page loads          |
-| `https://precision-core.netlify.app/estimator` | Estimator form loads          |
-| `https://precision-core.netlify.app/contact`   | Contact form loads            |
-| `https://precision-core.netlify.app/admin`     | Admin login / dashboard loads |
-| `https://precision-core.netlify.app/portal`    | Client portal login loads     |
+| `https://precisioncorebuilders.com`           | Public home page loads        |
+| `https://precisioncorebuilders.com/about`     | About page loads              |
+| `https://precisioncorebuilders.com/services`  | Services page loads           |
+| `https://precisioncorebuilders.com/portfolio` | Portfolio page loads          |
+| `https://precisioncorebuilders.com/estimator` | Estimator form loads          |
+| `https://precisioncorebuilders.com/contact`   | Contact form loads            |
+| `https://precisioncorebuilders.com/admin`     | Admin login / dashboard loads |
+| `https://precisioncorebuilders.com/portal`    | Client portal login loads     |
 
 ### 1.2 Feature Verification
 
