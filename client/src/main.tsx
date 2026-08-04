@@ -11,6 +11,58 @@ import superjson from "superjson";
 import App from "./App";
 import "./index.css";
 
+// A deploy can remove a lazy-loaded, content-hashed chunk while an already
+// open tab still has the previous app shell. Recover once by clearing this
+// app's service-worker caches and reloading into the current deployment.
+// The short cooldown prevents an infinite reload loop if the failure is not
+// cache-related.
+const STALE_ASSET_RELOAD_KEY = "pcb_stale_asset_reload_at";
+const STALE_ASSET_RELOAD_COOLDOWN_MS = 30_000;
+
+function recoverFromStaleAssets() {
+  const previousAttempt = Number(
+    sessionStorage.getItem(STALE_ASSET_RELOAD_KEY) ?? "0"
+  );
+  if (Date.now() - previousAttempt < STALE_ASSET_RELOAD_COOLDOWN_MS) return;
+
+  sessionStorage.setItem(STALE_ASSET_RELOAD_KEY, String(Date.now()));
+
+  void Promise.all([
+    caches
+      .keys()
+      .then(keys =>
+        Promise.all(
+          keys
+            .filter(key => key.startsWith("pcb-"))
+            .map(key => caches.delete(key))
+        )
+      ),
+    navigator.serviceWorker
+      .getRegistrations()
+      .then(registrations =>
+        Promise.all(registrations.map(registration => registration.update()))
+      ),
+  ])
+    .catch(() => {
+      // Reloading is still the best recovery if cache cleanup/update fails.
+    })
+    .finally(() => window.location.reload());
+}
+
+window.addEventListener("vite:preloadError", event => {
+  event.preventDefault();
+  recoverFromStaleAssets();
+});
+
+window.addEventListener(
+  "error",
+  event => {
+    // Module-script load failures do not always surface as Vite preload errors.
+    if (event.target instanceof HTMLScriptElement) recoverFromStaleAssets();
+  },
+  true
+);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

@@ -4,12 +4,15 @@
  * Offline fallback for when Eric's on-site with spotty signal.
  */
 
-// Bump these version numbers whenever we ship a client change that users
-// must pick up immediately. On activate, any cache whose name is not in the
-// current list is deleted, purging stale HTML/JS/CSS from returning users.
-const CACHE_NAME = "pcb-v5";
-const STATIC_CACHE = "pcb-static-v5";
-const API_CACHE = "pcb-api-v5";
+// `scripts/stamp-service-worker.ts` replaces this marker in the production
+// build with the deploy commit SHA. A new deploy therefore always gets fresh
+// cache names, and activation purges every prior app shell/chunk cache. Keeping
+// a hand-maintained version here caused returning users to combine old lazy
+// route chunks with a new app shell, leaving admin routes blank.
+const CACHE_VERSION = "__PCB_CACHE_VERSION__";
+const CACHE_NAME = `pcb-${CACHE_VERSION}`;
+const STATIC_CACHE = `pcb-static-${CACHE_VERSION}`;
+const API_CACHE = `pcb-api-${CACHE_VERSION}`;
 
 // Shell files to precache on install
 const PRECACHE_URLS = ["/", "/admin", "/offline.html"];
