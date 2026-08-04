@@ -142,6 +142,26 @@ const LazyCabinets = lazy(() =>
   import("./pages/services/index").then(m => ({ default: m.Cabinets }))
 );
 
+// Location (service-area) pages
+const LazySpringfield = lazy(() =>
+  import("./pages/locations/index").then(m => ({ default: m.Springfield }))
+);
+const LazyCoburg = lazy(() =>
+  import("./pages/locations/index").then(m => ({ default: m.Coburg }))
+);
+const LazyCreswell = lazy(() =>
+  import("./pages/locations/index").then(m => ({ default: m.Creswell }))
+);
+const LazyCottageGrove = lazy(() =>
+  import("./pages/locations/index").then(m => ({ default: m.CottageGrove }))
+);
+const LazyJunctionCity = lazy(() =>
+  import("./pages/locations/index").then(m => ({ default: m.JunctionCity }))
+);
+const LazyFlorence = lazy(() =>
+  import("./pages/locations/index").then(m => ({ default: m.Florence }))
+);
+
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -327,6 +347,32 @@ function Router() {
           <Route
             path="/services/cabinets"
             component={withBoundary(LazyCabinets)}
+          />
+
+          {/* Location (service-area) pages */}
+          <Route
+            path="/service-areas/springfield"
+            component={withBoundary(LazySpringfield)}
+          />
+          <Route
+            path="/service-areas/coburg"
+            component={withBoundary(LazyCoburg)}
+          />
+          <Route
+            path="/service-areas/creswell"
+            component={withBoundary(LazyCreswell)}
+          />
+          <Route
+            path="/service-areas/cottage-grove"
+            component={withBoundary(LazyCottageGrove)}
+          />
+          <Route
+            path="/service-areas/junction-city"
+            component={withBoundary(LazyJunctionCity)}
+          />
+          <Route
+            path="/service-areas/florence"
+            component={withBoundary(LazyFlorence)}
           />
 
           <Route path="/404" component={withBoundary(NotFound)} />
