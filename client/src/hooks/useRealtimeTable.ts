@@ -15,10 +15,15 @@ type RealtimePayload = {
 
 type UseRealtimeOptions = {
   table: string;
+  enabled?: boolean;
   onUpdate?: (payload: RealtimePayload) => void;
 };
 
-export function useRealtimeTable({ table, onUpdate }: UseRealtimeOptions) {
+export function useRealtimeTable({
+  table,
+  enabled = true,
+  onUpdate,
+}: UseRealtimeOptions) {
   const [isLive, setIsLive] = useState(false);
   const [lastEvent, setLastEvent] = useState<RealtimePayload | null>(null);
   // Keep callback ref stable so the subscription doesn't re-subscribe on every
@@ -27,6 +32,11 @@ export function useRealtimeTable({ table, onUpdate }: UseRealtimeOptions) {
   onUpdateRef.current = onUpdate;
 
   useEffect(() => {
+    if (!enabled) {
+      setIsLive(false);
+      return;
+    }
+
     // Skip realtime wiring entirely when Supabase isn't configured (e.g.
     // dev-bypass mode with no env vars). Attempting to subscribe against a
     // placeholder URL causes the realtime client to throw synchronously,
@@ -75,7 +85,7 @@ export function useRealtimeTable({ table, onUpdate }: UseRealtimeOptions) {
         );
       }
     };
-  }, [table]);
+  }, [enabled, table]);
 
   return { isLive, lastEvent };
 }

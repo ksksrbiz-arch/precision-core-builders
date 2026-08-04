@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import { formatCurrency, formatPercent, fmtDate } from "@/lib/formatters";
@@ -584,27 +585,34 @@ function LeadScoringPanel() {
 export default function CommandCenter() {
   const [, setLocation] = useLocation();
   const [realtimeFlash, setRealtimeFlash] = useState(false);
+  const { loading: authLoading, isAuthenticated, isAdmin } = useAuth();
+  const authReady = !authLoading && isAuthenticated && isAdmin;
 
   const utils = trpc.useUtils();
   const {
     data: stats,
     isError: statsError,
     refetch: refetchStats,
-  } = trpc.projects.stats.useQuery();
+  } = trpc.projects.stats.useQuery(undefined, { enabled: authReady });
   const { data: recentProjects, refetch: refetchProjects } =
-    trpc.projects.list.useQuery({ pageSize: 5 });
-  const { data: recentReports } = trpc.fieldReports.list.useQuery({
-    pageSize: 5,
-  });
-  const { data: shortages } = trpc.materials.list.useQuery({
-    shortagesOnly: true,
-    pageSize: 10,
-  });
-  const { data: weeklyReports } = trpc.fieldReports.weeklyStats.useQuery();
+    trpc.projects.list.useQuery({ pageSize: 5 }, { enabled: authReady });
+  const { data: recentReports } = trpc.fieldReports.list.useQuery(
+    { pageSize: 5 },
+    { enabled: authReady }
+  );
+  const { data: shortages } = trpc.materials.list.useQuery(
+    { shortagesOnly: true, pageSize: 10 },
+    { enabled: authReady }
+  );
+  const { data: weeklyReports } = trpc.fieldReports.weeklyStats.useQuery(
+    undefined,
+    { enabled: authReady }
+  );
 
   // ── Supabase Realtime subscription ─────────────────────────────────────────
   const { isLive } = useRealtimeTable({
     table: "projects",
+    enabled: authReady,
     onUpdate: () => {
       // Refetch every panel derived from project data on any change.
       refetchStats();
