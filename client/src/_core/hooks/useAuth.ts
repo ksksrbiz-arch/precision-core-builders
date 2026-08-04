@@ -10,7 +10,15 @@
  */
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { Session, User } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import {
+  createElement,
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 export type AuthUser = {
   id: string;
@@ -18,6 +26,18 @@ export type AuthUser = {
   name: string | null;
   role: "admin" | "user";
 };
+
+export type AuthState = {
+  user: AuthUser | null;
+  session: Session | null;
+  loading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  accessToken: string | null;
+  signOut: () => void | Promise<void>;
+};
+
+const AuthContext = createContext<AuthState | null>(null);
 
 /** Key used to persist the dev bypass flag across page loads. */
 export const DEV_BYPASS_KEY = "pcb_dev_active";
@@ -95,7 +115,7 @@ async function supabaseUserToAuthUser(user: User): Promise<AuthUser> {
   };
 }
 
-export function useAuth() {
+function useAuthState(): AuthState {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,54 +200,74 @@ export function useAuth() {
   }, []);
 
   // Path 1: dev bypass
-  if (devBypass) {
+  return useMemo(() => {
+    if (devBypass) {
+      return {
+        user: DEV_MOCK_USER,
+        session: null,
+        loading: false,
+        isAuthenticated: true,
+        isAdmin: true,
+        accessToken: "dev-admin-token",
+        signOut: () => {
+          localStorage.removeItem(DEV_BYPASS_KEY);
+          window.location.href = "/";
+        },
+      };
+    }
+
+    // Path 2: admin session token
+    if (adminToken) {
+      const adminUser: AuthUser = {
+        id: "admin",
+        email: "admin@precisioncorebuilders.com",
+        name: "Eric Tadlock",
+        role: "admin",
+      };
+      return {
+        user: adminUser,
+        session: null,
+        loading: false,
+        isAuthenticated: true,
+        isAdmin: true,
+        accessToken: adminToken,
+        signOut: () => {
+          localStorage.removeItem(ADMIN_SESSION_KEY);
+          window.location.href = "/";
+        },
+      };
+    }
+
+    // Path 3: Supabase session (portal clients)
     return {
-      user: DEV_MOCK_USER,
-      session: null,
-      loading: false,
-      isAuthenticated: true,
-      isAdmin: true,
-      accessToken: "dev-admin-token",
-      signOut: () => {
-        localStorage.removeItem(DEV_BYPASS_KEY);
+      user,
+      session,
+      loading,
+      isAuthenticated: !!session,
+      isAdmin: user?.role === "admin",
+      accessToken: session?.access_token ?? null,
+      signOut: async () => {
+        await supabase.auth.signOut();
         window.location.href = "/";
       },
     };
-  }
+  }, [adminToken, devBypass, loading, session, user]);
+}
 
-  // Path 2: admin session token
-  if (adminToken) {
-    const adminUser: AuthUser = {
-      id: "admin",
-      email: "admin@precisioncorebuilders.com",
-      name: "Eric Tadlock",
-      role: "admin",
-    };
-    return {
-      user: adminUser,
-      session: null,
-      loading: false,
-      isAuthenticated: true,
-      isAdmin: true,
-      accessToken: adminToken,
-      signOut: () => {
-        localStorage.removeItem(ADMIN_SESSION_KEY);
-        window.location.href = "/";
-      },
-    };
-  }
+/**
+ * Holds one auth lifecycle for the entire app. Route guards, layouts, and
+ * route pages therefore see the same resolved session instead of each
+ * remounting and repeating the Supabase/profile lookup during navigation.
+ */
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const auth = useAuthState();
+  return createElement(AuthContext.Provider, { value: auth }, children);
+}
 
-  // Path 3: Supabase session (portal clients)
-  return {
-    user,
-    session,
-    loading,
-    isAuthenticated: !!session,
-    isAdmin: user?.role === "admin",
-    accessToken: session?.access_token ?? null,
-    signOut: async () => {
-      await supabase.auth.signOut();
-      window.location.href = "/";
-    },
-  };
+export function useAuth(): AuthState {
+  const auth = useContext(AuthContext);
+  if (!auth) {
+    throw new Error("useAuth must be used within an AuthProvider.");
+  }
+  return auth;
 }

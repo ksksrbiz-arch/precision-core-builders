@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { getAccessToken } from "@/lib/supabase";
 import {
+  AuthProvider,
   DEV_BYPASS_KEY,
   getStoredAdminSessionToken,
 } from "@/_core/hooks/useAuth";
@@ -121,7 +122,9 @@ const trpcClient = trpc.createClient({
 createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </QueryClientProvider>
   </trpc.Provider>
 );
