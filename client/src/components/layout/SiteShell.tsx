@@ -530,6 +530,31 @@ export function SiteFooter() {
           </div>
         </div>
 
+        {/* Service areas — footer link row for local SEO internal linking */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-6 text-[11px] text-muted-foreground/60">
+          <span
+            className="font-bold tracking-[0.15em] uppercase text-muted-foreground/40 mr-1"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            Also Serving:
+          </span>
+          {[
+            { label: "Springfield", href: "/service-areas/springfield" },
+            { label: "Coburg", href: "/service-areas/coburg" },
+            { label: "Creswell", href: "/service-areas/creswell" },
+            { label: "Cottage Grove", href: "/service-areas/cottage-grove" },
+            { label: "Junction City", href: "/service-areas/junction-city" },
+            { label: "Florence", href: "/service-areas/florence" },
+          ].map((a, i, arr) => (
+            <span key={a.href}>
+              <a href={a.href} className="hover:text-primary transition-colors">
+                {a.label}
+              </a>
+              {i < arr.length - 1 && <span className="mx-1.5">·</span>}
+            </span>
+          ))}
+        </div>
+
         {/* Gold rule */}
         <div className="gold-rule mb-6" aria-hidden />
 
