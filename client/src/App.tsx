@@ -63,6 +63,22 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const Estimator = lazy(() => import("./pages/Estimator"));
 const About = lazy(() => import("./pages/About"));
 const Services = lazy(() => import("./pages/Services"));
+const Blog = lazy(() => import("./pages/Blog"));
+const LazyKitchenRemodelCost = lazy(() =>
+  import("./pages/blog/index").then(m => ({
+    default: m.KitchenRemodelCost,
+  }))
+);
+const LazyCCBLicensingGuide = lazy(() =>
+  import("./pages/blog/index").then(m => ({
+    default: m.CCBLicensingGuide,
+  }))
+);
+const LazyTadlockResidenceCaseStudy = lazy(() =>
+  import("./pages/blog/index").then(m => ({
+    default: m.TadlockResidenceCaseStudy,
+  }))
+);
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -183,6 +199,21 @@ function Router() {
           <Route path="/" component={withBoundary(Home)} />
           <Route path="/about" component={withBoundary(About)} />
           <Route path="/services" component={withBoundary(Services)} />
+
+          {/* Blog */}
+          <Route path="/blog" component={withBoundary(Blog)} />
+          <Route
+            path="/blog/kitchen-remodel-cost-eugene-oregon"
+            component={withBoundary(LazyKitchenRemodelCost)}
+          />
+          <Route
+            path="/blog/verify-oregon-ccb-license"
+            component={withBoundary(LazyCCBLicensingGuide)}
+          />
+          <Route
+            path="/blog/tadlock-residence-case-study"
+            component={withBoundary(LazyTadlockResidenceCaseStudy)}
+          />
           <Route path="/portfolio" component={withBoundary(Portfolio)} />
           <Route
             path="/portfolio/:slug"

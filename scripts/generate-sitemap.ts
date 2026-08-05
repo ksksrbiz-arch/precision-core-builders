@@ -45,6 +45,22 @@ const STATIC_ROUTES: Entry[] = [
   },
   { path: "/service-areas/florence", priority: 0.7, changefreq: "monthly" },
   { path: "/portfolio", priority: 0.8, changefreq: "weekly" },
+  { path: "/blog", priority: 0.7, changefreq: "weekly" },
+  {
+    path: "/blog/kitchen-remodel-cost-eugene-oregon",
+    priority: 0.7,
+    changefreq: "monthly",
+  },
+  {
+    path: "/blog/verify-oregon-ccb-license",
+    priority: 0.7,
+    changefreq: "monthly",
+  },
+  {
+    path: "/blog/tadlock-residence-case-study",
+    priority: 0.6,
+    changefreq: "monthly",
+  },
   { path: "/estimator", priority: 0.9, changefreq: "monthly" },
   { path: "/faq", priority: 0.8, changefreq: "monthly" },
   { path: "/contact", priority: 0.9, changefreq: "monthly" },

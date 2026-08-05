@@ -471,6 +471,7 @@ export function SiteFooter() {
                 { label: "About Us", href: "/about" },
                 { label: "Our Team", href: "/about#team" },
                 { label: "Our Work", href: "/portfolio" },
+                { label: "Blog", href: "/blog" },
                 { label: "FAQ", href: "/faq" },
                 { label: "Contact", href: "/contact" },
               ].map(l => (
