@@ -14,7 +14,7 @@
  */
 
 export type ProjectCategory =
-  | "The Tadlock Residence"
+  | "Signature Outdoor Living"
   | "Decks & Outdoor"
   | "Bath & Kitchen"
   | "Interior Remodels"
@@ -50,7 +50,7 @@ export interface Project {
   beforeAfter?: BeforeAfter;
   photos: ProjectPhoto[];
   /** Optional tag — used for special editorial treatment (e.g. the builders' own home) */
-  tag?: "Our Home" | "Signature Work";
+  tag?: "Featured Project" | "Signature Work";
   /** Year completed, e.g. "2023". Surfaced in the detail-page facts bar when set. */
   year?: string;
   /** Human-readable build duration, e.g. "6 weeks". Surfaced when set. */
@@ -60,17 +60,17 @@ export interface Project {
 }
 
 export const PROJECTS: Project[] = [
-  /* ─── FLAGSHIP: Eric & Mitch's own home ─────────────────────────────── */
+  /* ─── SIGNATURE: outdoor living build ───────────────────────────────── */
   {
     slug: "tadlock-residence",
-    title: "The Tadlock Residence",
-    category: "The Tadlock Residence",
+    title: "Signature Outdoor Living Project",
+    category: "Signature Outdoor Living",
     location: "Eugene, OR",
-    tag: "Our Home",
+    tag: "Featured Project",
     summary:
-      "Eric and Mitch built this home's outdoor envelope themselves — pergola, decking, privacy fence, and front yard. Every board. Every fastener.",
+      "A full outdoor living build-out — pergola, composite decking, privacy fencing, and front yard fencing, all tied together in one cohesive design.",
     description:
-      "When you hire the Tadlock brothers, you hire two carpenters who live in a home they built themselves. This is that home. Over a single year, Eric and Mitch designed and installed the covered pergola, composite deck, horizontal cedar privacy fence, and the hog-wire front yard fence that ties the whole property together. No subs. No shortcuts. Exactly the standard they bring to every client home.",
+      "A covered pergola, composite deck, horizontal cedar privacy fence, and a hog-wire front yard fence that ties the whole property together — built to the same standard we bring to every client home.",
     scope: [
       "Black-finished louvered pergola anchored to the structure",
       "Grey-tone composite deck, flush to the back-door threshold",
@@ -541,7 +541,7 @@ export const PROJECTS: Project[] = [
 ];
 
 export const CATEGORIES: ProjectCategory[] = [
-  "The Tadlock Residence",
+  "Signature Outdoor Living",
   "Custom Homes",
   "Exterior & Restoration",
   "Bath & Kitchen",

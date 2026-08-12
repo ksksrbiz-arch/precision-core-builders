@@ -184,7 +184,7 @@ export default function PortfolioDetail() {
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               className="max-w-3xl"
             >
-              {/* Stack category + Our Home on mobile, inline on sm+ */}
+              {/* Stack category + tag badge on mobile, inline on sm+ */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2 mb-3">
                 <p
                   className="text-[11px] uppercase tracking-[0.2em] text-white/85"
@@ -192,9 +192,9 @@ export default function PortfolioDetail() {
                 >
                   {project.category}
                 </p>
-                {project.tag === "Our Home" && (
+                {project.tag === "Featured Project" && (
                   <span className="self-start bg-[#C8A84B] text-neutral-900 text-[10px] uppercase tracking-[0.2em] font-bold px-2.5 py-1 rounded">
-                    Our Home
+                    Featured Project
                   </span>
                 )}
               </div>
