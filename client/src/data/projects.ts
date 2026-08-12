@@ -20,7 +20,8 @@ export type ProjectCategory =
   | "Interior Remodels"
   | "Fencing & Structures"
   | "Exterior & Restoration"
-  | "Custom Homes";
+  | "Custom Homes"
+  | "Roofing";
 
 export type PhotoRole = "before" | "after" | "progress" | "hero";
 
@@ -79,11 +80,6 @@ export const PROJECTS: Project[] = [
     ],
     featured: true,
     hero: "signature-outdoor-01.jpg",
-    beforeAfter: {
-      before: "pergola-deck-01.jpg",
-      after: "signature-outdoor-01.jpg",
-      caption: "From bare frame to outdoor living room",
-    },
     photos: [
       {
         file: "signature-outdoor-01.jpg",
@@ -93,27 +89,17 @@ export const PROJECTS: Project[] = [
       {
         file: "signature-deck-01.jpg",
         role: "hero",
-        caption: "Raw cedar pergola stage",
-      },
-      {
-        file: "pergola-deck-01.jpg",
-        role: "progress",
-        caption: "Pergola framing install",
+        caption: "Covered pergola and composite deck, finished",
       },
       {
         file: "pergola-deck-02.jpg",
-        role: "progress",
-        caption: "Deck progress",
-      },
-      {
-        file: "pergola-deck-03.jpg",
         role: "after",
-        caption: "Composite step detail",
+        caption: "Mitered composite step detail",
       },
       {
         file: "cedar-fence-01.jpg",
-        role: "progress",
-        caption: "Cedar privacy fence going up",
+        role: "hero",
+        caption: "Cedar privacy fence and pergola, finished",
       },
       {
         file: "cedar-fence-02.jpg",
@@ -213,14 +199,8 @@ export const PROJECTS: Project[] = [
     ],
     featured: true,
     hero: "side-yard-shed-03.jpg",
-    beforeAfter: {
-      before: "side-yard-shed-01.jpg",
-      after: "side-yard-shed-03.jpg",
-      caption: "From plastic shed to permanent architecture",
-    },
     photos: [
-      { file: "side-yard-shed-01.jpg", role: "before" },
-      { file: "side-yard-shed-02.jpg", role: "before" },
+      { file: "side-yard-shed-01.jpg", role: "after" },
       { file: "side-yard-shed-03.jpg", role: "after" },
       { file: "side-yard-shed-04.jpg", role: "after" },
       { file: "side-yard-shed-05.jpg", role: "after" },
@@ -280,11 +260,11 @@ export const PROJECTS: Project[] = [
     category: "Bath & Kitchen",
     location: "Eugene, OR",
     summary:
-      "Full bath gut with a Schluter waterproofing system, custom tile work, and matching bedroom trim refresh.",
+      "Full bath gut with a Hydro-Blok waterproofing system, custom tile work, and matching bedroom trim refresh.",
     description:
-      "Down to the studs and back up. This remodel used the Schluter membrane system for bulletproof waterproofing, large-format tile with crisp layout, and carried the finish work into the adjacent bedroom with new window casings and trim.",
+      "Down to the studs and back up. This remodel used the Hydro-Blok membrane system for bulletproof waterproofing, large-format tile with crisp layout, and carried the finish work into the adjacent bedroom with new window casings and trim.",
     scope: [
-      "Schluter waterproofing system on tub surround",
+      "Hydro-Blok waterproofing system on tub surround",
       "Large-format tile installation",
       "New tub and fixture installation",
       "Bedroom window casing and trim refresh",
@@ -295,10 +275,14 @@ export const PROJECTS: Project[] = [
     photos: [
       {
         file: "bath-remodel-01.jpg",
-        role: "progress",
-        caption: "Schluter membrane going in",
+        role: "after",
+        caption: "Bedroom window casing and trim refresh",
       },
-      { file: "bath-remodel-02.jpg", role: "progress" },
+      {
+        file: "bath-remodel-02.jpg",
+        role: "progress",
+        caption: "Hydro-Blok membrane and hex-tile shower pan going in",
+      },
       { file: "bath-remodel-03.jpg", role: "progress" },
       { file: "bath-remodel-04.jpg", role: "progress" },
       { file: "bath-remodel-05.jpg", role: "progress" },
@@ -335,6 +319,16 @@ export const PROJECTS: Project[] = [
       { file: "signature-interior-01.jpg", role: "hero" },
       { file: "signature-interior-02.jpg", role: "hero" },
       { file: "signature-interior-03.jpg", role: "hero" },
+      {
+        file: "signature-bath-03.jpg",
+        role: "hero",
+        caption: "Frameless glass shower with full-height marble tile",
+      },
+      {
+        file: "signature-bath-04.jpg",
+        role: "progress",
+        caption: "Linear mosaic shower tile install",
+      },
     ],
   },
 
@@ -410,6 +404,139 @@ export const PROJECTS: Project[] = [
       { file: "signature-home-01.jpg", role: "hero" },
       { file: "signature-exterior-01.jpg", role: "hero" },
       { file: "signature-exterior-02.jpg", role: "hero" },
+      { file: "signature-custom-home-04.jpg", role: "hero" },
+      {
+        file: "pergola-deck-01.jpg",
+        role: "hero",
+        caption: "Covered entry with stone veneer accents",
+      },
+    ],
+  },
+
+  /* ─── CUSTOM HOMES: ground-up rebuild ───────────────────────────────── */
+  {
+    slug: "custom-home-ground-up-build",
+    title: "Ground-Up Custom Home Build",
+    category: "Custom Homes",
+    location: "Lane County, OR",
+    tag: "Signature Work",
+    summary:
+      "Full teardown and rebuild — from demo, to foundation, to a finished single-story home with a composite deck.",
+    description:
+      "A complete ground-up build: interior demo and site clearing, poured concrete stem-wall foundation, floor joists, full wall and roof-truss framing, sheathing, shingle roof, siding, trim, and a finished composite deck. Every stage handled in-house from teardown to move-in ready.",
+    scope: [
+      "Interior demo and site clearing",
+      "Concrete stem-wall foundation",
+      "Floor joist and full framing package",
+      "Roof sheathing and architectural shingles",
+      "Exterior siding and trim",
+      "Composite deck build-out",
+    ],
+    featured: true,
+    hero: "demo-rebuild-13.jpg",
+    photos: [
+      { file: "demo-rebuild-01.jpg", role: "before", caption: "Interior demo" },
+      {
+        file: "demo-rebuild-02.jpg",
+        role: "progress",
+        caption: "Floor joists on new stem-wall foundation",
+      },
+      {
+        file: "demo-rebuild-03.jpg",
+        role: "progress",
+        caption: "Interior wall framing with in-floor radiant tubing",
+      },
+      {
+        file: "demo-rebuild-04.jpg",
+        role: "progress",
+        caption: "Full wall and roof truss framing",
+      },
+      {
+        file: "demo-rebuild-05.jpg",
+        role: "progress",
+        caption: "Framing package complete",
+      },
+      {
+        file: "demo-rebuild-06.jpg",
+        role: "progress",
+        caption: "Wall and roof framing underway",
+      },
+      {
+        file: "demo-rebuild-07.jpg",
+        role: "progress",
+        caption: "Roof sheathing installed",
+      },
+      {
+        file: "demo-rebuild-08.jpg",
+        role: "progress",
+        caption: "Sheathed and roofed, ready for siding",
+      },
+      {
+        file: "demo-rebuild-09.jpg",
+        role: "progress",
+        caption: "Wall sheathing with roof underlayment",
+      },
+      {
+        file: "demo-rebuild-10.jpg",
+        role: "progress",
+        caption: "Sheathing complete, shingles staged for install",
+      },
+      {
+        file: "demo-rebuild-11.jpg",
+        role: "progress",
+        caption: "Siding and window trim going in",
+      },
+      {
+        file: "demo-rebuild-12.jpg",
+        role: "progress",
+        caption: "Siding complete, entry steps being finished",
+      },
+      {
+        file: "demo-rebuild-13.jpg",
+        role: "after",
+        caption: "Finished home",
+      },
+      {
+        file: "demo-rebuild-14.jpg",
+        role: "after",
+        caption: "Composite deck build-out",
+      },
+    ],
+  },
+
+  /* ─── ROOFING ─────────────────────────────────────────────────────── */
+  {
+    slug: "architectural-shingle-roof-replacement",
+    title: "Architectural Shingle Roof Replacement",
+    category: "Roofing",
+    location: "Lane County, OR",
+    summary:
+      "A full architectural shingle roof replacement — clean tie-ins, straight lines, finished ridge cap.",
+    description:
+      "Full shingle roof replacement from bare sheathing to finished ridge cap, with clean valley and edge lines throughout.",
+    scope: [
+      "Tear-off and sheathing inspection",
+      "Underlayment and architectural shingle installation",
+      "Ridge cap and edge detailing",
+    ],
+    featured: false,
+    hero: "roof-replacement-02.jpg",
+    photos: [
+      {
+        file: "roof-replacement-01.jpg",
+        role: "progress",
+        caption: "Shingles going on",
+      },
+      {
+        file: "roof-replacement-02.jpg",
+        role: "after",
+        caption: "Finished shingle roof",
+      },
+      {
+        file: "roof-replacement-03.jpg",
+        role: "after",
+        caption: "Ridge cap detail",
+      },
     ],
   },
 ];
@@ -422,6 +549,7 @@ export const CATEGORIES: ProjectCategory[] = [
   "Decks & Outdoor",
   "Interior Remodels",
   "Fencing & Structures",
+  "Roofing",
 ];
 
 /** Helper: resolve a photo filename or absolute URL */
