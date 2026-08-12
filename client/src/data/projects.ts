@@ -404,7 +404,6 @@ export const PROJECTS: Project[] = [
       { file: "signature-home-01.jpg", role: "hero" },
       { file: "signature-exterior-01.jpg", role: "hero" },
       { file: "signature-exterior-02.jpg", role: "hero" },
-      { file: "signature-custom-home-04.jpg", role: "hero" },
       {
         file: "pergola-deck-01.jpg",
         role: "hero",

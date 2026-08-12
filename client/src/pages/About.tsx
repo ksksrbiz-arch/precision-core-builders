@@ -457,6 +457,33 @@ export default function About() {
           </div>
         </section>
 
+        {/* Fleet / on every job site */}
+        <section className="py-16 sm:py-20">
+          <div className="container">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.6 }}
+              className="relative max-w-4xl mx-auto overflow-hidden rounded-sm"
+            >
+              <img
+                src="/portfolio/brand-trailer-01.jpg"
+                alt="Precision Core Builders branded equipment trailer — licensed, bonded, and insured"
+                className="w-full h-auto object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-6 sm:p-8">
+                <p className="text-white text-sm sm:text-base font-light">
+                  Fully equipped and on the road across Lane County — every
+                  job backed by CCB #246527.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="py-20 sm:py-28">
           <div className="container max-w-2xl text-center">
