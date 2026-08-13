@@ -405,11 +405,6 @@ export const PROJECTS: Project[] = [
         role: "hero",
         caption: "Frameless glass shower with full-height marble tile",
       },
-      {
-        file: "signature-bath-04.jpg",
-        role: "progress",
-        caption: "Linear mosaic shower tile install",
-      },
     ],
   },
 
@@ -490,6 +485,95 @@ export const PROJECTS: Project[] = [
         role: "hero",
         caption: "Covered entry with stone veneer accents",
       },
+      {
+        file: "signature-exterior-03.jpg",
+        role: "hero",
+        caption: "Front exterior, finished",
+      },
+    ],
+  },
+
+  /* ─── NEW: Linear mosaic shower remodel ─────────────────────────────── */
+  {
+    slug: "mosaic-shower-remodel",
+    title: "Linear Mosaic Shower Remodel",
+    category: "Bath & Kitchen",
+    location: "Lane County, OR",
+    summary:
+      "Dated tub-shower combo replaced with a floor-to-ceiling black, white, and grey linear mosaic surround.",
+    description:
+      "Out with the builder-grade tan fiberglass surround, in with a full mosaic tile package — diagonal-set linear mosaic as the feature wall, vertical wood-look tile flanking it, and a new floating vanity to match.",
+    scope: [
+      "Demo of existing tub/shower surround",
+      "Diagonal linear mosaic tile feature wall",
+      "Vertical wood-look tile side walls",
+      "New tub, fixtures, and floating vanity",
+    ],
+    featured: false,
+    hero: "bath-mosaic-03.jpg",
+    beforeAfter: {
+      before: "bath-mosaic-01.jpg",
+      after: "bath-mosaic-03.jpg",
+      caption: "Builder-grade to custom mosaic",
+    },
+    photos: [
+      { file: "bath-mosaic-01.jpg", role: "before", caption: "Original tub/shower" },
+      { file: "signature-bath-04.jpg", role: "progress", caption: "Mosaic tile install" },
+      { file: "bath-mosaic-03.jpg", role: "after", caption: "Finished shower surround" },
+      { file: "bath-mosaic-04.jpg", role: "after", caption: "Finished bath, wide view" },
+      { file: "bath-mosaic-05.jpg", role: "after", caption: "Floating vanity detail" },
+    ],
+  },
+
+  /* ─── NEW: Stacked-stone fireplace remodel ──────────────────────────── */
+  {
+    slug: "stacked-stone-fireplace",
+    title: "Stacked-Stone Fireplace Remodel",
+    category: "Interior Remodels",
+    location: "Lane County, OR",
+    summary:
+      "An outdated tile fireplace surround reframed and rebuilt floor-to-ceiling in stacked stone with a linear gas insert.",
+    description:
+      "The old tile surround came out down to the framing. We rebuilt the chase, ran floor-to-ceiling stacked stone up the vaulted wall, and set a new linear gas insert — a full focal-point rebuild in a great room.",
+    scope: [
+      "Demo of existing tile surround",
+      "Chase framing and reinforcement",
+      "Floor-to-ceiling stacked stone veneer",
+      "Linear gas fireplace insert installation",
+    ],
+    featured: false,
+    hero: "fireplace-remodel-02.jpg",
+    beforeAfter: {
+      before: "fireplace-remodel-01.jpg",
+      after: "fireplace-remodel-02.jpg",
+      caption: "Framed chase to finished stone surround",
+    },
+    photos: [
+      { file: "fireplace-remodel-01.jpg", role: "before", caption: "Chase reframed" },
+      { file: "fireplace-remodel-02.jpg", role: "after", caption: "Finished stacked-stone surround" },
+    ],
+  },
+
+  /* ─── NEW: Custom interior structure build ──────────────────────────── */
+  {
+    slug: "custom-structure-build",
+    title: "Custom Interior Structure Build",
+    category: "Fencing & Structures",
+    location: "Lane County, OR",
+    summary:
+      "A steel-stud framed, polycarbonate-paneled enclosure built out inside a commercial space.",
+    description:
+      "Not every job is a house. This one was a fully custom steel-stud frame with translucent polycarbonate panel walls, built out inside an existing commercial space start to finish.",
+    scope: [
+      "Steel stud frame layout and assembly",
+      "Polycarbonate panel wall installation",
+      "Interior finish and hardware",
+    ],
+    featured: false,
+    hero: "custom-structure-02.jpg",
+    photos: [
+      { file: "custom-structure-01.jpg", role: "progress", caption: "Frame and panel install" },
+      { file: "custom-structure-02.jpg", role: "after", caption: "Finished enclosure" },
     ],
   },
 ];
