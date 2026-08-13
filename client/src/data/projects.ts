@@ -351,37 +351,27 @@ export const PROJECTS: Project[] = [
     category: "Bath & Kitchen",
     location: "Eugene, OR",
     summary:
-      "Full bath gut with a Hydro-Blok waterproofing system, custom tile work, and matching bedroom trim refresh.",
+      "Full bath gut with a Hydro-Blok waterproofing system and custom large-format tile work.",
     description:
-      "Down to the studs and back up. This remodel used the Hydro-Blok membrane system for bulletproof waterproofing, large-format tile with crisp layout, and carried the finish work into the adjacent bedroom with new window casings and trim.",
+      "Down to the studs and back up. This remodel used the Hydro-Blok membrane system for bulletproof waterproofing and large-format tile with crisp, clean layout throughout.",
     scope: [
       "Hydro-Blok waterproofing system on tub surround",
       "Large-format tile installation",
       "New tub and fixture installation",
-      "Bedroom window casing and trim refresh",
       "Wall color and finish coordination",
     ],
     featured: true,
-    hero: "bath-remodel-06.jpg",
+    hero: "bath-remodel-09.jpg",
     photos: [
-      {
-        file: "bath-remodel-01.jpg",
-        role: "after",
-        caption: "Bedroom window casing and trim refresh",
-      },
       {
         file: "bath-remodel-02.jpg",
         role: "progress",
         caption: "Hydro-Blok membrane and hex-tile shower pan going in",
       },
-      { file: "bath-remodel-03.jpg", role: "progress" },
-      { file: "bath-remodel-04.jpg", role: "progress" },
       { file: "bath-remodel-05.jpg", role: "progress" },
-      { file: "bath-remodel-06.jpg", role: "after" },
       { file: "bath-remodel-07.jpg", role: "after" },
       { file: "bath-remodel-08.jpg", role: "after" },
       { file: "bath-remodel-09.jpg", role: "after" },
-      { file: "bath-remodel-10.jpg", role: "after" },
     ],
   },
   {
