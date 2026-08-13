@@ -48,3 +48,4 @@ supabase/.temp/
 
 # Claude Code agent scratch (worktrees, transient state)
 .claude/worktrees/
+package-lock.json
