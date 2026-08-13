@@ -121,14 +121,14 @@ export const PROJECTS: Project[] = [
   /* ─── EXTERIOR & RESTORATION ────────────────────────────────────────── */
   {
     slug: "full-house-restoration",
-    title: "Full Home Restoration",
+    title: "Full Home Rebuild",
     category: "Exterior & Restoration",
     location: "Lane County, OR",
     tag: "Signature Work",
     summary:
-      "A storm-damaged home brought back better than new — full teardown, ground-up rebuild, and a finished composite deck.",
+      "A storm-damaged home torn down and rebuilt from the ground up — new foundation, full framing, roof, siding, and a finished composite deck.",
     description:
-      "This home suffered extensive damage before Eric's crew arrived. We tore down to the foundation and rebuilt from the ground up: new concrete stem-wall foundation, full framing package, roof sheathing and architectural shingles, siding and trim, and a finished composite deck. The owners returned to a home that is not only rebuilt, but substantially upgraded.",
+      "This home suffered extensive damage before Eric's crew arrived. Rather than patch it, we tore down to the foundation and rebuilt the entire home from the ground up: new concrete stem-wall foundation, full framing package, roof sheathing and architectural shingles, siding and trim, and a finished composite deck. The owners returned to a home that isn't repaired — it's brand new.",
     scope: [
       "Interior demo and site clearing",
       "Concrete stem-wall foundation and floor framing",
@@ -136,7 +136,7 @@ export const PROJECTS: Project[] = [
       "Roof sheathing and architectural shingle roofing",
       "New siding, trim, and exterior finish",
       "Composite deck build-out",
-      "Driveway and site restoration",
+      "Driveway and site cleanup",
     ],
     featured: true,
     hero: "house-restoration-02.jpg",
