@@ -107,6 +107,7 @@ export default function Estimator() {
   const [leadSent, setLeadSent] = useState(false);
   const [leadSending, setLeadSending] = useState(false);
   const [leadError, setLeadError] = useState("");
+  const [botField, setBotField] = useState(""); // honeypot — real users never fill this
 
   const toggleMaterial = (m: string) =>
     setMaterials(prev =>
@@ -155,11 +156,18 @@ export default function Estimator() {
   const submitLead = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!leadName || !leadEmail || leadSending) return;
+    // Honeypot tripped — silently drop without an error so a bot doesn't
+    // learn its submission was rejected.
+    if (botField) {
+      setLeadSent(true);
+      return;
+    }
     setLeadSending(true);
     setLeadError("");
 
     const formData = new FormData();
     formData.append("form-name", "estimator-lead");
+    formData.append("bot-field", botField);
     formData.append("name", leadName);
     formData.append("email", leadEmail);
     formData.append("phone", leadPhone);
@@ -659,6 +667,24 @@ export default function Estimator() {
                     free.
                   </p>
                   <form onSubmit={submitLead} className="space-y-3">
+                    {/* Honeypot — hidden from real users, bots that auto-fill
+                        every field will trip it. Field name must match the
+                        static form registration in index.html. */}
+                    <div
+                      style={{ position: "absolute", left: "-9999px" }}
+                      aria-hidden="true"
+                    >
+                      <label>
+                        Skip:{" "}
+                        <input
+                          name="bot-field"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          value={botField}
+                          onChange={e => setBotField(e.target.value)}
+                        />
+                      </label>
+                    </div>
                     <input
                       value={leadName}
                       onChange={e => setLeadName(e.target.value)}

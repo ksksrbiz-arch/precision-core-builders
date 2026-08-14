@@ -8,6 +8,21 @@ import {
 import { verifyAuth } from "./_utils/authGuard";
 import { withGuards } from "./_lib/http";
 import { PROMPTS } from "./_lib/llm/prompts";
+import { z } from "zod";
+
+// Bounds are deliberately generous but finite — this is public, unauthenticated
+// input that gets fed straight into an LLM prompt (token-cost/prompt-injection
+// surface) and, for the notes/location fields, into a database row.
+const estimateRequestSchema = z.object({
+  projectType: z.string().trim().min(1).max(100),
+  squareFootage: z.coerce.number().int().min(1).max(50_000).optional(),
+  complexity: z.enum(["low", "medium", "high"]).optional(),
+  materials: z.array(z.string().trim().max(100)).max(30).optional(),
+  location: z.string().trim().max(200).optional(),
+  additionalNotes: z.string().trim().max(2_000).optional(),
+  projectId: z.string().uuid().optional(),
+  clientId: z.string().uuid().optional(),
+});
 
 export const handler = withGuards(
   { methods: ["POST"], auth: "none" },
@@ -36,7 +51,14 @@ export const handler = withGuards(
     }
 
     try {
-      const input = JSON.parse(event.body ?? "{}");
+      const rawInput = JSON.parse(event.body ?? "{}");
+      const parsed = estimateRequestSchema.safeParse(rawInput);
+      if (!parsed.success) {
+        return error(
+          400,
+          `Invalid request: ${parsed.error.issues.map(i => `${i.path.join(".")} ${i.message}`).join("; ")}`
+        );
+      }
       const {
         squareFootage,
         projectType,
@@ -44,9 +66,9 @@ export const handler = withGuards(
         materials,
         location,
         additionalNotes,
-      } = input;
-
-      if (!projectType) return error(400, "projectType required");
+        projectId,
+        clientId,
+      } = parsed.data;
 
       const userPrompt = [
         `Project type: ${projectType}`,
@@ -106,12 +128,12 @@ export const handler = withGuards(
       // Save to estimates table if projectId or clientId provided
       let savedEstimate = null;
       const db = getSupabaseAdmin();
-      if (db && (input.projectId || input.clientId)) {
+      if (db && (projectId || clientId)) {
         const { data } = await db
           .from("estimates")
           .insert({
-            project_id: input.projectId,
-            client_id: input.clientId,
+            project_id: projectId,
+            client_id: clientId,
             square_footage: squareFootage,
             project_type: projectType,
             complexity,

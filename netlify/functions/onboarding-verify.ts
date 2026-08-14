@@ -14,6 +14,28 @@
  */
 import type { Handler } from "@netlify/functions";
 import { timingSafeEqualStr } from "./_lib/crypto";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
+import { z } from "zod";
+
+const verifyRequestSchema = z.object({
+  onboardingToken: z.string().min(1),
+  service: z.enum([
+    "groq",
+    "openweather",
+    "stripe",
+    "n8n",
+    "supabase",
+    "elevenlabs",
+    "cloudflare_ai",
+  ]),
+  // Credential values are third-party API keys/secrets — bound the size so a
+  // malformed request can't be used to smuggle megabytes of junk through.
+  credentials: z.record(z.string(), z.string().max(2_000)),
+});
 
 const ONBOARDING_TOKEN = process.env.ONBOARDING_TOKEN ?? "";
 
@@ -180,6 +202,23 @@ export const handler: Handler = async event => {
     return { statusCode: 405, headers, body: "" };
 
   try {
+    // Rate limit: 5 attempts per minute per IP — this endpoint checks a
+    // shared secret token, so it's a brute-force target without this.
+    const ip = getClientIp(event.headers);
+    const rl = checkRateLimit(`onboarding-verify:${ip}`, {
+      maxRequests: 5,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return {
+        statusCode: 429,
+        headers: { ...headers, ...rateLimitHeaders(rl) },
+        body: JSON.stringify({
+          error: "Too many attempts. Please wait a minute and try again.",
+        }),
+      };
+    }
+
     if (!ONBOARDING_TOKEN) {
       return {
         statusCode: 503,
@@ -188,19 +227,19 @@ export const handler: Handler = async event => {
       };
     }
 
-    const { onboardingToken, service, credentials } = JSON.parse(
-      event.body ?? "{}"
-    ) as {
-      onboardingToken?: string;
-      service?: string;
-      credentials?: Record<string, string>;
-    };
+    const rawBody = JSON.parse(event.body ?? "{}") as Record<string, unknown>;
+    const rawToken =
+      typeof rawBody.onboardingToken === "string"
+        ? rawBody.onboardingToken
+        : "";
 
+    // Auth check happens before schema validation of the rest of the body —
+    // we don't want to leak "your service field is malformed" to a caller
+    // who doesn't even have a valid token.
     if (
-      !onboardingToken ||
-      typeof onboardingToken !== "string" ||
-      onboardingToken.length !== ONBOARDING_TOKEN.length ||
-      !timingSafeEqualStr(onboardingToken, ONBOARDING_TOKEN)
+      !rawToken ||
+      rawToken.length !== ONBOARDING_TOKEN.length ||
+      !timingSafeEqualStr(rawToken, ONBOARDING_TOKEN)
     ) {
       return {
         statusCode: 401,
@@ -209,13 +248,17 @@ export const handler: Handler = async event => {
       };
     }
 
-    if (!service || !credentials) {
+    const parsed = verifyRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: "service and credentials required" }),
+        body: JSON.stringify({
+          error: `Invalid request: ${parsed.error.issues.map(i => `${i.path.join(".")} ${i.message}`).join("; ")}`,
+        }),
       };
     }
+    const { service, credentials } = parsed.data;
 
     let result: { ok: boolean; message: string };
     switch (service) {
