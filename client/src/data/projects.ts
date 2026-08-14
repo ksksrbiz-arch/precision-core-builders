@@ -369,9 +369,11 @@ export const PROJECTS: Project[] = [
         caption: "Hydro-Blok membrane and hex-tile shower pan going in",
       },
       { file: "bath-remodel-05.jpg", role: "progress" },
+      { file: "bath-remodel-12.jpg", role: "progress" },
       { file: "bath-remodel-07.jpg", role: "after" },
       { file: "bath-remodel-08.jpg", role: "after" },
       { file: "bath-remodel-09.jpg", role: "after" },
+      { file: "bath-remodel-11.jpg", role: "after" },
     ],
   },
   {
@@ -575,6 +577,155 @@ export const PROJECTS: Project[] = [
       { file: "custom-structure-01.jpg", role: "progress", caption: "Frame and panel install" },
       { file: "custom-structure-02.jpg", role: "after", caption: "Finished enclosure" },
     ],
+  },
+
+  /* ─── DECKS & OUTDOOR: covered patio pergola ────────────────────────── */
+  {
+    slug: "covered-patio-pergola",
+    title: "Covered Patio Pergola",
+    category: "Decks & Outdoor",
+    location: "Lane County, OR",
+    summary:
+      "A cedar pergola with a clear polycarbonate roof panel, built onto an existing concrete patio.",
+    description:
+      "A cedar pergola framed and anchored to the home, then topped with a clear corrugated polycarbonate roof panel for weather cover without losing natural light.",
+    scope: [
+      "Cedar pergola framing, anchored to the home",
+      "Clear corrugated polycarbonate roof panels",
+      "Structural post footings on existing patio",
+    ],
+    featured: false,
+    hero: "pergola-cover-02.jpg",
+    photos: [
+      {
+        file: "pergola-cover-01.jpg",
+        role: "progress",
+        caption: "Cedar pergola framing",
+      },
+      {
+        file: "pergola-cover-02.jpg",
+        role: "after",
+        caption: "Polycarbonate roof panels installed",
+      },
+      {
+        file: "pergola-cover-03.jpg",
+        role: "after",
+        caption: "Roofline detail at the house eave",
+      },
+      { file: "pergola-cover-04.jpg", role: "after" },
+    ],
+  },
+
+  /* ─── DECKS & OUTDOOR: composite deck build ──────────────────────────── */
+  {
+    slug: "composite-deck-build",
+    title: "Composite Deck Build",
+    category: "Decks & Outdoor",
+    location: "Lane County, OR",
+    summary:
+      "A multi-level composite deck with built-in bench seating and a paver patio tie-in.",
+    description:
+      "A composite deck build with built-in bench seating around a grill area, stepping down to a paver patio at grade.",
+    scope: [
+      "Composite decking and framing",
+      "Built-in bench seating",
+      "Cable-rail sections",
+      "Paver patio tie-in at grade",
+    ],
+    featured: false,
+    hero: "composite-deck-build-01.jpg",
+    photos: [
+      { file: "composite-deck-build-01.jpg", role: "after" },
+      { file: "composite-deck-build-02.jpg", role: "after" },
+    ],
+  },
+
+  /* ─── EXTERIOR & RESTORATION: cedar shake siding ─────────────────────── */
+  {
+    slug: "cedar-shake-siding",
+    title: "Cedar Shake Siding & Roofing Detail",
+    category: "Exterior & Restoration",
+    location: "Lane County, OR",
+    summary:
+      "Horizontal cedar shake siding on a dormer accent, tied into a new architectural shingle roof.",
+    description:
+      "Horizontal cedar shake siding installed on a dormer accent wall, with clean roof-to-wall flashing tied into new architectural shingles.",
+    scope: [
+      "Horizontal cedar shake siding installation",
+      "Roof-to-wall flashing detail",
+      "Architectural shingle roofing",
+    ],
+    featured: false,
+    hero: "cedar-shake-siding-01.jpg",
+    photos: [
+      { file: "cedar-shake-siding-01.jpg", role: "after" },
+      { file: "cedar-shake-siding-02.jpg", role: "after" },
+    ],
+  },
+
+  /* ─── EXTERIOR & RESTORATION: exterior painting ──────────────────────── */
+  {
+    slug: "exterior-house-painting",
+    title: "Exterior House Painting",
+    category: "Exterior & Restoration",
+    location: "Lane County, OR",
+    summary: "A full exterior repaint, windows masked and prepped for spray.",
+    description:
+      "A full exterior repaint from prep to finish — windows and fixtures masked off for spray application, siding coated top to bottom.",
+    scope: [
+      "Surface prep and masking",
+      "Spray-applied exterior paint",
+      "Trim and fixture protection",
+    ],
+    featured: false,
+    hero: "exterior-painting-01.jpg",
+    photos: [
+      { file: "exterior-painting-01.jpg", role: "after" },
+      {
+        file: "exterior-painting-02.jpg",
+        role: "progress",
+        caption: "Windows masked and prepped for spray",
+      },
+    ],
+  },
+
+  /* ─── INTERIOR REMODELS: interior trim & finish ──────────────────────── */
+  {
+    slug: "interior-trim-finish",
+    title: "Interior Trim & Finish Work",
+    category: "Interior Remodels",
+    location: "Eugene, OR",
+    summary:
+      "Interior trim, casing, and finish work across a dining nook, living room, and bedroom.",
+    description:
+      "Interior finish carpentry — window casings, crown molding, and trim work carried consistently through the dining nook, living room, and bedroom.",
+    scope: [
+      "Window and door casing",
+      "Crown molding",
+      "Interior trim and finish carpentry",
+    ],
+    featured: false,
+    hero: "interior-finish-02.jpg",
+    photos: [
+      { file: "interior-finish-01.jpg", role: "after", caption: "Dining nook" },
+      { file: "interior-finish-02.jpg", role: "after", caption: "Living room" },
+      { file: "interior-finish-03.jpg", role: "after", caption: "Bedroom" },
+    ],
+  },
+
+  /* ─── DECKS & OUTDOOR: mosaic patio ───────────────────────────────────── */
+  {
+    slug: "mosaic-accent-patio",
+    title: "Deck & Mosaic Accent Wall",
+    category: "Decks & Outdoor",
+    location: "Lane County, OR",
+    summary: "A wood deck with a custom mosaic tile accent wall and pergola.",
+    description:
+      "A wood deck build with a custom mosaic tile accent wall and a covered entry pergola.",
+    scope: ["Wood deck construction", "Custom mosaic accent wall", "Entry pergola"],
+    featured: false,
+    hero: "mosaic-patio-01.jpg",
+    photos: [{ file: "mosaic-patio-01.jpg", role: "after" }],
   },
 ];
 
