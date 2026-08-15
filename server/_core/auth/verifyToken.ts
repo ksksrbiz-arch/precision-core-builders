@@ -30,7 +30,13 @@ export type VerifyResult =
   | { ok: true; user: VerifiedUser }
   | { ok: false; statusCode: 401 | 403; message: string };
 
-/** The shared dev bypass token — matches the client-side constant. */
+/**
+ * The shared dev bypass token — matches the client-side constant.
+ *
+ * IMPORTANT: this is a public string (it's baked into the client JS bundle,
+ * readable via view-source on any deployed environment). It must NEVER be
+ * the sole gate on the bypass — see the ALLOW_DEV_ADMIN_BYPASS check below.
+ */
 export const DEV_ADMIN_TOKEN = "dev-admin-token";
 
 /** Extract a `Bearer <token>` value from a headers map (case-insensitive). */
@@ -80,8 +86,27 @@ export async function verifyToken(token: string | null): Promise<VerifyResult> {
     };
   }
 
-  // 2. Dev bypass — only outside production.
-  if (token === DEV_ADMIN_TOKEN && process.env.NODE_ENV !== "production") {
+  // 2. Dev bypass — never allowed unless BOTH:
+  //    (a) NODE_ENV !== 'production' — belt.
+  //    (b) ALLOW_DEV_ADMIN_BYPASS is explicitly set — suspenders.
+  //
+  // (a) alone is NOT sufficient: Netlify sets NODE_ENV=development for
+  // deploy-preview and branch-deploy contexts (see netlify.toml), and every
+  // PR/branch push gets a public preview URL. Since DEV_ADMIN_TOKEN is a
+  // public string visible in the client bundle on any deployed environment
+  // (previews included), gating on NODE_ENV alone means anyone who finds a
+  // preview URL gets full admin access.
+  //
+  // ALLOW_DEV_ADMIN_BYPASS must be set in a developer's own local .env (see
+  // .env.example) and must NEVER be added to Netlify's site environment
+  // variables for any deploy context — that's what keeps this off on every
+  // Netlify-hosted URL (production, deploy-preview, branch-deploy) while
+  // still working for `pnpm dev` on a developer's own machine.
+  if (
+    token === DEV_ADMIN_TOKEN &&
+    process.env.NODE_ENV !== "production" &&
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true"
+  ) {
     return {
       ok: true,
       user: {
