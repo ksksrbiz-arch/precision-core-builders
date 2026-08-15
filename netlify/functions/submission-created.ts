@@ -15,6 +15,11 @@
 import type { Handler } from "@netlify/functions";
 import { scoreLead, type LeadInput } from "../../server/_core/leadScoring";
 import { db } from "../../server/db";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
 
 /** Lead-capture `form-name`s this trigger acts on. Other forms are ignored. */
 const INQUIRY_FORM = "project-inquiry";
@@ -132,6 +137,23 @@ function buildEstimatorLead(
 
 export const handler: Handler = async event => {
   try {
+    // No auth is possible here (Netlify Forms triggers aren't signed), but
+    // this endpoint writes directly to the leads table and calls an LLM via
+    // scoreLead — rate limit by IP so it can't be hammered, and bound every
+    // field below before it reaches scoreLead or the DB insert.
+    const ip = getClientIp(event.headers);
+    const rl = checkRateLimit(`submission-created:${ip}`, {
+      maxRequests: 20,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return {
+        statusCode: 429,
+        headers: rateLimitHeaders(rl),
+        body: "rate limited",
+      };
+    }
+
     const parsed = JSON.parse(event.body ?? "{}") as {
       payload?: SubmissionPayload;
     };
@@ -144,7 +166,17 @@ export const handler: Handler = async event => {
       return { statusCode: 200, body: "skipped (other form)" };
     }
 
-    const data = payload.data ?? {};
+    // Bound every field: max 50 keys, each value truncated to 3000 chars.
+    // This feeds scoreLead's LLM prompt and a DB insert — an unauthenticated
+    // caller shouldn't be able to smuggle an oversized payload through either.
+    const rawData = payload.data ?? {};
+    const data: FormData = {};
+    for (const [key, value] of Object.entries(rawData).slice(0, 50)) {
+      if (typeof value === "string") {
+        data[key] = value.slice(0, 3_000);
+      }
+    }
+
     const name = data.name?.trim();
     const projectType = data.projectType?.trim();
     if (!name && !projectType) {

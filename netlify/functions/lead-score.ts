@@ -6,6 +6,24 @@ import {
 } from "./_utils/rateLimiter";
 import { withGuards } from "./_lib/http";
 import { isLLMConfigError } from "./_lib/llm/prompts";
+import { z } from "zod";
+
+// Public, unauthenticated endpoint whose fields feed straight into an LLM
+// prompt (server/_core/leadScoring.ts) — bound every field so a caller can't
+// inflate token cost with an oversized field, even within the rate limit.
+const leadSchema = z
+  .object({
+    name: z.string().trim().max(200).optional(),
+    projectType: z.string().trim().max(200).optional(),
+    budget: z.string().trim().max(100).optional(),
+    location: z.string().trim().max(200).optional(),
+    timeline: z.string().trim().max(100).optional(),
+    message: z.string().trim().max(3_000).optional(),
+    description: z.string().trim().max(3_000).optional(),
+  })
+  .refine(v => v.name || v.projectType, {
+    message: "Please provide at least a lead name or project type.",
+  });
 
 export const handler = withGuards(
   { methods: ["POST"], auth: "none" },
@@ -25,16 +43,16 @@ export const handler = withGuards(
     }
 
     try {
-      const lead = JSON.parse(event.body ?? "{}");
-
-      if (!lead.name && !lead.projectType) {
+      const rawLead = JSON.parse(event.body ?? "{}");
+      const parsed = leadSchema.safeParse(rawLead);
+      if (!parsed.success) {
         return error(
           400,
-          "Please provide at least a lead name or project type."
+          parsed.error.issues[0]?.message ?? "Invalid lead data."
         );
       }
 
-      const score = await scoreLead(lead);
+      const score = await scoreLead(parsed.data);
       return json(200, score);
     } catch (err) {
       console.error("[lead-score]", err);

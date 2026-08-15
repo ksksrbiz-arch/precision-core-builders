@@ -12,6 +12,12 @@ import { invokeLLM } from "../../server/_core/llm";
 import { buildPortalSnapshot } from "../../server/_core/portalSnapshot";
 import { withGuards } from "./_lib/http";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
+import { z } from "zod";
+
+const portalMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().max(4_000),
+});
 
 export const handler = withGuards(
   {
@@ -27,11 +33,12 @@ export const handler = withGuards(
   },
   async ({ event, user, json, error }) => {
     try {
-      const body = JSON.parse(event.body ?? "{}") as {
-        messages?: Array<{ role: "user" | "assistant"; content: string }>;
-      };
+      const body = JSON.parse(event.body ?? "{}") as { messages?: unknown[] };
       const messages = (body.messages ?? [])
-        .filter(m => m.role === "user" || m.role === "assistant")
+        .flatMap(m => {
+          const parsed = portalMessageSchema.safeParse(m);
+          return parsed.success ? [parsed.data] : [];
+        })
         .slice(-12);
 
       if (!messages.length) {

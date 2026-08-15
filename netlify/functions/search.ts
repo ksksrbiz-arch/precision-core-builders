@@ -320,8 +320,15 @@ export const handler = withGuards(
 
     try {
       const { query } = JSON.parse(event.body ?? "{}") as { query?: string };
-      if (!query || query.trim().length < 2) {
+      if (
+        !query ||
+        typeof query !== "string" ||
+        query.trim().length < 2
+      ) {
         return error(400, "Query must be at least 2 characters.");
+      }
+      if (query.length > 500) {
+        return error(400, "Query is too long (max 500 characters).");
       }
 
       // Primary path: ranked Postgres full-text search via the `search_all`
