@@ -27,6 +27,20 @@ export type { PaginationInput };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SupabaseRow = any;
 
+/**
+ * Escape a user-supplied search term for safe interpolation into a
+ * PostgREST filter string (e.g. `.or(\`name.ilike.%${term}%\`)`).
+ *
+ * PostgREST's filter syntax treats `,` `.` `(` `)` and `%` as structural —
+ * an unescaped search term containing them can alter which columns/operators
+ * the filter applies to (e.g. injecting an extra `,role.eq.admin` clause),
+ * not classic SQL injection, but a real query-shape injection risk. Escape
+ * each with a leading backslash, which PostgREST treats as a literal.
+ */
+export function escapePostgrestFilterTerm(term: string): string {
+  return term.replace(/[\\,.()%]/g, "\\$&");
+}
+
 export type SupabaseResult = {
   data: SupabaseRow;
   error: { message: string } | null;
