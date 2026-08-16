@@ -1,6 +1,6 @@
 # Precision Core Builders: Development TODO
 
-**Last Updated:** July 23, 2026
+**Last Updated:** August 16, 2026
 **Overall Progress:** ~70% complete (Foundation ✅ | Operations ~60% | Portal/Features ~40% | Estimator UI, Lead Scoring, Stripe billing, Purchase Orders, Full-Text Search, Blueprint ✅ shipped)
 **Next Milestone:** Finish Phase 2 real-time rollout to remaining pages (Gantt drag-and-drop ✅ shipped)
 
@@ -18,12 +18,12 @@
 - [ ] Surface reconnecting state via the existing `isLive` return (false while reconnecting)
 - **Acceptance:** `pnpm check` + `pnpm test` pass; add a Vitest unit test for the backoff schedule (mock the supabase channel)
 
-### [BOT-2] Gantt task edit modal (finishes CRITICAL-1)
+### [BOT-2] Gantt task edit modal (finishes CRITICAL-1) ✅
 
 - **Files:** `client/src/components/GanttChart.tsx` (+ new task edit dialog, wire into `client/src/pages/admin/ScheduleView.tsx`)
-- [ ] Clicking a task bar opens a modal (use the existing `ui/dialog` component) showing title, status, dates, assignee, notes
-- [ ] Edits call `schedule.update` with the same optimistic-update pattern already used for drag-and-drop
-- [ ] `readOnly` mode opens a view-only dialog with no save action
+- [x] Clicking a task bar opens a modal (use the existing `ui/dialog` component) showing title, status, dates, assignee, notes
+- [x] Edits call `schedule.update` with the same optimistic-update pattern already used for drag-and-drop
+- [x] `readOnly` mode opens a view-only dialog with no save action
 - **Acceptance:** `pnpm check` + `pnpm test` pass; dialog is keyboard-navigable and mobile-friendly
 
 ### [BOT-3] ScheduleView weather widget + rain alert banner (PHASE2-3 partial)
@@ -42,11 +42,11 @@
 - [ ] New tasks appear in the Gantt without manual refresh (invalidate the `schedule.list` query)
 - **Acceptance:** `pnpm check` + `pnpm test` pass
 
-### [BOT-5] Estimator: share-via-email + print-friendly (finishes CRITICAL-3)
+### [BOT-5] Estimator: share-via-email + print-friendly (finishes CRITICAL-3) ✅
 
 - **File:** `client/src/pages/Estimator.tsx`
-- [ ] "Share via email" button on the estimate result (`mailto:` with subject + plain-text summary of the 3 tiers and cost breakdown)
-- [ ] Print-friendly result layout (`@media print` rules: hide nav/buttons, clean single-column breakdown)
+- [x] "Share via email" button on the estimate result (`mailto:` with subject + plain-text summary of the 3 tiers and cost breakdown)
+- [x] Print-friendly result layout (`@media print` rules: hide nav/buttons, clean single-column breakdown)
 - **Acceptance:** `pnpm check` + `pnpm test` pass; verify with browser print preview
 
 

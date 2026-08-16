@@ -23,6 +23,14 @@ import {
 import { CloudRain } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/useMobile";
 
 // ScheduleItem matches the Supabase schedule_items column names returned by
@@ -39,10 +47,24 @@ export interface ScheduleItem {
   notes?: string | null;
 }
 
+/** Partial updates accepted by the task edit modal / save callback. */
+export type ScheduleTaskPatch = {
+  title?: string;
+  status?: ScheduleItem["status"];
+  plannedStart?: string;
+  plannedEnd?: string;
+  assignedTo?: string | null;
+  notes?: string | null;
+  weatherSensitive?: boolean;
+};
+
 export interface GanttChartProps {
   projectId: number;
   items?: ScheduleItem[];
+  /** Called when a task bar is drag-rescheduled (dates only). */
   onTaskUpdate?: (taskId: number, startDate: Date, endDate: Date) => void;
+  /** Called when the edit modal saves field changes. */
+  onTaskSave?: (taskId: number, updates: ScheduleTaskPatch) => void;
   readOnly?: boolean;
 }
 
@@ -88,20 +110,43 @@ export function GanttChart({
   projectId,
   items = [],
   onTaskUpdate,
+  onTaskSave,
   readOnly = false,
 }: GanttChartProps) {
   const [tasks, setTasks] = useState<ScheduleItem[]>(items);
   const [chartData, setChartData] = useState<GanttBarData[]>([]);
   const [draggingTaskId, setDraggingTaskId] = useState<number | null>(null);
   const [dragStartPos, setDragStartPos] = useState<number>(0);
+  const [editingTask, setEditingTask] = useState<ScheduleItem | null>(null);
+  const [editForm, setEditForm] = useState<{
+    title: string;
+    status: ScheduleItem["status"];
+    plannedStart: string;
+    plannedEnd: string;
+    assignedTo: string;
+    notes: string;
+    weatherSensitive: boolean;
+  }>({
+    title: "",
+    status: "pending",
+    plannedStart: "",
+    plannedEnd: "",
+    assignedTo: "",
+    notes: "",
+    weatherSensitive: false,
+  });
+  const [saving, setSaving] = useState(false);
   const isMobile = useIsMobile();
   const dragRef = useRef<HTMLDivElement>(null);
+  /** Tracks whether the pointer moved enough to count as a drag (vs click). */
+  const movedRef = useRef(false);
 
   // Fetch schedule items from database (overrides prop items when available)
   const { data: dbItems, isLoading } = trpc.schedule.list.useQuery({
     projectId,
   });
 
+  // Prefer live query results; fall back to prop items (tests / parent-driven)
   useEffect(() => {
     if (dbItems) {
       // Map Supabase row fields to the ScheduleItem interface.
@@ -117,8 +162,10 @@ export function GanttChart({
         notes: row.notes ?? null,
       }));
       setTasks(mapped);
+    } else if (items.length > 0) {
+      setTasks(items);
     }
-  }, [dbItems]);
+  }, [dbItems, items]);
 
   // Rebuild chart data whenever tasks change
   useEffect(() => {
@@ -155,28 +202,57 @@ export function GanttChart({
     setChartData(data);
   }, [tasks]);
 
-  // Drag-and-drop reschedule
+  const openTaskEditor = (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    setEditingTask(task);
+    setEditForm({
+      title: task.title,
+      status: task.status,
+      plannedStart: task.planned_start
+        ? task.planned_start.slice(0, 10)
+        : "",
+      plannedEnd: task.planned_end ? task.planned_end.slice(0, 10) : "",
+      assignedTo: task.assigned_to ?? "",
+      notes: task.notes ?? "",
+      weatherSensitive: !!task.weather_sensitive,
+    });
+  };
+
+  // Drag-and-drop reschedule, or click-to-edit when pointer barely moved
   const handleBarMouseDown = (e: React.MouseEvent, taskId: number) => {
-    if (readOnly) return;
     setDraggingTaskId(taskId);
     setDragStartPos(e.clientX);
+    movedRef.current = false;
   };
 
   useEffect(() => {
     if (draggingTaskId === null) return;
 
+    const handleMouseMove = (e: MouseEvent) => {
+      if (Math.abs(e.clientX - dragStartPos) > 4) {
+        movedRef.current = true;
+      }
+    };
+
     const handleMouseUp = (e: MouseEvent) => {
-      if (draggingTaskId === null || !dragRef.current) return;
+      if (draggingTaskId === null) return;
 
       const task = tasks.find(t => t.id === draggingTaskId);
-      if (task?.planned_start && task?.planned_end) {
-        const moved = e.clientX - dragStartPos;
-        const dragDays = Math.round(moved / PIXELS_PER_DAY);
+      const moved = e.clientX - dragStartPos;
+      const wasClick = !movedRef.current && Math.abs(moved) <= 4;
 
+      if (wasClick) {
+        openTaskEditor(draggingTaskId);
+      } else if (
+        !readOnly &&
+        task?.planned_start &&
+        task?.planned_end
+      ) {
+        const dragDays = Math.round(moved / PIXELS_PER_DAY);
         if (dragDays !== 0) {
           const newStart = new Date(task.planned_start);
           newStart.setDate(newStart.getDate() + dragDays);
-
           const newEnd = new Date(task.planned_end);
           newEnd.setDate(newEnd.getDate() + dragDays);
 
@@ -200,11 +276,16 @@ export function GanttChart({
       }
 
       setDraggingTaskId(null);
+      movedRef.current = false;
     };
 
+    document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    return () => document.removeEventListener("mouseup", handleMouseUp);
-  }, [draggingTaskId, dragStartPos, tasks, onTaskUpdate]);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [draggingTaskId, dragStartPos, tasks, onTaskUpdate, readOnly]);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
@@ -230,6 +311,56 @@ export function GanttChart({
         )}
       </div>
     );
+  };
+
+  const closeEditor = () => {
+    setEditingTask(null);
+    setSaving(false);
+  };
+
+  const handleSave = () => {
+    if (!editingTask || readOnly) return;
+    if (!editForm.title.trim()) return;
+
+    const updates: ScheduleTaskPatch = {
+      title: editForm.title.trim(),
+      status: editForm.status,
+      plannedStart: editForm.plannedStart
+        ? new Date(editForm.plannedStart).toISOString()
+        : undefined,
+      plannedEnd: editForm.plannedEnd
+        ? new Date(editForm.plannedEnd).toISOString()
+        : undefined,
+      assignedTo: editForm.assignedTo.trim() || null,
+      notes: editForm.notes.trim() || null,
+      weatherSensitive: editForm.weatherSensitive,
+    };
+
+    setSaving(true);
+
+    // Optimistic local update so the chart/list reflect immediately
+    setTasks(prev =>
+      prev.map(t =>
+        t.id === editingTask.id
+          ? {
+              ...t,
+              title: updates.title ?? t.title,
+              status: updates.status ?? t.status,
+              planned_start: updates.plannedStart ?? t.planned_start,
+              planned_end: updates.plannedEnd ?? t.planned_end,
+              assigned_to: updates.assignedTo ?? t.assigned_to,
+              notes: updates.notes ?? t.notes,
+              weather_sensitive:
+                updates.weatherSensitive ?? t.weather_sensitive,
+            }
+          : t
+      )
+    );
+
+    if (onTaskSave) {
+      onTaskSave(editingTask.id, updates);
+    }
+    closeEditor();
   };
 
   if (isLoading) {
@@ -269,8 +400,12 @@ export function GanttChart({
               <div className="w-3 h-3 bg-yellow-500 rounded-sm" />
               <span>Weather-sensitive</span>
             </div>
-            {!readOnly && !isMobile && (
-              <span className="text-[10px]">Drag bars to reschedule</span>
+            {!isMobile && (
+              <span className="text-[10px]">
+                {readOnly
+                  ? "Click a bar to view details"
+                  : "Click to edit · Drag to reschedule"}
+              </span>
             )}
           </div>
         </div>
@@ -282,7 +417,16 @@ export function GanttChart({
             {chartData.map(bar => (
               <li
                 key={bar.id}
-                className="border border-border/60 rounded p-3 flex gap-3"
+                role="button"
+                tabIndex={0}
+                onClick={() => openTaskEditor(bar.id)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openTaskEditor(bar.id);
+                  }
+                }}
+                className="border border-border/60 rounded p-3 flex gap-3 cursor-pointer hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors"
               >
                 <span
                   className="mt-1 inline-block h-3 w-3 rounded-sm flex-shrink-0"
@@ -348,7 +492,13 @@ export function GanttChart({
                   dataKey="duration"
                   stackId="gantt"
                   radius={[2, 2, 2, 2]}
-                  style={{ cursor: readOnly ? "default" : "grab" }}
+                  style={{
+                    cursor: readOnly
+                      ? "pointer"
+                      : draggingTaskId
+                        ? "grabbing"
+                        : "grab",
+                  }}
                   onMouseDown={(data: any, _idx: number, e: React.MouseEvent) =>
                     handleBarMouseDown(e, data.id)
                   }
@@ -386,12 +536,203 @@ export function GanttChart({
             <p className="font-semibold text-foreground">Notes</p>
             <ul className="text-muted-foreground space-y-1">
               <li>• Yellow bars: Weather-sensitive tasks</li>
+              <li>• Click a bar to {readOnly ? "view" : "edit"} details</li>
               {!readOnly && <li>• Drag bars horizontally to reschedule</li>}
               <li>• Only tasks with dates are shown</li>
             </ul>
           </div>
         </div>
       </CardContent>
+
+      {/* Task edit / view dialog (BOT-2) */}
+      <Dialog
+        open={!!editingTask}
+        onOpenChange={open => {
+          if (!open) closeEditor();
+        }}
+      >
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {readOnly ? "Task details" : "Edit task"}
+            </DialogTitle>
+            <DialogDescription>
+              {readOnly
+                ? "View-only schedule item details."
+                : "Update title, status, dates, assignee, or notes."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-1.5">
+              <label
+                htmlFor="gantt-task-title"
+                className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Title
+              </label>
+              <input
+                id="gantt-task-title"
+                value={editForm.title}
+                onChange={e =>
+                  setEditForm(f => ({ ...f, title: e.target.value }))
+                }
+                disabled={readOnly}
+                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 disabled:opacity-60"
+              />
+            </div>
+
+            <div className="grid gap-1.5">
+              <label
+                htmlFor="gantt-task-status"
+                className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Status
+              </label>
+              <select
+                id="gantt-task-status"
+                value={editForm.status}
+                onChange={e =>
+                  setEditForm(f => ({
+                    ...f,
+                    status: e.target.value as ScheduleItem["status"],
+                  }))
+                }
+                disabled={readOnly}
+                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60 disabled:opacity-60"
+              >
+                <option value="pending">Pending</option>
+                <option value="in_progress">In progress</option>
+                <option value="complete">Complete</option>
+                <option value="blocked">Blocked</option>
+                <option value="deferred">Deferred</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <label
+                  htmlFor="gantt-task-start"
+                  className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Start
+                </label>
+                <input
+                  id="gantt-task-start"
+                  type="date"
+                  value={editForm.plannedStart}
+                  onChange={e =>
+                    setEditForm(f => ({ ...f, plannedStart: e.target.value }))
+                  }
+                  disabled={readOnly}
+                  className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60 disabled:opacity-60"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <label
+                  htmlFor="gantt-task-end"
+                  className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  End
+                </label>
+                <input
+                  id="gantt-task-end"
+                  type="date"
+                  value={editForm.plannedEnd}
+                  onChange={e =>
+                    setEditForm(f => ({ ...f, plannedEnd: e.target.value }))
+                  }
+                  disabled={readOnly}
+                  className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60 disabled:opacity-60"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-1.5">
+              <label
+                htmlFor="gantt-task-assignee"
+                className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Assignee
+              </label>
+              <input
+                id="gantt-task-assignee"
+                value={editForm.assignedTo}
+                onChange={e =>
+                  setEditForm(f => ({ ...f, assignedTo: e.target.value }))
+                }
+                disabled={readOnly}
+                placeholder="Name or role"
+                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 disabled:opacity-60"
+              />
+            </div>
+
+            <div className="grid gap-1.5">
+              <label
+                htmlFor="gantt-task-notes"
+                className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Notes
+              </label>
+              <textarea
+                id="gantt-task-notes"
+                value={editForm.notes}
+                onChange={e =>
+                  setEditForm(f => ({ ...f, notes: e.target.value }))
+                }
+                disabled={readOnly}
+                rows={3}
+                placeholder="Optional notes…"
+                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-y disabled:opacity-60"
+              />
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={editForm.weatherSensitive}
+                onChange={e =>
+                  setEditForm(f => ({
+                    ...f,
+                    weatherSensitive: e.target.checked,
+                  }))
+                }
+                disabled={readOnly}
+                className="h-4 w-4 accent-primary"
+              />
+              <span>Weather-sensitive</span>
+            </label>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={closeEditor}
+              className="px-4 py-2 border border-border text-[11px] font-bold tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              {readOnly ? "Close" : "Cancel"}
+            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving || !editForm.title.trim()}
+                className="px-5 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
