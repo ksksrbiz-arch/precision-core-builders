@@ -15,40 +15,96 @@ import { useToast } from "@/components/ToastProvider";
 /**
  * Curated finish options the client can choose from, grouped by category.
  * `delta` is the budget impact (in dollars) relative to the base allowance.
+ * `image` is a static asset under /finishes for the gallery card.
  */
 const FINISH_OPTIONS: {
   category: string;
-  options: { label: string; delta: number }[];
+  options: { label: string; delta: number; image: string; blurb: string }[];
 }[] = [
   {
     category: "Countertops",
     options: [
-      { label: "Quartz (Standard)", delta: 0 },
-      { label: "Granite", delta: 1200 },
-      { label: "Natural Marble", delta: 3500 },
+      {
+        label: "Quartz (Standard)",
+        delta: 0,
+        image: "/finishes/quartz-standard.jpg",
+        blurb: "Durable engineered stone — low maintenance standard allowance",
+      },
+      {
+        label: "Granite",
+        delta: 1200,
+        image: "/finishes/granite.jpg",
+        blurb: "Natural stone with unique patterning and heat resistance",
+      },
+      {
+        label: "Natural Marble",
+        delta: 3500,
+        image: "/finishes/marble-natural.jpg",
+        blurb: "Classic veining for a luxury statement surface",
+      },
     ],
   },
   {
     category: "Flooring",
     options: [
-      { label: "Engineered Hardwood (Standard)", delta: 0 },
-      { label: "Luxury Vinyl Plank", delta: -800 },
-      { label: "Natural Stone Tile", delta: 2400 },
+      {
+        label: "Engineered Hardwood (Standard)",
+        delta: 0,
+        image: "/finishes/hardwood-engineered.jpg",
+        blurb: "Real wood wear layer over stable core — standard allowance",
+      },
+      {
+        label: "Luxury Vinyl Plank",
+        delta: -800,
+        image: "/finishes/lvp-flooring.jpg",
+        blurb: "Waterproof wood-look planks — budget-friendly upgrade path",
+      },
+      {
+        label: "Natural Stone Tile",
+        delta: 2400,
+        image: "/finishes/stone-tile.jpg",
+        blurb: "Stone tile floors for lasting character and durability",
+      },
     ],
   },
   {
     category: "Cabinetry",
     options: [
-      { label: "Shaker (Standard)", delta: 0 },
-      { label: "Custom Inset", delta: 4000 },
+      {
+        label: "Shaker (Standard)",
+        delta: 0,
+        image: "/finishes/cabinet-shaker.jpg",
+        blurb: "Clean recessed panel doors — timeless standard allowance",
+      },
+      {
+        label: "Custom Inset",
+        delta: 4000,
+        image: "/finishes/cabinet-inset.jpg",
+        blurb: "Furniture-grade inset doors with precision joinery",
+      },
     ],
   },
   {
     category: "Fixtures",
     options: [
-      { label: "Brushed Nickel (Standard)", delta: 0 },
-      { label: "Matte Black", delta: 350 },
-      { label: "Polished Brass", delta: 600 },
+      {
+        label: "Brushed Nickel (Standard)",
+        delta: 0,
+        image: "/finishes/fixture-brushed-nickel.jpg",
+        blurb: "Soft metal finish that hides fingerprints — standard",
+      },
+      {
+        label: "Matte Black",
+        delta: 350,
+        image: "/finishes/fixture-matte-black.jpg",
+        blurb: "Modern contrast faucet finish for contemporary baths",
+      },
+      {
+        label: "Polished Brass",
+        delta: 600,
+        image: "/finishes/fixture-polished-brass.jpg",
+        blurb: "Warm polished metal for a refined luxury accent",
+      },
     ],
   },
 ];
@@ -130,7 +186,7 @@ export default function PortalFinishes() {
 
   const chooseFinish = (
     category: string,
-    option: { label: string; delta: number }
+    option: { label: string; delta: number; image: string; blurb: string }
   ) => {
     if (!project?.id) return;
     selectMut.mutate({
@@ -173,7 +229,7 @@ export default function PortalFinishes() {
 
   return (
     <PortalLayout>
-      <div className="container py-10 max-w-3xl">
+      <div className="container py-10 max-w-5xl">
         <button
           onClick={() => setLocation("/portal")}
           className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary mb-6 transition-colors"
@@ -269,37 +325,58 @@ export default function PortalFinishes() {
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {options.map(option => {
                           const isSelected = current === option.label;
                           return (
                             <button
                               key={option.label}
+                              type="button"
                               onClick={() => chooseFinish(category, option)}
                               disabled={selectMut.isPending}
                               aria-pressed={isSelected}
-                              className={`group flex items-center gap-2 border px-3 py-2 text-left disabled:opacity-50 transition-all ${
+                              className={`group text-left border overflow-hidden disabled:opacity-50 transition-all ${
                                 isSelected
-                                  ? "border-primary bg-primary/10 text-foreground"
-                                  : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
+                                  ? "border-primary ring-1 ring-primary/40"
+                                  : "border-border/60 hover:border-primary/40"
                               }`}
                             >
-                              {isSelected ? (
-                                <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                              ) : (
-                                <Plus className="h-3.5 w-3.5 text-primary shrink-0" />
-                              )}
-                              <span className="text-xs font-medium">
-                                {option.label}
-                              </span>
-                              {option.delta !== 0 && (
-                                <span
-                                  className={`text-[11px] font-bold ${option.delta > 0 ? "text-red-400" : "text-green-400"}`}
-                                >
-                                  {option.delta > 0 ? "+" : ""}
-                                  {fmt(option.delta)}
-                                </span>
-                              )}
+                              <div className="relative aspect-[4/3] bg-muted/30 overflow-hidden">
+                                <img
+                                  src={option.image}
+                                  alt={option.label}
+                                  loading="lazy"
+                                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                />
+                                {isSelected && (
+                                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold tracking-widest uppercase px-2 py-1">
+                                    <Check className="h-3 w-3" /> Selected
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-3 space-y-1.5">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-xs font-semibold leading-snug">
+                                    {option.label}
+                                  </p>
+                                  <span
+                                    className={`text-[11px] font-bold shrink-0 ${
+                                      option.delta > 0
+                                        ? "text-red-400"
+                                        : option.delta < 0
+                                          ? "text-green-400"
+                                          : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    {option.delta === 0
+                                      ? "Included"
+                                      : `${option.delta > 0 ? "+" : ""}${fmt(option.delta)}`}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                  {option.blurb}
+                                </p>
+                              </div>
                             </button>
                           );
                         })}
