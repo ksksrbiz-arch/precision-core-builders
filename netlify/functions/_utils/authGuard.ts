@@ -22,9 +22,10 @@
  * The canonical `VerifiedUser.name` field is intentionally dropped in the
  * mapping so the public `AuthUser` shape is unchanged.
  *
- * Dev Mode: When NODE_ENV !== 'production' and the token is the well-known
- * dev bypass token, a mock admin user is returned so functions work without a
- * live Supabase connection.
+ * Dev Mode: When NODE_ENV !== 'production' AND ALLOW_DEV_ADMIN_BYPASS=true
+ * and the token is the well-known dev bypass token, a mock admin user is
+ * returned so functions work without a live Supabase connection. See
+ * server/_core/auth/verifyToken.ts for why both conditions are required.
  */
 
 import {

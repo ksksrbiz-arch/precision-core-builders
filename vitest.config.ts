@@ -18,6 +18,14 @@ export default defineConfig({
     },
   },
   test: {
+    // Tests exercise the dev-admin-token bypass (see
+    // server/_core/auth/verifyToken.ts), which now requires this explicit
+    // opt-in in addition to NODE_ENV !== "production" — set it only for the
+    // test runner's own process, the same way a developer would set it in
+    // their local .env. Never set this in Netlify's environment variables.
+    env: {
+      ALLOW_DEV_ADMIN_BYPASS: "true",
+    },
     include: [
       "server/**/*.test.ts",
       "server/**/*.spec.ts",

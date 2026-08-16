@@ -6,7 +6,12 @@
  * chains live here and MUST match the previous inline behaviour exactly
  * (columns, filters, ordering, ranges).
  */
-import { data, paginate, type PaginationInput } from "./repository";
+import {
+  data,
+  escapePostgrestFilterTerm,
+  paginate,
+  type PaginationInput,
+} from "./repository";
 
 export type NotificationInsert = {
   recipient_id: string;
@@ -129,7 +134,8 @@ export const notificationsRepo = {
     if (input.channel) q = q.eq("channel", input.channel);
     if (input.status) q = q.eq("status", input.status);
     if (input.search) {
-      q = q.or(`subject.ilike.%${input.search}%,body.ilike.%${input.search}%`);
+      const term = escapePostgrestFilterTerm(input.search);
+      q = q.or(`subject.ilike.%${term}%,body.ilike.%${term}%`);
     }
 
     const { data: rows, error, count } = await q;

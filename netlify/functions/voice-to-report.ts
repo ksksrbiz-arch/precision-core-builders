@@ -46,6 +46,21 @@ export const handler = withGuards(
         mimeType?: string;
       };
 
+      // Bound both input modes before they're decoded/sent to an LLM or
+      // transcription API — even authenticated + rate-limited callers
+      // shouldn't be able to submit an unbounded payload.
+      if (input.transcript && input.transcript.length > 20_000) {
+        return error(400, "Transcript is too long (max 20,000 characters).");
+      }
+      if (input.audio) {
+        // Base64 is ~4/3 the size of the decoded bytes; 25MB decoded is a
+        // generous cap for a single voice field report.
+        const approxDecodedBytes = (input.audio.length * 3) / 4;
+        if (approxDecodedBytes > 25 * 1024 * 1024) {
+          return error(400, "Audio file is too large (max 25MB).");
+        }
+      }
+
       const projectId =
         input.projectId ??
         parseInt(event.queryStringParameters?.projectId ?? "0");
