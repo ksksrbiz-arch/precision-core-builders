@@ -126,19 +126,18 @@ export function useRealtimeTable({
       clearReconnectTimer();
 
       try {
-        const channel = supabase
-          .channel(`realtime-${table}`)
+        // Assign channelRef *before* subscribe() so a synchronous status
+        // callback can tear the channel down immediately on error.
+        const channel = supabase.channel(`realtime-${table}`);
+        channelRef.current = channel;
+
+        channel
           .on(
-            // Supabase client types require a cast for the postgres_changes
-            // event name; keep the surface narrow and do not spread `any`.
-            "postgres_changes" as "postgres_changes",
+            // Supabase Realtime client types don't model postgres_changes
+            // cleanly here; keep the cast local and do not spread `any`.
+            "postgres_changes" as any,
             { event: "*", schema: "public", table },
-            (payload: {
-              eventType: RealtimePayload["eventType"];
-              table: string;
-              new?: Record<string, unknown>;
-              old?: Record<string, unknown>;
-            }) => {
+            (payload: any) => {
               const event: RealtimePayload = {
                 eventType: payload.eventType,
                 table: payload.table,
@@ -161,10 +160,13 @@ export function useRealtimeTable({
             }
 
             if (RECOVERABLE_STATUSES.has(status)) {
-              // Channel is gone — drop it immediately, mark not-live, and
-              // schedule a resubscribe with backoff + jitter.
+              // Channel is gone — drop it immediately (only if this callback
+              // still owns the active channel), mark not-live, and schedule a
+              // resubscribe with backoff + jitter.
               setIsLive(false);
-              removeActiveChannel(status);
+              if (channelRef.current === channel) {
+                removeActiveChannel(status);
+              }
               const attempt = attemptRef.current;
               const delay = nextReconnectDelay(attempt);
               attemptRef.current = attempt + 1;
@@ -182,7 +184,6 @@ export function useRealtimeTable({
             // Any other status is treated as inert: not live, no resubscribe.
             setIsLive(false);
           });
-        channelRef.current = channel;
       } catch (err) {
         // Realtime failures should never crash the page — log and continue
         // with isLive=false so consumers fall back to polling/manual refresh.
@@ -190,6 +191,7 @@ export function useRealtimeTable({
           `[useRealtimeTable] subscribe failed for "${table}":`,
           err
         );
+        channelRef.current = null;
         setIsLive(false);
       }
     };

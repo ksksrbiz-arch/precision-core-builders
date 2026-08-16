@@ -183,10 +183,12 @@ describe("useRealtimeTable — Supabase configured", () => {
 
   it("stays not-live when subscribe reports a non-SUBSCRIBED status", () => {
     h.state.subscribeStatus = "CHANNEL_ERROR";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { result } = renderHook(() =>
       useRealtimeTable({ table: "projects", onUpdate: vi.fn() })
     );
     expect(result.current.isLive).toBe(false);
+    expect(warn).toHaveBeenCalled();
   });
 
   it("removes the channel on unmount", () => {
@@ -267,9 +269,8 @@ describe("useRealtimeTable — Supabase configured", () => {
 
     expect(result.current.isLive).toBe(false);
     expect(warn).toHaveBeenCalled();
-    // No channel was successfully created, so unmount must not remove one.
+    // Channel object was created before subscribe threw; unmount is still safe.
     expect(() => unmount()).not.toThrow();
-    expect(removeChannel).not.toHaveBeenCalled();
   });
 });
 
@@ -281,6 +282,7 @@ describe("useRealtimeTable — reconnection backoff", () => {
   beforeEach(() => {
     // Deterministic jitter so the schedule assertions are exact.
     vi.spyOn(Math, "random").mockReturnValue(0);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   it("nextReconnectDelay follows 1s→2s→4s… capped at 30s, + jitter", () => {
@@ -296,12 +298,14 @@ describe("useRealtimeTable — reconnection backoff", () => {
   });
 
   it("nextReconnectDelay adds jitter within [0, 500ms)", () => {
+    // Math.random is defined on [0, 1) — keep mocks inside that range.
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     // 1000 + (0.5 * 500) = 1250
     expect(nextReconnectDelay(0)).toBe(1250);
-    // cap + jitter = 30000 + 500 = 30500
-    vi.spyOn(Math, "random").mockReturnValue(1);
-    expect(nextReconnectDelay(10)).toBe(30500);
+
+    vi.spyOn(Math, "random").mockReturnValue(0.999);
+    // 30000 + (0.999 * 500) = 30499.5
+    expect(nextReconnectDelay(10)).toBe(30499.5);
   });
 
   it("schedules a resubscribe with backoff after CHANNEL_ERROR", () => {
@@ -316,6 +320,10 @@ describe("useRealtimeTable — reconnection backoff", () => {
     // Initial error → not live, one channel created so far.
     expect(result.current.isLive).toBe(false);
     expect(channel).toHaveBeenCalledTimes(1);
+    // Dead channel is removed immediately on recoverable status (not only at
+    // the start of the next subscribe attempt).
+    expect(removeChannel).toHaveBeenCalledTimes(1);
+    expect(removeChannel).toHaveBeenCalledWith(h.state.channels[0]);
 
     // No resubscribe before the backoff delay (1000ms @ attempt 0) elapses.
     expect(channel).toHaveBeenCalledTimes(1);
@@ -364,6 +372,7 @@ describe("useRealtimeTable — reconnection backoff", () => {
       healthy.subscribeCb?.("CHANNEL_ERROR");
     });
     expect(result.current.isLive).toBe(false);
+    expect(removeChannel).toHaveBeenCalledWith(healthy);
 
     // 999ms later — no reconnect yet (rules out a sub-1000ms schedule).
     act(() => {
@@ -417,6 +426,7 @@ describe("useRealtimeTable — reconnection backoff", () => {
 
       expect(result.current.isLive).toBe(false);
       expect(channel).toHaveBeenCalledTimes(1);
+      expect(removeChannel).toHaveBeenCalledTimes(1);
 
       act(() => {
         vi.advanceTimersByTime(1000);
