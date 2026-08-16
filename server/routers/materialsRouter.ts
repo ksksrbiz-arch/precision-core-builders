@@ -12,6 +12,7 @@ import {
   setMaterialVendors,
   updateMaterial,
 } from "../_data/materialsRepo";
+import { appendLedgerEntry } from "../_data/ledgerRepo";
 import { z } from "zod";
 
 const MaterialInput = z.object({
@@ -95,7 +96,46 @@ export const materialsRouter = router({
         items: z.array(MaterialInput).min(1).max(50),
       })
     )
-    .mutation(async ({ input }) => createMaterials(input.items)),
+    .mutation(async ({ input, ctx }) => {
+      const created = await createMaterials(input.items);
+
+      // Field-report → materials push (or any bulk shortage import) shows on ledger.
+      try {
+        const authorId = ctx.user?.id;
+        const byProject = new Map<number, string[]>();
+        for (const item of input.items) {
+          if (!item.projectId) continue;
+          const list = byProject.get(item.projectId) ?? [];
+          list.push(item.name);
+          byProject.set(item.projectId, list);
+        }
+        if (authorId) {
+          for (const [projectId, names] of byProject) {
+            const fromField = input.items.some(
+              i =>
+                i.projectId === projectId &&
+                typeof i.notes === "string" &&
+                i.notes.toLowerCase().includes("field report")
+            );
+            await appendLedgerEntry({
+              projectId,
+              authorId,
+              entryType: "note",
+              title: fromField
+                ? `Field shortages synced (${names.length})`
+                : `Materials imported (${names.length})`,
+              description: names.slice(0, 12).join(", ") +
+                (names.length > 12 ? ` (+${names.length - 12} more)` : ""),
+              visibleToClient: true,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[ledger] materials createMany append failed:", err);
+      }
+
+      return created;
+    }),
 
   update: adminProcedure
     .input(

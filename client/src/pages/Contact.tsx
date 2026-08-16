@@ -10,6 +10,7 @@ import { TrustBar } from "@/components/layout/TrustBar";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
+import { trackContactSubmit, trackPhoneClick } from "@/lib/analytics";
 import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { motion } from "framer-motion";
 import { TextReveal } from "@/components/ui/TextReveal";
@@ -86,7 +87,8 @@ export default function Contact() {
         ).toString(),
       });
       setStatus(res.ok ? "success" : "error");
-      if (res.ok)
+      if (res.ok) {
+        trackContactSubmit();
         setFields({
           name: "",
           email: "",
@@ -95,6 +97,7 @@ export default function Contact() {
           budget: "",
           message: "",
         });
+      }
     } catch {
       setStatus("error");
     }

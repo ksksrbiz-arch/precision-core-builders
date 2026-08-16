@@ -5,6 +5,7 @@
 import { DEV_BYPASS_KEY } from "@/_core/hooks/useAuth";
 import { Magnetic } from "@/components/ui/Magnetic";
 import { ASSETS, SITE } from "@/const";
+import { trackCtaClick, trackPhoneClick } from "@/lib/analytics";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -265,6 +266,7 @@ export function SiteNav() {
             {/* Phone — visible md+ */}
             <a
               href={SITE.phoneHref}
+              onClick={() => trackPhoneClick("nav_desktop")}
               className="hidden md:flex items-center gap-2 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
               aria-label={`Call ${SITE.phone}`}
@@ -275,6 +277,7 @@ export function SiteNav() {
             <Magnetic className="hidden sm:inline-block" strength={0.25}>
               <a
                 href="/estimator"
+                onClick={() => trackCtaClick("nav_free_estimate")}
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -380,6 +383,7 @@ export function MobileCTABar() {
       <div className="flex border-t border-border/60 bg-card/95 backdrop-blur-md">
         <a
           href={SITE.phoneHref}
+          onClick={() => trackPhoneClick("mobile_sticky")}
           className="flex-1 flex items-center justify-center gap-2 py-4 text-[12px] font-bold tracking-widest uppercase text-primary border-r border-border/40 min-h-[56px] active:bg-primary/10"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
@@ -387,6 +391,7 @@ export function MobileCTABar() {
         </a>
         <a
           href="/estimator"
+          onClick={() => trackCtaClick("mobile_sticky_estimate")}
           className="flex-1 flex items-center justify-center gap-2 py-4 text-[12px] font-bold tracking-widest uppercase bg-primary text-primary-foreground min-h-[56px] active:bg-primary/80"
           style={{ fontFamily: "var(--font-condensed)" }}
         >

@@ -283,3 +283,179 @@ export function TadlockResidenceCaseStudy() {
     />
   );
 }
+
+// ─── 4. Deck Cost Guide (Eugene) ─────────────────────────────────────────────
+export function DeckCostEugene() {
+  return (
+    <ArticlePage
+      title="How Much Does a Deck Cost in Eugene, OR?"
+      category="Cost Guides"
+      heroImage="/portfolio/signature-deck-01.jpg"
+      heroImageAlt="Composite deck build in Eugene, Oregon"
+      metaTitle="Deck Cost in Eugene, OR (2026) | Precision Core Builders"
+      metaDescription="What a new deck costs in Eugene and Lane County in 2026 — pressure-treated, cedar, and composite tiers, permits, and what drives the price."
+      publishedDate="2026-08-16"
+      dek="Deck pricing in the Willamette Valley depends on size, material, height, and whether you're tying into an existing structure. Here's a practical range for Eugene homeowners planning in 2026."
+      blocks={[
+        {
+          type: "p",
+          content:
+            "Most Eugene residential decks we price fall between roughly $35 and $75 per square foot installed, depending on material and complexity. A straightforward ground-level pressure-treated deck is at the low end; an elevated composite build with railings, lighting, and custom stairs sits higher.",
+        },
+        { type: "h2", content: "Three common tiers" },
+        {
+          type: "list",
+          items: [
+            <>
+              <strong className="text-foreground">
+                Pressure-treated softwood — roughly $25–$45 / sq ft installed.
+              </strong>{" "}
+              Workhorse option for utility decks and budget-conscious builds.
+              Needs regular sealing in Oregon's wet winters.
+            </>,
+            <>
+              <strong className="text-foreground">
+                Cedar or redwood — roughly $40–$60 / sq ft installed.
+              </strong>{" "}
+              Better natural resistance and appearance; still requires
+              maintenance, but ages well when cared for.
+            </>,
+            <>
+              <strong className="text-foreground">
+                Composite / PVC — roughly $50–$85+ / sq ft installed.
+              </strong>{" "}
+              Higher upfront cost, lower long-term maintenance. Popular for
+              Eugene homeowners who want a clean look without annual staining.
+            </>,
+          ],
+        },
+        { type: "h2", content: "What changes the number" },
+        {
+          type: "list",
+          items: [
+            "Height and structural requirements (footings, beams, lateral bracing)",
+            "Railings, stairs, and gates",
+            "Tying into an existing home structure vs freestanding",
+            "Site access and demolition of an old deck",
+            "Permits — decks over 30 inches above grade typically need them in Eugene",
+          ],
+        },
+        {
+          type: "callout",
+          content: (
+            <>
+              <strong className="text-foreground">Local tip.</strong> Eugene and
+              Lane County treat elevated decks as permitted work. We handle the
+              permit package so your estimate includes the real timeline, not
+              just the build days.
+            </>
+          ),
+        },
+        {
+          type: "p",
+          content:
+            "For a directional range on your lot, use the free online estimator, then schedule an on-site walk with Eric for a written number.",
+        },
+      ]}
+      faqs={[
+        {
+          q: "Do I need a permit for a deck in Eugene?",
+          a: "Decks more than 30 inches above grade generally require a building permit in Eugene. We confirm requirements during the estimate and handle submittal when needed.",
+        },
+        {
+          q: "How long does a typical deck take?",
+          a: "A straightforward residential deck is often 1–3 weeks on site after materials arrive, depending on size, weather, and structural complexity.",
+        },
+      ]}
+      relatedLinks={[
+        { label: "Free Cost Estimator", href: "/estimator" },
+        { label: "Outdoor Spaces Service", href: "/services/outdoor" },
+        { label: "Portfolio — Decks", href: "/portfolio" },
+      ]}
+    />
+  );
+}
+
+// ─── 5. Bathroom Remodel Cost Guide (Eugene) ─────────────────────────────────
+export function BathroomRemodelCostEugene() {
+  return (
+    <ArticlePage
+      title="How Much Does a Bathroom Remodel Cost in Eugene, OR?"
+      category="Cost Guides"
+      heroImage="/portfolio/signature-bath-01.jpg"
+      heroImageAlt="Bathroom remodel in Eugene, Oregon"
+      metaTitle="Bathroom Remodel Cost in Eugene, OR (2026) | Precision Core Builders"
+      metaDescription="Bathroom remodel costs in Eugene and Lane County — cosmetic refresh vs full gut, tile, waterproofing, and what actually drives the budget."
+      publishedDate="2026-08-16"
+      dek="Bathroom work is where waterproofing, layout, and finish choices collide. Here's how Eugene projects typically price out in 2026 — without the national averages that ignore Oregon labor and permit reality."
+      blocks={[
+        {
+          type: "p",
+          content:
+            "A cosmetic bathroom refresh in Eugene often lands in the $8,000–$18,000 range. A full gut remodel with new layout, tile shower, and quality fixtures more commonly runs $20,000–$45,000+, depending on size and finish level.",
+        },
+        { type: "h2", content: "What you're actually paying for" },
+        {
+          type: "list",
+          items: [
+            <>
+              <strong className="text-foreground">Waterproofing & substrate.</strong>{" "}
+              Showers and wet walls done right cost more up front and prevent
+              the call-backs nobody wants.
+            </>,
+            <>
+              <strong className="text-foreground">Plumbing moves.</strong>{" "}
+              Keeping the toilet, vanity, and shower where they are saves
+              money. Relocating drains or supply lines is a major cost driver.
+            </>,
+            <>
+              <strong className="text-foreground">Tile labor.</strong>{" "}
+              Labor often exceeds material cost on detailed tile work —
+              especially niches, curbs, and large-format panels.
+            </>,
+            <>
+              <strong className="text-foreground">Fixtures & finishes.</strong>{" "}
+              Vanity, faucet, lighting, and flooring choices swing the total
+              more than most homeowners expect.
+            </>,
+          ],
+        },
+        { type: "h2", content: "Typical Eugene ranges" },
+        {
+          type: "list",
+          items: [
+            "Cosmetic update (paint, fixtures, refinish): about $8k–$18k",
+            "Standard full remodel, same layout: about $20k–$35k",
+            "Premium / layout change / custom shower: $35k–$55k+",
+          ],
+        },
+        {
+          type: "callout",
+          content: (
+            <>
+              <strong className="text-foreground">Estimator first.</strong> Use
+              the free online cost estimator for a directional range, then book
+              an on-site visit for a written scope that matches your house —
+              not a national average.
+            </>
+          ),
+        },
+      ]}
+      faqs={[
+        {
+          q: "How long is a bathroom remodel out of service?",
+          a: "Many standard full remodels are 2–4 weeks on site once materials are staged. Layout changes or custom tile can run longer.",
+        },
+        {
+          q: "Can I stay in the house during the work?",
+          a: "Usually yes for a single bathroom. We isolate dust and keep a clear path so the rest of the home stays usable.",
+        },
+      ]}
+      relatedLinks={[
+        { label: "Free Cost Estimator", href: "/estimator" },
+        { label: "Remodels Service", href: "/services/remodels" },
+        { label: "Kitchen Cost Guide", href: "/blog/kitchen-remodel-cost-eugene-oregon" },
+      ]}
+    />
+  );
+}
