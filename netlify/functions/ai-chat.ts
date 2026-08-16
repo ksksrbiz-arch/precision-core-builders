@@ -21,6 +21,7 @@ import {
   type LLMStreamChunk,
 } from "../../server/_core/llm";
 import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
+import { z } from "zod";
 import {
   checkRateLimit,
   getClientIp,
@@ -29,6 +30,11 @@ import {
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
+
+const chatMessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string(),
+});
 
 const RATE_LIMIT = { maxRequests: 20, windowMs: 60_000 };
 
@@ -98,7 +104,15 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   let messages: ChatMessage[];
   try {
     const body = JSON.parse(event.body ?? "{}");
-    messages = Array.isArray(body.messages) ? body.messages : [];
+    const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+    // Validate shape per-message rather than the whole array, so one
+    // malformed message doesn't reject an otherwise-valid conversation —
+    // just drop it, matching the existing "be lenient, then bound" style
+    // of this handler (see MAX_MESSAGES/MAX_CONTENT_CHARS below).
+    messages = rawMessages.flatMap((m: unknown) => {
+      const parsed = chatMessageSchema.safeParse(m);
+      return parsed.success ? [parsed.data] : [];
+    });
   } catch {
     return errorBody(400, "Invalid JSON body");
   }

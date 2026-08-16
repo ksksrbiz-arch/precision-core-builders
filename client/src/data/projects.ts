@@ -14,7 +14,7 @@
  */
 
 export type ProjectCategory =
-  | "The Tadlock Residence"
+  | "Signature Outdoor Living"
   | "Decks & Outdoor"
   | "Bath & Kitchen"
   | "Interior Remodels"
@@ -49,7 +49,7 @@ export interface Project {
   beforeAfter?: BeforeAfter;
   photos: ProjectPhoto[];
   /** Optional tag — used for special editorial treatment (e.g. the builders' own home) */
-  tag?: "Our Home" | "Signature Work";
+  tag?: "Featured Project" | "Signature Work";
   /** Year completed, e.g. "2023". Surfaced in the detail-page facts bar when set. */
   year?: string;
   /** Human-readable build duration, e.g. "6 weeks". Surfaced when set. */
@@ -59,17 +59,17 @@ export interface Project {
 }
 
 export const PROJECTS: Project[] = [
-  /* ─── FLAGSHIP: Eric & Mitch's own home ─────────────────────────────── */
+  /* ─── SIGNATURE: outdoor living build ───────────────────────────────── */
   {
     slug: "tadlock-residence",
-    title: "The Tadlock Residence",
-    category: "The Tadlock Residence",
+    title: "Signature Outdoor Living Project",
+    category: "Signature Outdoor Living",
     location: "Eugene, OR",
-    tag: "Our Home",
+    tag: "Featured Project",
     summary:
-      "Eric and Mitch built this home's outdoor envelope themselves — pergola, decking, privacy fence, and front yard. Every board. Every fastener.",
+      "A full outdoor living build-out — pergola, composite decking, privacy fencing, and front yard fencing, all tied together in one cohesive design.",
     description:
-      "When you hire the Tadlock brothers, you hire two carpenters who live in a home they built themselves. This is that home. Over a single year, Eric and Mitch designed and installed the covered pergola, composite deck, horizontal cedar privacy fence, and the hog-wire front yard fence that ties the whole property together. No subs. No shortcuts. Exactly the standard they bring to every client home.",
+      "A covered pergola, composite deck, horizontal cedar privacy fence, and a hog-wire front yard fence that ties the whole property together — built to the same standard we bring to every client home.",
     scope: [
       "Black-finished louvered pergola anchored to the structure",
       "Grey-tone composite deck, flush to the back-door threshold",
@@ -79,11 +79,6 @@ export const PROJECTS: Project[] = [
     ],
     featured: true,
     hero: "signature-outdoor-01.jpg",
-    beforeAfter: {
-      before: "pergola-deck-01.jpg",
-      after: "signature-outdoor-01.jpg",
-      caption: "From bare frame to outdoor living room",
-    },
     photos: [
       {
         file: "signature-outdoor-01.jpg",
@@ -93,27 +88,17 @@ export const PROJECTS: Project[] = [
       {
         file: "signature-deck-01.jpg",
         role: "hero",
-        caption: "Raw cedar pergola stage",
-      },
-      {
-        file: "pergola-deck-01.jpg",
-        role: "progress",
-        caption: "Pergola framing install",
+        caption: "Covered pergola and composite deck, finished",
       },
       {
         file: "pergola-deck-02.jpg",
-        role: "progress",
-        caption: "Deck progress",
-      },
-      {
-        file: "pergola-deck-03.jpg",
         role: "after",
-        caption: "Composite step detail",
+        caption: "Mitered composite step detail",
       },
       {
         file: "cedar-fence-01.jpg",
-        role: "progress",
-        caption: "Cedar privacy fence going up",
+        role: "hero",
+        caption: "Cedar privacy fence and pergola, finished",
       },
       {
         file: "cedar-fence-02.jpg",
@@ -136,20 +121,22 @@ export const PROJECTS: Project[] = [
   /* ─── EXTERIOR & RESTORATION ────────────────────────────────────────── */
   {
     slug: "full-house-restoration",
-    title: "Full Home Restoration",
+    title: "Full Home Rebuild",
     category: "Exterior & Restoration",
     location: "Lane County, OR",
     tag: "Signature Work",
     summary:
-      "A storm-damaged home brought back better than new — full roof, siding, and exterior envelope replacement.",
+      "A storm-damaged home torn down and rebuilt from the ground up — new foundation, full framing, roof, siding, and a finished composite deck.",
     description:
-      "This home suffered extensive damage before Eric's crew arrived. We tore down and rebuilt the exterior envelope from the roof to the foundation trim: new architectural shingles, siding, windows, entry, driveway, and landscaping. The owners returned to a home that is not only rebuilt, but substantially upgraded.",
+      "This home suffered extensive damage before Eric's crew arrived. Rather than patch it, we tore down to the foundation and rebuilt the entire home from the ground up: new concrete stem-wall foundation, full framing package, roof sheathing and architectural shingles, siding and trim, and a finished composite deck. The owners returned to a home that isn't repaired — it's brand new.",
     scope: [
-      "Full roof tear-off and replacement",
-      "New siding and exterior trim",
-      "Window and door replacements",
-      "Driveway and walkway rebuild",
-      "Landscaping and site restoration",
+      "Interior demo and site clearing",
+      "Concrete stem-wall foundation and floor framing",
+      "Full wall and roof-truss framing package",
+      "Roof sheathing and architectural shingle roofing",
+      "New siding, trim, and exterior finish",
+      "Composite deck build-out",
+      "Driveway and site cleanup",
     ],
     featured: true,
     hero: "house-restoration-02.jpg",
@@ -160,6 +147,96 @@ export const PROJECTS: Project[] = [
     },
     photos: [
       { file: "house-restoration-01.jpg", role: "before" },
+      {
+        file: "house-restoration-03.jpg",
+        role: "progress",
+        caption: "New stem-wall foundation, floor framing underway",
+      },
+      {
+        file: "house-restoration-04.jpg",
+        role: "before",
+        caption: "Interior demo",
+      },
+      {
+        file: "house-restoration-05.jpg",
+        role: "progress",
+        caption: "Floor joists on new stem-wall foundation",
+      },
+      {
+        file: "house-restoration-06.jpg",
+        role: "progress",
+        caption: "Interior wall framing with in-floor radiant tubing",
+      },
+      {
+        file: "house-restoration-07.jpg",
+        role: "progress",
+        caption: "Full wall and roof truss framing",
+      },
+      {
+        file: "house-restoration-08.jpg",
+        role: "progress",
+        caption: "Framing package complete",
+      },
+      {
+        file: "house-restoration-09.jpg",
+        role: "progress",
+        caption: "Wall and roof framing underway",
+      },
+      {
+        file: "house-restoration-10.jpg",
+        role: "progress",
+        caption: "Roof sheathing installed",
+      },
+      {
+        file: "house-restoration-11.jpg",
+        role: "progress",
+        caption: "Sheathed and roofed, ready for siding",
+      },
+      {
+        file: "house-restoration-12.jpg",
+        role: "progress",
+        caption: "Wall sheathing with roof underlayment",
+      },
+      {
+        file: "house-restoration-13.jpg",
+        role: "progress",
+        caption: "Sheathing complete, shingles staged for install",
+      },
+      {
+        file: "house-restoration-14.jpg",
+        role: "progress",
+        caption: "Siding and window trim going in",
+      },
+      {
+        file: "house-restoration-15.jpg",
+        role: "progress",
+        caption: "Siding complete, entry steps being finished",
+      },
+      {
+        file: "house-restoration-16.jpg",
+        role: "after",
+        caption: "Finished home",
+      },
+      {
+        file: "house-restoration-17.jpg",
+        role: "after",
+        caption: "Composite deck build-out",
+      },
+      {
+        file: "house-restoration-18.jpg",
+        role: "progress",
+        caption: "Architectural shingle roof going on",
+      },
+      {
+        file: "house-restoration-19.jpg",
+        role: "after",
+        caption: "Finished shingle roof",
+      },
+      {
+        file: "house-restoration-20.jpg",
+        role: "after",
+        caption: "Ridge cap detail",
+      },
       { file: "house-restoration-02.jpg", role: "after" },
     ],
   },
@@ -213,14 +290,8 @@ export const PROJECTS: Project[] = [
     ],
     featured: true,
     hero: "side-yard-shed-03.jpg",
-    beforeAfter: {
-      before: "side-yard-shed-01.jpg",
-      after: "side-yard-shed-03.jpg",
-      caption: "From plastic shed to permanent architecture",
-    },
     photos: [
-      { file: "side-yard-shed-01.jpg", role: "before" },
-      { file: "side-yard-shed-02.jpg", role: "before" },
+      { file: "side-yard-shed-01.jpg", role: "after" },
       { file: "side-yard-shed-03.jpg", role: "after" },
       { file: "side-yard-shed-04.jpg", role: "after" },
       { file: "side-yard-shed-05.jpg", role: "after" },
@@ -280,33 +351,29 @@ export const PROJECTS: Project[] = [
     category: "Bath & Kitchen",
     location: "Eugene, OR",
     summary:
-      "Full bath gut with a Schluter waterproofing system, custom tile work, and matching bedroom trim refresh.",
+      "Full bath gut with a Hydro-Blok waterproofing system and custom large-format tile work.",
     description:
-      "Down to the studs and back up. This remodel used the Schluter membrane system for bulletproof waterproofing, large-format tile with crisp layout, and carried the finish work into the adjacent bedroom with new window casings and trim.",
+      "Down to the studs and back up. This remodel used the Hydro-Blok membrane system for bulletproof waterproofing and large-format tile with crisp, clean layout throughout.",
     scope: [
-      "Schluter waterproofing system on tub surround",
+      "Hydro-Blok waterproofing system on tub surround",
       "Large-format tile installation",
       "New tub and fixture installation",
-      "Bedroom window casing and trim refresh",
       "Wall color and finish coordination",
     ],
     featured: true,
-    hero: "bath-remodel-06.jpg",
+    hero: "bath-remodel-09.jpg",
     photos: [
       {
-        file: "bath-remodel-01.jpg",
+        file: "bath-remodel-02.jpg",
         role: "progress",
-        caption: "Schluter membrane going in",
+        caption: "Hydro-Blok membrane and hex-tile shower pan going in",
       },
-      { file: "bath-remodel-02.jpg", role: "progress" },
-      { file: "bath-remodel-03.jpg", role: "progress" },
-      { file: "bath-remodel-04.jpg", role: "progress" },
       { file: "bath-remodel-05.jpg", role: "progress" },
-      { file: "bath-remodel-06.jpg", role: "after" },
+      { file: "bath-remodel-12.jpg", role: "progress" },
       { file: "bath-remodel-07.jpg", role: "after" },
       { file: "bath-remodel-08.jpg", role: "after" },
       { file: "bath-remodel-09.jpg", role: "after" },
-      { file: "bath-remodel-10.jpg", role: "after" },
+      { file: "bath-remodel-11.jpg", role: "after" },
     ],
   },
   {
@@ -335,6 +402,11 @@ export const PROJECTS: Project[] = [
       { file: "signature-interior-01.jpg", role: "hero" },
       { file: "signature-interior-02.jpg", role: "hero" },
       { file: "signature-interior-03.jpg", role: "hero" },
+      {
+        file: "signature-bath-03.jpg",
+        role: "hero",
+        caption: "Frameless glass shower with full-height marble tile",
+      },
     ],
   },
 
@@ -410,12 +482,255 @@ export const PROJECTS: Project[] = [
       { file: "signature-home-01.jpg", role: "hero" },
       { file: "signature-exterior-01.jpg", role: "hero" },
       { file: "signature-exterior-02.jpg", role: "hero" },
+      {
+        file: "pergola-deck-01.jpg",
+        role: "hero",
+        caption: "Covered entry with stone veneer accents",
+      },
+      {
+        file: "signature-exterior-03.jpg",
+        role: "hero",
+        caption: "Front exterior, finished",
+      },
     ],
+  },
+
+  /* ─── NEW: Linear mosaic shower remodel ─────────────────────────────── */
+  {
+    slug: "mosaic-shower-remodel",
+    title: "Linear Mosaic Shower Remodel",
+    category: "Bath & Kitchen",
+    location: "Lane County, OR",
+    summary:
+      "Dated tub-shower combo replaced with a floor-to-ceiling black, white, and grey linear mosaic surround.",
+    description:
+      "Out with the builder-grade tan fiberglass surround, in with a full mosaic tile package — diagonal-set linear mosaic as the feature wall, vertical wood-look tile flanking it, and a new floating vanity to match.",
+    scope: [
+      "Demo of existing tub/shower surround",
+      "Diagonal linear mosaic tile feature wall",
+      "Vertical wood-look tile side walls",
+      "New tub, fixtures, and floating vanity",
+    ],
+    featured: false,
+    hero: "bath-mosaic-03.jpg",
+    beforeAfter: {
+      before: "bath-mosaic-01.jpg",
+      after: "bath-mosaic-03.jpg",
+      caption: "Builder-grade to custom mosaic",
+    },
+    photos: [
+      { file: "bath-mosaic-01.jpg", role: "before", caption: "Original tub/shower" },
+      { file: "signature-bath-04.jpg", role: "progress", caption: "Mosaic tile install" },
+      { file: "bath-mosaic-03.jpg", role: "after", caption: "Finished shower surround" },
+      { file: "bath-mosaic-04.jpg", role: "after", caption: "Finished bath, wide view" },
+      { file: "bath-mosaic-05.jpg", role: "after", caption: "Floating vanity detail" },
+    ],
+  },
+
+  /* ─── NEW: Stacked-stone fireplace remodel ──────────────────────────── */
+  {
+    slug: "stacked-stone-fireplace",
+    title: "Stacked-Stone Fireplace Remodel",
+    category: "Interior Remodels",
+    location: "Lane County, OR",
+    summary:
+      "An outdated tile fireplace surround reframed and rebuilt floor-to-ceiling in stacked stone with a linear gas insert.",
+    description:
+      "The old tile surround came out down to the framing. We rebuilt the chase, ran floor-to-ceiling stacked stone up the vaulted wall, and set a new linear gas insert — a full focal-point rebuild in a great room.",
+    scope: [
+      "Demo of existing tile surround",
+      "Chase framing and reinforcement",
+      "Floor-to-ceiling stacked stone veneer",
+      "Linear gas fireplace insert installation",
+    ],
+    featured: false,
+    hero: "fireplace-remodel-02.jpg",
+    beforeAfter: {
+      before: "fireplace-remodel-01.jpg",
+      after: "fireplace-remodel-02.jpg",
+      caption: "Framed chase to finished stone surround",
+    },
+    photos: [
+      { file: "fireplace-remodel-01.jpg", role: "before", caption: "Chase reframed" },
+      { file: "fireplace-remodel-02.jpg", role: "after", caption: "Finished stacked-stone surround" },
+    ],
+  },
+
+  /* ─── NEW: Custom interior structure build ──────────────────────────── */
+  {
+    slug: "custom-structure-build",
+    title: "Custom Interior Structure Build",
+    category: "Fencing & Structures",
+    location: "Lane County, OR",
+    summary:
+      "A steel-stud framed, polycarbonate-paneled enclosure built out inside a commercial space.",
+    description:
+      "Not every job is a house. This one was a fully custom steel-stud frame with translucent polycarbonate panel walls, built out inside an existing commercial space start to finish.",
+    scope: [
+      "Steel stud frame layout and assembly",
+      "Polycarbonate panel wall installation",
+      "Interior finish and hardware",
+    ],
+    featured: false,
+    hero: "custom-structure-02.jpg",
+    photos: [
+      { file: "custom-structure-01.jpg", role: "progress", caption: "Frame and panel install" },
+      { file: "custom-structure-02.jpg", role: "after", caption: "Finished enclosure" },
+    ],
+  },
+
+  /* ─── DECKS & OUTDOOR: covered patio pergola ────────────────────────── */
+  {
+    slug: "covered-patio-pergola",
+    title: "Covered Patio Pergola",
+    category: "Decks & Outdoor",
+    location: "Lane County, OR",
+    summary:
+      "A cedar pergola with a clear polycarbonate roof panel, built onto an existing concrete patio.",
+    description:
+      "A cedar pergola framed and anchored to the home, then topped with a clear corrugated polycarbonate roof panel for weather cover without losing natural light.",
+    scope: [
+      "Cedar pergola framing, anchored to the home",
+      "Clear corrugated polycarbonate roof panels",
+      "Structural post footings on existing patio",
+    ],
+    featured: false,
+    hero: "pergola-cover-02.jpg",
+    photos: [
+      {
+        file: "pergola-cover-01.jpg",
+        role: "progress",
+        caption: "Cedar pergola framing",
+      },
+      {
+        file: "pergola-cover-02.jpg",
+        role: "after",
+        caption: "Polycarbonate roof panels installed",
+      },
+      {
+        file: "pergola-cover-03.jpg",
+        role: "after",
+        caption: "Roofline detail at the house eave",
+      },
+      { file: "pergola-cover-04.jpg", role: "after" },
+    ],
+  },
+
+  /* ─── DECKS & OUTDOOR: composite deck build ──────────────────────────── */
+  {
+    slug: "composite-deck-build",
+    title: "Composite Deck Build",
+    category: "Decks & Outdoor",
+    location: "Lane County, OR",
+    summary:
+      "A multi-level composite deck with built-in bench seating and a paver patio tie-in.",
+    description:
+      "A composite deck build with built-in bench seating around a grill area, stepping down to a paver patio at grade.",
+    scope: [
+      "Composite decking and framing",
+      "Built-in bench seating",
+      "Cable-rail sections",
+      "Paver patio tie-in at grade",
+    ],
+    featured: false,
+    hero: "composite-deck-build-01.jpg",
+    photos: [
+      { file: "composite-deck-build-01.jpg", role: "after" },
+      { file: "composite-deck-build-02.jpg", role: "after" },
+    ],
+  },
+
+  /* ─── EXTERIOR & RESTORATION: cedar shake siding ─────────────────────── */
+  {
+    slug: "cedar-shake-siding",
+    title: "Cedar Shake Siding & Roofing Detail",
+    category: "Exterior & Restoration",
+    location: "Lane County, OR",
+    summary:
+      "Horizontal cedar shake siding on a dormer accent, tied into a new architectural shingle roof.",
+    description:
+      "Horizontal cedar shake siding installed on a dormer accent wall, with clean roof-to-wall flashing tied into new architectural shingles.",
+    scope: [
+      "Horizontal cedar shake siding installation",
+      "Roof-to-wall flashing detail",
+      "Architectural shingle roofing",
+    ],
+    featured: false,
+    hero: "cedar-shake-siding-01.jpg",
+    photos: [
+      { file: "cedar-shake-siding-01.jpg", role: "after" },
+      { file: "cedar-shake-siding-02.jpg", role: "after" },
+    ],
+  },
+
+  /* ─── EXTERIOR & RESTORATION: exterior painting ──────────────────────── */
+  {
+    slug: "exterior-house-painting",
+    title: "Exterior House Painting",
+    category: "Exterior & Restoration",
+    location: "Lane County, OR",
+    summary: "A full exterior repaint, windows masked and prepped for spray.",
+    description:
+      "A full exterior repaint from prep to finish — windows and fixtures masked off for spray application, siding coated top to bottom.",
+    scope: [
+      "Surface prep and masking",
+      "Spray-applied exterior paint",
+      "Trim and fixture protection",
+    ],
+    featured: false,
+    hero: "exterior-painting-01.jpg",
+    photos: [
+      { file: "exterior-painting-01.jpg", role: "after" },
+      {
+        file: "exterior-painting-02.jpg",
+        role: "progress",
+        caption: "Windows masked and prepped for spray",
+      },
+    ],
+  },
+
+  /* ─── INTERIOR REMODELS: interior trim & finish ──────────────────────── */
+  {
+    slug: "interior-trim-finish",
+    title: "Interior Trim & Finish Work",
+    category: "Interior Remodels",
+    location: "Eugene, OR",
+    summary:
+      "Interior trim, casing, and finish work across a dining nook, living room, and bedroom.",
+    description:
+      "Interior finish carpentry — window casings, crown molding, and trim work carried consistently through the dining nook, living room, and bedroom.",
+    scope: [
+      "Window and door casing",
+      "Crown molding",
+      "Interior trim and finish carpentry",
+    ],
+    featured: false,
+    hero: "interior-finish-02.jpg",
+    photos: [
+      { file: "interior-finish-01.jpg", role: "after", caption: "Dining nook" },
+      { file: "interior-finish-02.jpg", role: "after", caption: "Living room" },
+      { file: "interior-finish-03.jpg", role: "after", caption: "Bedroom" },
+    ],
+  },
+
+  /* ─── DECKS & OUTDOOR: mosaic patio ───────────────────────────────────── */
+  {
+    slug: "mosaic-accent-patio",
+    title: "Deck & Mosaic Accent Wall",
+    category: "Decks & Outdoor",
+    location: "Lane County, OR",
+    summary: "A wood deck with a custom mosaic tile accent wall and pergola.",
+    description:
+      "A wood deck build with a custom mosaic tile accent wall and a covered entry pergola.",
+    scope: ["Wood deck construction", "Custom mosaic accent wall", "Entry pergola"],
+    featured: false,
+    hero: "mosaic-patio-01.jpg",
+    photos: [{ file: "mosaic-patio-01.jpg", role: "after" }],
   },
 ];
 
 export const CATEGORIES: ProjectCategory[] = [
-  "The Tadlock Residence",
+  "Signature Outdoor Living",
   "Custom Homes",
   "Exterior & Restoration",
   "Bath & Kitchen",

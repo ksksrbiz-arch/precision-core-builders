@@ -237,10 +237,10 @@ export default function ScheduleView() {
     }
   );
   const updateTask = useMutationWithToast(trpc.schedule.update.useMutation(), {
-    success: "Task Rescheduled",
-    successMessage: "Task dates updated.",
-    error: "Reschedule Failed",
-    errorMessage: "Failed to update task dates. Please try again.",
+    success: "Task Updated",
+    successMessage: "Schedule task saved.",
+    error: "Update Failed",
+    errorMessage: "Failed to update task. Please try again.",
     onSuccess: () => refetch(),
   });
 
@@ -562,6 +562,18 @@ export default function ScheduleView() {
                   id: taskId,
                   plannedStart: startDate.toISOString(),
                   plannedEnd: endDate.toISOString(),
+                });
+              }}
+              onTaskSave={(taskId, updates) => {
+                updateTask.mutate({
+                  id: taskId,
+                  title: updates.title,
+                  status: updates.status,
+                  plannedStart: updates.plannedStart,
+                  plannedEnd: updates.plannedEnd,
+                  assignedTo: updates.assignedTo ?? undefined,
+                  notes: updates.notes ?? undefined,
+                  weatherSensitive: updates.weatherSensitive,
                 });
               }}
             />

@@ -23,22 +23,21 @@ export default defineConfig({
     // caused by splitting React out from its consumers AND by funneling all of
     // node_modules into one eager "vendor" chunk (which defeats Vite's automatic
     // per-route code splitting). To stay safe we ONLY carve out self-contained
-    // leaf libraries (recharts/d3 charting, framer-motion) that have no module-init
-    // coupling with React, and we let Vite handle React and everything else with
-    // its default safe chunking. Do NOT add a catch-all `return "vendor"` here.
+    // leaf libraries (framer-motion) that have no module-init coupling with React,
+    // and we let Vite handle React and everything else with its default safe
+    // chunking. Do NOT add a catch-all `return "vendor"` here.
+    //
+    // recharts/d3 were previously carved into a named "charts" chunk here too,
+    // but naming it made Vite emit a <link rel="modulepreload"> for it in the
+    // base index.html — so every visitor's browser fetched ~461KB/123KB gzip on
+    // page load, even though only admin-only routes (GanttChart, Analytics,
+    // ProfitabilityTable) use it. Letting Vite's default chunking handle it
+    // instead ties it to those lazy routes with no eager preload. (Aug 2026)
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) {
             return undefined;
-          }
-          // Charting stack: heavy and only used on a few routes.
-          if (
-            /[\\/]node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor|internmap)[\\/]/.test(
-              id
-            )
-          ) {
-            return "charts";
           }
           // Animation library: large and self-contained.
           if (/[\\/]node_modules[\\/]framer-motion[\\/]/.test(id)) {

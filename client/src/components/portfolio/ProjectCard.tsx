@@ -58,9 +58,9 @@ export function ProjectCard({ project, index = 0 }: Props) {
             aria-hidden
           />
         </div>
-        {project.tag === "Our Home" && (
+        {project.tag === "Featured Project" && (
           <div className="absolute top-4 left-4 z-10 bg-[#C8A84B] text-neutral-900 text-[10px] uppercase tracking-[0.2em] font-bold px-3 py-1.5 rounded">
-            Our Home
+            Featured Project
           </div>
         )}
         <div className="p-4 md:p-5">

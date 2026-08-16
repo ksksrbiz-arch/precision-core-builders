@@ -98,6 +98,43 @@ export async function createMaterial(input: CreateMaterialInput) {
   return row;
 }
 
+/** Bulk insert materials (used by "Import from estimate"). Returns created rows. */
+export async function createMaterials(inputs: CreateMaterialInput[]) {
+  if (inputs.length === 0) return [];
+  const rows = inputs.map(input => ({
+    project_id: input.projectId,
+    name: input.name,
+    description: input.description,
+    category: input.category,
+    unit: input.unit,
+    quantity_needed: input.quantityNeeded,
+    quantity_ordered: input.quantityOrdered ?? 0,
+    quantity_received: input.quantityReceived ?? 0,
+    unit_price_current: input.unitPriceCurrent,
+    unit_price_budgeted: input.unitPriceBudgeted,
+    vendor_id: input.vendorId,
+    vendor_name: input.vendorName,
+    vendor_sku: input.vendorSku,
+    vendor_url: input.vendorUrl,
+    po_number: input.poNumber,
+    ordered_at: input.orderedAt,
+    expected_delivery: input.expectedDelivery,
+    received_at: input.receivedAt,
+    phase_needed: input.phaseNeeded,
+    notes: input.notes,
+    is_shortage: computeIsShortage(
+      input.quantityNeeded,
+      input.quantityOrdered ?? 0
+    ),
+  }));
+  const { data: created, error } = await data
+    .from("materials")
+    .insert(rows)
+    .select();
+  if (error) throw new Error(error.message);
+  return created ?? [];
+}
+
 /** Read the current quantities for a material, used to recompute shortage. */
 export async function getMaterialQuantities(id: number) {
   const { data: current } = await data

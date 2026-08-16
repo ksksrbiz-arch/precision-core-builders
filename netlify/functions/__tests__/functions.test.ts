@@ -201,6 +201,44 @@ describe("submission-created function", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toMatch(/skipped/);
   });
+
+  it("rejects a request with a mismatched Origin header", async () => {
+    const { handler } = await import("../submission-created");
+    const event = mockEvent(
+      "POST",
+      { payload: { form_name: "project-inquiry", data: { name: "x" } } },
+      { origin: "https://evil.example.com" }
+    );
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(403);
+  });
+
+  it("rejects a request with a mismatched Referer and no Origin", async () => {
+    const { handler } = await import("../submission-created");
+    const event = mockEvent(
+      "POST",
+      { payload: { form_name: "project-inquiry", data: { name: "x" } } },
+      { origin: "", referer: "https://evil.example.com/attack" }
+    );
+    const response = await handler(event as any, {} as any);
+
+    expect(response.statusCode).toBe(403);
+  });
+
+  it("ignores a malformed Referer rather than 500ing", async () => {
+    const { handler } = await import("../submission-created");
+    const event = mockEvent(
+      "POST",
+      { payload: { form_name: "newsletter", data: { name: "x" } } },
+      { origin: "", referer: "not a url" }
+    );
+    const response = await handler(event as any, {} as any);
+
+    // Falls through to the normal "skipped (other form)" path rather than
+    // throwing on the unparseable Referer.
+    expect(response.statusCode).toBe(200);
+  });
 });
 
 // ─── AI Usage Function Tests ────────────────────────────────

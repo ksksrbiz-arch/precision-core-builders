@@ -26,6 +26,8 @@ import {
   DollarSign,
   Clock,
   AlertTriangle,
+  Mail,
+  Printer,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -81,6 +83,30 @@ type EstimateResult = {
   aiReasoning: string;
 };
 
+function buildEstimateEmailBody(
+  result: EstimateResult,
+  projectType: string
+): string {
+  return [
+    "My AI construction cost estimate from Precision Core Builders (Eugene, OR)",
+    "",
+    `Project type: ${projectType || "—"}`,
+    "",
+    `Conservative: ${formatCurrency(result.estimatedLow)}`,
+    `Expected:     ${formatCurrency(result.estimatedMid)}`,
+    `Premium:      ${formatCurrency(result.estimatedHigh)}`,
+    "",
+    "Breakdown:",
+    `  Labor:        ${formatCurrency(result.laborCost)}`,
+    `  Materials:    ${formatCurrency(result.materialsCost)}`,
+    `  Permits:      ${formatCurrency(result.permitsCost)}`,
+    `  Contingency:  ${formatCurrency(result.contingency)}`,
+    "",
+    "This is a ballpark figure only — not a formal quote.",
+    "Request a free on-site estimate at https://precisioncorebuilders.com/estimator",
+  ].join("\n");
+}
+
 export default function Estimator() {
   useSEO({
     title: "Construction Cost Estimator — Eugene, OR",
@@ -107,6 +133,7 @@ export default function Estimator() {
   const [leadSent, setLeadSent] = useState(false);
   const [leadSending, setLeadSending] = useState(false);
   const [leadError, setLeadError] = useState("");
+  const [botField, setBotField] = useState(""); // honeypot — real users never fill this
 
   const toggleMaterial = (m: string) =>
     setMaterials(prev =>
@@ -155,11 +182,18 @@ export default function Estimator() {
   const submitLead = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!leadName || !leadEmail || leadSending) return;
+    // Honeypot tripped — silently drop without an error so a bot doesn't
+    // learn its submission was rejected.
+    if (botField) {
+      setLeadSent(true);
+      return;
+    }
     setLeadSending(true);
     setLeadError("");
 
     const formData = new FormData();
     formData.append("form-name", "estimator-lead");
+    formData.append("bot-field", botField);
     formData.append("name", leadName);
     formData.append("email", leadEmail);
     formData.append("phone", leadPhone);
@@ -474,15 +508,47 @@ export default function Estimator() {
 
           {/* Step 4: Results */}
           {step === 4 && result && (
-            <div className="space-y-5">
+            <div className="space-y-5 estimator-print-root">
               {/* Cost range */}
               <div className="bg-card border border-border/60 p-6">
-                <p
-                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-4"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Estimated Project Cost
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <p
+                    className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Estimated Project Cost
+                  </p>
+                  <div className="flex gap-2 print:hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const subject = encodeURIComponent(
+                          "Precision Core Builders – Project Estimate"
+                        );
+                        const body = encodeURIComponent(
+                          buildEstimateEmailBody(result, projectType)
+                        );
+                        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                      aria-label="Share estimate via email"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      Share
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                      aria-label="Print estimate"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      Print
+                    </button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-3 gap-4 mb-5">
                   {[
                     {
@@ -659,6 +725,24 @@ export default function Estimator() {
                     free.
                   </p>
                   <form onSubmit={submitLead} className="space-y-3">
+                    {/* Honeypot — hidden from real users, bots that auto-fill
+                        every field will trip it. Field name must match the
+                        static form registration in index.html. */}
+                    <div
+                      style={{ position: "absolute", left: "-9999px" }}
+                      aria-hidden="true"
+                    >
+                      <label>
+                        Skip:{" "}
+                        <input
+                          name="bot-field"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          value={botField}
+                          onChange={e => setBotField(e.target.value)}
+                        />
+                      </label>
+                    </div>
                     <input
                       value={leadName}
                       onChange={e => setLeadName(e.target.value)}

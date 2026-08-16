@@ -15,6 +15,12 @@
 import type { Handler } from "@netlify/functions";
 import { scoreLead, type LeadInput } from "../../server/_core/leadScoring";
 import { db } from "../../server/db";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from "./_utils/rateLimiter";
+import { isOriginAllowed } from "./_utils/corsGuard";
 
 /** Lead-capture `form-name`s this trigger acts on. Other forms are ignored. */
 const INQUIRY_FORM = "project-inquiry";
@@ -132,6 +138,54 @@ function buildEstimatorLead(
 
 export const handler: Handler = async event => {
   try {
+    // Weak but cheap defense-in-depth: this endpoint has no way to verify a
+    // request actually came from Netlify's Forms trigger (that mechanism
+    // has no signing/JWS support, unlike Netlify's separate "outgoing
+    // webhook notifications" feature — see commit history for why we didn't
+    // migrate to that). This does NOT stop a curl/script-based attacker who
+    // simply omits both headers or spoofs a matching one — it only blocks
+    // the realistic browser-based case: a malicious page on another origin
+    // trying to POST here directly via fetch/XHR, which carries a
+    // same-origin-policy-enforced Origin header revealing the mismatch.
+    // Netlify's real internal call is server-to-server and likely carries
+    // neither header, so we only reject when one IS present and mismatches
+    // — an absent Origin/Referer is not itself treated as suspicious, since
+    // blocking that would break the actual feature.
+    const origin = event.headers["origin"] ?? event.headers["Origin"];
+    const referer = event.headers["referer"] ?? event.headers["Referer"];
+    let refererOrigin: string | null = null;
+    if (referer) {
+      try {
+        refererOrigin = new URL(referer).origin;
+      } catch {
+        // Malformed Referer — ignore rather than 500 on a header we can't
+        // trust the shape of anyway.
+      }
+    }
+    if (
+      (origin && !isOriginAllowed(origin)) ||
+      (!origin && refererOrigin && !isOriginAllowed(refererOrigin))
+    ) {
+      return { statusCode: 403, body: "forbidden" };
+    }
+
+    // No auth is possible here (Netlify Forms triggers aren't signed), but
+    // this endpoint writes directly to the leads table and calls an LLM via
+    // scoreLead — rate limit by IP so it can't be hammered, and bound every
+    // field below before it reaches scoreLead or the DB insert.
+    const ip = getClientIp(event.headers);
+    const rl = checkRateLimit(`submission-created:${ip}`, {
+      maxRequests: 20,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return {
+        statusCode: 429,
+        headers: rateLimitHeaders(rl),
+        body: "rate limited",
+      };
+    }
+
     const parsed = JSON.parse(event.body ?? "{}") as {
       payload?: SubmissionPayload;
     };
@@ -144,7 +198,17 @@ export const handler: Handler = async event => {
       return { statusCode: 200, body: "skipped (other form)" };
     }
 
-    const data = payload.data ?? {};
+    // Bound every field: max 50 keys, each value truncated to 3000 chars.
+    // This feeds scoreLead's LLM prompt and a DB insert — an unauthenticated
+    // caller shouldn't be able to smuggle an oversized payload through either.
+    const rawData = payload.data ?? {};
+    const data: FormData = {};
+    for (const [key, value] of Object.entries(rawData).slice(0, 50)) {
+      if (typeof value === "string") {
+        data[key] = value.slice(0, 3_000);
+      }
+    }
+
     const name = data.name?.trim();
     const projectType = data.projectType?.trim();
     if (!name && !projectType) {

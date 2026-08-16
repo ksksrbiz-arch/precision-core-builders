@@ -44,7 +44,7 @@ export function Residential() {
       heroImageAlt="Residential construction Eugene Oregon — Precision Core Builders"
       projectCategories={[
         "Custom Homes",
-        "The Tadlock Residence",
+        "Signature Outdoor Living",
         "Interior Remodels",
       ]}
       metaTitle="Residential Contractor Eugene OR | CCB #246527"
@@ -176,7 +176,7 @@ export function NewConstruction() {
       }
       heroImage={ASSETS.services.newConstruction}
       heroImageAlt="New home construction Eugene Oregon"
-      projectCategories={["Custom Homes", "The Tadlock Residence"]}
+      projectCategories={["Custom Homes", "Signature Outdoor Living"]}
       metaTitle="Custom Home Builder Eugene OR | New Construction"
       metaDescription="Custom home builder in Eugene, Oregon. Ground-up construction from permits to final walkthrough. Licensed CCB #246527, 20+ years of experience. Free estimates."
       intro={withBudget(

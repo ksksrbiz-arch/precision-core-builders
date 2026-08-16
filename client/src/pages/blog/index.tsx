@@ -6,7 +6,7 @@
  * single source. CCB facts are sourced from the Oregon CCB's own public
  * requirements and multiple independent verification guides, current as
  * of Aug 2026. The case study uses only real project data already in
- * data/projects.ts (the Tadlock Residence).
+ * data/projects.ts (the Signature Outdoor Living project).
  */
 import { ArticlePage } from "./_template";
 
@@ -217,29 +217,29 @@ export function CCBLicensingGuide() {
   );
 }
 
-// ─── 3. Case Study: The Tadlock Residence ────────────────────────────────────
+// ─── 3. Case Study: Signature Outdoor Living Project ─────────────────────────
 export function TadlockResidenceCaseStudy() {
   return (
     <ArticlePage
-      title="We Built Our Own Backyard First — Here's What That Taught Us"
+      title="What a Full Outdoor Living Build Actually Looks Like"
       category="Project Story"
       heroImage="/portfolio/signature-outdoor-01.jpg"
-      heroImageAlt="Finished outdoor living space at the Tadlock Residence in Eugene, Oregon"
-      metaTitle="The Tadlock Residence: A Real Precision Core Builders Project | Case Study"
-      metaDescription="Eric and Mitch Tadlock built their own home's outdoor living space — pergola, deck, and fencing — over the course of a year. Here's the real project, start to finish."
+      heroImageAlt="Finished outdoor living space in Eugene, Oregon"
+      metaTitle="A Complete Outdoor Living Build | Case Study | Precision Core Builders"
+      metaDescription="A covered pergola, composite deck, and matched cedar fencing, built out over the course of a year. Here's the real project, start to finish."
       publishedDate="2026-08-04"
-      dek="Most contractors show you client work. We want to show you our own home first, because it's the one project where nobody was watching over our shoulder but us — and we still held ourselves to the same standard."
+      dek="Most contractors show you the finished photo. We wanted to walk through what a full outdoor living build actually involves — from bare structure to a cohesive, finished property."
       blocks={[
         {
           type: "p",
           content:
-            "When you hire Precision Core Builders, you're hiring two brothers who live in a home they built the outdoor envelope of themselves. This is that home — the covered pergola, the composite deck, the cedar privacy fence, and the front-yard fence that ties the whole property together. No subcontractors on this one. No shortcuts. Just the same standard we bring to every client's project, except this time the client was us.",
+            "This project covers the full outdoor envelope of a property: a covered pergola, a composite deck, a cedar privacy fence, and a front-yard fence that ties the whole property together. Same standard we bring to every client's project, start to finish.",
         },
         { type: "h2", content: "The starting point" },
         {
           type: "p",
           content:
-            "The backyard started as a bare frame — a blank structural shell with no covered outdoor space, no deck, and no real separation from the neighboring properties. Eric and Mitch spent a full year designing and building the entire outdoor living space themselves, working it in around client projects.",
+            "The backyard started as a bare frame — a blank structural shell with no covered outdoor space, no deck, and no real separation from the neighboring properties. Building out the full outdoor living space took the better part of a year, worked in around other client projects.",
         },
         { type: "h2", content: "What actually got built" },
         {
@@ -256,7 +256,7 @@ export function TadlockResidenceCaseStudy() {
         {
           type: "p",
           content:
-            "Client photos are great, but they only show you the finished result. This project is different — it's the one where we made every material decision, every layout call, and every finish choice with nobody to answer to but ourselves. If you're wondering what \"the standard we hold ourselves to\" actually looks like in practice, this is it: a covered pergola that anchors solidly to the structure, a deck that sits flush rather than gapped, and fencing that's stain-matched across two completely different fence styles so the whole property reads as one cohesive design.",
+            'Client photos are great, but they only show you the finished result. This project walks through the material decisions, the layout calls, and the finish choices that go into a build like this. If you\'re wondering what "the standard we hold ourselves to" actually looks like in practice, this is it: a covered pergola that anchors solidly to the structure, a deck that sits flush rather than gapped, and fencing that\'s stain-matched across two completely different fence styles so the whole property reads as one cohesive design.',
         },
         {
           type: "callout",

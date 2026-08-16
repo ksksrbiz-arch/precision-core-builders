@@ -7,6 +7,7 @@
  */
 import {
   data,
+  escapePostgrestFilterTerm,
   paginate,
   unwrapList,
   unwrapOne,
@@ -26,8 +27,10 @@ export async function listClients(input: ListClientsInput) {
     .select("*, projects(id,name,status)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
-  if (input.search)
-    q = q.or(`name.ilike.%${input.search}%,email.ilike.%${input.search}%`);
+  if (input.search) {
+    const term = escapePostgrestFilterTerm(input.search);
+    q = q.or(`name.ilike.%${term}%,email.ilike.%${term}%`);
+  }
   return unwrapList(await q);
 }
 
