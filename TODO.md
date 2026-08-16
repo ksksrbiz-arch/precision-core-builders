@@ -1,8 +1,8 @@
 # Precision Core Builders: Development TODO
 
 **Last Updated:** August 16, 2026
-**Overall Progress:** ~78% complete (Foundation ✅ | Operations ~75% | Portal/Features ~50% | Estimator UI, Lead Scoring, Stripe billing, Purchase Orders, Full-Text Search, Blueprint, Gantt edit modal, Estimator share/print ✅ shipped)
-**Next Milestone:** Materials import + test coverage; remaining polish items
+**Overall Progress:** ~82% complete (Foundation ✅ | Operations ~80% | Portal/Features ~60% | BOT queue complete | Portal finishes polish, PO receipt→inventory, field-report shortage sync ✅)
+**Next Milestone:** Stripe live / Netlify secrets (human-gated); portal ledger auto-entries; delivery tracking polish
 
 ---
 
@@ -315,12 +315,12 @@ Public estimator form plus admin estimate authoring/edit UI are live.
 
 - **File:** `client/src/pages/portal/PortalFinishes.tsx`
 - **Components:**
-  - [ ] Product catalog (kitchen, bathroom, flooring, paint, fixtures)
+  - [x] Product catalog (kitchen, bathroom, flooring, paint, fixtures) — curated FINISH_OPTIONS
   - [ ] Image gallery for each product
-  - [ ] Cost for each option
-  - [ ] Budget impact calculator (shows delta from baseline)
-  - [ ] Selection workflow (add to cart, confirm)
-  - [ ] Saved selections list
+  - [x] Cost for each option (budget delta per choice)
+  - [x] Budget impact calculator (shows delta from baseline)
+  - [x] Selection workflow (client select + approve; selected state highlighted)
+  - [x] Saved selections list (grouped by room, realtime)
 - **Database:**
   - [ ] Populate `finish_selections` table with sample products
   - [ ] Link to project budget

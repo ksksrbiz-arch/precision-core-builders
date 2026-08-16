@@ -119,10 +119,15 @@ export default function MaterialsView() {
     trpc.purchaseOrders.updateStatus.useMutation(),
     {
       success: "Status Updated",
-      successMessage: "Purchase order status updated.",
+      successMessage:
+        "Purchase order status updated. Received/partial also updates material inventory.",
       error: "Update Failed",
       errorMessage: "Failed to update purchase order status.",
-      onSuccess: () => utils.purchaseOrders.list.invalidate(),
+      onSuccess: () => {
+        utils.purchaseOrders.list.invalidate();
+        // Receipt path bumps quantity_received / is_shortage on linked materials.
+        utils.materials.list.invalidate();
+      },
     }
   );
   const appendLedger = trpc.ledger.append.useMutation({

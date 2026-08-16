@@ -3,6 +3,7 @@
  */
 import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import { fmtDate as fmtDateSafe, fmtDateTime } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -109,6 +110,20 @@ export default function FieldReportDetail() {
       invalidate: () => {
         utils.fieldReports.getById.invalidate({ id: reportId });
         utils.fieldReports.list.invalidate();
+      },
+    }
+  );
+
+  const { addToast } = useToast();
+  const syncShortagesMut = useMutationWithToast(
+    trpc.materials.createMany.useMutation(),
+    {
+      success: "Shortages Synced",
+      successMessage: "Material shortages pushed to inventory.",
+      error: "Sync Failed",
+      errorMessage: "Could not sync shortages to materials.",
+      invalidate: () => {
+        utils.materials.list.invalidate();
       },
     }
   );
@@ -403,14 +418,58 @@ export default function FieldReportDetail() {
           {/* Material Shortages */}
           {materialShortages.length > 0 && (
             <div className="bg-card border border-red-400/30 bg-red-400/5 p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertCircle className="h-4 w-4 text-red-400" />
-                <p
-                  className="text-[9px] font-bold tracking-[0.2em] uppercase text-red-400/80"
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-400" />
+                  <p
+                    className="text-[9px] font-bold tracking-[0.2em] uppercase text-red-400/80"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Material Shortages
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={
+                    syncShortagesMut.isPending ||
+                    !(report as any).project_id
+                  }
+                  onClick={() => {
+                    const projectId = (report as any).project_id as
+                      | number
+                      | undefined;
+                    if (!projectId) {
+                      addToast({
+                        type: "error",
+                        title: "No project",
+                        message:
+                          "This report is not linked to a project, so shortages cannot be synced.",
+                        duration: 5000,
+                      });
+                      return;
+                    }
+                    const names = materialShortages
+                      .map((s: string) => String(s).trim())
+                      .filter(Boolean);
+                    if (!names.length) return;
+                    syncShortagesMut.mutate({
+                      items: names.map((name: string) => ({
+                        projectId,
+                        name,
+                        quantityNeeded: 1,
+                        quantityOrdered: 0,
+                        notes: `Flagged from field report #${reportId}`,
+                      })),
+                    });
+                  }}
+                  className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase border border-red-400/40 text-red-400 px-2.5 py-1.5 hover:bg-red-400/10 disabled:opacity-50 transition-colors"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Material Shortages
-                </p>
+                  <Package className="h-3 w-3" />
+                  {syncShortagesMut.isPending
+                    ? "Syncing…"
+                    : "Push to Materials"}
+                </button>
               </div>
               <ul className="space-y-1.5">
                 {materialShortages.map((s: string, i: number) => (
@@ -420,6 +479,10 @@ export default function FieldReportDetail() {
                   </li>
                 ))}
               </ul>
+              <p className="text-[10px] text-muted-foreground mt-3">
+                Pushes each shortage name into project inventory as a shortage
+                row so Generate PO can pick them up.
+              </p>
             </div>
           )}
         </div>
