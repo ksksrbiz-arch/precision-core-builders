@@ -541,7 +541,7 @@ const STATS = [
   { value: 20, suffix: "", label: "Years Construction" },
   { value: 12, suffix: "", label: "Years In Business" },
   { value: 50, suffix: "+", label: "Happy Customers" },
-  { value: 0, suffix: "", label: "Call-Backs" },
+  { value: 0, suffix: "", label: "Warranty Call-Backs" },
 ] as const;
 
 function StatCell({ value, suffix, label }: (typeof STATS)[number]) {
@@ -1057,16 +1057,34 @@ function SuperSplatTeaser() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   TESTIMONIAL TEASER — single quote + link to full testimonials
+   TESTIMONIAL TEASER — multi-review proof + review destinations
 ══════════════════════════════════════════════════════════════ */
-const FEATURED_TESTIMONIAL = {
-  quote:
-    "Eric finished our second-story addition exactly when he said he would and exactly on budget. He was on site every single day. We won't use anyone else.",
-  name: "T. & K. Whitfield",
-  location: "South Eugene",
-  project: "Second Story Addition",
-  stars: 5,
-} as const;
+const TESTIMONIALS = [
+  {
+    quote:
+      "Eric finished our second-story addition exactly when he said he would and exactly on budget. He was on site every single day. We won't use anyone else.",
+    name: "T. & K. Whitfield",
+    location: "South Eugene",
+    project: "Second Story Addition",
+    stars: 5,
+  },
+  {
+    quote:
+      "Our deck and pergola came out better than we imagined. Clear communication, clean job site, and they treated our property like their own.",
+    name: "J. Morales",
+    location: "Springfield",
+    project: "Deck & Pergola",
+    stars: 5,
+  },
+  {
+    quote:
+      "Kitchen remodel on a tight timeline. Mitch and the crew stayed on schedule, walked us through every decision, and the finish quality is exceptional.",
+    name: "A. Chen",
+    location: "Eugene",
+    project: "Kitchen Remodel",
+    stars: 5,
+  },
+] as const;
 
 function TestimonialTeaser() {
   return (
@@ -1074,56 +1092,86 @@ function TestimonialTeaser() {
       className="py-24 md:py-32 bg-card/40 border-y border-border/40"
       aria-labelledby="testimonial-heading"
     >
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.15 }}
-        variants={stagger}
-        className="max-w-4xl mx-auto px-6 md:px-10 text-center"
-      >
-        <motion.div variants={fadeUp}>
-          <Quote
-            className="w-12 h-12 text-primary/40 mx-auto mb-6"
-            aria-hidden="true"
-          />
-        </motion.div>
-        <motion.div variants={fadeUp}>
-          <div
-            className="flex justify-center gap-1 mb-8"
-            aria-label={`${FEATURED_TESTIMONIAL.stars} out of 5 stars`}
-          >
-            {Array.from({ length: FEATURED_TESTIMONIAL.stars }).map((_, i) => (
-              <Star
-                key={i}
-                className="w-5 h-5 fill-primary text-primary"
-                aria-hidden="true"
-              />
-            ))}
-          </div>
-        </motion.div>
-        <motion.blockquote
-          id="testimonial-heading"
-          variants={fadeUp}
-          className="text-2xl md:text-3xl font-medium text-foreground leading-snug mb-8"
-          style={{ fontFamily: "var(--font-heading)" }}
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={stagger}
+          className="text-center mb-12 md:mb-16"
         >
-          &ldquo;{FEATURED_TESTIMONIAL.quote}&rdquo;
-        </motion.blockquote>
-        <motion.div variants={fadeUp}>
-          <div className="text-sm font-medium text-foreground">
-            {FEATURED_TESTIMONIAL.name}
-          </div>
-          <div
-            className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mt-1"
+          <motion.div variants={fadeUp}>
+            <Quote
+              className="w-10 h-10 text-primary/40 mx-auto mb-5"
+              aria-hidden="true"
+            />
+          </motion.div>
+          <motion.p
+            variants={fadeUp}
+            className="text-[11px] tracking-[0.28em] uppercase text-primary font-semibold mb-3"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
-            {FEATURED_TESTIMONIAL.project} · {FEATURED_TESTIMONIAL.location}
-          </div>
+            Client voices
+          </motion.p>
+          <motion.h2
+            id="testimonial-heading"
+            variants={fadeUp}
+            className="text-3xl md:text-4xl font-semibold text-foreground"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Built on trust, delivered on promise
+          </motion.h2>
         </motion.div>
 
         <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={stagger}
+          className="grid md:grid-cols-3 gap-5 md:gap-6"
+        >
+          {TESTIMONIALS.map(t => (
+            <motion.figure
+              key={t.name}
+              variants={fadeUp}
+              className="border border-border/60 bg-background/40 p-6 md:p-7 text-left flex flex-col"
+            >
+              <div
+                className="flex gap-0.5 mb-4"
+                aria-label={`${t.stars} out of 5 stars`}
+              >
+                {Array.from({ length: t.stars }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className="w-3.5 h-3.5 fill-primary text-primary"
+                    aria-hidden="true"
+                  />
+                ))}
+              </div>
+              <blockquote className="text-sm md:text-[15px] text-foreground/90 leading-relaxed flex-1 mb-6">
+                &ldquo;{t.quote}&rdquo;
+              </blockquote>
+              <figcaption>
+                <div className="text-sm font-semibold text-foreground">
+                  {t.name}
+                </div>
+                <div
+                  className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground mt-1"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  {t.project} · {t.location}
+                </div>
+              </figcaption>
+            </motion.figure>
+          ))}
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
           variants={fadeUp}
-          className="mt-12 inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-border/50 pt-8"
+          className="mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 border-t border-border/50 pt-8"
         >
           <span className="flex items-center gap-2">
             <span className="flex gap-0.5" aria-hidden="true">
@@ -1141,23 +1189,34 @@ function TestimonialTeaser() {
           />
           <span className="text-sm text-muted-foreground">
             50+ happy customers ·{" "}
-            <span className="text-foreground font-medium">0 call-backs</span>
+            <span className="text-foreground font-medium">
+              zero warranty call-backs to date
+            </span>
           </span>
           <span
             className="hidden sm:block w-px h-4 bg-border"
             aria-hidden="true"
           />
           <a
+            href={SITE.googleBusiness}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-primary font-medium border-b border-primary/40 hover:border-primary transition-colors"
+          >
+            Find us on Google
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </a>
+          <a
             href={SITE.facebook}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-primary font-medium border-b border-primary/40 hover:border-primary transition-colors"
           >
-            Read more reviews
+            Facebook reviews
             <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
           </a>
         </motion.div>
-      </motion.div>
+      </div>
     </section>
   );
 }
@@ -1170,10 +1229,11 @@ function ClosingCTA() {
     <CTABand
       eyebrow="Let's build it right"
       headline="Ready to start your project?"
-      body="Whether you're planning a kitchen remodel, new construction, or just have a question — we'd love to hear about it."
-      primaryHref="/contact"
-      primaryLabel="Contact Us"
+      body="Get a free high-level cost range in minutes, or call Eric about scope, timeline, and next steps."
+      primaryHref="/estimator"
+      primaryLabel="Free Cost Estimate"
       variant="light"
+      showPhone
     />
   );
 }
