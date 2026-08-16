@@ -1035,3 +1035,39 @@ body.admin-shell .prose-invert,
 body.admin-shell .dark\:prose-invert {
   color: var(--foreground);
 }
+
+/* ─── Estimator print layout (BOT-5) ─────────────────────────────────────── */
+@media print {
+  /* Hide chrome */
+  header,
+  nav,
+  footer,
+  .print\:hidden,
+  [data-mobile-cta],
+  .MobileCTABar,
+  body > div > nav,
+  body > div > footer {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .estimator-print-root {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .estimator-print-root .bg-card {
+    border: 1px solid #ccc !important;
+    background: white !important;
+    break-inside: avoid;
+  }
+
+  .estimator-print-root button {
+    display: none !important;
+  }
+}
