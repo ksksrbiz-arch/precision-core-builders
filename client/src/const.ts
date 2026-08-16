@@ -15,6 +15,9 @@ export const SITE = {
   location: "Eugene, Oregon",
   facebook:
     "https://www.facebook.com/p/Precision-Core-Builders-61554995032484/",
+  /** Google Business / Maps search — replace with exact GBP place URL when claimed. */
+  googleBusiness:
+    "https://www.google.com/maps/search/?api=1&query=Precision+Core+Builders+Eugene+OR",
 } as const;
 
 /** All real assets hosted on the existing Webflow CDN */

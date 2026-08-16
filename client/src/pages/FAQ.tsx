@@ -47,7 +47,7 @@ const FAQS: FaqSection[] = [
     items: [
       {
         q: "How do I get started?",
-        a: "Call Eric directly at 541-852-5144 or fill out our contact form. We schedule a free on-site consultation — we come to your property, review the scope, and provide a detailed written estimate before you commit to anything.",
+        a: "Start with our free online cost estimator for a high-level range, then call Eric at 541-852-5144 or use the contact form. We schedule a free on-site consultation — we come to your property, review the scope, and provide a detailed written estimate before you commit to anything.",
       },
       {
         q: "Are you licensed and insured in Oregon?",
@@ -101,7 +101,7 @@ const FAQS: FaqSection[] = [
       },
       {
         q: "How accurate are your estimates?",
-        a: "Our estimates are detailed and itemized. For fixed-price work, we stand behind our numbers. For projects with inherent unknowns (like restoration work), we explain contingency ranges upfront so there are no surprises.",
+        a: "The online estimator gives a directional range from project parameters. After a site visit, you receive a detailed written estimate itemizing labor, materials, and timeline. For fixed-price work we stand behind those numbers; for projects with inherent unknowns (like restoration), we explain contingency ranges upfront so there are no surprises.",
       },
       {
         q: "Why is the lowest bid not always the best choice?",
