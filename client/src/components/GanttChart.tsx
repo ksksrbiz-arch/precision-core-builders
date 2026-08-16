@@ -32,6 +32,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/useMobile";
+import {
+  STATUS_COLORS,
+  dateToISO,
+  dragDaysFromPixels,
+  getBarColor as barColorFor,
+  getDateNum,
+  shiftTaskDates,
+  toBarOffsets,
+} from "@/lib/ganttMath";
 
 // ScheduleItem matches the Supabase schedule_items column names returned by
 // the scheduleRouter.list query.
@@ -81,29 +90,8 @@ interface GanttBarData {
   endDate: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  complete: "#10b981",
-  in_progress: "#3b82f6",
-  pending: "#8b7355",
-  blocked: "#ef4444",
-  deferred: "#f59e0b",
-};
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-/** Approximate pixels per day used for drag-to-reschedule sensitivity. */
-const PIXELS_PER_DAY = 5;
-
-function getDateNum(dateStr: string): number {
-  return new Date(dateStr).getTime();
-}
-
-function dateToISO(date: Date): string {
-  return date.toISOString().split("T")[0];
-}
-
 function getBarColor(bar: GanttBarData): string {
-  if (bar.weatherSensitive) return "#eab308";
-  return STATUS_COLORS[bar.status] ?? "#8b7355";
+  return barColorFor(bar.status, bar.weatherSensitive);
 }
 
 export function GanttChart({
@@ -182,10 +170,11 @@ export function GanttChart({
     const min = Math.min(...timestamps);
 
     const data: GanttBarData[] = withDates.map(task => {
-      const taskStart = getDateNum(task.planned_start!);
-      const taskEnd = getDateNum(task.planned_end!);
-      const start = (taskStart - min) / MS_PER_DAY;
-      const duration = Math.max(1, (taskEnd - taskStart) / MS_PER_DAY);
+      const { start, duration } = toBarOffsets(
+        task.planned_start!,
+        task.planned_end!,
+        min
+      );
 
       return {
         id: task.id,
@@ -244,20 +233,16 @@ export function GanttChart({
 
       if (wasClick) {
         openTaskEditor(draggingTaskId);
-      } else if (
-        !readOnly &&
-        task?.planned_start &&
-        task?.planned_end
-      ) {
-        const dragDays = Math.round(moved / PIXELS_PER_DAY);
-        if (dragDays !== 0) {
-          const newStart = new Date(task.planned_start);
-          newStart.setDate(newStart.getDate() + dragDays);
-          const newEnd = new Date(task.planned_end);
-          newEnd.setDate(newEnd.getDate() + dragDays);
-
+      } else if (!readOnly && task?.planned_start && task?.planned_end) {
+        const dragDays = dragDaysFromPixels(moved);
+        const shifted = shiftTaskDates(
+          task.planned_start,
+          task.planned_end,
+          dragDays
+        );
+        if (shifted) {
           if (onTaskUpdate) {
-            onTaskUpdate(task.id, newStart, newEnd);
+            onTaskUpdate(task.id, shifted.start, shifted.end);
           }
 
           // Optimistic update
@@ -266,8 +251,8 @@ export function GanttChart({
               t.id === draggingTaskId
                 ? {
                     ...t,
-                    planned_start: dateToISO(newStart),
-                    planned_end: dateToISO(newEnd),
+                    planned_start: shifted.startISO,
+                    planned_end: shifted.endISO,
                   }
                 : t
             )

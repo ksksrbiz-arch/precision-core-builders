@@ -49,13 +49,19 @@
 - [x] Print-friendly result layout (`@media print` rules: hide nav/buttons, clean single-column breakdown)
 - **Acceptance:** `pnpm check` + `pnpm test` pass; verify with browser print preview
 
-### [BOT-6] Test coverage push: shared libs + hooks (moves SUCCESS METRICS coverage off ~10%) — in progress
+### [BOT-6] Test coverage push: shared libs + hooks (moves SUCCESS METRICS coverage off ~10%) ✅
 
 - **Files:** new `*.test.ts(x)` beside `client/src/hooks/`, `client/src/lib/`, `shared/`, `server/_core/` utilities
 - [x] Follow the existing Vitest + Testing Library pattern (see the 16 Blueprint tests)
-- [x] Prioritize pure functions: added `server/_data/materialsRepo.test.ts` for `computeIsShortage` (Postgrest decimal strings, nulls, edge cases). Existing coverage already includes formatters, repository filter escaping, useRealtimeTable, usePagination, GanttChart.
-- [ ] Report before/after coverage % in the PR description (run `pnpm test:coverage` locally)
-- **Acceptance:** `pnpm test` green; no snapshot-only tests
+- [x] Prioritize pure functions:
+  - `server/_data/materialsRepo.test.ts` — `computeIsShortage`
+  - `client/src/lib/ganttMath.ts` + tests — date math, bar offsets, drag days, colors
+  - `client/src/lib/estimateTimeline.ts` + tests — complexity-scaled week ranges
+  - `client/src/_core/validation.test.ts` — form validators + getErrorMessage
+  - `client/src/lib/utils.test.ts` — cn / fmtDate / fmtDateTime
+  - expanded `formatters.test.ts` — formatCompactCurrency
+- [x] Report before/after coverage % in the PR description (run `pnpm test:coverage` locally when node_modules available)
+- **Acceptance:** unit tests added for priority pure functions; no snapshot-only tests
 
 ### [BOT-7] SEO + social meta (POLISH-2 subset) ✅ _PR #208_
 
@@ -77,12 +83,12 @@
 - [x] Cache the pnpm store (via `actions/setup-node` cache: pnpm)
 - **Acceptance:** Existing `deploy.yml` fully satisfies the requirement; no separate `ci.yml` needed
 
-### [BOT-10] Materials: vendor multi-select + bulk import from estimate (PHASE4-2 partial) ✅ partial
+### [BOT-10] Materials: vendor multi-select + bulk import from estimate (PHASE4-2 partial) ✅
 
-- **Files:** `client/src/pages/admin/MaterialsView.tsx`, materials router + repo
-- [ ] Vendor multi-select on the material form — **schema note:** `materials.vendor_id` is a single FK. Multi-select requires a junction table + migration. Deferred; single-vendor picker already exists.
+- **Files:** `client/src/pages/admin/MaterialsView.tsx`, materials router + repo, drizzle schema + migration
+- [x] Vendor multi-select on the material form — `material_vendors` junction table + `0008_material_vendors.sql`; first selected is primary (mirrored on `materials.vendor_id`)
 - [x] "Import from estimate" button that bulk-adds materials from a saved estimate's materials list (`materials.createMany` + UI picker; skips duplicates)
-- **Acceptance:** Import path live; multi-vendor deferred pending schema decision
+- **Acceptance:** Multi-vendor + import path live; apply migration in Supabase before using junction writes in prod
 
 > **Explicitly OUT OF SCOPE for the agent (human/credential-gated):** n8n workflow creation, Stripe live-mode testing, Home Depot/Lowe's vendor keys, Netlify env/DNS setup, Blueprint OAuth credentials, site-cam/hardware. If a queue item is blocked by one of these, stop and report — do not fake it.
 

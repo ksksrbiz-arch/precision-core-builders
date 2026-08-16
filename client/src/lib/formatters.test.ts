@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrency, formatNumber, formatPercent } from "./formatters";
+import {
+  formatCompactCurrency,
+  formatCurrency,
+  formatNumber,
+  formatPercent,
+} from "./formatters";
 
 describe("formatCurrency", () => {
   it("formats integers with a $ prefix and grouping", () => {
@@ -38,5 +43,22 @@ describe("formatPercent", () => {
 
   it("returns the fallback for nullish values", () => {
     expect(formatPercent(null)).toBe("—");
+  });
+});
+
+describe("formatCompactCurrency", () => {
+  it("compacts large values", () => {
+    // Intl compact notation varies slightly by engine; assert shape.
+    expect(formatCompactCurrency(1_200_000)).toMatch(/^\$1(\.2)?M$/);
+    expect(formatCompactCurrency(5000)).toMatch(/^\$5K$/);
+  });
+
+  it("formats small values without suffix", () => {
+    expect(formatCompactCurrency(450)).toBe("$450");
+  });
+
+  it("returns fallback for nullish", () => {
+    expect(formatCompactCurrency(null)).toBe("—");
+    expect(formatCompactCurrency(undefined, "n/a")).toBe("n/a");
   });
 });

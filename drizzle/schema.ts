@@ -13,6 +13,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -448,6 +449,32 @@ export const vendors = pgTable(
 
 export type Vendor = typeof vendors.$inferSelect;
 export type InsertVendor = typeof vendors.$inferInsert;
+
+// ─── Material ↔ Vendor (many-to-many) ─────────────────────────────────────────
+// A material can source from multiple catalog vendors. The primary vendor is
+// still mirrored on materials.vendor_id / vendor_name for PO generation and
+// search backward-compat; this junction holds the full set.
+
+export const materialVendors = pgTable(
+  "material_vendors",
+  {
+    materialId: integer("material_id")
+      .notNull()
+      .references(() => materials.id, { onDelete: "cascade" }),
+    vendorId: integer("vendor_id")
+      .notNull()
+      .references(() => vendors.id, { onDelete: "cascade" }),
+    isPrimary: boolean("is_primary").default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  t => [
+    primaryKey({ columns: [t.materialId, t.vendorId] }),
+    index("idx_material_vendors_vendor_id").on(t.vendorId),
+  ]
+);
+
+export type MaterialVendor = typeof materialVendors.$inferSelect;
+export type InsertMaterialVendor = typeof materialVendors.$inferInsert;
 
 // ─── 10. Sub-Contractors ──────────────────────────────────────────────────────
 

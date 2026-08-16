@@ -51,8 +51,11 @@ export type CreateMaterialInput = {
   quantityReceived?: number;
   unitPriceCurrent?: number;
   unitPriceBudgeted?: number;
+  /** Primary vendor (mirrors materials.vendor_id for PO/search compat). */
   vendorId?: number;
   vendorName?: string;
+  /** Full multi-vendor set written to material_vendors junction. */
+  vendorIds?: number[];
   vendorSku?: string;
   vendorUrl?: string;
   poNumber?: string;
@@ -63,7 +66,56 @@ export type CreateMaterialInput = {
   notes?: string;
 };
 
+/**
+ * Replace the material_vendors rows for a material.
+ * First id in `vendorIds` is marked is_primary.
+ */
+export async function setMaterialVendors(
+  materialId: number,
+  vendorIds: number[]
+) {
+  const unique = [...new Set(vendorIds.filter(id => Number.isFinite(id) && id > 0))];
+  // Clear existing links then insert the new set.
+  const { error: delError } = await data
+    .from("material_vendors")
+    .delete()
+    .eq("material_id", materialId);
+  if (delError) throw new Error(delError.message);
+  if (unique.length === 0) return [];
+
+  const rows = unique.map((vendorId, idx) => ({
+    material_id: materialId,
+    vendor_id: vendorId,
+    is_primary: idx === 0,
+  }));
+  const { data: created, error } = await data
+    .from("material_vendors")
+    .insert(rows)
+    .select();
+  if (error) throw new Error(error.message);
+  return created ?? [];
+}
+
+/** List vendor ids linked to a material (primary first). */
+export async function listMaterialVendorIds(
+  materialId: number
+): Promise<number[]> {
+  const { data: rows, error } = await data
+    .from("material_vendors")
+    .select("vendor_id, is_primary")
+    .eq("material_id", materialId)
+    .order("is_primary", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (rows ?? []).map((r: { vendor_id: number }) => r.vendor_id);
+}
+
 export async function createMaterial(input: CreateMaterialInput) {
+  // Prefer explicit vendorIds[0] as primary when provided.
+  const primaryVendorId =
+    input.vendorIds && input.vendorIds.length > 0
+      ? input.vendorIds[0]
+      : input.vendorId;
+
   const { data: row, error } = await data
     .from("materials")
     .insert({
@@ -77,7 +129,7 @@ export async function createMaterial(input: CreateMaterialInput) {
       quantity_received: input.quantityReceived ?? 0,
       unit_price_current: input.unitPriceCurrent,
       unit_price_budgeted: input.unitPriceBudgeted,
-      vendor_id: input.vendorId,
+      vendor_id: primaryVendorId,
       vendor_name: input.vendorName,
       vendor_sku: input.vendorSku,
       vendor_url: input.vendorUrl,
@@ -95,6 +147,17 @@ export async function createMaterial(input: CreateMaterialInput) {
     .select()
     .single();
   if (error) throw new Error(error.message);
+
+  const junctionIds =
+    input.vendorIds && input.vendorIds.length > 0
+      ? input.vendorIds
+      : primaryVendorId
+        ? [primaryVendorId]
+        : [];
+  if (junctionIds.length > 0 && row?.id) {
+    await setMaterialVendors(row.id as number, junctionIds);
+  }
+
   return row;
 }
 
