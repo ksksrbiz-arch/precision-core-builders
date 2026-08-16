@@ -564,6 +564,20 @@ export default function ScheduleView() {
                   plannedEnd: endDate.toISOString(),
                 });
               }}
+              onTaskEdit={task => {
+                // Same optimistic mutation as drag-to-reschedule: schedule.update
+                // reconciles via refetch() in updateTask.onSuccess. Only fields
+                // the edit dialog exposes are sent; nulls clear the column.
+                updateTask.mutate({
+                  id: task.id,
+                  title: task.title,
+                  status: task.status,
+                  plannedStart: task.planned_start ?? undefined,
+                  plannedEnd: task.planned_end ?? undefined,
+                  assignedTo: task.assigned_to ?? undefined,
+                  notes: task.notes ?? undefined,
+                });
+              }}
             />
           </div>
         )}
