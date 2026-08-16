@@ -4,12 +4,13 @@
  * Returns: { isLive, lastEvent }
  *
  * Reconnection: when the channel reports a recoverable error status
- * (`CHANNEL_ERROR`, `TIMED_OUT`, `CLOSED`) the hook tears the channel down and
- * resubscribes with exponential backoff (1s → 2s → 4s … capped at 30s, plus a
- * small jitter). `isLive` is driven false the moment a recoverable status is
- * observed and only flips back to true on a fresh `SUBSCRIBED`, so consumers
- * can rely on `isLive === false` to mean "reconnecting or unavailable" and fall
- * back to polling/manual refresh. A successful `SUBSCRIBED` resets the backoff.
+ * (`CHANNEL_ERROR`, `TIMED_OUT`, `CLOSED`) the hook tears the channel down
+ * immediately and resubscribes with exponential backoff (1s → 2s → 4s …
+ * capped at 30s, plus a small jitter). `isLive` is driven false the moment a
+ * recoverable status is observed and only flips back to true on a fresh
+ * `SUBSCRIBED`, so consumers can rely on `isLive === false` to mean
+ * "reconnecting or unavailable" and fall back to polling/manual refresh.
+ * A successful `SUBSCRIBED` resets the backoff.
  */
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -80,6 +81,22 @@ export function useRealtimeTable({
     }
   }, []);
 
+  const removeActiveChannel = useCallback(
+    (reason: string) => {
+      if (!channelRef.current) return;
+      try {
+        supabase.removeChannel(channelRef.current);
+      } catch (err) {
+        console.warn(
+          `[useRealtimeTable] removeChannel failed for "${table}" (${reason}):`,
+          err
+        );
+      }
+      channelRef.current = null;
+    },
+    [table]
+  );
+
   useEffect(() => {
     disposedRef.current = false;
     attemptRef.current = 0;
@@ -105,26 +122,23 @@ export function useRealtimeTable({
       if (disposedRef.current) return;
       // Tear down any channel from a previous attempt before creating a fresh
       // one — a lingering errored channel would otherwise leak and double-fire.
-      if (channelRef.current) {
-        try {
-          supabase.removeChannel(channelRef.current);
-        } catch (err) {
-          console.warn(
-            `[useRealtimeTable] removeChannel failed for "${table}":`,
-            err
-          );
-        }
-        channelRef.current = null;
-      }
+      removeActiveChannel("resubscribe");
       clearReconnectTimer();
 
       try {
         const channel = supabase
           .channel(`realtime-${table}`)
           .on(
-            "postgres_changes" as any,
+            // Supabase client types require a cast for the postgres_changes
+            // event name; keep the surface narrow and do not spread `any`.
+            "postgres_changes" as "postgres_changes",
             { event: "*", schema: "public", table },
-            (payload: any) => {
+            (payload: {
+              eventType: RealtimePayload["eventType"];
+              table: string;
+              new?: Record<string, unknown>;
+              old?: Record<string, unknown>;
+            }) => {
               const event: RealtimePayload = {
                 eventType: payload.eventType,
                 table: payload.table,
@@ -147,16 +161,24 @@ export function useRealtimeTable({
             }
 
             if (RECOVERABLE_STATUSES.has(status)) {
-              // Channel is gone — mark not-live and schedule a resubscribe.
+              // Channel is gone — drop it immediately, mark not-live, and
+              // schedule a resubscribe with backoff + jitter.
               setIsLive(false);
-              const delay = nextReconnectDelay(attemptRef.current);
-              attemptRef.current += 1;
+              removeActiveChannel(status);
+              const attempt = attemptRef.current;
+              const delay = nextReconnectDelay(attempt);
+              attemptRef.current = attempt + 1;
               clearReconnectTimer();
+              console.warn(
+                `[useRealtimeTable] "${table}" ${status}; reconnect in ${Math.round(delay)}ms (attempt ${attempt + 1})`
+              );
               reconnectTimerRef.current = setTimeout(() => {
                 reconnectTimerRef.current = null;
                 subscribe();
               }, delay);
+              return;
             }
+
             // Any other status is treated as inert: not live, no resubscribe.
             setIsLive(false);
           });
@@ -177,19 +199,9 @@ export function useRealtimeTable({
     return () => {
       disposedRef.current = true;
       clearReconnectTimer();
-      if (channelRef.current) {
-        try {
-          supabase.removeChannel(channelRef.current);
-        } catch (err) {
-          console.warn(
-            `[useRealtimeTable] removeChannel failed for "${table}":`,
-            err
-          );
-        }
-        channelRef.current = null;
-      }
+      removeActiveChannel("unmount");
     };
-  }, [enabled, table, clearReconnectTimer]);
+  }, [enabled, table, clearReconnectTimer, removeActiveChannel]);
 
   return { isLive, lastEvent };
 }
