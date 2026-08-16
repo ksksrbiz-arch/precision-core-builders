@@ -128,8 +128,11 @@ precision-core-builders/
 │   └── functions/             # Serverless functions (ai-chat, voice-to-report, blueprint-proxy, …)
 ├── drizzle/                   # Database schema & migration files
 ├── shared/                    # Shared types and error classes
-├── docs/integrations/         # Third-party integration guides
+├── docs/                      # Living operator docs + integrations/
+│   └── archive/               # Historical session notes / audits (not source of truth)
 ├── CLAUDE.md                  # Agent priming & implementation guardrails
+├── instructions.md            # Agent quality bar (mandatory for coding agents)
+├── TODO.md                    # Active task queue + progress
 ├── README.md                  # This file
 └── package.json
 ```
@@ -178,6 +181,9 @@ Push to GitHub. Netlify automatically builds and deploys on every commit to `mai
 | File                                            | Purpose                                                         |
 | :---------------------------------------------- | :-------------------------------------------------------------- |
 | `CLAUDE.md`                                     | Agent priming, architecture, implementation guardrails.         |
+| `instructions.md`                               | Agent quality bar (control-flow, verification, security).       |
+| `TODO.md`                                       | Active development queue and progress tracker.                  |
+| `docs/archive/`                                 | Historical session notes — not current acceptance criteria.     |
 | `drizzle/schema.ts`                             | All database tables and TypeScript types.                       |
 | `server/routers.ts`                             | Root tRPC router — assembles all feature routers.               |
 | `server/routers/blueprintRouter.ts`             | Blueprint.am integration (status, OAuth, API key, artifacts).   |

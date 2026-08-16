@@ -14,7 +14,7 @@ never in email, Slack, spreadsheets, or any plain-text document.
 ## ⚠️ SECURITY — Do This First
 
 Several partial API key prefixes were previously committed to
-`COMPLETION_SUMMARY.md`. The keys have been redacted in the file but **the
+`docs/archive/COMPLETION_SUMMARY.md`. The keys have been redacted in the file but **the
 fragments remain in git history**. The only safe remediation is to rotate all
 affected keys immediately so the historical fragments are worthless.
 
@@ -249,12 +249,12 @@ All documents are in the repository:
 
 | Document                       | Purpose                                             |
 | ------------------------------ | --------------------------------------------------- |
-| `docs/USER_GUIDE_ERIC.md`      | Full feature guide — Eric's primary reference       |
-| `GETTING_STARTED_ERIC.md`      | Quick-start checklist for first 48 hours            |
-| `docs/HANDOVER.md`             | This document — transfer and operations reference   |
-| `.env.example`                 | Complete list of all required environment variables |
-| `CLAUDE.md`                    | Technical architecture reference (for developers)   |
-| `PLATFORM_AUDIT_APRIL_2026.md` | Completion state audit (April 2026)                 |
+| `docs/USER_GUIDE_ERIC.md`                | Full feature guide — Eric's primary reference       |
+| `GETTING_STARTED_ERIC.md`                | Quick-start checklist for first 48 hours            |
+| `docs/HANDOVER.md`                       | This document — transfer and operations reference   |
+| `.env.example`                           | Complete list of all required environment variables |
+| `CLAUDE.md`                              | Technical architecture reference (for developers)   |
+| `docs/archive/PLATFORM_AUDIT_APRIL_2026.md` | Historical completion audit (April 2026)         |
 
 > **Credential Reference Sheet:** Compile all account usernames, URLs, and
 > keys into a 1Password vault or Bitwarden collection shared with Eric.
