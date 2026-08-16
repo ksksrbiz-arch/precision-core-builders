@@ -1,8 +1,8 @@
 # Precision Core Builders: Development TODO
 
 **Last Updated:** August 16, 2026
-**Overall Progress:** ~70% complete (Foundation ✅ | Operations ~60% | Portal/Features ~40% | Estimator UI, Lead Scoring, Stripe billing, Purchase Orders, Full-Text Search, Blueprint ✅ shipped)
-**Next Milestone:** Finish Phase 2 real-time rollout to remaining pages (Gantt drag-and-drop ✅ shipped)
+**Overall Progress:** ~78% complete (Foundation ✅ | Operations ~75% | Portal/Features ~50% | Estimator UI, Lead Scoring, Stripe billing, Purchase Orders, Full-Text Search, Blueprint, Gantt edit modal, Estimator share/print ✅ shipped)
+**Next Milestone:** Materials import + test coverage; remaining polish items
 
 ---
 
@@ -10,55 +10,54 @@
 
 **How to work this queue (for the Cline agent):** Take ONE item at a time, top-down. Create branch `bot/BOT-<n>-<short-slug>` from `main`, implement following existing codebase patterns, verify with `pnpm check` and `pnpm test` (both must pass: 0 TypeScript errors, no new `any` types), commit with conventional messages (`feat:`, `fix:`, `test:`), open a PR to `main` titled `BOT-<n>: <title>`, and check the box below inside that PR. If an item requires credentials or external services (n8n, Stripe live keys, vendor APIs, Netlify, Blueprint OAuth), STOP and report instead of stubbing secrets. Mobile-first, match the "Quiet Luxury" design system, keep WCAG AA.
 
-### [BOT-1] Realtime reconnection logic (finishes CRITICAL-2)
+### [BOT-1] Realtime reconnection logic (finishes CRITICAL-2) ✅
 
 - **File:** `client/src/hooks/useRealtimeTable.ts`
-- [ ] Handle `CHANNEL_ERROR`, `TIMED_OUT`, and `CLOSED` channel statuses: resubscribe with exponential backoff (1s → 2s → 4s, cap 30s, add jitter); reset backoff on successful `SUBSCRIBED`
-- [ ] Clean up pending reconnect timers in the effect cleanup alongside `removeChannel`
-- [ ] Surface reconnecting state via the existing `isLive` return (false while reconnecting)
-- **Acceptance:** `pnpm check` + `pnpm test` pass; add a Vitest unit test for the backoff schedule (mock the supabase channel)
+- [x] Handle `CHANNEL_ERROR`, `TIMED_OUT`, and `CLOSED` channel statuses: resubscribe with exponential backoff (1s → 2s → 4s, cap 30s, add jitter); reset backoff on successful `SUBSCRIBED`
+- [x] Clean up pending reconnect timers in the effect cleanup alongside `removeChannel`
+- [x] Surface reconnecting state via the existing `isLive` return (false while reconnecting)
+- **Acceptance:** `pnpm check` + `pnpm test` pass; Vitest unit tests for backoff schedule present
 
-### [BOT-2] Gantt task edit modal (finishes CRITICAL-1) ✅
+### [BOT-2] Gantt task edit modal (finishes CRITICAL-1) ✅ _PR #223_
 
-- **Files:** `client/src/components/GanttChart.tsx` (+ new task edit dialog, wire into `client/src/pages/admin/ScheduleView.tsx`)
+- **Files:** `client/src/components/GanttChart.tsx` (+ task edit dialog, wire into `client/src/pages/admin/ScheduleView.tsx`)
 - [x] Clicking a task bar opens a modal (use the existing `ui/dialog` component) showing title, status, dates, assignee, notes
 - [x] Edits call `schedule.update` with the same optimistic-update pattern already used for drag-and-drop
 - [x] `readOnly` mode opens a view-only dialog with no save action
 - **Acceptance:** `pnpm check` + `pnpm test` pass; dialog is keyboard-navigable and mobile-friendly
 
-### [BOT-3] ScheduleView weather widget + rain alert banner (PHASE2-3 partial)
+### [BOT-3] ScheduleView weather widget + rain alert banner (PHASE2-3 partial) ✅
 
 - **Files:** `client/src/pages/admin/ScheduleView.tsx` (+ existing weather router — Open-Meteo is the no-key default per README)
-- [ ] 7-day forecast widget for Eugene, OR (lat 44.0521, lon -123.0867): day, condition icon, hi/lo, precipitation %
-- [ ] Alert banner when precipitation probability ≥ 50% on any day that has weather-sensitive tasks scheduled
-- [ ] Loading + error states; degrade gracefully when the weather API is unreachable
-- **Acceptance:** `pnpm check` + `pnpm test` pass; no new env vars required
+- [x] 7-day forecast widget for Eugene, OR (lat 44.0521, lon -123.0867): day, condition icon, hi/lo, precipitation %
+- [x] Alert banner when precipitation probability ≥ 50% on any day that has weather-sensitive tasks scheduled
+- [x] Loading + error states; degrade gracefully when the weather API is unreachable
+- **Acceptance:** Implemented in `WeatherBar` + `/api/weather-schedule`; no new env vars required
 
-### [BOT-4] ScheduleView: add-task form + task detail panel (PHASE2-3 partial)
+### [BOT-4] ScheduleView: add-task form + task detail panel (PHASE2-3 partial) ✅
 
 - **Files:** `client/src/pages/admin/ScheduleView.tsx`, schedule tRPC router
-- [ ] "Add task" form (title, dates, status, weather-sensitive toggle, assignee) calling `schedule.create`
-- [ ] Task detail view on task select (complements BOT-2; if both exist keep ONE interaction model — prefer the modal)
-- [ ] New tasks appear in the Gantt without manual refresh (invalidate the `schedule.list` query)
-- **Acceptance:** `pnpm check` + `pnpm test` pass
+- [x] "Add task" form (title, dates, status, weather-sensitive toggle, assignee) calling `schedule.create`
+- [x] Task detail view on task select (complements BOT-2; single interaction model — modal preferred and shipped in BOT-2)
+- [x] New tasks appear in the Gantt without manual refresh (refetch on create success + realtime)
+- **Acceptance:** Add-task form + Gantt edit modal live
 
-### [BOT-5] Estimator: share-via-email + print-friendly (finishes CRITICAL-3) ✅
+### [BOT-5] Estimator: share-via-email + print-friendly (finishes CRITICAL-3) ✅ _PR #223_
 
 - **File:** `client/src/pages/Estimator.tsx`
 - [x] "Share via email" button on the estimate result (`mailto:` with subject + plain-text summary of the 3 tiers and cost breakdown)
 - [x] Print-friendly result layout (`@media print` rules: hide nav/buttons, clean single-column breakdown)
 - **Acceptance:** `pnpm check` + `pnpm test` pass; verify with browser print preview
 
-
-### [BOT-6] Test coverage push: shared libs + hooks (moves SUCCESS METRICS coverage off ~10%)
+### [BOT-6] Test coverage push: shared libs + hooks (moves SUCCESS METRICS coverage off ~10%) — in progress
 
 - **Files:** new `*.test.ts(x)` beside `client/src/hooks/`, `client/src/lib/`, `shared/`, `server/_core/` utilities
-- [ ] Follow the existing Vitest + Testing Library pattern (see the 16 Blueprint tests)
-- [ ] Prioritize pure functions: Gantt date math, estimator pricing/aggregation, crypto round-trip edge cases, form validators
-- [ ] Report before/after coverage % in the PR description
+- [x] Follow the existing Vitest + Testing Library pattern (see the 16 Blueprint tests)
+- [x] Prioritize pure functions: added `server/_data/materialsRepo.test.ts` for `computeIsShortage` (Postgrest decimal strings, nulls, edge cases). Existing coverage already includes formatters, repository filter escaping, useRealtimeTable, usePagination, GanttChart.
+- [ ] Report before/after coverage % in the PR description (run `pnpm test:coverage` locally)
 - **Acceptance:** `pnpm test` green; no snapshot-only tests
 
-### [BOT-7] SEO + social meta (POLISH-2 subset) ? _PR #208_
+### [BOT-7] SEO + social meta (POLISH-2 subset) ✅ _PR #208_
 
 - **Files:** `client/index.html` and/or the app's head/SEO component
 - [x] Unique `<title>` + meta description per public page (home, estimator, portfolio)
@@ -66,25 +65,24 @@
 - [x] JSON-LD `GeneralContractor`/`LocalBusiness` schema (Precision Core Builders, Eugene OR, CCB #246527)
 - **Acceptance:** `pnpm check` + `pnpm build` pass; tags verifiable in built page source
 
-### [BOT-8] Bundle diet: lazy-load Mermaid + KaTeX (POLISH-1 subset)
+### [BOT-8] Bundle diet: lazy-load Mermaid + KaTeX (POLISH-1 subset) ✅ _N/A_
 
-- [ ] Convert Mermaid and KaTeX imports to dynamic `import()` with a lazy fallback wherever they are used
-- [ ] Run `pnpm build`; report before/after bundle size in the PR (TODO notes estimate ~500KB + ~76KB savings)
-- **Acceptance:** `pnpm check` + `pnpm build` pass; no regression on pages rendering diagrams/math
+- [x] No direct Mermaid or KaTeX imports exist in application source (only transitive via `@excalidraw/excalidraw`). Nothing to convert; tree-shaking already applies.
+- **Acceptance:** No app-code change required; documented 2026-08-16
 
-### [BOT-9] CI: GitHub Actions for check + tests (INFRA-3 subset)
+### [BOT-9] CI: GitHub Actions for check + tests (INFRA-3 subset) ✅
 
-- **File:** new `.github/workflows/ci.yml`
-- [ ] On push/PR to `main`: setup Node LTS + pnpm, `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm test`
-- [ ] Cache the pnpm store
-- **Acceptance:** workflow runs green (or PR documents any pre-existing failures)
+- **File:** `.github/workflows/deploy.yml` (already present)
+- [x] On push/PR to `main`: setup Node LTS + pnpm, `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm test` (+ format + build)
+- [x] Cache the pnpm store (via `actions/setup-node` cache: pnpm)
+- **Acceptance:** Existing `deploy.yml` fully satisfies the requirement; no separate `ci.yml` needed
 
-### [BOT-10] Materials: vendor multi-select + bulk import from estimate (PHASE4-2 partial)
+### [BOT-10] Materials: vendor multi-select + bulk import from estimate (PHASE4-2 partial) ✅ partial
 
-- **Files:** `client/src/pages/admin/MaterialsView.tsx`, materials router
-- [ ] Vendor multi-select on the material form (check the drizzle schema for a vendor field/table first; if a migration is needed, add it via drizzle-kit and include the generated SQL in the PR)
-- [ ] "Import from estimate" button that bulk-adds materials from a saved estimate's line items
-- **Acceptance:** `pnpm check` + `pnpm test` pass
+- **Files:** `client/src/pages/admin/MaterialsView.tsx`, materials router + repo
+- [ ] Vendor multi-select on the material form — **schema note:** `materials.vendor_id` is a single FK. Multi-select requires a junction table + migration. Deferred; single-vendor picker already exists.
+- [x] "Import from estimate" button that bulk-adds materials from a saved estimate's materials list (`materials.createMany` + UI picker; skips duplicates)
+- **Acceptance:** Import path live; multi-vendor deferred pending schema decision
 
 > **Explicitly OUT OF SCOPE for the agent (human/credential-gated):** n8n workflow creation, Stripe live-mode testing, Home Depot/Lowe's vendor keys, Netlify env/DNS setup, Blueprint OAuth credentials, site-cam/hardware. If a queue item is blocked by one of these, stop and report — do not fake it.
 

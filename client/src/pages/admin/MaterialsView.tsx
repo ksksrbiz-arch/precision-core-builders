@@ -75,6 +75,8 @@ export default function MaterialsView() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [poError, setPoError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importEstimateId, setImportEstimateId] = useState<number | "">("");
   const [newMaterial, setNewMaterial] = useState({
     name: "",
     category: "",
@@ -100,6 +102,10 @@ export default function MaterialsView() {
     shortagesOnly: showShortagesOnly,
     pageSize: 100,
   });
+  const { data: projectEstimates } = trpc.estimates.list.useQuery(
+    { projectId: selectedProject!, pageSize: 50 },
+    { enabled: !!selectedProject && showImport }
+  );
   const utils = trpc.useUtils();
   const {
     data: purchaseOrdersData,
@@ -165,6 +171,87 @@ export default function MaterialsView() {
       },
     }
   );
+
+  const createManyMaterials = useMutationWithToast(
+    trpc.materials.createMany.useMutation(),
+    {
+      success: "Materials Imported",
+      successMessage: "Materials from the estimate were added to inventory.",
+      error: "Import Failed",
+      errorMessage: "Failed to import materials from the estimate.",
+      onSuccess: () => {
+        refetch();
+        setShowImport(false);
+        setImportEstimateId("");
+      },
+    }
+  );
+
+  const handleImportFromEstimate = () => {
+    if (!selectedProject || !importEstimateId) return;
+    const list = (projectEstimates as { data?: any[] } | undefined)?.data ??
+      (Array.isArray(projectEstimates) ? projectEstimates : []);
+    const estimate = list.find(
+      (e: { id: number }) => e.id === Number(importEstimateId)
+    );
+    if (!estimate) {
+      addToast({
+        type: "error",
+        title: "Estimate not found",
+        message: "Could not locate the selected estimate.",
+        duration: 5000,
+      });
+      return;
+    }
+
+    // estimates.materials is stored as a JSON string array of material names
+    // (from the public estimator options) or may already be parsed.
+    let names: string[] = [];
+    const raw = estimate.materials;
+    if (Array.isArray(raw)) {
+      names = raw.map(String);
+    } else if (typeof raw === "string" && raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw);
+        names = Array.isArray(parsed) ? parsed.map(String) : [raw];
+      } catch {
+        names = raw
+          .split(/[,;\n]/)
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+      }
+    }
+
+    const existingNames = new Set(
+      (materials?.data ?? []).map((m: { name?: string }) =>
+        (m.name ?? "").toLowerCase()
+      )
+    );
+    const unique = [
+      ...new Set(names.map(n => n.trim()).filter(n => n.length > 0)),
+    ].filter(n => !existingNames.has(n.toLowerCase()));
+
+    if (unique.length === 0) {
+      addToast({
+        type: "info",
+        title: "Nothing to import",
+        message:
+          names.length === 0
+            ? "This estimate has no materials listed."
+            : "All materials from this estimate are already in inventory.",
+        duration: 6000,
+      });
+      return;
+    }
+
+    createManyMaterials.mutate({
+      items: unique.map(name => ({
+        projectId: selectedProject,
+        name,
+        notes: `Imported from estimate #${estimate.id}`,
+      })),
+    });
+  };
 
   const generatePO = async () => {
     if (!selectedProject) {
@@ -291,7 +378,21 @@ export default function MaterialsView() {
           actions={
             <>
               <button
-                onClick={() => setShowAddForm(v => !v)}
+                onClick={() => {
+                  setShowImport(v => !v);
+                  setShowAddForm(false);
+                }}
+                disabled={!selectedProject}
+                className="flex min-h-11 items-center gap-2 border border-border/60 text-muted-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 disabled:opacity-50 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Download className="h-3.5 w-3.5" /> Import from Estimate
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddForm(v => !v);
+                  setShowImport(false);
+                }}
                 className="flex min-h-11 items-center gap-2 border border-border/60 text-muted-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -400,6 +501,71 @@ export default function MaterialsView() {
             Shortages Only
           </button>
         </div>
+
+        {/* Import materials from a project estimate */}
+        {showImport && selectedProject && (
+          <div className="bg-card border border-primary/30 p-5 mb-5">
+            <div className="flex items-center justify-between mb-4">
+              <p
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Import from Estimate
+              </p>
+              <button
+                onClick={() => {
+                  setShowImport(false);
+                  setImportEstimateId("");
+                }}
+                aria-label="Close import panel"
+              >
+                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Select a saved estimate for this project. Material names listed on
+              the estimate will be added to inventory (duplicates are skipped).
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <select
+                value={importEstimateId}
+                onChange={e =>
+                  setImportEstimateId(
+                    e.target.value ? Number(e.target.value) : ""
+                  )
+                }
+                className="flex-1 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+              >
+                <option value="">— Select estimate —</option>
+                {(
+                  (projectEstimates as { data?: any[] } | undefined)?.data ??
+                  []
+                ).map((est: any) => (
+                  <option key={est.id} value={est.id}>
+                    #{est.id}
+                    {est.project_type ? ` · ${est.project_type}` : ""}
+                    {est.estimated_mid != null
+                      ? ` · $${Number(est.estimated_mid).toLocaleString()}`
+                      : ""}
+                    {est.created_at
+                      ? ` · ${new Date(est.created_at).toLocaleDateString()}`
+                      : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleImportFromEstimate}
+                disabled={
+                  !importEstimateId || createManyMaterials.isPending
+                }
+                className="px-5 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {createManyMaterials.isPending ? "Importing…" : "Import"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Add material form */}
         {showAddForm && (

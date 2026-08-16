@@ -2,6 +2,7 @@ import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import {
   computeIsShortage,
   createMaterial,
+  createMaterials,
   deleteMaterial,
   getMaterialQuantities,
   listMaterials,
@@ -53,6 +54,15 @@ export const materialsRouter = router({
   create: adminProcedure
     .input(MaterialInput)
     .mutation(async ({ input }) => createMaterial(input)),
+
+  /** Bulk-create materials (e.g. import names from an estimate). Max 50. */
+  createMany: adminProcedure
+    .input(
+      z.object({
+        items: z.array(MaterialInput).min(1).max(50),
+      })
+    )
+    .mutation(async ({ input }) => createMaterials(input.items)),
 
   update: adminProcedure
     .input(
