@@ -81,7 +81,7 @@ export default function MaterialsView() {
     name: "",
     category: "",
     unit: "",
-    vendorId: undefined as number | undefined,
+    vendorIds: [] as number[],
     vendorName: "",
     quantityNeeded: "",
     unitPriceCurrent: "",
@@ -161,7 +161,7 @@ export default function MaterialsView() {
           name: "",
           category: "",
           unit: "",
-          vendorId: undefined,
+          vendorIds: [],
           vendorName: "",
           quantityNeeded: "",
           unitPriceCurrent: "",
@@ -585,29 +585,6 @@ export default function MaterialsView() {
               </button>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {/* Catalog vendor picker — snapshots name into vendorName */}
-              <select
-                value={newMaterial.vendorId ?? ""}
-                onChange={e => {
-                  const id = e.target.value
-                    ? parseInt(e.target.value)
-                    : undefined;
-                  const vendor = (vendorsData ?? []).find(v => v.id === id);
-                  setNewMaterial(prev => ({
-                    ...prev,
-                    vendorId: id,
-                    vendorName: vendor ? vendor.name : prev.vendorName,
-                  }));
-                }}
-                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-              >
-                <option value="">— Select vendor —</option>
-                {(vendorsData ?? []).map(v => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
               {[
                 { key: "name", placeholder: "Material name *", required: true },
                 {
@@ -615,7 +592,7 @@ export default function MaterialsView() {
                   placeholder: "Category (lumber, hardware…)",
                 },
                 { key: "unit", placeholder: "Unit (ea, lf, sqft, lb…)" },
-                { key: "vendorName", placeholder: "Vendor name" },
+                { key: "vendorName", placeholder: "Vendor name (free text)" },
                 {
                   key: "quantityNeeded",
                   placeholder: "Quantity needed",
@@ -655,6 +632,60 @@ export default function MaterialsView() {
                 className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
               />
             </div>
+
+            {/* Multi-vendor catalog picker — first checked is primary */}
+            {(vendorsData ?? []).length > 0 && (
+              <div className="mt-3 border border-border/40 p-3">
+                <p
+                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-2"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Catalog Vendors (multi-select)
+                </p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+                  {(vendorsData ?? []).map((v: { id: number; name: string }) => {
+                    const checked = newMaterial.vendorIds.includes(v.id);
+                    return (
+                      <label
+                        key={v.id}
+                        className="flex items-center gap-2 text-sm text-foreground cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setNewMaterial(prev => {
+                              const next = checked
+                                ? prev.vendorIds.filter(id => id !== v.id)
+                                : [...prev.vendorIds, v.id];
+                              const primary = (vendorsData ?? []).find(
+                                (x: { id: number }) => x.id === next[0]
+                              );
+                              return {
+                                ...prev,
+                                vendorIds: next,
+                                vendorName:
+                                  primary?.name ??
+                                  (next.length === 0 ? prev.vendorName : prev.vendorName),
+                              };
+                            });
+                          }}
+                          className="accent-primary"
+                        />
+                        <span className="truncate">
+                          {v.name}
+                          {newMaterial.vendorIds[0] === v.id ? " ★" : ""}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  First selected vendor is primary (★) and used for PO grouping.
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2 mt-3">
               <button
                 onClick={() =>
@@ -663,7 +694,11 @@ export default function MaterialsView() {
                     projectId: selectedProject ?? undefined,
                     category: newMaterial.category || undefined,
                     unit: newMaterial.unit || undefined,
-                    vendorId: newMaterial.vendorId || undefined,
+                    vendorIds:
+                      newMaterial.vendorIds.length > 0
+                        ? newMaterial.vendorIds
+                        : undefined,
+                    vendorId: newMaterial.vendorIds[0] || undefined,
                     vendorName: newMaterial.vendorName || undefined,
                     quantityNeeded: newMaterial.quantityNeeded
                       ? parseFloat(newMaterial.quantityNeeded)

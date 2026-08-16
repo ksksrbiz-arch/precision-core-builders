@@ -5,9 +5,11 @@ import {
   createMaterials,
   deleteMaterial,
   getMaterialQuantities,
+  listMaterialVendorIds,
   listMaterials,
   listMaterialsForProject,
   setMaterialShortage,
+  setMaterialVendors,
   updateMaterial,
 } from "../_data/materialsRepo";
 import { z } from "zod";
@@ -25,6 +27,8 @@ const MaterialInput = z.object({
   unitPriceBudgeted: z.number().positive().optional(),
   vendorId: z.number().int().positive().optional(),
   vendorName: z.string().max(200).optional(),
+  /** Multi-vendor catalog links (first entry becomes primary). */
+  vendorIds: z.array(z.number().int().positive()).max(20).optional(),
   vendorSku: z.string().max(100).optional(),
   vendorUrl: z.string().url().optional(),
   poNumber: z.string().max(100).optional(),
@@ -55,6 +59,35 @@ export const materialsRouter = router({
     .input(MaterialInput)
     .mutation(async ({ input }) => createMaterial(input)),
 
+  /** Vendor ids linked to a material (primary first). */
+  listVendorIds: adminProcedure
+    .input(z.object({ materialId: z.number().int().positive() }))
+    .query(async ({ input }) => listMaterialVendorIds(input.materialId)),
+
+  /** Replace the multi-vendor set for a material. */
+  setVendors: adminProcedure
+    .input(
+      z.object({
+        materialId: z.number().int().positive(),
+        vendorIds: z.array(z.number().int().positive()).max(20),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const links = await setMaterialVendors(
+        input.materialId,
+        input.vendorIds
+      );
+      // Keep materials.vendor_id in sync with the primary (first) vendor.
+      if (input.vendorIds.length > 0) {
+        await updateMaterial(input.materialId, {
+          vendor_id: input.vendorIds[0],
+        });
+      } else {
+        await updateMaterial(input.materialId, { vendor_id: null });
+      }
+      return links;
+    }),
+
   /** Bulk-create materials (e.g. import names from an estimate). Max 50. */
   createMany: adminProcedure
     .input(
@@ -81,6 +114,7 @@ export const materialsRouter = router({
         unitPriceBudgeted,
         vendorId,
         vendorName,
+        vendorIds,
         vendorSku,
         vendorUrl,
         poNumber,
@@ -103,6 +137,13 @@ export const materialsRouter = router({
         };
       }
 
+      // Sync junction table when vendorIds provided; first id is primary.
+      if (vendorIds !== undefined) {
+        await setMaterialVendors(id, vendorIds);
+      }
+      const primaryFromIds =
+        vendorIds && vendorIds.length > 0 ? vendorIds[0] : undefined;
+
       return updateMaterial(id, {
         ...rest,
         ...shortagePatch,
@@ -122,7 +163,9 @@ export const materialsRouter = router({
         ...(unitPriceBudgeted !== undefined && {
           unit_price_budgeted: unitPriceBudgeted,
         }),
-        ...(vendorId !== undefined && { vendor_id: vendorId }),
+        ...((primaryFromIds ?? vendorId) !== undefined && {
+          vendor_id: primaryFromIds ?? vendorId,
+        }),
         ...(vendorName !== undefined && { vendor_name: vendorName }),
         ...(vendorSku !== undefined && { vendor_sku: vendorSku }),
         ...(vendorUrl !== undefined && { vendor_url: vendorUrl }),

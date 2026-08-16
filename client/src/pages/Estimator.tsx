@@ -11,12 +11,9 @@ import { SITE } from "@/const";
 import { JsonLd } from "@/components/JsonLd";
 import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { TextReveal } from "@/components/ui/TextReveal";
-import {
-  PROJECT_TYPES,
-  MATERIALS_OPTIONS,
-  TIMELINE_WEEKS,
-} from "@/config/projects";
+import { PROJECT_TYPES, MATERIALS_OPTIONS } from "@/config/projects";
 import { formatCurrency } from "@/lib/formatters";
+import { estimateTimeline } from "@/lib/estimateTimeline";
 import { useSEO } from "@/hooks/useSEO";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -30,18 +27,6 @@ import {
   Printer,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-
-function estimateTimeline(
-  projectType: string,
-  complexity: "low" | "medium" | "high"
-): string | null {
-  const base = TIMELINE_WEEKS[projectType];
-  if (!base) return null;
-  const factor = complexity === "high" ? 1.25 : complexity === "low" ? 0.85 : 1;
-  const low = Math.max(1, Math.round(base[0] * factor));
-  const high = Math.max(low + 1, Math.round(base[1] * factor));
-  return `${low}–${high} weeks`;
-}
 
 /** Animated currency figure — eases from 0 to value on mount (result reveal). */
 function CountCurrency({ value }: { value: number }) {
