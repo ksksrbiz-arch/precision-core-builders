@@ -131,6 +131,9 @@ export async function insertClientSelection(input: {
       category: input.category,
       budget_delta: input.budgetImpact,
       client_id: input.clientId ?? null,
+      // Client-initiated choice is already their approval.
+      client_approved: true,
+      client_approved_at: new Date().toISOString(),
     })
     .select()
     .single();

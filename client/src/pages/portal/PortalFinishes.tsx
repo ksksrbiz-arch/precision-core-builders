@@ -145,6 +145,21 @@ export default function PortalFinishes() {
     n ? `$${Number(n).toLocaleString()}` : "—";
   const totalDelta = budgetImpact?.totalDelta ?? 0;
 
+  /** Latest selection label for a category (case-insensitive). */
+  const selectedLabelFor = (category: string): string | null => {
+    const matches = (selections ?? []).filter(
+      (s: any) =>
+        (s.category ?? "").toLowerCase() === category.toLowerCase() ||
+        (s.item_name ?? "").toLowerCase().includes(category.toLowerCase())
+    );
+    if (!matches.length) return null;
+    // Prefer the most recent by id
+    const latest = [...matches].sort(
+      (a: any, b: any) => Number(b.id) - Number(a.id)
+    )[0];
+    return latest?.item_name ?? null;
+  };
+
   // Group by room
   const grouped = (selections ?? []).reduce(
     (acc: Record<string, any[]>, s: any) => {
@@ -239,37 +254,59 @@ export default function PortalFinishes() {
                 Choose Your Finishes
               </p>
               <div className="space-y-4">
-                {FINISH_OPTIONS.map(({ category, options }) => (
-                  <div
-                    key={category}
-                    className="bg-card border border-border/60 p-4"
-                  >
-                    <p className="text-sm font-semibold mb-3">{category}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {options.map(option => (
-                        <button
-                          key={option.label}
-                          onClick={() => chooseFinish(category, option)}
-                          disabled={selectMut.isPending}
-                          className="group flex items-center gap-2 border border-border/60 px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 disabled:opacity-50 transition-all"
-                        >
-                          <Plus className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span className="text-xs font-medium">
-                            {option.label}
+                {FINISH_OPTIONS.map(({ category, options }) => {
+                  const current = selectedLabelFor(category);
+                  return (
+                    <div
+                      key={category}
+                      className="bg-card border border-border/60 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <p className="text-sm font-semibold">{category}</p>
+                        {current && (
+                          <span className="text-[10px] text-primary font-semibold tracking-wide uppercase">
+                            Selected: {current}
                           </span>
-                          {option.delta !== 0 && (
-                            <span
-                              className={`text-[11px] font-bold ${option.delta > 0 ? "text-red-400" : "text-green-400"}`}
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {options.map(option => {
+                          const isSelected = current === option.label;
+                          return (
+                            <button
+                              key={option.label}
+                              onClick={() => chooseFinish(category, option)}
+                              disabled={selectMut.isPending}
+                              aria-pressed={isSelected}
+                              className={`group flex items-center gap-2 border px-3 py-2 text-left disabled:opacity-50 transition-all ${
+                                isSelected
+                                  ? "border-primary bg-primary/10 text-foreground"
+                                  : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
+                              }`}
                             >
-                              {option.delta > 0 ? "+" : ""}
-                              {fmt(option.delta)}
-                            </span>
-                          )}
-                        </button>
-                      ))}
+                              {isSelected ? (
+                                <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+                              ) : (
+                                <Plus className="h-3.5 w-3.5 text-primary shrink-0" />
+                              )}
+                              <span className="text-xs font-medium">
+                                {option.label}
+                              </span>
+                              {option.delta !== 0 && (
+                                <span
+                                  className={`text-[11px] font-bold ${option.delta > 0 ? "text-red-400" : "text-green-400"}`}
+                                >
+                                  {option.delta > 0 ? "+" : ""}
+                                  {fmt(option.delta)}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -281,8 +318,8 @@ export default function PortalFinishes() {
               <div className="bg-card border border-border/60 p-12 text-center">
                 <Sparkles className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
                 <p className="text-muted-foreground text-sm">
-                  No finish selections yet. Eric will add options as your
-                  project progresses.
+                  No finish selections yet. Use the catalog above to choose
+                  finishes — your budget impact updates as you select.
                 </p>
               </div>
             ) : (
