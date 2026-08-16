@@ -10,6 +10,7 @@ import {
   listFinishSelectionBudgetFields,
   listFinishSelections,
 } from "../_data/finishSelectionsRepo";
+import { appendLedgerEntry } from "../_data/ledgerRepo";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -103,12 +104,35 @@ export const finishSelectionsRouter = router({
       // client row (previously any client could inject into any project with a
       // null client_id).
       const project = await assertProjectAccess(ctx, input.projectId);
-      return insertClientSelection({
+      const row = await insertClientSelection({
         projectId: input.projectId,
         selection: input.selection,
         category: input.category,
         budgetImpact: input.budgetImpact,
         clientId: project?.clients?.id ?? null,
       });
+
+      // Core Values ledger — client finish choice is a visible decision.
+      try {
+        const authorId = ctx.user?.id;
+        if (authorId) {
+          const delta = input.budgetImpact ?? 0;
+          await appendLedgerEntry({
+            projectId: input.projectId,
+            authorId,
+            entryType: "decision",
+            title: `Finish selected: ${input.selection}`,
+            description: input.category
+              ? `Client selected ${input.selection} (${input.category}).`
+              : `Client selected ${input.selection}.`,
+            amountDelta: delta !== 0 ? delta : undefined,
+            visibleToClient: true,
+          });
+        }
+      } catch (err) {
+        console.warn("[ledger] finish select append failed:", err);
+      }
+
+      return row;
     }),
 });

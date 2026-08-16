@@ -30,7 +30,7 @@ export function Springfield() {
       metaDescription="Licensed general contractor serving Springfield, Oregon. Custom homes, remodels & additions. CCB #246527. Free on-site estimates."
       intro="Springfield runs its own full-service building department, separate from both Eugene and Lane County — and knowing exactly how that system works is the difference between a smooth permit and months of back-and-forth."
       body={[
-        "We've built and remodeled homes throughout Springfield for years, from established neighborhoods near downtown to newer developments on the city's edges. Every project starts the same way: a free on-site consultation where we walk the property, review your goals, and give you a real, itemized estimate.",
+        "We've built and remodeled homes throughout Springfield for years — kitchen and bath remodels near downtown, second-story additions on the Thurston side, and outdoor living builds on larger lots toward the edges. Every project starts the same way: a free on-site consultation where we walk the property, review your goals, and give you a real, itemized estimate.",
         "Because Springfield issues its own permits rather than routing through Lane County, we coordinate directly with the city's Development and Public Works Department from day one — so there's no confusion about who's reviewing your plans or how long it will take.",
       ]}
       localHeading="Building in Springfield"
@@ -43,7 +43,7 @@ export function Springfield() {
       faqs={[
         {
           q: "Do you build and remodel homes in Springfield, OR?",
-          a: "Yes. Springfield is one of our core service areas alongside Eugene. We handle everything from custom home builds to kitchen and bath remodels, additions, and outdoor living spaces throughout the city.",
+          a: "Yes. Springfield is one of our core service areas alongside Eugene. We handle everything from custom home builds to kitchen and bath remodels, additions, and outdoor living spaces throughout the city. Start with our free online cost estimator for a directional range, then call for an on-site visit.",
         },
         {
           q: "Who handles my building permit in Springfield?",
@@ -150,7 +150,7 @@ export function Creswell() {
       faqs={[
         {
           q: "Do you build and remodel homes in Creswell, OR?",
-          a: "Yes. Creswell is one of our regular service areas, and we're familiar with how permitting works here — including the fact that it routes through Cottage Grove's building department rather than a separate Creswell office.",
+          a: "Yes — and you can start with our free online cost estimator for a directional budget before the site visit. Creswell is one of our regular service areas, and we're familiar with how permitting works here — including the fact that it routes through Cottage Grove's building department rather than a separate Creswell office.",
         },
         {
           q: "Why does my Creswell permit go through Cottage Grove?",
@@ -257,7 +257,7 @@ export function JunctionCity() {
       faqs={[
         {
           q: "Do you build and remodel homes in Junction City, OR?",
-          a: "Yes. Junction City is one of our regular service areas, and we're familiar with the floodplain and wetland considerations that come up more often here due to the flat, river-adjacent terrain.",
+          a: "Yes — and you can start with our free online cost estimator for a directional budget before the site visit. Junction City is one of our regular service areas, and we're familiar with the floodplain and wetland considerations that come up more often here due to the flat, river-adjacent terrain.",
         },
         {
           q: "Why does floodplain mapping matter for my Junction City project?",
@@ -307,7 +307,7 @@ export function Florence() {
       faqs={[
         {
           q: "Do you build and remodel homes in Florence, OR?",
-          a: "Yes. Florence is one of our service areas, and we have experience with the coastal-specific permitting — flood hazard review, elevation certificates, and dune terrain — that inland Lane County projects don't require.",
+          a: "Yes — and you can start with our free online cost estimator for a directional budget before the site visit. Florence is one of our service areas, and we have experience with the coastal-specific permitting — flood hazard review, elevation certificates, and dune terrain — that inland Lane County projects don't require.",
         },
         {
           q: "Why does my Florence project need an elevation certificate?",

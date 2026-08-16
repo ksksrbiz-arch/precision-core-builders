@@ -33,6 +33,20 @@ const POSTS = [
     href: "/blog/kitchen-remodel-cost-eugene-oregon",
   },
   {
+    title: "How Much Does a Deck Cost in Eugene, OR?",
+    category: "Cost Guides",
+    dek: "Pressure-treated, cedar, and composite deck ranges for Eugene and Lane County — plus permits and timeline.",
+    photo: "/portfolio/signature-deck-01.jpg",
+    href: "/blog/deck-cost-eugene-oregon",
+  },
+  {
+    title: "How Much Does a Bathroom Remodel Cost in Eugene, OR?",
+    category: "Cost Guides",
+    dek: "Cosmetic refresh vs full gut: waterproofing, tile labor, and real 2026 ranges for Eugene homes.",
+    photo: "/portfolio/signature-bath-01.jpg",
+    href: "/blog/bathroom-remodel-cost-eugene-oregon",
+  },
+  {
     title: "Oregon CCB Licensing: What to Check Before Hiring a Contractor",
     category: "Homeowner Resources",
     dek: "What Oregon's CCB license actually verifies, how to check it yourself, and the red flags to watch for.",

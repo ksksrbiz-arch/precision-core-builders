@@ -79,6 +79,16 @@ const LazyTadlockResidenceCaseStudy = lazy(() =>
     default: m.TadlockResidenceCaseStudy,
   }))
 );
+const LazyDeckCostEugene = lazy(() =>
+  import("./pages/blog/index").then(m => ({
+    default: m.DeckCostEugene,
+  }))
+);
+const LazyBathroomRemodelCostEugene = lazy(() =>
+  import("./pages/blog/index").then(m => ({
+    default: m.BathroomRemodelCostEugene,
+  }))
+);
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -213,6 +223,14 @@ function Router() {
           <Route
             path="/blog/tadlock-residence-case-study"
             component={withBoundary(LazyTadlockResidenceCaseStudy)}
+          />
+          <Route
+            path="/blog/deck-cost-eugene-oregon"
+            component={withBoundary(LazyDeckCostEugene)}
+          />
+          <Route
+            path="/blog/bathroom-remodel-cost-eugene-oregon"
+            component={withBoundary(LazyBathroomRemodelCostEugene)}
           />
           <Route path="/portfolio" component={withBoundary(Portfolio)} />
           <Route

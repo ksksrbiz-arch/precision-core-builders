@@ -12,6 +12,11 @@ import { JsonLd } from "@/components/JsonLd";
 import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { TextReveal } from "@/components/ui/TextReveal";
 import { PROJECT_TYPES, MATERIALS_OPTIONS } from "@/config/projects";
+import {
+  trackEstimatorComplete,
+  trackEstimatorLeadSubmit,
+  trackPhoneClick,
+} from "@/lib/analytics";
 import { formatCurrency } from "@/lib/formatters";
 import { estimateTimeline } from "@/lib/estimateTimeline";
 import { useSEO } from "@/hooks/useSEO";
@@ -157,6 +162,9 @@ export default function Estimator() {
       }
       setResult(data);
       setStep(4);
+      trackEstimatorComplete(
+        typeof data?.estimatedMid === "number" ? data.estimatedMid : undefined
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -218,6 +226,7 @@ export default function Estimator() {
       }).catch(() => {});
 
       setLeadSent(true);
+      trackEstimatorLeadSubmit();
     } catch {
       setLeadError(
         `We couldn't submit that just now. Please call Eric directly at ${SITE.phone}, or try again in a moment.`
