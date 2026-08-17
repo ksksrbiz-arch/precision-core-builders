@@ -63,9 +63,7 @@ declare global {
 }
 
 const SpeechRecognitionAPI:
-  | (new () => BrowserSpeechRecognition)
-  | null
-  | undefined =
+  (new () => BrowserSpeechRecognition) | null | undefined =
   typeof window !== "undefined"
     ? (window.SpeechRecognition ?? window.webkitSpeechRecognition)
     : null;

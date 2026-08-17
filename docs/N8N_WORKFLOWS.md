@@ -6,10 +6,10 @@ _The last off-repo piece of the automation layer. Once these workflows exist in 
 
 Two channels, both already implemented:
 
-| Direction | Path | Auth |
-| --- | --- | --- |
-| Platform → n8n (events) | `POST {N8N_WEBHOOK_URL}/<event-path>` | n8n webhook node's own secret path |
-| n8n → Platform (relay) | `POST /.netlify/functions/n8n-webhook` `{ event, payload }` | `X-N8N-Signature: <N8N_WEBHOOK_SECRET>` or `Authorization: Bearer <secret>` |
+| Direction               | Path                                                        | Auth                                                                        |
+| ----------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Platform → n8n (events) | `POST {N8N_WEBHOOK_URL}/<event-path>`                       | n8n webhook node's own secret path                                          |
+| n8n → Platform (relay)  | `POST /.netlify/functions/n8n-webhook` `{ event, payload }` | `X-N8N-Signature: <N8N_WEBHOOK_SECRET>` or `Authorization: Bearer <secret>` |
 
 Inbound relay accepts these event types (`netlify/functions/n8n-webhook.ts`):
 `lead_captured`, `material_shortage`, `sub_notification`, `milestone_complete`, `inspection_scheduled`, `payment_received`, `field_report_created`, `project_status_changed`, `client_notification`.

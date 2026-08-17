@@ -1,14 +1,14 @@
 # instructions.md — Agent Quality Bar for Precision Core Builders
 
 **Audience:** Claude, Grok, Mistral, and any other coding agent working this repo.
-**Authority:** Complements `CLAUDE.md` (product/architecture) and `TODO.md` (task queue). When this file conflicts with stale claims in older docs, prefer *this file* + the live code.
+**Authority:** Complements `CLAUDE.md` (product/architecture) and `TODO.md` (task queue). When this file conflicts with stale claims in older docs, prefer _this file_ + the live code.
 **Last updated:** 2026-08-16
 
 ---
 
 ## 0. Why this file exists
 
-Agent quality varies. The BOT-1 realtime commit (Mistral / Vibe Nuage, PR #222) was *mostly solid* but still needed a follow-up for control-flow honesty, immediate channel teardown on error, and reconnect observability. This document encodes the bar so future work does not reintroduce the same class of issues — and so stronger agents (Claude / Grok) do not regress into weaker patterns either.
+Agent quality varies. The BOT-1 realtime commit (Mistral / Vibe Nuage, PR #222) was _mostly solid_ but still needed a follow-up for control-flow honesty, immediate channel teardown on error, and reconnect observability. This document encodes the bar so future work does not reintroduce the same class of issues — and so stronger agents (Claude / Grok) do not regress into weaker patterns either.
 
 Read this before writing code. Treat it as mandatory, not advisory.
 
@@ -17,7 +17,7 @@ Read this before writing code. Treat it as mandatory, not advisory.
 ## 1. Non-negotiable operating rules
 
 1. **One focused change per PR/commit.** Do not mix feature work, drive-by refactors, and doc cleanup unless the user explicitly asked for a bundled pass.
-2. **Stay inside the stated scope.** If blocked by secrets, third-party credentials, Netlify dashboard settings, or off-repo systems (n8n workflows), *stop and report*. Do not stub live secrets or invent credentials.
+2. **Stay inside the stated scope.** If blocked by secrets, third-party credentials, Netlify dashboard settings, or off-repo systems (n8n workflows), _stop and report_. Do not stub live secrets or invent credentials.
 3. **Match existing patterns first.** Before inventing a new abstraction, find the nearest working example in-tree and mirror it.
 4. **Never break the public API of a shared hook/component without an explicit migration plan.** Prefer additive, backward-compatible returns.
 5. **Verify before claiming done.** Minimum gate for any code change:
@@ -34,16 +34,16 @@ Read this before writing code. Treat it as mandatory, not advisory.
 
 A change is not done until all of the following are true:
 
-| Gate | Requirement |
-|------|-------------|
-| **Intent** | Commit message states *what* and *why*; references BOT-n / issue when applicable |
-| **Types** | `pnpm check` clean |
-| **Tests** | `pnpm test` clean; new behavior has focused unit tests |
-| **Lifecycle** | Effects clean up timers, subscriptions, listeners, and channels on unmount |
-| **Control flow** | Every branch either `return`s or intentionally falls through — no accidental double work |
-| **Observability** | Recoverable failures log enough to debug in production without spamming |
-| **API shape** | Shared exports remain backward-compatible unless the user approved a break |
-| **Docs** | If you change agent workflow or quality rules, update *this file* in the same PR |
+| Gate              | Requirement                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| **Intent**        | Commit message states _what_ and _why_; references BOT-n / issue when applicable         |
+| **Types**         | `pnpm check` clean                                                                       |
+| **Tests**         | `pnpm test` clean; new behavior has focused unit tests                                   |
+| **Lifecycle**     | Effects clean up timers, subscriptions, listeners, and channels on unmount               |
+| **Control flow**  | Every branch either `return`s or intentionally falls through — no accidental double work |
+| **Observability** | Recoverable failures log enough to debug in production without spamming                  |
+| **API shape**     | Shared exports remain backward-compatible unless the user approved a break               |
+| **Docs**          | If you change agent workflow or quality rules, update _this file_ in the same PR         |
 
 Do not write "Verified: …" in the commit message unless you actually ran the commands.
 
@@ -130,12 +130,12 @@ setIsLive(false);
 
 ### What was insufficient (do not repeat)
 
-| Issue | Why it mattered | Required fix |
-|-------|-----------------|--------------|
-| Recoverable branch fell through to a second `setIsLive(false)` | Accidental control flow; confuses readers and future edits | `return` after each terminal branch |
-| Dead channel only removed at the *next* `subscribe()` | Resource lingered for the full backoff window | `removeChannel` immediately on recoverable status |
-| Recoverable retries were silent | Production flaps are undebuggable | `console.warn` with table, status, attempt, delay |
-| Test mocked `Math.random` → `1` | Real RNG is `[0, 1)`; assertion documented an impossible value | Keep jitter tests inside `[0, 1)` |
+| Issue                                                          | Why it mattered                                                | Required fix                                      |
+| -------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------- |
+| Recoverable branch fell through to a second `setIsLive(false)` | Accidental control flow; confuses readers and future edits     | `return` after each terminal branch               |
+| Dead channel only removed at the _next_ `subscribe()`          | Resource lingered for the full backoff window                  | `removeChannel` immediately on recoverable status |
+| Recoverable retries were silent                                | Production flaps are undebuggable                              | `console.warn` with table, status, attempt, delay |
+| Test mocked `Math.random` → `1`                                | Real RNG is `[0, 1)`; assertion documented an impossible value | Keep jitter tests inside `[0, 1)`                 |
 
 ### Follow-up landed in-repo
 
@@ -147,10 +147,12 @@ The hardened `useRealtimeTable` behavior (immediate teardown + return + reconnec
 
 ```markdown
 ## Scope
+
 - [ ] Single concern; no unrelated drive-byes
 - [ ] No secret/credential stubs; blockers reported instead
 
 ## Implementation
+
 - [ ] Matched existing in-repo patterns
 - [ ] Effects clean up timers/subscriptions/channels
 - [ ] Control flow has explicit returns on terminal branches
@@ -158,12 +160,14 @@ The hardened `useRealtimeTable` behavior (immediate teardown + return + reconnec
 - [ ] No new `any` types
 
 ## Verification
+
 - [ ] `pnpm check` — 0 errors
 - [ ] `pnpm test` — green (note count if tests added)
 - [ ] Touched files Prettier-clean
 - [ ] Manual path checked if UI (mobile width + keyboard)
 
 ## Risk
+
 - [ ] Auth/security surface reviewed if endpoints or filters changed
 - [ ] Public API of shared modules unchanged (or migration noted)
 ```
@@ -182,15 +186,15 @@ The hardened `useRealtimeTable` behavior (immediate teardown + return + reconnec
 
 ## 7. Document map
 
-| File | Use for |
-|------|---------|
-| `instructions.md` (this file) | Quality bar, agent process, anti-patterns |
-| `CLAUDE.md` | Product vision, stack, architecture, design system |
-| `TODO.md` | Prioritized backlog + BOT queue |
-| `docs/ADMIN_COMPLETION_PLAN.md` | Admin ship gaps vs ops |
-| `docs/PHASE5_SCOPING.md` | Post-launch feature tracks |
-| `docs/PLATFORM_AUDIT_2026-07-23.md` | Snapshot of what was already code-complete |
-| `SECURITY.md` | Security policy / reporting |
+| File                                | Use for                                            |
+| ----------------------------------- | -------------------------------------------------- |
+| `instructions.md` (this file)       | Quality bar, agent process, anti-patterns          |
+| `CLAUDE.md`                         | Product vision, stack, architecture, design system |
+| `TODO.md`                           | Prioritized backlog + BOT queue                    |
+| `docs/ADMIN_COMPLETION_PLAN.md`     | Admin ship gaps vs ops                             |
+| `docs/PHASE5_SCOPING.md`            | Post-launch feature tracks                         |
+| `docs/PLATFORM_AUDIT_2026-07-23.md` | Snapshot of what was already code-complete         |
+| `SECURITY.md`                       | Security policy / reporting                        |
 
 If product status in `CLAUDE.md` disagrees with a newer audit or with `main`, trust `main` + the newest audit, then update the stale doc in a dedicated chore commit.
 

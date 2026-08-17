@@ -21,12 +21,7 @@ import {
 } from "lucide-react";
 
 type AnalysisMode =
-  | "progress"
-  | "safety"
-  | "material"
-  | "defect"
-  | "general"
-  | "estimate";
+  "progress" | "safety" | "material" | "defect" | "general" | "estimate";
 
 interface AnalysisResult {
   id: string;

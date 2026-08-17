@@ -20,8 +20,7 @@ declare global {
 }
 
 const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY as
-  | string
-  | undefined;
+  string | undefined;
 const FORGE_BASE_URL =
   (import.meta.env.VITE_FRONTEND_FORGE_API_URL as string | undefined) ||
   "https://forge.butterfly-effect.dev";

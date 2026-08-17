@@ -29,11 +29,7 @@ export const MAX_PHOTOS_PER_REPORT = 8;
 const PHOTO_TIMEOUT_MS = 45_000;
 
 export type PhotoCategory =
-  | "progress"
-  | "safety"
-  | "defect"
-  | "material"
-  | "general";
+  "progress" | "safety" | "defect" | "material" | "general";
 
 const PHOTO_CATEGORIES: PhotoCategory[] = [
   "progress",
