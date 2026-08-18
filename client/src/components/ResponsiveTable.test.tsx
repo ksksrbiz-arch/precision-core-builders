@@ -83,6 +83,31 @@ describe("ResponsiveTable", () => {
     expect(region.className).not.toContain("overflow-x-hidden");
   });
 
+  it("strips a responsive overflow-hidden variant (md:overflow-hidden)", () => {
+    render(
+      <ResponsiveTable label="Materials" className="md:overflow-hidden">
+        <div>row-content</div>
+      </ResponsiveTable>
+    );
+    const region = screen.getByRole("region", { name: "Materials" });
+    expect(region.className).toContain("overflow-x-auto");
+    expect(region.className).not.toContain("overflow-hidden");
+  });
+
+  it("strips an important overflow-hidden variant (!overflow-hidden / overflow-hidden!)", () => {
+    render(
+      <ResponsiveTable
+        label="Materials"
+        className="!overflow-hidden overflow-hidden!"
+      >
+        <div>row-content</div>
+      </ResponsiveTable>
+    );
+    const region = screen.getByRole("region", { name: "Materials" });
+    expect(region.className).toContain("overflow-x-auto");
+    expect(region.className).not.toContain("overflow-hidden");
+  });
+
   it("falls back to a generic accessible label", () => {
     render(
       <ResponsiveTable>

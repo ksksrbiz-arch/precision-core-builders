@@ -21,7 +21,7 @@
  *     onConfirm={() => deleteMut.mutate({ id: vendor.id })}
  *   />
  */
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,8 +35,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export type ConfirmDeleteProps = {
-  /** The element that opens the dialog. Icon-only triggers need aria-label. */
-  trigger: ReactNode;
+  /**
+   * The element that opens the dialog. Must be a single element — Radix
+   * clones it via `asChild` and forwards its own props/ref onto it, so a
+   * custom component used here must forward both. Icon-only triggers need
+   * aria-label.
+   */
+  trigger: ReactElement;
   title: ReactNode;
   description: ReactNode;
   /** Label for the destructive action. Defaults to "Delete". */

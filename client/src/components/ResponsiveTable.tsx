@@ -30,13 +30,14 @@ export type ResponsiveTableProps = {
 };
 
 /**
- * Bare `overflow-*` shorthands (as opposed to `overflow-x-*` / `overflow-y-*`)
- * live in a different tailwind-merge group than `overflow-x-auto`, so they
- * would survive `cn()` and keep clipping the horizontal axis. Drop them so the
- * component's guarantee holds no matter what a caller passes in.
+ * Bare/axis `overflow-*` shorthands — including responsive (`md:`) and
+ * important (`!` prefix or suffix) variants — live in a different
+ * tailwind-merge group than `overflow-x-auto`, so they would survive `cn()`
+ * and keep clipping the horizontal axis. Drop them all so the component's
+ * guarantee holds no matter what a caller passes in.
  */
 const CLIPPING_SHORTHAND =
-  /(^|\s)-?overflow-(auto|hidden|clip|visible|scroll)(?=\s|$)/g;
+  /(^|\s)!?(?:[\w-]+:)*!?-?overflow(?:-[xy])?-(?:auto|hidden|clip|visible|scroll)!?(?=\s|$)/g;
 
 function stripClippingShorthand(className?: string) {
   if (!className) return className;
