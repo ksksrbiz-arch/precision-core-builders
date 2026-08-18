@@ -18,13 +18,13 @@ Several partial API key prefixes were previously committed to
 fragments remain in git history**. The only safe remediation is to rotate all
 affected keys immediately so the historical fragments are worthless.
 
-| Key                      | Action                           | URL                                         |
-| ------------------------ | -------------------------------- | ------------------------------------------- |
-| `OPENAI_API_KEY`         | Delete old key; generate new one | https://platform.openai.com/api-keys        |
-| `GROQ_API_KEY`           | Delete old key; generate new one | https://console.groq.com/keys               |
-| `GOOGLE_AI_API_KEY`      | Delete old key; generate new one | https://aistudio.google.com/app/apikey      |
-| `OPENROUTER_API_KEY`     | Delete old key; generate new one | https://openrouter.ai/keys                  |
-| `OPENWEATHERMAP_API_KEY` | Regenerate key                   | https://home.openweathermap.org/api_keys    |
+| Key                      | Action                           | URL                                      |
+| ------------------------ | -------------------------------- | ---------------------------------------- |
+| `OPENAI_API_KEY`         | Delete old key; generate new one | https://platform.openai.com/api-keys     |
+| `GROQ_API_KEY`           | Delete old key; generate new one | https://console.groq.com/keys            |
+| `GOOGLE_AI_API_KEY`      | Delete old key; generate new one | https://aistudio.google.com/app/apikey   |
+| `OPENROUTER_API_KEY`     | Delete old key; generate new one | https://openrouter.ai/keys               |
+| `OPENWEATHERMAP_API_KEY` | Regenerate key                   | https://home.openweathermap.org/api_keys |
 
 After generating new keys, add them to the Netlify dashboard (Phase 3, Step 5
 below) **before** testing the platform.
@@ -39,8 +39,8 @@ Complete these checks before signing any transfer agreement.
 
 Visit each URL and confirm it loads without errors:
 
-| URL                                            | Expected                      |
-| ---------------------------------------------- | ----------------------------- |
+| URL                                           | Expected                      |
+| --------------------------------------------- | ----------------------------- |
 | `https://precisioncorebuilders.com`           | Public home page loads        |
 | `https://precisioncorebuilders.com/about`     | About page loads              |
 | `https://precisioncorebuilders.com/services`  | Services page loads           |
@@ -91,19 +91,19 @@ Expected output: 0 TypeScript errors, 5 tests passing, build succeeds.
 Use this table as a template. Fill in values in your password manager — do **not**
 write actual keys into this document.
 
-| Service              | Purpose                              | Account to Create             | Notes                                     |
-| -------------------- | ------------------------------------ | ----------------------------- | ----------------------------------------- |
-| **GitHub**           | Source code + CI                     | github.com                    | Repo transfers to Eric's account          |
-| **Netlify**          | Hosting + functions                  | netlify.com (business email)  | Site transfers to Eric's team             |
-| **Supabase**         | Database + auth                      | supabase.com                  | Project transfers to Eric's org           |
-| **OpenAI**           | Whisper voice transcription          | platform.openai.com           | Generate fresh key (rotate existing)      |
-| **Groq**             | Free-tier AI (estimator, chat, reports) — primary | console.groq.com/keys | Generate fresh key (rotate existing)      |
-| **Google Gemini**    | Free-tier AI fallback                | aistudio.google.com/app/apikey | Generate fresh key (rotate existing)     |
-| **OpenRouter**       | Free-tier AI fallback                | openrouter.ai/keys            | Generate fresh key (rotate existing)      |
-| **OpenWeatherMap**   | Weather scheduling                   | openweathermap.org            | Regenerate key (rotate existing)          |
-| **Stripe**           | Milestone billing (Phase 5)          | dashboard.stripe.com          | Eric creates account; use test keys first |
-| **n8n**              | Automation workflows (Phase 4)       | n8n.io or self-hosted         | Eric creates account                      |
-| **Domain Registrar** | Custom domain DNS                    | Namecheap / Cloudflare / etc. | Eric purchases/owns domain                |
+| Service              | Purpose                                           | Account to Create              | Notes                                     |
+| -------------------- | ------------------------------------------------- | ------------------------------ | ----------------------------------------- |
+| **GitHub**           | Source code + CI                                  | github.com                     | Repo transfers to Eric's account          |
+| **Netlify**          | Hosting + functions                               | netlify.com (business email)   | Site transfers to Eric's team             |
+| **Supabase**         | Database + auth                                   | supabase.com                   | Project transfers to Eric's org           |
+| **OpenAI**           | Whisper voice transcription                       | platform.openai.com            | Generate fresh key (rotate existing)      |
+| **Groq**             | Free-tier AI (estimator, chat, reports) — primary | console.groq.com/keys          | Generate fresh key (rotate existing)      |
+| **Google Gemini**    | Free-tier AI fallback                             | aistudio.google.com/app/apikey | Generate fresh key (rotate existing)      |
+| **OpenRouter**       | Free-tier AI fallback                             | openrouter.ai/keys             | Generate fresh key (rotate existing)      |
+| **OpenWeatherMap**   | Weather scheduling                                | openweathermap.org             | Regenerate key (rotate existing)          |
+| **Stripe**           | Milestone billing (Phase 5)                       | dashboard.stripe.com           | Eric creates account; use test keys first |
+| **n8n**              | Automation workflows (Phase 4)                    | n8n.io or self-hosted          | Eric creates account                      |
+| **Domain Registrar** | Custom domain DNS                                 | Namecheap / Cloudflare / etc.  | Eric purchases/owns domain                |
 
 ### Netlify Environment Variables Checklist
 
@@ -247,14 +247,14 @@ variables** and trigger a new deploy to confirm the functions still work.
 
 All documents are in the repository:
 
-| Document                       | Purpose                                             |
-| ------------------------------ | --------------------------------------------------- |
-| `docs/USER_GUIDE_ERIC.md`                | Full feature guide — Eric's primary reference       |
-| `GETTING_STARTED_ERIC.md`                | Quick-start checklist for first 48 hours            |
-| `docs/HANDOVER.md`                       | This document — transfer and operations reference   |
-| `.env.example`                           | Complete list of all required environment variables |
-| `CLAUDE.md`                              | Technical architecture reference (for developers)   |
-| `docs/archive/PLATFORM_AUDIT_APRIL_2026.md` | Historical completion audit (April 2026)         |
+| Document                                    | Purpose                                             |
+| ------------------------------------------- | --------------------------------------------------- |
+| `docs/USER_GUIDE_ERIC.md`                   | Full feature guide — Eric's primary reference       |
+| `GETTING_STARTED_ERIC.md`                   | Quick-start checklist for first 48 hours            |
+| `docs/HANDOVER.md`                          | This document — transfer and operations reference   |
+| `.env.example`                              | Complete list of all required environment variables |
+| `CLAUDE.md`                                 | Technical architecture reference (for developers)   |
+| `docs/archive/PLATFORM_AUDIT_APRIL_2026.md` | Historical completion audit (April 2026)            |
 
 > **Credential Reference Sheet:** Compile all account usernames, URLs, and
 > keys into a 1Password vault or Bitwarden collection shared with Eric.

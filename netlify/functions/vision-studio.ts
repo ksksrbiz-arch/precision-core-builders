@@ -30,18 +30,10 @@ When possible, reference Oregon building codes and best practices.
 Format your response as clear sections with headers.`;
 
 type AnalysisMode =
-  | "progress"
-  | "safety"
-  | "material"
-  | "defect"
-  | "general"
-  | "estimate";
+  "progress" | "safety" | "material" | "defect" | "general" | "estimate";
 
 type SupportedMediaType =
-  | "image/jpeg"
-  | "image/png"
-  | "image/gif"
-  | "image/webp";
+  "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
 const SUPPORTED_MEDIA_TYPES: SupportedMediaType[] = [
   "image/jpeg",

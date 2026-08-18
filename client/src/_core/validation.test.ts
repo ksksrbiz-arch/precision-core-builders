@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getErrorMessage,
-  validate,
-  validators,
-} from "./validation";
+import { getErrorMessage, validate, validators } from "./validation";
 
 describe("validators.required", () => {
   const rule = validators.required("Name");

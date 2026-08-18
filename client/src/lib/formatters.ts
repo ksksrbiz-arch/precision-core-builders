@@ -51,6 +51,11 @@ export function formatCompactCurrency(
     style: "currency",
     currency: "USD",
     notation: "compact",
+    // Compact notation pins minimumFractionDigits to maximumFractionDigits
+    // unless the minimum is set explicitly, which rendered whole values as
+    // "$450.0" / "$5.0K". Pinning the minimum to 0 strips the trailing zero
+    // while still allowing one digit where it carries meaning ("$1.2M").
+    minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   }).format(value as number);
 }

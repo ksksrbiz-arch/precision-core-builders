@@ -74,10 +74,7 @@ export const materialsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const links = await setMaterialVendors(
-        input.materialId,
-        input.vendorIds
-      );
+      const links = await setMaterialVendors(input.materialId, input.vendorIds);
       // Keep materials.vendor_id in sync with the primary (first) vendor.
       if (input.vendorIds.length > 0) {
         await updateMaterial(input.materialId, {
@@ -124,7 +121,8 @@ export const materialsRouter = router({
               title: fromField
                 ? `Field shortages synced (${names.length})`
                 : `Materials imported (${names.length})`,
-              description: names.slice(0, 12).join(", ") +
+              description:
+                names.slice(0, 12).join(", ") +
                 (names.length > 12 ? ` (+${names.length - 12} more)` : ""),
               visibleToClient: true,
             });

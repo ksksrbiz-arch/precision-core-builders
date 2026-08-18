@@ -7,13 +7,13 @@
 
 ## Health Check (validated live)
 
-| Check | Result |
-| --- | --- |
-| TypeScript (`pnpm check`) | ✅ Clean — 0 errors |
-| Tests (`pnpm test`) | ✅ 588/588 passing (41 files, ~11s) |
-| Local repo state | ✅ Clean, synced with origin/main |
-| Open PRs / Issues | None |
-| Local `.env` | Absent (only `.env.example` / `.env.template`; secrets live in Netlify) |
+| Check                     | Result                                                                  |
+| ------------------------- | ----------------------------------------------------------------------- |
+| TypeScript (`pnpm check`) | ✅ Clean — 0 errors                                                     |
+| Tests (`pnpm test`)       | ✅ 588/588 passing (41 files, ~11s)                                     |
+| Local repo state          | ✅ Clean, synced with origin/main                                       |
+| Open PRs / Issues         | None                                                                    |
+| Local `.env`              | Absent (only `.env.example` / `.env.template`; secrets live in Netlify) |
 
 ## Repo Vitals
 
@@ -46,11 +46,11 @@ React 19 + Vite 8 + Tailwind 4 + Radix UI · tRPC 11 + TanStack Query 5 · Drizz
 
 ## Branch Hygiene
 
-| Branch | vs main | Verdict |
-| --- | --- | --- |
-| `chore/new-supabase-keys-and-free-tier-transcription` | 0 ahead / 64 behind | Safe to delete |
-| `chore/remove-auth0` | 0 ahead / 67 behind | Safe to delete |
-| `chore/doc-triage-2026-07` | 1 ahead / 68 behind | Review the 1 unmerged commit before deleting |
+| Branch                                                | vs main             | Verdict                                      |
+| ----------------------------------------------------- | ------------------- | -------------------------------------------- |
+| `chore/new-supabase-keys-and-free-tier-transcription` | 0 ahead / 64 behind | Safe to delete                               |
+| `chore/remove-auth0`                                  | 0 ahead / 67 behind | Safe to delete                               |
+| `chore/doc-triage-2026-07`                            | 1 ahead / 68 behind | Review the 1 unmerged commit before deleting |
 
 ## Remaining Gaps
 

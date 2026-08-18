@@ -431,13 +431,11 @@ export default function FieldReportDetail() {
                 <button
                   type="button"
                   disabled={
-                    syncShortagesMut.isPending ||
-                    !(report as any).project_id
+                    syncShortagesMut.isPending || !(report as any).project_id
                   }
                   onClick={() => {
                     const projectId = (report as any).project_id as
-                      | number
-                      | undefined;
+                      number | undefined;
                     if (!projectId) {
                       addToast({
                         type: "error",

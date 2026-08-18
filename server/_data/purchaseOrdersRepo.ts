@@ -11,11 +11,7 @@ import { requireSupabaseAdmin } from "../_core/supabase";
 import { unwrapList, unwrapOne, unwrapVoid } from "./repository";
 
 export type PurchaseOrderStatus =
-  | "draft"
-  | "issued"
-  | "partial"
-  | "received"
-  | "cancelled";
+  "draft" | "issued" | "partial" | "received" | "cancelled";
 
 export type CreatePurchaseOrderInput = {
   projectId: number;

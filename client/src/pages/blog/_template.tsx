@@ -223,8 +223,8 @@ export function ArticlePage(p: ArticlePageProps) {
                   Ready to talk about your project?
                 </p>
                 <p className="text-sm text-muted-foreground font-light mb-6">
-                  Free on-site consultation, no obligation. Or try our
-                  instant AI estimator for a ballpark first.
+                  Free on-site consultation, no obligation. Or try our instant
+                  AI estimator for a ballpark first.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <a
