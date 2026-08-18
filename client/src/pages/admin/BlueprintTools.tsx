@@ -9,6 +9,8 @@
  * route level in App.tsx — the page assumes the flag is on when rendered.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { QueryError } from "@/components/QueryError";
+import { fmtDateTime } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,8 +28,12 @@ import { useEffect, useState } from "react";
 
 export default function BlueprintTools() {
   const utils = trpc.useUtils();
-  const { data: status, isLoading } =
-    trpc.blueprint.getConnectionStatus.useQuery();
+  const {
+    data: status,
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.blueprint.getConnectionStatus.useQuery();
 
   const [apiKey, setApiKey] = useState("");
   const [apiEmail, setApiEmail] = useState("");
@@ -123,6 +129,11 @@ export default function BlueprintTools() {
           <h2 className="text-lg font-semibold">Connection status</h2>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : isError ? (
+            <QueryError
+              message="We couldn't load your Blueprint connection status. Check your connection and try again."
+              onRetry={() => refetch()}
+            />
           ) : isConnected ? (
             <div className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
@@ -141,8 +152,7 @@ export default function BlueprintTools() {
                 </p>
                 {status?.connection?.expiresAt && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Token expires:{" "}
-                    {new Date(status.connection.expiresAt).toLocaleString()}
+                    Token expires: {fmtDateTime(status.connection.expiresAt)}
                   </p>
                 )}
               </div>

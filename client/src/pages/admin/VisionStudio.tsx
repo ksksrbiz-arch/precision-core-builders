@@ -381,10 +381,7 @@ export default function VisionStudioAdmin() {
               </button>
               {showCustom && (
                 <>
-                  <Label
-                    htmlFor="vision-custom-prompt"
-                    className="sr-only"
-                  >
+                  <Label htmlFor="vision-custom-prompt" className="sr-only">
                     Custom prompt
                   </Label>
                   <textarea
@@ -437,8 +434,8 @@ export default function VisionStudioAdmin() {
                     </EmptyMedia>
                     <EmptyTitle>No analyses yet</EmptyTitle>
                     <EmptyDescription>
-                      Every analysis you run this session is kept here so you can
-                      jump back between shots.
+                      Every analysis you run this session is kept here so you
+                      can jump back between shots.
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
@@ -514,9 +511,9 @@ export default function VisionStudioAdmin() {
                   </EmptyMedia>
                   <EmptyTitle>No analysis yet</EmptyTitle>
                   <EmptyDescription>
-                    Upload a site photo, pick an analysis mode, and Vision Studio
-                    will read the shot for progress, safety, materials, defects
-                    or a rough estimate.
+                    Upload a site photo, pick an analysis mode, and Vision
+                    Studio will read the shot for progress, safety, materials,
+                    defects or a rough estimate.
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
