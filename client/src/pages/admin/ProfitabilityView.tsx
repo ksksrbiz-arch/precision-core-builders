@@ -6,10 +6,19 @@
  * source of truth) in a focused, table-first layout: portfolio totals up top,
  * then a per-project breakdown with margin, variance, and on-budget status.
  */
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
 import { QueryError } from "@/components/QueryError";
+import { SkeletonCard } from "@/components/Skeletons";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/formatters";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { formatCurrency, formatPercent } from "@/lib/formatters";
 import { trpc } from "@/lib/trpc";
 import { TrendingUp } from "lucide-react";
 
@@ -17,8 +26,8 @@ import { TrendingUp } from "lucide-react";
 // null/undefined/NaN fall back to "—".
 const fmt = (n?: number) => formatCurrency(n);
 
-const pct = (n?: number) =>
-  n === undefined || n === null || Number.isNaN(n) ? "—" : `${n.toFixed(1)}%`;
+// One decimal place, matching the Analytics page's margin display.
+const pct = (n?: number) => formatPercent(n, 1);
 
 // Margin health colour, matching the thresholds used on the Analytics page.
 const marginClass = (basis: number, marginPct: number) =>
@@ -96,9 +105,7 @@ export default function ProfitabilityView() {
         </div>
 
         {isLoading ? (
-          <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
-            Loading profitability data…
-          </div>
+          <SkeletonCard count={4} />
         ) : isError ? (
           <QueryError
             message="We couldn't load profitability data. Check your connection and try again."
