@@ -1,12 +1,14 @@
 /**
  * Activity Log — Real-time platform event & audit log viewer.
  *
- * Shows all [AUDIT] ledger entries and subscribes to new entries via Supabase
- * Realtime so the dev/admin can see every platform action as it happens.
- * Provides filtering by action type, date range, and free-text search.
+ * Shows all [AUDIT] ledger entries and subscribes to new entries via the
+ * shared `useRealtimeTable` hook (which owns reconnection with exponential
+ * backoff) so the dev/admin can see every platform action as it happens.
+ * Provides filtering by level and free-text search.
  */
 import DashboardLayout from "@/components/DashboardLayout";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { QueryError } from "@/components/QueryError";
+import { SkeletonList } from "@/components/Skeletons";
 import {
   Empty,
   EmptyDescription,
@@ -14,8 +16,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { Label } from "@/components/ui/label";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { fmtDateTime } from "@/lib/formatters";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -32,7 +35,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -84,21 +87,6 @@ function parseAuditEntry(row: Record<string, unknown>): LogEntry {
     details,
     source: "audit",
   };
-}
-
-/** Format ISO timestamp to locale-aware short form. */
-function fmt(iso: string) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 // ── Level badge ───────────────────────────────────────────────────────────
@@ -162,14 +150,16 @@ function LogRow({ entry, isNew }: { entry: LogEntry; isNew?: boolean }) {
       <button
         type="button"
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-muted/20 transition-colors group"
+        aria-expanded={entry.details ? expanded : undefined}
+        aria-label={`Event ${entry.action} by ${entry.actor}`}
+        className="w-full flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-1 px-3 sm:px-4 py-3 text-left hover:bg-muted/20 transition-colors group"
       >
         {/* Live dot */}
         <span className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${dot}`} />
 
         {/* Timestamp */}
-        <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0 mt-0.5 w-[128px]">
-          {fmt(entry.timestamp)}
+        <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0 mt-0.5 sm:w-[128px]">
+          {fmtDateTime(entry.timestamp)}
         </span>
 
         {/* Level */}
@@ -178,18 +168,19 @@ function LogRow({ entry, isNew }: { entry: LogEntry; isNew?: boolean }) {
         </span>
 
         {/* Action */}
-        <span className="flex-1 font-mono text-xs text-foreground/80 truncate">
+        <span className="basis-full sm:basis-auto sm:flex-1 min-w-0 font-mono text-xs text-foreground/80 truncate">
           {entry.action}
         </span>
 
         {/* Actor */}
-        <span className="text-[10px] text-muted-foreground/50 truncate max-w-[140px] shrink-0">
+        <span className="text-[10px] text-muted-foreground/50 truncate max-w-full sm:max-w-[140px] shrink-0">
           {entry.actor}
         </span>
 
         {/* Expand chevron */}
         {entry.details && (
           <ChevronDown
+            aria-hidden="true"
             className={`h-3 w-3 text-muted-foreground/30 shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
           />
         )}
@@ -205,7 +196,7 @@ function LogRow({ entry, isNew }: { entry: LogEntry; isNew?: boolean }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <pre className="px-4 pb-3 pl-12 font-mono text-[10px] text-muted-foreground/70 whitespace-pre-wrap break-all">
+            <pre className="px-3 sm:px-4 pb-3 sm:pl-12 font-mono text-[10px] text-muted-foreground/70 whitespace-pre-wrap break-all">
               {entry.details}
               {entry.projectId ? `\nProject ID: ${entry.projectId}` : ""}
               {entry.source !== "audit" ? `\nSource: ${entry.source}` : ""}
@@ -220,103 +211,80 @@ function LogRow({ entry, isNew }: { entry: LogEntry; isNew?: boolean }) {
 // ── Main Page ─────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 100;
+const HIGHLIGHT_MS = 3000;
+const LEVELS = ["all", "info", "success", "warn", "error"] as const;
 
 export default function ActivityLog() {
-  const [entries, setEntries] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel | "all">("all");
-  const [realtimeOn, setRealtimeOn] = useState(false);
+  const [liveEntries, setLiveEntries] = useState<LogEntry[]>([]);
+  const [historyCleared, setHistoryCleared] = useState(false);
   const [newIds, setNewIds] = useState<Set<string | number>>(new Set());
   const [autoScroll, setAutoScroll] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const utils = trpc.useUtils();
+  // Highlight timers are tracked so unmount can clear them instead of leaving
+  // setState calls queued against a dead component.
+  const highlightTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // ── Fetch historical audit entries ──────────────────────────────────────
+  // ── Historical audit entries ────────────────────────────────────────────
   // Read through the ledger.auditLog adminProcedure (role-checked server-side)
   // rather than querying Supabase directly from the browser.
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await utils.ledger.auditLog.fetch({ limit: PAGE_SIZE });
+  const { data, isPending, isError, error, refetch } =
+    trpc.ledger.auditLog.useQuery({ limit: PAGE_SIZE });
 
-      const parsed = (data ?? []).map(r =>
-        parseAuditEntry(r as Record<string, unknown>)
+  const history = useMemo<LogEntry[]>(() => {
+    if (historyCleared) return [];
+    const parsed = ((data ?? []) as Record<string, unknown>[]).map(
+      parseAuditEntry
+    );
+    // Display in chronological order (oldest first, newest at bottom)
+    return parsed.slice().reverse();
+  }, [data, historyCleared]);
+
+  const entries = useMemo(
+    () => [...history, ...liveEntries],
+    [history, liveEntries]
+  );
+
+  // ── Supabase Realtime subscription (shared hook: backoff + reconnect) ────
+  const { isLive } = useRealtimeTable({
+    table: "ledger_entries",
+    onUpdate: payload => {
+      if (payload.eventType !== "INSERT") return;
+      const row = payload.new;
+      if (!row) return;
+      // Only handle [AUDIT] entries
+      if (!String(row.title ?? "").startsWith("[AUDIT]")) return;
+
+      const entry = parseAuditEntry(row);
+      entry.source = "realtime";
+      setLiveEntries(prev =>
+        prev.some(e => e.id === entry.id) ? prev : [...prev, entry]
       );
-      // Display in chronological order (oldest first, newest at bottom)
-      setEntries(parsed.reverse());
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load activity log"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [utils]);
-
-  useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
-
-  // ── Supabase Realtime subscription ──────────────────────────────────────
-  useEffect(() => {
-    // Subscribing against the placeholder client (unconfigured Supabase, e.g.
-    // dev-bypass) throws synchronously and would bubble to the ErrorBoundary,
-    // taking the whole page down. Skip realtime entirely in that case.
-    if (!isSupabaseConfigured) return;
-
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel("activity-log-realtime")
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "ledger_entries",
-          },
-          payload => {
-            const row = payload.new as Record<string, unknown>;
-            // Only handle [AUDIT] entries
-            const title = String(row.title ?? "");
-            if (!title.startsWith("[AUDIT]")) return;
-
-            const entry = parseAuditEntry(row);
-            entry.source = "realtime";
-            setEntries(prev => [...prev, entry]);
-            setNewIds(prev => new Set(prev).add(entry.id));
-            setTimeout(() => {
-              setNewIds(prev => {
-                const next = new Set(prev);
-                next.delete(entry.id);
-                return next;
-              });
-            }, 3000);
-          }
-        )
-        .subscribe(status => {
-          setRealtimeOn(status === "SUBSCRIBED");
+      setNewIds(prev => new Set(prev).add(entry.id));
+      const timer = setTimeout(() => {
+        setNewIds(prev => {
+          const next = new Set(prev);
+          next.delete(entry.id);
+          return next;
         });
+      }, HIGHLIGHT_MS);
+      highlightTimersRef.current.push(timer);
+    },
+  });
 
-      channelRef.current = channel;
-    } catch (err) {
-      console.warn("[ActivityLog] realtime subscribe failed:", err);
-      return;
-    }
-
-    return () => {
-      if (channel) supabase.removeChannel(channel);
-    };
-  }, []);
+  useEffect(
+    () => () => {
+      highlightTimersRef.current.forEach(clearTimeout);
+      highlightTimersRef.current = [];
+    },
+    []
+  );
 
   // ── Auto-scroll to bottom on new entries ─────────────────────────────────
   useEffect(() => {
     if (autoScroll) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      bottomRef.current?.scrollIntoView?.({ behavior: "smooth" });
     }
   }, [entries, autoScroll]);
 
@@ -342,6 +310,16 @@ export default function ActivityLog() {
     error: entries.filter(e => e.level === "error").length,
   };
 
+  const handleRefresh = () => {
+    setHistoryCleared(false);
+    refetch();
+  };
+
+  const handleClear = () => {
+    setHistoryCleared(true);
+    setLiveEntries([]);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-5 max-w-5xl">
@@ -349,7 +327,7 @@ export default function ActivityLog() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <span
-              className="block text-[9px] tracking-[0.25em] uppercase text-muted-foreground/50 mb-1"
+              className="block text-[10px] font-bold tracking-[0.18em] uppercase text-primary mb-1"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
               Developer Tools
@@ -368,29 +346,37 @@ export default function ActivityLog() {
           <div className="flex items-center gap-2 flex-wrap">
             {/* Realtime indicator */}
             <div
+              role="status"
+              aria-label={
+                isLive
+                  ? "Realtime connected"
+                  : "Realtime offline — reconnecting"
+              }
               className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border ${
-                realtimeOn
+                isLive
                   ? "border-green-500/30 bg-green-500/10 text-green-400"
                   : "border-border/40 bg-muted/20 text-muted-foreground/50"
               }`}
             >
-              {realtimeOn ? (
-                <Wifi className="h-3 w-3" />
+              {isLive ? (
+                <Wifi aria-hidden="true" className="h-3 w-3" />
               ) : (
-                <WifiOff className="h-3 w-3" />
+                <WifiOff aria-hidden="true" className="h-3 w-3" />
               )}
-              {realtimeOn ? "Live" : "Offline"}
+              {isLive ? "Live" : "Offline"}
             </div>
 
             {/* Refresh */}
             <button
               type="button"
-              onClick={fetchEntries}
-              disabled={loading}
+              onClick={handleRefresh}
+              disabled={isPending}
+              aria-label="Refresh activity log"
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border border-border/40 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50"
             >
               <RefreshCw
-                className={`h-3 w-3 ${loading ? "animate-spin" : ""}`}
+                aria-hidden="true"
+                className={`h-3 w-3 ${isPending ? "animate-spin" : ""}`}
               />
               Refresh
             </button>
@@ -398,10 +384,11 @@ export default function ActivityLog() {
             {/* Clear */}
             <button
               type="button"
-              onClick={() => setEntries([])}
+              onClick={handleClear}
+              aria-label="Clear activity log view"
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border border-border/40 hover:border-destructive/40 hover:text-destructive transition-colors"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 aria-hidden="true" className="h-3 w-3" />
               Clear
             </button>
           </div>
@@ -438,8 +425,15 @@ export default function ActivityLog() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+            <Label htmlFor="activity-search" className="sr-only">
+              Search activity log
+            </Label>
+            <Search
+              aria-hidden="true"
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40"
+            />
             <input
+              id="activity-search"
               type="text"
               placeholder="Search actions, actors, details…"
               value={search}
@@ -449,13 +443,18 @@ export default function ActivityLog() {
           </div>
 
           {/* Level filter */}
-          <div className="flex items-center gap-1">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground/40" />
-            {(["all", "info", "success", "warn", "error"] as const).map(lvl => (
+          <div className="flex items-center gap-1 flex-wrap">
+            <Filter
+              aria-hidden="true"
+              className="h-3.5 w-3.5 text-muted-foreground/40"
+            />
+            {LEVELS.map(lvl => (
               <button
                 key={lvl}
                 type="button"
                 onClick={() => setLevelFilter(lvl)}
+                aria-pressed={levelFilter === lvl}
+                aria-label={`Filter by ${lvl} level`}
                 className={`px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider border transition-colors ${
                   levelFilter === lvl
                     ? "border-primary/50 bg-primary/10 text-primary"
@@ -471,13 +470,15 @@ export default function ActivityLog() {
           <button
             type="button"
             onClick={() => setAutoScroll(a => !a)}
+            aria-pressed={autoScroll}
+            aria-label="Toggle auto-scroll"
             className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border transition-colors ${
               autoScroll
                 ? "border-primary/40 bg-primary/10 text-primary"
                 : "border-border/40 text-muted-foreground/50"
             }`}
           >
-            <Activity className="h-3 w-3" />
+            <Activity aria-hidden="true" className="h-3 w-3" />
             Auto-scroll
           </button>
         </div>
@@ -485,22 +486,23 @@ export default function ActivityLog() {
         {/* ── Log viewer ──────────────────────────────────────────────── */}
         <div className="bg-card border border-border/60 overflow-hidden">
           {/* Console header bar */}
-          <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border/40">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-muted/30 border-b border-border/40">
+            <div className="flex items-center gap-2" aria-hidden="true">
               <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
               <span className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
             </div>
             <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground/40 font-mono">
-              <Clock className="h-3 w-3" />
+              <Clock aria-hidden="true" className="h-3 w-3" />
               <span>
                 {filtered.length} of {counts.total} events
               </span>
             </div>
           </div>
 
-          {/* Column headers */}
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-border/30 bg-muted/10">
+          {/* Column headers — the fixed-width grid only makes sense once
+              there's room for it, so it collapses away on small screens. */}
+          <div className="hidden sm:flex items-center gap-3 px-4 py-2 border-b border-border/30 bg-muted/10">
             <span className="w-1.5 shrink-0" />
             <span className="w-[128px] shrink-0 text-[9px] uppercase tracking-widest text-muted-foreground/30 font-mono">
               Timestamp
@@ -519,49 +521,34 @@ export default function ActivityLog() {
 
           {/* Log rows */}
           <div className="max-h-[520px] overflow-y-auto overscroll-contain font-mono">
-            {loading && (
-              <div className="p-4 space-y-3" aria-busy="true">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="h-1.5 w-1.5 rounded-full" />
-                    <Skeleton className="h-3 w-[128px]" />
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-3 flex-1" />
-                    <Skeleton className="h-3 w-[120px]" />
-                  </div>
-                ))}
+            {isPending && (
+              <div
+                className="p-4"
+                role="status"
+                aria-busy="true"
+                aria-label="Loading activity log"
+              >
+                <SkeletonList items={6} />
               </div>
             )}
 
-            {error && !loading && (
+            {isError && (
               <div className="p-6">
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Failed to load activity log</AlertTitle>
-                  <AlertDescription>
-                    <p>{error}</p>
-                    <p className="text-muted-foreground/70">
-                      Supabase may not be configured. Connect it in the Netlify
-                      dashboard to enable log persistence.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={fetchEntries}
-                      className="mt-1 inline-flex items-center gap-1.5 text-primary text-xs font-medium hover:underline"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                      Try again
-                    </button>
-                  </AlertDescription>
-                </Alert>
+                <QueryError
+                  message={
+                    error?.message ??
+                    "We couldn't load the activity log. Check your connection and try again."
+                  }
+                  onRetry={() => refetch()}
+                />
               </div>
             )}
 
-            {!loading && !error && filtered.length === 0 && (
+            {!isPending && !isError && filtered.length === 0 && (
               <Empty className="border-0">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <Activity className="h-6 w-6 text-muted-foreground/60" />
+                    <Activity className="h-5 w-5 text-muted-foreground/60" />
                   </EmptyMedia>
                   <EmptyTitle>No events yet</EmptyTitle>
                   <EmptyDescription>
