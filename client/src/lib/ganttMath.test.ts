@@ -59,11 +59,7 @@ describe("shiftTaskDates", () => {
 describe("toBarOffsets", () => {
   it("places the earliest task at start=0 with correct duration", () => {
     const min = getDateNum("2026-03-01");
-    const { start, duration } = toBarOffsets(
-      "2026-03-01",
-      "2026-03-05",
-      min
-    );
+    const { start, duration } = toBarOffsets("2026-03-01", "2026-03-05", min);
     expect(start).toBe(0);
     // 4 days span → duration at least 1; (end-start)/MS_PER_DAY = 4
     expect(duration).toBe(4);
@@ -71,11 +67,7 @@ describe("toBarOffsets", () => {
 
   it("offsets later tasks relative to range min", () => {
     const min = getDateNum("2026-03-01");
-    const { start, duration } = toBarOffsets(
-      "2026-03-03",
-      "2026-03-05",
-      min
-    );
+    const { start, duration } = toBarOffsets("2026-03-03", "2026-03-05", min);
     expect(start).toBe(2);
     expect(duration).toBe(2);
   });

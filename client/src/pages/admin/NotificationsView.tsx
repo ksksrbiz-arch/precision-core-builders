@@ -655,11 +655,7 @@ export default function NotificationsView() {
               onChange={e => {
                 setStatusFilter(
                   (e.target.value || undefined) as
-                    | "pending"
-                    | "sent"
-                    | "read"
-                    | "failed"
-                    | undefined
+                    "pending" | "sent" | "read" | "failed" | undefined
                 );
                 setPage(1);
               }}

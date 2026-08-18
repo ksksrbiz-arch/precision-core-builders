@@ -519,11 +519,31 @@ export const PROJECTS: Project[] = [
       caption: "Builder-grade to custom mosaic",
     },
     photos: [
-      { file: "bath-mosaic-01.jpg", role: "before", caption: "Original tub/shower" },
-      { file: "signature-bath-04.jpg", role: "progress", caption: "Mosaic tile install" },
-      { file: "bath-mosaic-03.jpg", role: "after", caption: "Finished shower surround" },
-      { file: "bath-mosaic-04.jpg", role: "after", caption: "Finished bath, wide view" },
-      { file: "bath-mosaic-05.jpg", role: "after", caption: "Floating vanity detail" },
+      {
+        file: "bath-mosaic-01.jpg",
+        role: "before",
+        caption: "Original tub/shower",
+      },
+      {
+        file: "signature-bath-04.jpg",
+        role: "progress",
+        caption: "Mosaic tile install",
+      },
+      {
+        file: "bath-mosaic-03.jpg",
+        role: "after",
+        caption: "Finished shower surround",
+      },
+      {
+        file: "bath-mosaic-04.jpg",
+        role: "after",
+        caption: "Finished bath, wide view",
+      },
+      {
+        file: "bath-mosaic-05.jpg",
+        role: "after",
+        caption: "Floating vanity detail",
+      },
     ],
   },
 
@@ -551,8 +571,16 @@ export const PROJECTS: Project[] = [
       caption: "Framed chase to finished stone surround",
     },
     photos: [
-      { file: "fireplace-remodel-01.jpg", role: "before", caption: "Chase reframed" },
-      { file: "fireplace-remodel-02.jpg", role: "after", caption: "Finished stacked-stone surround" },
+      {
+        file: "fireplace-remodel-01.jpg",
+        role: "before",
+        caption: "Chase reframed",
+      },
+      {
+        file: "fireplace-remodel-02.jpg",
+        role: "after",
+        caption: "Finished stacked-stone surround",
+      },
     ],
   },
 
@@ -574,8 +602,16 @@ export const PROJECTS: Project[] = [
     featured: false,
     hero: "custom-structure-02.jpg",
     photos: [
-      { file: "custom-structure-01.jpg", role: "progress", caption: "Frame and panel install" },
-      { file: "custom-structure-02.jpg", role: "after", caption: "Finished enclosure" },
+      {
+        file: "custom-structure-01.jpg",
+        role: "progress",
+        caption: "Frame and panel install",
+      },
+      {
+        file: "custom-structure-02.jpg",
+        role: "after",
+        caption: "Finished enclosure",
+      },
     ],
   },
 
@@ -722,7 +758,11 @@ export const PROJECTS: Project[] = [
     summary: "A wood deck with a custom mosaic tile accent wall and pergola.",
     description:
       "A wood deck build with a custom mosaic tile accent wall and a covered entry pergola.",
-    scope: ["Wood deck construction", "Custom mosaic accent wall", "Entry pergola"],
+    scope: [
+      "Wood deck construction",
+      "Custom mosaic accent wall",
+      "Entry pergola",
+    ],
     featured: false,
     hero: "mosaic-patio-01.jpg",
     photos: [{ file: "mosaic-patio-01.jpg", role: "after" }],

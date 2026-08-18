@@ -33,9 +33,7 @@ export interface Breadcrumb {
  * pass only the trail below it, e.g.
  * breadcrumbJsonLd([{ name: "Portfolio", path: "/portfolio" }]).
  */
-export function breadcrumbJsonLd(
-  trail: Breadcrumb[]
-): Record<string, unknown> {
+export function breadcrumbJsonLd(trail: Breadcrumb[]): Record<string, unknown> {
   const items: Breadcrumb[] = [{ name: "Home", path: "/" }, ...trail];
   return {
     "@context": "https://schema.org",

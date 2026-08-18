@@ -36,9 +36,9 @@ export function KitchenRemodelCost() {
               <strong className="text-foreground">
                 Cosmetic refresh — roughly $10,000–$20,000.
               </strong>{" "}
-              Repainting, cabinet refacing or refinishing, new hardware,
-              updated sink and faucet, new backsplash tile. Layout stays
-              exactly the same — no plumbing or electrical moves.
+              Repainting, cabinet refacing or refinishing, new hardware, updated
+              sink and faucet, new backsplash tile. Layout stays exactly the
+              same — no plumbing or electrical moves.
             </>,
             <>
               <strong className="text-foreground">
@@ -46,17 +46,17 @@ export function KitchenRemodelCost() {
               </strong>{" "}
               This is where most Eugene kitchen projects actually land. New
               cabinets (semi-custom is the sweet spot for most homeowners),
-              stone or quartz countertops, new appliances, and often some
-              layout adjustment — moving a sink or relocating an island.
+              stone or quartz countertops, new appliances, and often some layout
+              adjustment — moving a sink or relocating an island.
             </>,
             <>
               <strong className="text-foreground">
-                Full custom / high-end — $50,000 and up, sometimes well
-                past $90,000.
+                Full custom / high-end — $50,000 and up, sometimes well past
+                $90,000.
               </strong>{" "}
-              Structural changes, fully custom cabinetry, premium
-              appliance packages, and layout changes that touch plumbing
-              and electrical throughout.
+              Structural changes, fully custom cabinetry, premium appliance
+              packages, and layout changes that touch plumbing and electrical
+              throughout.
             </>,
           ],
         },
@@ -75,12 +75,13 @@ export function KitchenRemodelCost() {
           type: "callout",
           content: (
             <>
-              <strong className="text-foreground">Budget for the unexpected.</strong>{" "}
+              <strong className="text-foreground">
+                Budget for the unexpected.
+              </strong>{" "}
               A reasonable rule of thumb is to set aside 10–20% of your total
-              budget as contingency for issues that only show up once walls
-              or flooring come out — outdated wiring, hidden water damage,
-              or plumbing that doesn't match what the original permit
-              records show.
+              budget as contingency for issues that only show up once walls or
+              flooring come out — outdated wiring, hidden water damage, or
+              plumbing that doesn't match what the original permit records show.
             </>
           ),
         },
@@ -173,12 +174,11 @@ export function CCBLicensingGuide() {
           type: "callout",
           content: (
             <>
-              <strong className="text-foreground">Worth knowing:</strong>{" "}
-              under a 2026 Oregon law (HB 4089), intentionally using another
-              contractor's CCB number without authorization — or using any
-              CCB number with intent to deceive — is now a Class C felony,
-              up from a misdemeanor. The state has genuinely tightened
-              enforcement here.
+              <strong className="text-foreground">Worth knowing:</strong> under
+              a 2026 Oregon law (HB 4089), intentionally using another
+              contractor's CCB number without authorization — or using any CCB
+              number with intent to deceive — is now a Class C felony, up from a
+              misdemeanor. The state has genuinely tightened enforcement here.
             </>
           ),
         },
@@ -256,7 +256,7 @@ export function TadlockResidenceCaseStudy() {
         {
           type: "p",
           content:
-            'Client photos are great, but they only show you the finished result. This project walks through the material decisions, the layout calls, and the finish choices that go into a build like this. If you\'re wondering what "the standard we hold ourselves to" actually looks like in practice, this is it: a covered pergola that anchors solidly to the structure, a deck that sits flush rather than gapped, and fencing that\'s stain-matched across two completely different fence styles so the whole property reads as one cohesive design.',
+            "Client photos are great, but they only show you the finished result. This project walks through the material decisions, the layout calls, and the finish choices that go into a build like this. If you're wondering what \"the standard we hold ourselves to\" actually looks like in practice, this is it: a covered pergola that anchors solidly to the structure, a deck that sits flush rather than gapped, and fencing that's stain-matched across two completely different fence styles so the whole property reads as one cohesive design.",
         },
         {
           type: "callout",
@@ -265,12 +265,11 @@ export function TadlockResidenceCaseStudy() {
               <strong className="text-foreground">
                 Thinking about your own backyard?
               </strong>{" "}
-              Pergolas, decks, and fencing are exactly the kind of project
-              where the difference between a contractor who treats it as a
-              side job and one who treats it like their own home really
-              shows up in the details — flush thresholds, matched stain
-              across structures, hardware that's actually rated for outdoor
-              exposure.
+              Pergolas, decks, and fencing are exactly the kind of project where
+              the difference between a contractor who treats it as a side job
+              and one who treats it like their own home really shows up in the
+              details — flush thresholds, matched stain across structures,
+              hardware that's actually rated for outdoor exposure.
             </>
           ),
         },
@@ -399,19 +398,21 @@ export function BathroomRemodelCostEugene() {
           type: "list",
           items: [
             <>
-              <strong className="text-foreground">Waterproofing & substrate.</strong>{" "}
+              <strong className="text-foreground">
+                Waterproofing & substrate.
+              </strong>{" "}
               Showers and wet walls done right cost more up front and prevent
               the call-backs nobody wants.
             </>,
             <>
               <strong className="text-foreground">Plumbing moves.</strong>{" "}
-              Keeping the toilet, vanity, and shower where they are saves
-              money. Relocating drains or supply lines is a major cost driver.
+              Keeping the toilet, vanity, and shower where they are saves money.
+              Relocating drains or supply lines is a major cost driver.
             </>,
             <>
-              <strong className="text-foreground">Tile labor.</strong>{" "}
-              Labor often exceeds material cost on detailed tile work —
-              especially niches, curbs, and large-format panels.
+              <strong className="text-foreground">Tile labor.</strong> Labor
+              often exceeds material cost on detailed tile work — especially
+              niches, curbs, and large-format panels.
             </>,
             <>
               <strong className="text-foreground">Fixtures & finishes.</strong>{" "}
@@ -435,8 +436,8 @@ export function BathroomRemodelCostEugene() {
             <>
               <strong className="text-foreground">Estimator first.</strong> Use
               the free online cost estimator for a directional range, then book
-              an on-site visit for a written scope that matches your house —
-              not a national average.
+              an on-site visit for a written scope that matches your house — not
+              a national average.
             </>
           ),
         },
@@ -454,7 +455,10 @@ export function BathroomRemodelCostEugene() {
       relatedLinks={[
         { label: "Free Cost Estimator", href: "/estimator" },
         { label: "Remodels Service", href: "/services/remodels" },
-        { label: "Kitchen Cost Guide", href: "/blog/kitchen-remodel-cost-eugene-oregon" },
+        {
+          label: "Kitchen Cost Guide",
+          href: "/blog/kitchen-remodel-cost-eugene-oregon",
+        },
       ]}
     />
   );

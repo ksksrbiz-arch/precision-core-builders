@@ -72,10 +72,7 @@ export function toBarOffsets(
 }
 
 /** Pick bar fill: weather-sensitive overrides status color. */
-export function getBarColor(
-  status: string,
-  weatherSensitive: boolean
-): string {
+export function getBarColor(status: string, weatherSensitive: boolean): string {
   if (weatherSensitive) return WEATHER_SENSITIVE_COLOR;
   return STATUS_COLORS[status] ?? "#8b7355";
 }

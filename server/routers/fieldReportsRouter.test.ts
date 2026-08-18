@@ -374,9 +374,9 @@ describe("Field Reports Router — input validation", () => {
 describe("Field Reports Router — tagPhotos (AI vision)", () => {
   it("requires admin role", async () => {
     const userCaller = appRouter.createCaller(ctx("u1", "user"));
-    await expect(
-      userCaller.fieldReports.tagPhotos({ id: 1 })
-    ).rejects.toThrow(/forbidden/i);
+    await expect(userCaller.fieldReports.tagPhotos({ id: 1 })).rejects.toThrow(
+      /forbidden/i
+    );
     expect(vision.tagFieldReportPhotos).not.toHaveBeenCalled();
   });
 

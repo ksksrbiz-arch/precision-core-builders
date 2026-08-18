@@ -263,7 +263,8 @@ export default function MaterialsView() {
 
   const handleImportFromEstimate = () => {
     if (!selectedProject || !importEstimateId) return;
-    const list = (projectEstimates as { data?: any[] } | undefined)?.data ??
+    const list =
+      (projectEstimates as { data?: any[] } | undefined)?.data ??
       (Array.isArray(projectEstimates) ? projectEstimates : []);
     const estimate = list.find(
       (e: { id: number }) => e.id === Number(importEstimateId)
@@ -732,42 +733,46 @@ export default function MaterialsView() {
                   Catalog Vendors (multi-select)
                 </p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                  {(vendorsData ?? []).map((v: { id: number; name: string }) => {
-                    const checked = newMaterial.vendorIds.includes(v.id);
-                    return (
-                      <label
-                        key={v.id}
-                        className="flex items-center gap-2 text-sm text-foreground cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            setNewMaterial(prev => {
-                              const next = checked
-                                ? prev.vendorIds.filter(id => id !== v.id)
-                                : [...prev.vendorIds, v.id];
-                              const primary = (vendorsData ?? []).find(
-                                (x: { id: number }) => x.id === next[0]
-                              );
-                              return {
-                                ...prev,
-                                vendorIds: next,
-                                vendorName:
-                                  primary?.name ??
-                                  (next.length === 0 ? prev.vendorName : prev.vendorName),
-                              };
-                            });
-                          }}
-                          className="accent-primary"
-                        />
-                        <span className="truncate">
-                          {v.name}
-                          {newMaterial.vendorIds[0] === v.id ? " ★" : ""}
-                        </span>
-                      </label>
-                    );
-                  })}
+                  {(vendorsData ?? []).map(
+                    (v: { id: number; name: string }) => {
+                      const checked = newMaterial.vendorIds.includes(v.id);
+                      return (
+                        <label
+                          key={v.id}
+                          className="flex items-center gap-2 text-sm text-foreground cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setNewMaterial(prev => {
+                                const next = checked
+                                  ? prev.vendorIds.filter(id => id !== v.id)
+                                  : [...prev.vendorIds, v.id];
+                                const primary = (vendorsData ?? []).find(
+                                  (x: { id: number }) => x.id === next[0]
+                                );
+                                return {
+                                  ...prev,
+                                  vendorIds: next,
+                                  vendorName:
+                                    primary?.name ??
+                                    (next.length === 0
+                                      ? prev.vendorName
+                                      : prev.vendorName),
+                                };
+                              });
+                            }}
+                            className="accent-primary"
+                          />
+                          <span className="truncate">
+                            {v.name}
+                            {newMaterial.vendorIds[0] === v.id ? " ★" : ""}
+                          </span>
+                        </label>
+                      );
+                    }
+                  )}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-2">
                   First selected vendor is primary (★) and used for PO grouping.
