@@ -20,13 +20,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
+import { QueryError } from "@/components/QueryError";
+import { SkeletonList } from "@/components/Skeletons";
 import { trpc } from "@/lib/trpc";
+import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
@@ -66,6 +72,15 @@ type StampItem = {
 const MOBILE_BREAKPOINT = 900;
 const DESKTOP_BREAKPOINT = 1280;
 const OPERATIONS_CATEGORY_GRID_CLASS = "grid-cols-[148px_1fr]";
+
+/**
+ * Shared visible-focus treatment for the hand-rolled buttons in the
+ * operations panel. The canvas itself is pointer-driven, so these discrete
+ * controls carry the keyboard story: every one of them is a real <button>
+ * (tab-reachable, Enter/Space activated) and must show where focus landed.
+ */
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const CONSTRUCTION_STAMPS: StampCategory[] = [
   {
@@ -549,7 +564,11 @@ export default function SitePlanBuilder() {
   const isMobile = useIsMobile();
   const isDesktop = !isMobile && !isTablet;
 
-  const { data: savedPlans } = trpc.sitePlans.list.useQuery({});
+  const {
+    data: savedPlans,
+    isError: savedPlansError,
+    refetch: refetchSavedPlans,
+  } = trpc.sitePlans.list.useQuery({});
   const createPlan = trpc.sitePlans.create.useMutation();
   const updatePlan = trpc.sitePlans.update.useMutation();
   const deletePlan = trpc.sitePlans.delete.useMutation();
@@ -1123,10 +1142,17 @@ export default function SitePlanBuilder() {
                 )
               ) : (
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                  {(savedPlans ?? []).length === 0 && (
-                    <p className="text-xs text-muted-foreground px-2 py-1">
-                      No saved plans yet.
-                    </p>
+                  {savedPlansError ? (
+                    <QueryError
+                      message="We couldn't load your saved site plans. Check your connection and try again."
+                      onRetry={() => refetchSavedPlans()}
+                    />
+                  ) : (
+                    (savedPlans ?? []).length === 0 && (
+                      <p className="text-xs text-muted-foreground px-2 py-1">
+                        No saved plans yet.
+                      </p>
+                    )
                   )}
                   {(savedPlans ?? []).map(plan => (
                     <div
