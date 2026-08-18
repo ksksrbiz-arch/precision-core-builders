@@ -105,7 +105,9 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <JsonLd data={breadcrumbJsonLd([{ name: "Contact", path: "/contact" }])} />
+      <JsonLd
+        data={breadcrumbJsonLd([{ name: "Contact", path: "/contact" }])}
+      />
       <SiteNav />
       <MobileCTABar />
 

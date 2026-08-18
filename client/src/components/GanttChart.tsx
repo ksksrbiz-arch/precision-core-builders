@@ -198,9 +198,7 @@ export function GanttChart({
     setEditForm({
       title: task.title,
       status: task.status,
-      plannedStart: task.planned_start
-        ? task.planned_start.slice(0, 10)
-        : "",
+      plannedStart: task.planned_start ? task.planned_start.slice(0, 10) : "",
       plannedEnd: task.planned_end ? task.planned_end.slice(0, 10) : "",
       assignedTo: task.assigned_to ?? "",
       notes: task.notes ?? "",
@@ -538,9 +536,7 @@ export function GanttChart({
       >
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {readOnly ? "Task details" : "Edit task"}
-            </DialogTitle>
+            <DialogTitle>{readOnly ? "Task details" : "Edit task"}</DialogTitle>
             <DialogDescription>
               {readOnly
                 ? "View-only schedule item details."

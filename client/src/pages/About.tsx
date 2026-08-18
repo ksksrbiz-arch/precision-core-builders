@@ -476,8 +476,8 @@ export default function About() {
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-6 sm:p-8">
                 <p className="text-white text-sm sm:text-base font-light">
-                  Fully equipped and on the road across Lane County — every
-                  job backed by CCB #246527.
+                  Fully equipped and on the road across Lane County — every job
+                  backed by CCB #246527.
                 </p>
               </div>
             </motion.div>

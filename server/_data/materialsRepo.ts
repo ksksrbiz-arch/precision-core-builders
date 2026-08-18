@@ -74,7 +74,9 @@ export async function setMaterialVendors(
   materialId: number,
   vendorIds: number[]
 ) {
-  const unique = [...new Set(vendorIds.filter(id => Number.isFinite(id) && id > 0))];
+  const unique = [
+    ...new Set(vendorIds.filter(id => Number.isFinite(id) && id > 0)),
+  ];
   // Clear existing links then insert the new set.
   const { error: delError } = await data
     .from("material_vendors")
