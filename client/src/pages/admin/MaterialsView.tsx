@@ -6,8 +6,10 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
-import { Skeleton } from "@/components/ui/skeleton";
+import { QueryError } from "@/components/QueryError";
+import { SkeletonCard } from "@/components/Skeletons";
 import { Spinner } from "@/components/ui/spinner";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   Empty,
@@ -17,6 +19,7 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty";
+import { fmtDate, formatCurrency, formatNumber } from "@/lib/formatters";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -65,6 +68,72 @@ const PO_STATUS_STYLES: Record<PoStatus, string> = {
   received: "border-green-400/40 text-green-400",
   cancelled: "border-red-400/40 text-red-400",
 };
+
+/** Condensed display face, applied inline per the admin design system. */
+const CONDENSED_FONT = { fontFamily: "var(--font-condensed)" } as const;
+
+/** Eyebrow-styled form label shared by every labelled control on this page. */
+const FILTER_LABEL_CLASS =
+  "mb-1.5 text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground";
+
+/**
+ * Text fields on the "Add Material" form. Each carries an explicit `label`
+ * so the control gets a real `<Label htmlFor>` instead of leaning on the
+ * placeholder (which disappears the moment the field has a value, and is
+ * never announced as a name by screen readers).
+ */
+type MaterialTextFieldKey =
+  | "name"
+  | "category"
+  | "unit"
+  | "vendorName"
+  | "quantityNeeded"
+  | "unitPriceCurrent"
+  | "phaseNeeded";
+
+const MATERIAL_FIELDS: ReadonlyArray<{
+  key: MaterialTextFieldKey;
+  label: string;
+  placeholder: string;
+  type?: string;
+  required?: boolean;
+}> = [
+  {
+    key: "name",
+    label: "Material name",
+    placeholder: "2x4 Doug Fir Stud",
+    required: true,
+  },
+  { key: "category", label: "Category", placeholder: "lumber, hardware…" },
+  { key: "unit", label: "Unit", placeholder: "ea, lf, sqft, lb…" },
+  { key: "vendorName", label: "Vendor name", placeholder: "Free text" },
+  {
+    key: "quantityNeeded",
+    label: "Quantity needed",
+    placeholder: "0",
+    type: "number",
+  },
+  {
+    key: "unitPriceCurrent",
+    label: "Unit price ($)",
+    placeholder: "0.00",
+    type: "number",
+  },
+  { key: "phaseNeeded", label: "Phase", placeholder: "framing, roofing…" },
+];
+
+/** Money with cents, e.g. `1234` → `"$1,234.00"`. */
+const fmtCurrency = (n: number | null | undefined) =>
+  n != null
+    ? `$${formatNumber(Number(n), {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`
+    : "—";
+
+/** Short date, e.g. `"Mar 4, 2026"`. */
+const fmtShortDate = (d: string | null | undefined) =>
+  fmtDate(d, { month: "short", day: "numeric", year: "numeric" });
 
 export default function MaterialsView() {
   const isMobile = useIsMobile();
@@ -341,20 +410,6 @@ export default function MaterialsView() {
     }
   };
 
-  const fmtCurrency = (n: number | null | undefined) =>
-    n != null
-      ? `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-      : "—";
-
-  const fmtDate = (d: string | null | undefined) =>
-    d
-      ? new Date(d).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "—";
-
   const persistedPOs = purchaseOrdersData?.data ?? [];
 
   const filtered = (materials?.data ?? []).filter(
@@ -462,38 +517,61 @@ export default function MaterialsView() {
         </div>
 
         {/* Filters row */}
-        <div className="flex flex-wrap gap-3 mb-5">
+        <div className="flex flex-col gap-3 mb-5 sm:flex-row sm:flex-wrap sm:items-end">
           {/* Project filter */}
-          <select
-            value={selectedProject ?? ""}
-            onChange={e =>
-              setSelectedProject(
-                e.target.value ? parseInt(e.target.value) : null
-              )
-            }
-            className="w-full bg-input border border-border px-3 py-2 text-sm text-foreground focus:border-primary/60 focus:outline-none sm:w-auto sm:min-w-[160px]"
-          >
-            <option value="">All Projects</option>
-            {projects?.data.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <div className="min-w-0 sm:w-auto sm:min-w-[180px]">
+            <Label
+              htmlFor="materials-project-filter"
+              className={FILTER_LABEL_CLASS}
+              style={CONDENSED_FONT}
+            >
+              Project
+            </Label>
+            <select
+              id="materials-project-filter"
+              value={selectedProject ?? ""}
+              onChange={e =>
+                setSelectedProject(
+                  e.target.value ? parseInt(e.target.value) : null
+                )
+              }
+              className="w-full bg-input border border-border px-3 py-2 text-sm text-foreground focus:border-primary/60 focus:outline-none"
+            >
+              <option value="">All Projects</option>
+              {projects?.data.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Search */}
-          <div className="relative min-w-0 flex-1 basis-full sm:basis-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search materials or vendor…"
-              className="w-full pl-9 pr-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-            />
+          <div className="min-w-0 flex-1 sm:basis-64">
+            <Label
+              htmlFor="materials-search"
+              className={FILTER_LABEL_CLASS}
+              style={CONDENSED_FONT}
+            >
+              Search
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                id="materials-search"
+                type="search"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search materials or vendor…"
+                className="w-full pl-9 pr-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+              />
+            </div>
           </div>
 
           {/* Shortages toggle */}
           <button
+            type="button"
+            aria-pressed={showShortagesOnly}
             onClick={() => setShowShortagesOnly(v => !v)}
             className={`flex w-full items-center justify-center gap-2 border px-3 py-2 text-[11px] font-bold tracking-widest uppercase transition-colors sm:w-auto ${
               showShortagesOnly
@@ -531,38 +609,45 @@ export default function MaterialsView() {
               Select a saved estimate for this project. Material names listed on
               the estimate will be added to inventory (duplicates are skipped).
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-              <select
-                value={importEstimateId}
-                onChange={e =>
-                  setImportEstimateId(
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-                className="flex-1 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-              >
-                <option value="">— Select estimate —</option>
-                {(
-                  (projectEstimates as { data?: any[] } | undefined)?.data ??
-                  []
-                ).map((est: any) => (
-                  <option key={est.id} value={est.id}>
-                    #{est.id}
-                    {est.project_type ? ` · ${est.project_type}` : ""}
-                    {est.estimated_mid != null
-                      ? ` · $${Number(est.estimated_mid).toLocaleString()}`
-                      : ""}
-                    {est.created_at
-                      ? ` · ${new Date(est.created_at).toLocaleDateString()}`
-                      : ""}
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+              <div className="min-w-0 flex-1">
+                <Label
+                  htmlFor="materials-import-estimate"
+                  className={FILTER_LABEL_CLASS}
+                  style={CONDENSED_FONT}
+                >
+                  Estimate
+                </Label>
+                <select
+                  id="materials-import-estimate"
+                  value={importEstimateId}
+                  onChange={e =>
+                    setImportEstimateId(
+                      e.target.value ? Number(e.target.value) : ""
+                    )
+                  }
+                  className="w-full px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+                >
+                  <option value="">— Select estimate —</option>
+                  {(
+                    (projectEstimates as { data?: any[] } | undefined)?.data ??
+                    []
+                  ).map((est: any) => (
+                    <option key={est.id} value={est.id}>
+                      #{est.id}
+                      {est.project_type ? ` · ${est.project_type}` : ""}
+                      {est.estimated_mid != null
+                        ? ` · ${formatCurrency(Number(est.estimated_mid))}`
+                        : ""}
+                      {est.created_at ? ` · ${fmtDate(est.created_at)}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
+                type="button"
                 onClick={handleImportFromEstimate}
-                disabled={
-                  !importEstimateId || createManyMaterials.isPending
-                }
+                disabled={!importEstimateId || createManyMaterials.isPending}
                 className="px-5 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -589,53 +674,52 @@ export default function MaterialsView() {
                 <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
               </button>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[
-                { key: "name", placeholder: "Material name *", required: true },
-                {
-                  key: "category",
-                  placeholder: "Category (lumber, hardware…)",
-                },
-                { key: "unit", placeholder: "Unit (ea, lf, sqft, lb…)" },
-                { key: "vendorName", placeholder: "Vendor name (free text)" },
-                {
-                  key: "quantityNeeded",
-                  placeholder: "Quantity needed",
-                  type: "number",
-                },
-                {
-                  key: "unitPriceCurrent",
-                  placeholder: "Unit price ($)",
-                  type: "number",
-                },
-                {
-                  key: "phaseNeeded",
-                  placeholder: "Phase (framing, roofing…)",
-                },
-              ].map(f => (
-                <input
-                  key={f.key}
-                  type={f.type ?? "text"}
-                  placeholder={f.placeholder}
-                  value={(newMaterial as any)[f.key]}
-                  onChange={e =>
-                    setNewMaterial(prev => ({
-                      ...prev,
-                      [f.key]: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {MATERIAL_FIELDS.map(f => (
+                <div key={f.key} className="flex flex-col">
+                  <Label
+                    htmlFor={`material-${f.key}`}
+                    className={FILTER_LABEL_CLASS}
+                    style={CONDENSED_FONT}
+                  >
+                    {f.label}
+                    {f.required ? " *" : ""}
+                  </Label>
+                  <input
+                    id={`material-${f.key}`}
+                    type={f.type ?? "text"}
+                    required={f.required}
+                    placeholder={f.placeholder}
+                    value={newMaterial[f.key]}
+                    onChange={e =>
+                      setNewMaterial(prev => ({
+                        ...prev,
+                        [f.key]: e.target.value,
+                      }))
+                    }
+                    className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                  />
+                </div>
               ))}
-              <textarea
-                placeholder="Notes"
-                rows={1}
-                value={newMaterial.notes}
-                onChange={e =>
-                  setNewMaterial(prev => ({ ...prev, notes: e.target.value }))
-                }
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
-              />
+              <div className="flex flex-col">
+                <Label
+                  htmlFor="material-notes"
+                  className={FILTER_LABEL_CLASS}
+                  style={CONDENSED_FONT}
+                >
+                  Notes
+                </Label>
+                <textarea
+                  id="material-notes"
+                  placeholder="Anything the crew should know"
+                  rows={1}
+                  value={newMaterial.notes}
+                  onChange={e =>
+                    setNewMaterial(prev => ({ ...prev, notes: e.target.value }))
+                  }
+                  className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
+                />
+              </div>
             </div>
 
             {/* Multi-vendor catalog picker — first checked is primary */}
@@ -988,7 +1072,7 @@ export default function MaterialsView() {
                       </div>
                       <div className="mt-3 flex items-center justify-between">
                         <span className="text-[11px] text-muted-foreground">
-                          {fmtDate(po.created_at)}
+                          {fmtShortDate(po.created_at)}
                         </span>
                         <select
                           value={po.status}
@@ -1052,7 +1136,7 @@ export default function MaterialsView() {
                           {fmtCurrency(po.subtotal)}
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {fmtDate(po.created_at)}
+                          {fmtShortDate(po.created_at)}
                         </td>
                         <td className="px-4 py-3">
                           <select
