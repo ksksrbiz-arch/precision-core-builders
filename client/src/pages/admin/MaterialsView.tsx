@@ -8,6 +8,7 @@ import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
 import { SkeletonCard } from "@/components/Skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -916,7 +917,7 @@ export default function MaterialsView() {
                     ))}
                   </div>
                 ) : (
-                  <div className="border border-border/40 overflow-hidden">
+                  <div className="border border-border/40 overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-muted/30 border-b border-border/40">
@@ -1054,7 +1055,7 @@ export default function MaterialsView() {
           )}
 
           {!poLoading && !poIsError && persistedPOs.length > 0 && (
-            <div className="border border-border/60 overflow-hidden">
+            <div className="border border-border/60 overflow-x-auto">
               {isMobile ? (
                 <div className="space-y-3 p-3">
                   {persistedPOs.map(po => (
@@ -1235,7 +1236,7 @@ export default function MaterialsView() {
         )}
 
         {!isLoading && !isError && filtered.length > 0 && (
-          <div className="border border-border/60 overflow-hidden">
+          <div className="border border-border/60 overflow-x-auto">
             {isMobile ? (
               <div className="space-y-3 p-3">
                 {filtered.map(m => {
