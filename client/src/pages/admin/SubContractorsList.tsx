@@ -2,6 +2,13 @@
  * Sub-Contractors — crew roster with trade, license, and briefing dispatch.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
@@ -476,38 +483,38 @@ export default function SubContractorsList() {
         )}
 
         {/* Briefing dialog: requires an explicit project so we don't ship
-            the wrong client/address/scope to subs (was hardcoded to project #1). */}
-        {briefingTarget && (
-          <div
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setBriefingTarget(null)}
-          >
-            <div
-              className="bg-card border border-primary/30 p-6 w-full max-w-md space-y-4"
-              onClick={e => e.stopPropagation()}
-            >
-              <div>
-                <p
-                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary mb-1"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Send Briefing
-                </p>
-                <h3
-                  className="text-base font-semibold"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  {briefingTarget.name}
-                </h3>
-              </div>
+            the wrong client/address/scope to subs (was hardcoded to project #1).
+            Uses ui/dialog (Radix) instead of a hand-rolled overlay so it gets
+            a focus trap, Escape-to-close, and focus restoration for free. */}
+        <Dialog
+          open={!!briefingTarget}
+          onOpenChange={open => {
+            if (!open) setBriefingTarget(null);
+          }}
+        >
+          <DialogContent className="bg-card border border-primary/30 max-w-md">
+            <DialogHeader>
+              <p
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary mb-1"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Send Briefing
+              </p>
+              <DialogTitle style={{ fontFamily: "var(--font-heading)" }}>
+                {briefingTarget?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
               <div>
                 <label
+                  htmlFor="briefing-project"
                   className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
                   Project *
                 </label>
                 <select
+                  id="briefing-project"
                   value={briefingProjectId ?? ""}
                   onChange={e =>
                     setBriefingProjectId(
@@ -607,7 +614,12 @@ export default function SubContractorsList() {
                 </button>
                 <button
                   onClick={() => {
-                    if (!briefingProjectId || !briefingSchedule.trim()) return;
+                    if (
+                      !briefingTarget ||
+                      !briefingProjectId ||
+                      !briefingSchedule.trim()
+                    )
+                      return;
                     briefMut.mutate({
                       subContractorId: briefingTarget.id,
                       projectId: briefingProjectId,
@@ -628,8 +640,8 @@ export default function SubContractorsList() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
