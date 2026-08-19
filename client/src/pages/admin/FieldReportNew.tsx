@@ -6,6 +6,7 @@
  *      Whisper only as a fallback) — used when Web Speech is unavailable
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { Label } from "@/components/ui/label";
 import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
@@ -112,27 +113,39 @@ export default function FieldReportNew() {
     }
   );
 
-  const updateMutation = trpc.fieldReports.update.useMutation();
+  const updateMutation = useMutationWithToast(
+    trpc.fieldReports.update.useMutation(),
+    {
+      success: "Draft Saved",
+      successMessage: "Your edits to the report summary were saved.",
+      error: "Save Failed",
+      errorMessage:
+        "Failed to save your edits. Please try again before publishing.",
+    }
+  );
 
   /**
    * Persist any edits the user made to the AI-generated summary before
    * publishing or saving. Without this, corrections typed into the review
    * textarea are silently discarded and the client sees the original AI text.
    */
-  const persistSummaryEdits = async () => {
+  /** Returns false only when there were edits to save and saving them failed. */
+  const persistSummaryEdits = async (): Promise<boolean> => {
     if (
       report?.id &&
       editedSummary.trim() &&
       editedSummary !== (report.summary ?? "")
     ) {
-      await updateMutation.mutateAsync({
+      const result = await updateMutation.mutateAsync({
         id: report.id,
         summary: editedSummary,
       });
+      if (!result) return false;
       setReport((prev: any) =>
         prev ? { ...prev, summary: editedSummary } : prev
       );
     }
+    return true;
   };
 
   const startRecording = async () => {
@@ -342,7 +355,8 @@ export default function FieldReportNew() {
 
   const publishReport = async () => {
     if (!report?.id) return;
-    await persistSummaryEdits();
+    const saved = await persistSummaryEdits();
+    if (!saved) return;
     await publishMutation.mutateAsync({ id: report.id });
 
     // Fire field_report_created n8n event to notify client
@@ -651,13 +665,15 @@ export default function FieldReportNew() {
         {step === "review" && report && (
           <div className="space-y-4">
             <div className="bg-card border border-border/60 p-5">
-              <p
-                className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-3"
+              <Label
+                htmlFor="field-report-summary"
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-3 block"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 Report Summary
-              </p>
+              </Label>
               <textarea
+                id="field-report-summary"
                 value={editedSummary}
                 onChange={e => setEditedSummary(e.target.value)}
                 rows={4}
@@ -696,7 +712,8 @@ export default function FieldReportNew() {
             <div className="flex gap-3">
               <button
                 onClick={async () => {
-                  await persistSummaryEdits();
+                  const saved = await persistSummaryEdits();
+                  if (!saved) return;
                   setLocation(`/admin/field-reports/${report.id}`);
                 }}
                 disabled={updateMutation.isPending}
