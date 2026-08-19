@@ -18,6 +18,8 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { trpc } from "@/lib/trpc";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { classifyError } from "@/_core/apiError";
 import { formatNumber, fmtDate } from "@/lib/formatters";
 import {
   buildFreePaymentLinks,
@@ -236,6 +238,16 @@ export default function BillingView() {
     fetchStripeInvoices();
   }, [fetchStripeInvoices]);
 
+  // Live updates: the Stripe webhook writes a row here the moment a payment
+  // completes or an invoice status changes. Re-pull the Stripe invoice list
+  // so a payment made on one device shows up here without a manual refresh.
+  // This only re-runs a read (not a form hydration), so there is no
+  // in-progress-edit data to protect against clobbering.
+  useRealtimeTable({
+    table: "billing_events",
+    onUpdate: () => fetchStripeInvoices(),
+  });
+
   const applyTemplate = (tpl: (typeof MILESTONE_TEMPLATES)[0]) => {
     const budget = selectedProjectData?.contracted_budget
       ? Number(selectedProjectData.contracted_budget)
@@ -396,7 +408,7 @@ export default function BillingView() {
       addToast({
         type: "error",
         title: "Error",
-        message: String(err),
+        message: classifyError(err).message,
         duration: 6000,
       });
     } finally {
