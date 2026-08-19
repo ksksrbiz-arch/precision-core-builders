@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, FolderPlus } from "lucide-react";
-import { useState } from "react";
+import { cloneElement, isValidElement, useId, useState } from "react";
 import { useLocation } from "wouter";
 
 type ProjectStatus =
@@ -86,16 +86,29 @@ function LabeledInput({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  // Give the label a real htmlFor/id association rather than relying on
+  // visual proximity alone, without having to thread an id prop through
+  // every one of this form's ~17 call sites.
+  const generatedId = useId();
+  const field =
+    isValidElement<{ id?: string }>(children) && !children.props.id
+      ? cloneElement(children, { id: generatedId })
+      : children;
+  const fieldId = isValidElement<{ id?: string }>(field)
+    ? field.props.id
+    : undefined;
+
   return (
     <div>
       <label
+        htmlFor={fieldId}
         className="text-[10px] font-bold tracking-[0.15em] uppercase text-muted-foreground mb-1 block"
         style={{ fontFamily: "var(--font-condensed)" }}
       >
         {label}
         {required && <span className="text-primary ml-0.5">*</span>}
       </label>
-      {children}
+      {field}
     </div>
   );
 }
