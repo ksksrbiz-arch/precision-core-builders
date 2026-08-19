@@ -4,20 +4,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
-const queryState: { data: unknown; isPending: boolean; isError: boolean } = {
+const queryState: { data: unknown; isLoading: boolean; isError: boolean } = {
   data: undefined,
-  isPending: true,
+  isLoading: true,
   isError: false,
 };
-
-const useRealtimeTableMock = vi.fn((_opts: unknown) => ({
-  isLive: true,
-  lastEvent: null,
-}));
-
-vi.mock("@/hooks/useRealtimeTable", () => ({
-  useRealtimeTable: (opts: unknown) => useRealtimeTableMock(opts),
-}));
 
 vi.mock("@/lib/trpc", () => {
   const base = {
@@ -31,13 +22,12 @@ vi.mock("@/lib/trpc", () => {
         {},
         {
           get(_t2, procName: string) {
-            if (routerName === "ledger" && procName === "auditLog") {
+            if (routerName === "clients" && procName === "list") {
               return {
                 useQuery: () => ({
                   data: queryState.data,
-                  isPending: queryState.isPending,
+                  isLoading: queryState.isLoading,
                   isError: queryState.isError,
-                  error: queryState.isError ? new Error("boom") : null,
                   refetch: vi.fn(),
                 }),
               };
@@ -45,7 +35,7 @@ vi.mock("@/lib/trpc", () => {
             return {
               useQuery: () => ({
                 data: undefined,
-                isPending: false,
+                isLoading: false,
                 isError: false,
                 refetch: vi.fn(),
               }),
@@ -63,37 +53,33 @@ vi.mock("@/lib/trpc", () => {
   return { trpc: trpcProxy };
 });
 
+vi.mock("@/components/ToastProvider", () => ({
+  useToast: () => ({ addToast: vi.fn() }),
+}));
+
 vi.mock("@/components/DashboardLayout", () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+vi.mock("wouter", () => ({
+  useLocation: () => ["/admin/clients", vi.fn()],
 }));
 
 afterEach(cleanup);
 
 async function loadPage() {
   vi.resetModules();
-  const mod = await import("./ActivityLog");
+  const mod = await import("./ClientsList");
   return mod.default;
 }
 
-describe("ActivityLog", () => {
-  it("subscribes to realtime updates through the shared hook (not a raw channel)", async () => {
-    queryState.data = [];
-    queryState.isPending = false;
-    queryState.isError = false;
-    useRealtimeTableMock.mockClear();
-    const ActivityLog = await loadPage();
-    render(<ActivityLog />);
-    expect(useRealtimeTableMock).toHaveBeenCalledWith(
-      expect.objectContaining({ table: "ledger_entries" })
-    );
-  });
-
-  it("shows a skeleton while the audit log is pending", async () => {
+describe("ClientsList", () => {
+  it("shows a skeleton while clients are loading", async () => {
     queryState.data = undefined;
-    queryState.isPending = true;
+    queryState.isLoading = true;
     queryState.isError = false;
-    const ActivityLog = await loadPage();
-    const { container } = render(<ActivityLog />);
+    const ClientsList = await loadPage();
+    const { container } = render(<ClientsList />);
     expect(
       container.querySelectorAll('[class*="animate-pulse"]').length
     ).toBeGreaterThan(0);
@@ -101,21 +87,42 @@ describe("ActivityLog", () => {
 
   it("shows QueryError with a retry control on error", async () => {
     queryState.data = undefined;
-    queryState.isPending = false;
+    queryState.isLoading = false;
     queryState.isError = true;
-    const ActivityLog = await loadPage();
-    render(<ActivityLog />);
+    const ClientsList = await loadPage();
+    render(<ClientsList />);
     expect(
       screen.getByRole("button", { name: /retry|try again/i })
     ).toBeTruthy();
   });
 
-  it("every interactive control has an accessible name", async () => {
-    queryState.data = [];
-    queryState.isPending = false;
+  it("shows an empty state when there are no clients", async () => {
+    queryState.data = { data: [] };
+    queryState.isLoading = false;
     queryState.isError = false;
-    const ActivityLog = await loadPage();
-    render(<ActivityLog />);
+    const ClientsList = await loadPage();
+    render(<ClientsList />);
+    expect(
+      screen.getAllByText(/no clients|add your first client/i).length
+    ).toBeGreaterThan(0);
+  });
+
+  it("every interactive control has an accessible name", async () => {
+    queryState.data = {
+      data: [
+        {
+          id: 1,
+          name: "Acme Co",
+          email: "a@acme.com",
+          phone: null,
+          projectCount: 0,
+        },
+      ],
+    };
+    queryState.isLoading = false;
+    queryState.isError = false;
+    const ClientsList = await loadPage();
+    render(<ClientsList />);
     const buttons = screen.getAllByRole("button");
     for (const btn of buttons) {
       if (btn.getAttribute("data-slot") === "tooltip-trigger") continue;

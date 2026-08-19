@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertDialog,
@@ -88,6 +89,11 @@ export default function VendorsList() {
     isError,
     refetch,
   } = trpc.vendors.list.useQuery();
+
+  useRealtimeTable({
+    table: "vendors",
+    onUpdate: () => refetch(),
+  });
 
   const resetForm = () => {
     setShowNew(false);
