@@ -16,6 +16,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { getAuthHeader } from "@/lib/authHeader";
 import { trpc } from "@/lib/trpc";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { PROJECT_TYPES } from "@/config/projects";
 import { ArrowLeft, Calculator, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -105,6 +106,10 @@ export default function EstimateEditor() {
   const [prefilling, setPrefilling] = useState(false);
   const [prefillError, setPrefillError] = useState("");
   const [formError, setFormError] = useState("");
+  // Guards the realtime refetch below from clobbering in-progress edits:
+  // a remote change only re-hydrates the form while the user has not yet
+  // typed anything into it.
+  const [dirty, setDirty] = useState(false);
 
   const utils = trpc.useUtils();
   const { data: projectsData } = trpc.projects.list.useQuery({ pageSize: 100 });
@@ -114,16 +119,31 @@ export default function EstimateEditor() {
     data: existing,
     isLoading: loadingExisting,
     isError: existingError,
+    refetch: refetchExisting,
   } = trpc.estimates.getById.useQuery(
     { id: estimateId ?? 0 },
     { enabled: isEdit }
   );
+
+  // Live updates: reflect edits made to this estimate from another device.
+  // Skipped while the user has unsaved local edits so a concurrent change
+  // elsewhere can never silently overwrite what they're typing.
+  useRealtimeTable({
+    table: "estimates",
+    onUpdate: payload => {
+      if (!isEdit || dirty) return;
+      const row = (payload.new ?? payload.old) as { id?: number } | null;
+      if (row?.id !== estimateId) return;
+      refetchExisting();
+    },
+  });
 
   // Hydrate the form once the existing estimate loads (edit mode).
   useEffect(() => {
     if (!existing) return;
     const str = (v: unknown) =>
       v === null || v === undefined ? "" : String(v);
+    setDirty(false);
     setForm({
       projectId: str(existing.project_id),
       clientId: str(existing.client_id),
@@ -143,8 +163,10 @@ export default function EstimateEditor() {
     });
   }, [existing]);
 
-  const set = (key: keyof FormState, value: string) =>
+  const set = (key: keyof FormState, value: string) => {
+    setDirty(true);
     setForm(prev => ({ ...prev, [key]: value }));
+  };
 
   const createMut = useMutationWithToast(trpc.estimates.create.useMutation(), {
     success: "Estimate Created",
@@ -252,6 +274,7 @@ export default function EstimateEditor() {
         typeof v === "number" && Number.isFinite(v)
           ? String(Math.round(v))
           : "";
+      setDirty(true);
       setForm(prev => ({
         ...prev,
         estimatedLow: numToStr(data.estimatedLow) || prev.estimatedLow,
