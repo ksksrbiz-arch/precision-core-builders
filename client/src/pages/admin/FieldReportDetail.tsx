@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { fmtDate as fmtDateSafe, fmtDateTime } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
@@ -85,6 +86,17 @@ export default function FieldReportDetail() {
   );
 
   const utils = trpc.useUtils();
+
+  // Live updates: edits/publish state changed from another device (e.g.
+  // the field-reports list) refresh this detail view without a reload.
+  useRealtimeTable({
+    table: "field_reports",
+    onUpdate: payload => {
+      const row = (payload.new ?? payload.old) as { id?: number } | null;
+      if (row?.id !== reportId) return;
+      refetch();
+    },
+  });
 
   const publishMut = useMutationWithToast(
     trpc.fieldReports.publish.useMutation(),
