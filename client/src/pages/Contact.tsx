@@ -26,6 +26,23 @@ import {
   Shield,
 } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const contactSchema = z.object({
+  name: z.string().trim().min(1, "Please enter your name"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Please enter your email")
+    .email("Enter a valid email address"),
+  phone: z.string().trim().optional(),
+  projectType: z.string().trim().optional(),
+  budget: z.string().trim().optional(),
+  message: z.string().trim().min(1, "Tell us a bit about your project"),
+});
+type ContactFormValues = z.infer<typeof contactSchema>;
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -59,26 +76,30 @@ export default function Contact() {
   });
 
   const [status, setStatus] = useState<Status>("idle");
-  const [fields, setFields] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    projectType: "",
-    budget: "",
-    message: "",
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      projectType: "",
+      budget: "",
+      message: "",
+    },
   });
+  const budget = watch("budget");
 
-  const onChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => setFields(p => ({ ...p, [e.target.name]: e.target.value }));
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = handleSubmit(async (_values, e) => {
     setStatus("submitting");
     try {
-      const data = new FormData(e.currentTarget);
+      const data = new FormData(e?.target as HTMLFormElement);
       const res = await fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -89,19 +110,12 @@ export default function Contact() {
       setStatus(res.ok ? "success" : "error");
       if (res.ok) {
         trackContactSubmit();
-        setFields({
-          name: "",
-          email: "",
-          phone: "",
-          projectType: "",
-          budget: "",
-          message: "",
-        });
+        reset();
       }
     } catch {
       setStatus("error");
     }
-  };
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -215,7 +229,8 @@ export default function Contact() {
                     method="POST"
                     data-netlify="true"
                     netlify-honeypot="bot-field"
-                    onSubmit={onSubmit}
+                    onSubmit={e => void onSubmit(e)}
+                    noValidate
                     className="space-y-5"
                     aria-label="Project inquiry form"
                   >
@@ -283,16 +298,26 @@ export default function Contact() {
                           </label>
                           <input
                             id={f.id}
-                            name={f.id}
                             type={f.type}
-                            required={f.req}
                             autoComplete={f.auto}
                             inputMode={f.inputMode}
-                            value={(fields as Record<string, string>)[f.id]}
-                            onChange={onChange}
                             className={inputCls}
                             placeholder={f.placeholder}
+                            aria-invalid={
+                              errors[f.id as keyof ContactFormValues]
+                                ? true
+                                : undefined
+                            }
+                            {...register(f.id as keyof ContactFormValues)}
                           />
+                          {errors[f.id as keyof ContactFormValues] && (
+                            <p
+                              className="mt-1.5 text-xs text-destructive"
+                              role="alert"
+                            >
+                              {errors[f.id as keyof ContactFormValues]?.message}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -307,18 +332,14 @@ export default function Contact() {
                       </span>
                       {/* Hidden field carries the selected value into the
                           Netlify form submission (FormData picks it up). */}
-                      <input
-                        type="hidden"
-                        name="budget"
-                        value={fields.budget}
-                      />
+                      <input type="hidden" {...register("budget")} />
                       <div
                         role="radiogroup"
                         aria-labelledby="budget-label"
                         className="grid grid-cols-2 sm:grid-cols-3 gap-2"
                       >
                         {BUDGET_OPTIONS.map(opt => {
-                          const selected = fields.budget === opt;
+                          const selected = budget === opt;
                           return (
                             <button
                               key={opt}
@@ -326,10 +347,7 @@ export default function Contact() {
                               role="radio"
                               aria-checked={selected}
                               onClick={() =>
-                                setFields(p => ({
-                                  ...p,
-                                  budget: selected ? "" : opt,
-                                }))
+                                setValue("budget", selected ? "" : opt)
                               }
                               className={`min-h-[44px] px-3 py-2 text-xs font-medium border transition-colors focus:outline-none focus:ring-1 focus:ring-primary/40 ${
                                 selected
@@ -354,10 +372,8 @@ export default function Contact() {
                       </label>
                       <select
                         id="projectType"
-                        name="projectType"
-                        value={fields.projectType}
-                        onChange={onChange}
                         className={inputCls}
+                        {...register("projectType")}
                       >
                         <option value="">Select a service…</option>
                         {[
@@ -391,14 +407,20 @@ export default function Contact() {
                       </label>
                       <textarea
                         id="message"
-                        name="message"
-                        required
                         rows={4}
-                        value={fields.message}
-                        onChange={onChange}
                         className={`${inputCls} resize-none min-h-[112px] sm:min-h-[140px]`}
                         placeholder="Tell us about your project — location, timeline, scope, anything that helps us understand what you need…"
+                        aria-invalid={errors.message ? true : undefined}
+                        {...register("message")}
                       />
+                      {errors.message && (
+                        <p
+                          className="mt-1.5 text-xs text-destructive"
+                          role="alert"
+                        >
+                          {errors.message.message}
+                        </p>
+                      )}
                     </div>
 
                     {status === "error" && (
