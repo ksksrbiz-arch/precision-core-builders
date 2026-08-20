@@ -4,13 +4,20 @@
   command = "pnpm install --prod=false && pnpm build"
 
 [build.environment]
-  NODE_VERSION = "20"
-  # Must match package.json's "packageManager" field (and the pnpm version
-  # pnpm-lock.yaml was generated with). This was previously stuck at 10.4.1
-  # while package.json had moved on to 10.34.4 — Netlify's build log showed
-  # "Found pnpm version (10.34.4) that doesn't match expected (10.4.1)" and
-  # then forced a downgrade mid-build, which broke the install step with
-  # exit code 2. Keep these two in sync when bumping either one.
+  # Bumped from 20 to 22: whatever pnpm version Netlify actually resolves at
+  # build time (observed once as 10.4.1 despite package.json pinning
+  # 10.34.4, then as 11.21.0 despite this file pinning 10.34.4 — the
+  # PNPM_VERSION override below is evidently not reliably honored, possibly
+  # shadowed by a site-level env var in the Netlify dashboard outside this
+  # repo's control) has required Node >=22.13 for a while now. Pinning Node
+  # itself sidesteps that ambiguity: pnpm 11.21.0 crashed under Node 20 with
+  # `Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite`
+  # before it could even install dependencies.
+  NODE_VERSION = "22"
+  # Kept as a hint/pin attempt, but see the note above — verify in the
+  # Netlify dashboard (Site configuration → Environment variables) whether a
+  # PNPM_VERSION set there is overriding this file, and align it with
+  # package.json's "packageManager" field if so.
   PNPM_VERSION = "10.34.4"
   # ─────────────────────────────────────────────────────────────────────────────
   # AWS Lambda imposes a hard 4 KB limit on total environment-variable payload.
