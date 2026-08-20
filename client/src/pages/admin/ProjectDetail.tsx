@@ -465,6 +465,7 @@ export default function ProjectDetail() {
                   </p>
                   <button
                     onClick={cancelEditOverview}
+                    aria-label="Cancel editing project details"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <X className="h-4 w-4" />
