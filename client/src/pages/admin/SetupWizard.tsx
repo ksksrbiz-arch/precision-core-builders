@@ -1199,8 +1199,10 @@ export default function SetupWizard() {
   useEffect(() => {
     if (!isSet) return;
     fetch(`/api/platform-health?adminToken=${encodeURIComponent(token)}`)
-      .then(r => r.json())
-      .then(setHealth)
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (data && Array.isArray(data.services)) setHealth(data);
+      })
       .catch(() => {});
   }, [isSet, token, refreshKey]);
 
