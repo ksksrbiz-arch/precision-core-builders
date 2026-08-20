@@ -3,6 +3,15 @@
  * Add items, approve, track budget impact, and manage client-facing selections.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { SkeletonCard } from "@/components/Skeletons";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { QueryError } from "@/components/QueryError";
 import {
   AlertDialog,
@@ -287,6 +296,7 @@ export default function FinishSelectionsAdmin() {
               <p className="text-sm font-semibold">Add Selection</p>
               <button
                 onClick={() => setShowAdd(false)}
+                aria-label="Close add-selection form"
                 className="text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -405,21 +415,25 @@ export default function FinishSelectionsAdmin() {
             </p>
           </div>
         ) : isLoading ? (
-          <div className="bg-card border border-border/60 p-12 text-center text-muted-foreground text-sm">
-            Loading…
-          </div>
+          <SkeletonCard count={3} />
         ) : isError ? (
           <QueryError
             message="We couldn't load finish selections for this project. Try again."
             onRetry={() => refetch()}
           />
         ) : !selections?.length ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <Sparkles className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm mb-3">
-              No selections yet. Add the first one above.
-            </p>
-          </div>
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Sparkles className="h-8 w-8 text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>No selections yet</EmptyTitle>
+              <EmptyDescription>
+                Add the first finish selection above.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent />
+          </Empty>
         ) : (
           <div className="space-y-6">
             {Object.entries(grouped).map(([room, items]) => (
