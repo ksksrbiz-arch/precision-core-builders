@@ -281,11 +281,13 @@ export default function Guides() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search guides… (e.g. weather, invoice, voice memo)"
+                aria-label="Search guides"
                 className="pl-9 pr-9 bg-card border-border/60"
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
+                  aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />

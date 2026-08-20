@@ -384,6 +384,7 @@ export default function NotificationsView() {
               {/* Recipient */}
               <div>
                 <label
+                  htmlFor="notif-recipient"
                   className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
@@ -391,6 +392,7 @@ export default function NotificationsView() {
                 </label>
                 {clientsWithUser.length > 0 ? (
                   <select
+                    id="notif-recipient"
                     value={form.recipientId}
                     onChange={e => set("recipientId", e.target.value)}
                     className={selectCls}
@@ -405,6 +407,7 @@ export default function NotificationsView() {
                 ) : (
                   <div>
                     <input
+                      id="notif-recipient"
                       type="text"
                       value={form.recipientId}
                       onChange={e => set("recipientId", e.target.value)}
@@ -422,12 +425,14 @@ export default function NotificationsView() {
               {/* Project (optional) */}
               <div>
                 <label
+                  htmlFor="notif-project"
                   className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
                   Related Project (optional)
                 </label>
                 <select
+                  id="notif-project"
                   value={form.projectId}
                   onChange={e => set("projectId", e.target.value)}
                   className={selectCls}
@@ -472,12 +477,14 @@ export default function NotificationsView() {
               {form.channel === "email" && (
                 <div>
                   <label
+                    htmlFor="notif-subject"
                     className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
                     Subject
                   </label>
                   <input
+                    id="notif-subject"
                     type="text"
                     value={form.subject}
                     onChange={e => set("subject", e.target.value)}
@@ -491,12 +498,14 @@ export default function NotificationsView() {
             {/* Body */}
             <div>
               <label
+                htmlFor="notif-message"
                 className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 Message *
               </label>
               <textarea
+                id="notif-message"
                 value={form.body}
                 onChange={e => set("body", e.target.value)}
                 rows={5}
@@ -647,6 +656,7 @@ export default function NotificationsView() {
                   setPage(1);
                 }}
                 placeholder="Search subject or message body…"
+                aria-label="Search notifications"
                 className="w-full bg-input border border-border text-sm text-foreground pl-9 pr-3 py-2.5 focus:outline-none focus:border-primary/60"
               />
             </div>
@@ -659,6 +669,7 @@ export default function NotificationsView() {
                 );
                 setPage(1);
               }}
+              aria-label="Filter by status"
               className="w-full bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60"
             >
               <option value="">All statuses</option>
@@ -676,6 +687,7 @@ export default function NotificationsView() {
                 );
                 setPage(1);
               }}
+              aria-label="Filter by channel"
               className="w-full bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60"
             >
               <option value="">All channels</option>
