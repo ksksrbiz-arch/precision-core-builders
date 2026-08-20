@@ -32,6 +32,20 @@ import {
   Printer,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const leadSchema = z.object({
+  name: z.string().trim().min(1, "Please enter your name"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Please enter your email")
+    .email("Enter a valid email address"),
+  phone: z.string().trim().optional(),
+});
+type LeadFormValues = z.infer<typeof leadSchema>;
 
 /** Animated currency figure — eases from 0 to value on mount (result reveal). */
 function CountCurrency({ value }: { value: number }) {
@@ -117,9 +131,14 @@ export default function Estimator() {
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
   // Lead form
-  const [leadName, setLeadName] = useState("");
-  const [leadEmail, setLeadEmail] = useState("");
-  const [leadPhone, setLeadPhone] = useState("");
+  const {
+    register: registerLead,
+    handleSubmit: handleLeadSubmit,
+    formState: { errors: leadErrors },
+  } = useForm<LeadFormValues>({
+    resolver: zodResolver(leadSchema),
+    defaultValues: { name: "", email: "", phone: "" },
+  });
   const [leadSent, setLeadSent] = useState(false);
   const [leadSending, setLeadSending] = useState(false);
   const [leadError, setLeadError] = useState("");
@@ -172,9 +191,8 @@ export default function Estimator() {
     }
   };
 
-  const submitLead = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!leadName || !leadEmail || leadSending) return;
+  const submitLead = handleLeadSubmit(async values => {
+    if (leadSending) return;
     // Honeypot tripped — silently drop without an error so a bot doesn't
     // learn its submission was rejected.
     if (botField) {
@@ -187,9 +205,9 @@ export default function Estimator() {
     const formData = new FormData();
     formData.append("form-name", "estimator-lead");
     formData.append("bot-field", botField);
-    formData.append("name", leadName);
-    formData.append("email", leadEmail);
-    formData.append("phone", leadPhone);
+    formData.append("name", values.name);
+    formData.append("email", values.email);
+    formData.append("phone", values.phone ?? "");
     formData.append("projectType", projectType);
     formData.append("complexity", complexity);
     formData.append("sqft", sqft);
@@ -211,9 +229,9 @@ export default function Estimator() {
         body: JSON.stringify({
           event: "lead_captured",
           payload: {
-            name: leadName,
-            email: leadEmail,
-            phone: leadPhone,
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
             projectType,
             complexity,
             squareFootage: sqft,
@@ -234,7 +252,7 @@ export default function Estimator() {
     } finally {
       setLeadSending(false);
     }
-  };
+  });
 
   return (
     <>
@@ -718,7 +736,11 @@ export default function Estimator() {
                     Ready for a real, on-site estimate? Eric will come to you —
                     free.
                   </p>
-                  <form onSubmit={submitLead} className="space-y-3">
+                  <form
+                    onSubmit={e => void submitLead(e)}
+                    className="space-y-3"
+                    noValidate
+                  >
                     {/* Honeypot — hidden from real users, bots that auto-fill
                         every field will trip it. Field name must match the
                         static form registration in index.html. */}
@@ -737,36 +759,53 @@ export default function Estimator() {
                         />
                       </label>
                     </div>
-                    <input
-                      value={leadName}
-                      onChange={e => setLeadName(e.target.value)}
-                      placeholder="Your name *"
-                      required
-                      autoComplete="name"
-                      className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-                    />
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
                       <input
-                        value={leadEmail}
-                        onChange={e => setLeadEmail(e.target.value)}
-                        placeholder="Email *"
-                        type="email"
-                        required
-                        autoComplete="email"
+                        placeholder="Your name *"
+                        autoComplete="name"
+                        aria-invalid={leadErrors.name ? true : undefined}
                         className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                        {...registerLead("name")}
                       />
+                      {leadErrors.name && (
+                        <p
+                          className="mt-1.5 text-xs text-destructive"
+                          role="alert"
+                        >
+                          {leadErrors.name.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div>
+                        <input
+                          placeholder="Email *"
+                          type="email"
+                          autoComplete="email"
+                          aria-invalid={leadErrors.email ? true : undefined}
+                          className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                          {...registerLead("email")}
+                        />
+                        {leadErrors.email && (
+                          <p
+                            className="mt-1.5 text-xs text-destructive"
+                            role="alert"
+                          >
+                            {leadErrors.email.message}
+                          </p>
+                        )}
+                      </div>
                       <input
-                        value={leadPhone}
-                        onChange={e => setLeadPhone(e.target.value)}
                         placeholder="Phone"
                         type="tel"
                         autoComplete="tel"
                         className="w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                        {...registerLead("phone")}
                       />
                     </div>
                     <button
                       type="submit"
-                      disabled={!leadName || !leadEmail || leadSending}
+                      disabled={leadSending}
                       className="w-full py-3 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
