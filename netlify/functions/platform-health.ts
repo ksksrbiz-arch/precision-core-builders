@@ -448,7 +448,8 @@ export const handler: Handler = async event => {
 
   const verified = await verifyAdminToken(adminToken ?? null);
   if (!verified.ok) {
-    const expectedToken = process.env.SETUP_ADMIN_TOKEN;
+    const expectedToken =
+      process.env.SETUP_ADMIN_TOKEN ?? process.env.SETUP_ADMIN_KEY;
     if (
       !expectedToken ||
       !adminToken ||
@@ -462,7 +463,44 @@ export const handler: Handler = async event => {
     }
   }
 
-  // Run all checks in parallel
+  // Run all checks in parallel. Each check function already catches its own
+  // errors into an "error" ServiceStatus, but wrap the batch too — a single
+  // check throwing synchronously (e.g. checkLLMRouting, checkDatabaseTables)
+  // would otherwise reject the whole Promise.all and turn into a bare 502
+  // instead of a JSON response the client can render.
+  let results: ServiceStatus[];
+  try {
+    results = await Promise.all([
+      checkSupabase(),
+      checkGroq(),
+      checkOpenRouter(),
+      checkLLMRouting(),
+      checkWeather(),
+      checkStripe(),
+      checkFreePayments(),
+      checkN8n(),
+      checkOpenAI(),
+      checkDatabaseTables(),
+    ]);
+  } catch (err) {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        status: "error",
+        summary: {
+          healthy: 0,
+          degraded: 0,
+          errors: 1,
+          notConfigured: 0,
+          total: 0,
+        },
+        services: [],
+        error: String(err),
+        timestamp: new Date().toISOString(),
+      }),
+    };
+  }
   const [
     supabase,
     groqAI,
@@ -474,18 +512,7 @@ export const handler: Handler = async event => {
     n8n,
     openai,
     dbTables,
-  ] = await Promise.all([
-    checkSupabase(),
-    checkGroq(),
-    checkOpenRouter(),
-    checkLLMRouting(),
-    checkWeather(),
-    checkStripe(),
-    checkFreePayments(),
-    checkN8n(),
-    checkOpenAI(),
-    checkDatabaseTables(),
-  ]);
+  ] = results;
 
   const services: ServiceStatus[] = [
     supabase,
