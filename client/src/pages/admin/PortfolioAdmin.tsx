@@ -275,7 +275,7 @@ export default function PortfolioAdmin() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
           {[
             {
               label: "Total",
@@ -318,7 +318,10 @@ export default function PortfolioAdmin() {
               >
                 {editId ? "Edit Project" : "New Portfolio Project"}
               </p>
-              <button onClick={() => setShowForm(false)}>
+              <button
+                onClick={() => setShowForm(false)}
+                aria-label="Close project form"
+              >
                 <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
               </button>
             </div>
@@ -588,6 +591,7 @@ export default function PortfolioAdmin() {
                   onClick={() => handleEdit(p)}
                   className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors"
                   title="Edit"
+                  aria-label={`Edit ${p.title}`}
                 >
                   <Eye className="h-3.5 w-3.5" />
                 </button>
