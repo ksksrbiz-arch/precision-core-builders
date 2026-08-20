@@ -783,7 +783,7 @@ export default function CommandCenter() {
             />
           </div>
         )}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard
             icon={ClipboardList}
             label="Total Projects"

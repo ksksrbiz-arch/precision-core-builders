@@ -781,7 +781,7 @@ export default function ScheduleView() {
 
         {/* Stats footer */}
         {scheduleItems && scheduleItems.length > 0 && (
-          <div className="grid grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
             {[
               {
                 label: "Total",
