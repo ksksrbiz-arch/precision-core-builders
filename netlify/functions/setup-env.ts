@@ -32,8 +32,12 @@ const ALLOWED_KEYS = new Set([
 const NETLIFY_TOKEN = process.env.NETLIFY_AUTH_TOKEN ?? "";
 const NETLIFY_SITE_ID = process.env.NETLIFY_SITE_ID ?? "";
 const NETLIFY_ACCOUNT_ID = process.env.NETLIFY_ACCOUNT_ID ?? "";
-// Admin guard — Eric MUST set SETUP_ADMIN_TOKEN in Netlify env vars
-const ADMIN_TOKEN = process.env.SETUP_ADMIN_TOKEN ?? "";
+// Admin guard — Eric MUST set SETUP_ADMIN_TOKEN in Netlify env vars.
+// SETUP_ADMIN_KEY is accepted too: it's the name already configured in the
+// live Netlify dashboard, and code should match what's actually deployed
+// rather than require a manual rename of a live secret.
+const ADMIN_TOKEN =
+  process.env.SETUP_ADMIN_TOKEN ?? process.env.SETUP_ADMIN_KEY ?? "";
 
 export const handler: Handler = async event => {
   const headers = {

@@ -588,7 +588,8 @@ export const handler: Handler = async event => {
   // never fall back to a hardcoded constant baked into source.
   const verified = await verifyAdminToken(body.adminToken ?? null);
   if (!verified.ok) {
-    const expectedToken = process.env.SETUP_ADMIN_TOKEN;
+    const expectedToken =
+      process.env.SETUP_ADMIN_TOKEN ?? process.env.SETUP_ADMIN_KEY;
     if (
       !expectedToken ||
       !body.adminToken ||
