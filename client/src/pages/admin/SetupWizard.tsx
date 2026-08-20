@@ -635,6 +635,15 @@ function ServiceCard({
           ) : (
             <svc.icon className="h-4.5 w-4.5 text-muted-foreground" />
           )}
+          {/* Status is otherwise conveyed by icon shape + color alone,
+              which a screen reader can't perceive. */}
+          <span className="sr-only">
+            {isConfigured
+              ? "Configured"
+              : healthStatus?.status === "error"
+                ? "Error"
+                : "Not configured"}
+          </span>
         </div>
 
         <div className="flex-1 min-w-0">
@@ -727,6 +736,7 @@ function ServiceCard({
                 value={value}
                 onChange={e => setValue(e.target.value)}
                 placeholder={svc.placeholder}
+                aria-label={`${svc.label} key`}
                 className="flex-1 bg-input border border-border px-3 py-2 text-sm font-mono placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/60 transition-colors"
               />
               <button
@@ -1259,6 +1269,7 @@ export default function SetupWizard() {
               type="password"
               value={tokenInput}
               onChange={e => setTokenInput(e.target.value)}
+              aria-label="Admin token"
               onKeyDown={e => {
                 if (e.key === "Enter" && tokenInput.trim())
                   setToken(tokenInput.trim());
