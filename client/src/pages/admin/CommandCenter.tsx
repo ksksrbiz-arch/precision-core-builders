@@ -623,6 +623,13 @@ export default function CommandCenter() {
       setTimeout(() => setRealtimeFlash(false), 1500);
     },
   });
+  // Actual cost (stats.totalActual) is derived from cost_adjustment ledger
+  // entries, not a projects column — a new entry needs its own refetch.
+  useRealtimeTable({
+    table: "ledger_entries",
+    enabled: authReady,
+    onUpdate: () => refetchStats(),
+  });
 
   const budgetData = [
     {

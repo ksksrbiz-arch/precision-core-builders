@@ -65,6 +65,7 @@ vi.mock("../_data/projectsRepo", () => ({
     { data: [], error: null },
   ]),
   getPortfolioProfitability: vi.fn(async () => []),
+  getCostAdjustmentTotals: vi.fn(async () => new Map()),
 }));
 
 import { appRouter } from "../routers";
@@ -136,15 +137,13 @@ describe("Projects Router — repo delegation", () => {
     expect(patch).toMatchObject({ name: "Renamed", client_id: 3 });
   });
 
-  it("updateProgress maps completion/actual cost to snake_case", async () => {
+  it("updateProgress maps completion percent to snake_case", async () => {
     await admin().projects.updateProgress({
       id: 8,
       completionPercent: 40,
-      actualCost: 1200,
     });
     expect(repo.updateProjectProgress).toHaveBeenCalledWith(8, {
       completion_percent: 40,
-      actual_cost: 1200,
     });
   });
 
@@ -159,11 +158,17 @@ describe("Projects Router — repo delegation", () => {
     expect(repo.deleteProject).toHaveBeenCalledWith(14);
   });
 
-  it("stats aggregates the rows from getProjectsStats", async () => {
+  it("stats aggregates the rows from getProjectsStats, actual cost from the ledger", async () => {
     vi.mocked(repo.getProjectsStats).mockResolvedValueOnce([
-      { status: "lead", estimated_budget: 100, actual_cost: 50 },
-      { status: "in_progress", estimated_budget: 200, actual_cost: 150 },
+      { id: 1, status: "lead", estimated_budget: 100 },
+      { id: 2, status: "in_progress", estimated_budget: 200 },
     ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(
+      new Map([
+        [1, 50],
+        [2, 150],
+      ])
+    );
     const res = await admin().projects.stats();
     expect(res.total).toBe(2);
     expect(res.byStatus.lead).toBe(1);
@@ -172,15 +177,29 @@ describe("Projects Router — repo delegation", () => {
     expect(res.totalActual).toBe(200);
   });
 
-  it("profitability computes margin/variance from the sources", async () => {
+  it("profitability computes margin/variance from the sources, actual cost from cost_adjustment ledger entries", async () => {
+    vi.mocked(repo.getProfitabilitySources).mockResolvedValueOnce([
+      { data: { contracted_budget: 1000 }, error: null },
+      { data: [], error: null },
+      {
+        data: [
+          { entry_type: "cost_adjustment", amount_delta: 300 },
+          { entry_type: "change_order", amount_delta: 200 },
+          { entry_type: "note", amount_delta: null },
+        ],
+        error: null,
+      },
+    ] as any);
     const res = await admin().projects.profitability({ id: 3 });
     expect(repo.getProfitabilitySources).toHaveBeenCalledWith(3);
     expect(res.projectId).toBe(3);
     expect(res.contracted).toBe(1000);
+    expect(res.actualCost).toBe(300);
+    expect(res.changeOrderTotal).toBe(500);
     expect(res.onBudget).toBe(true);
   });
 
-  it("profitabilitySummary rolls up portfolio totals", async () => {
+  it("profitabilitySummary rolls up portfolio totals, actual cost from the ledger", async () => {
     vi.mocked(repo.getPortfolioProfitability).mockResolvedValueOnce([
       {
         id: 1,
@@ -188,9 +207,11 @@ describe("Projects Router — repo delegation", () => {
         status: "in_progress",
         contracted_budget: 1000,
         estimated_budget: 800,
-        actual_cost: 600,
       },
     ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(
+      new Map([[1, 600]])
+    );
     const res = await admin().projects.profitabilitySummary();
     expect(res.projects).toHaveLength(1);
     expect(res.projects[0].profit).toBe(400);

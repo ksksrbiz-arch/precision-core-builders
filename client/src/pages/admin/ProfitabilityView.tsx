@@ -74,10 +74,15 @@ export default function ProfitabilityView() {
   const { data, isLoading, isError, refetch } =
     trpc.projects.profitabilitySummary.useQuery();
 
-  // Live updates: contracted/estimated/actual cost edits on any project
-  // refresh the portfolio-wide margin math shown here.
+  // Live updates: contracted/estimated budget edits on any project, or a new
+  // cost_adjustment ledger entry (actual cost is derived from the ledger,
+  // not a project column), refresh the portfolio-wide margin math shown here.
   useRealtimeTable({
     table: "projects",
+    onUpdate: () => refetch(),
+  });
+  useRealtimeTable({
+    table: "ledger_entries",
     onUpdate: () => refetch(),
   });
 
