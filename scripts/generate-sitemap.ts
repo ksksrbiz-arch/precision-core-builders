@@ -45,6 +45,7 @@ const STATIC_ROUTES: Entry[] = [
   },
   { path: "/service-areas/florence", priority: 0.7, changefreq: "monthly" },
   { path: "/portfolio", priority: 0.8, changefreq: "weekly" },
+  { path: "/showroom", priority: 0.7, changefreq: "weekly" },
   { path: "/blog", priority: 0.7, changefreq: "weekly" },
   {
     path: "/blog/kitchen-remodel-cost-eugene-oregon",
