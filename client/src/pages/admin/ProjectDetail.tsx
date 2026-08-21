@@ -651,7 +651,6 @@ export default function ProjectDetail() {
                       label: "Contracted Budget",
                       value: fmt(project.contracted_budget),
                     },
-                    { label: "Actual Cost", value: fmt(project.actual_cost) },
                     {
                       label: "License",
                       value: project.license_number ?? "CCB #246527",
@@ -980,15 +979,25 @@ export default function ProjectDetail() {
                   ))}
                 </div>
 
-                {/* Actual cost update */}
+                {/* Actual cost is derived from the ledger, not editable
+                    here directly. */}
                 <div className="bg-card border border-border/60 p-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-3">
-                    Update Actual Cost
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">
+                    Actual cost is tracked in the ledger
                   </p>
-                  <ActualCostForm
-                    projectId={projectId}
-                    currentActual={profitability.actualCost}
-                  />
+                  <p className="text-xs text-muted-foreground/80 mb-3">
+                    This figure is the sum of every &quot;Cost Adjustment&quot;
+                    ledger entry on this project — it updates automatically as
+                    costs are logged, no manual re-entry needed.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("ledger")}
+                    className="text-[11px] font-bold tracking-widest uppercase text-primary hover:underline"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Log a cost in the ledger →
+                  </button>
                 </div>
               </>
             )}
@@ -1181,56 +1190,6 @@ function LedgerEntryForm({
         style={{ fontFamily: "var(--font-condensed)" }}
       >
         {append.isPending ? "Saving…" : "Add Entry"}
-      </button>
-    </div>
-  );
-}
-
-function ActualCostForm({
-  projectId,
-  currentActual,
-}: {
-  projectId: number;
-  currentActual: number;
-}) {
-  const [value, setValue] = useState(
-    currentActual ? String(currentActual) : ""
-  );
-  const utils = trpc.useUtils();
-  const mut = trpc.projects.updateProgress.useMutation({
-    onSuccess: () => {
-      utils.projects.profitability.invalidate({ id: projectId });
-      utils.projects.getById.invalidate({ id: projectId });
-    },
-  });
-
-  return (
-    <div className="flex gap-2">
-      <div className="relative flex-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-          $
-        </span>
-        <input
-          type="number"
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          placeholder="0.00"
-          className="w-full pl-7 pr-3 py-2 bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-        />
-      </div>
-      <button
-        onClick={() =>
-          value &&
-          mut.mutate({
-            id: projectId,
-            actualCost: parseFloat(value),
-          })
-        }
-        disabled={!value || mut.isPending}
-        className="px-4 py-2 text-[11px] font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-50 transition-colors"
-        style={{ fontFamily: "var(--font-condensed)" }}
-      >
-        {mut.isPending ? "Saving…" : "Save"}
       </button>
     </div>
   );

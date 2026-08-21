@@ -96,7 +96,7 @@ export async function deleteProject(id: number) {
 export async function getProjectsStats() {
   const { data: rows } = await data
     .from("projects")
-    .select("status, estimated_budget, actual_cost, contracted_budget");
+    .select("id, status, estimated_budget, contracted_budget");
   return rows ?? [];
 }
 
@@ -105,7 +105,7 @@ export async function getProfitabilitySources(id: number) {
     data
       .from("projects")
       .select(
-        "id,name,estimated_budget,contracted_budget,actual_cost,completion_percent,status"
+        "id,name,estimated_budget,contracted_budget,completion_percent,status"
       )
       .eq("id", id)
       .single(),
@@ -130,6 +130,28 @@ export async function getPortfolioProfitability() {
   return unwrapList(
     await data
       .from("projects")
-      .select("id,name,status,estimated_budget,contracted_budget,actual_cost")
+      .select("id,name,status,estimated_budget,contracted_budget")
   ).data;
+}
+
+/**
+ * Actual cost per project, derived from the ledger rather than a manually
+ * maintained column: the sum of every `cost_adjustment` ledger entry's
+ * `amount_delta`, grouped by project. This is the single source of truth for
+ * "actual cost" — there is no separate manual-entry path, so the figure
+ * can't silently drift stale the way a hand-typed number would.
+ */
+export async function getCostAdjustmentTotals(): Promise<Map<number, number>> {
+  const { data: rows } = await data
+    .from("ledger_entries")
+    .select("project_id,amount_delta")
+    .eq("entry_type", "cost_adjustment");
+
+  const totals = new Map<number, number>();
+  for (const row of rows ?? []) {
+    const projectId = row.project_id as number;
+    const delta = Number(row.amount_delta ?? 0);
+    totals.set(projectId, (totals.get(projectId) ?? 0) + delta);
+  }
+  return totals;
 }

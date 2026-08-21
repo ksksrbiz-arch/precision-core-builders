@@ -154,9 +154,15 @@ export default function Analytics() {
     void refetchShortages();
   };
 
-  // Live updates: project changes refresh portfolio-wide analytics.
+  // Live updates: project changes refresh portfolio-wide analytics. A new
+  // cost_adjustment ledger entry moves totalActual/profitability too, since
+  // actual cost is derived from the ledger rather than a projects column.
   useRealtimeTable({
     table: "projects",
+    onUpdate: () => utils.projects.invalidate(),
+  });
+  useRealtimeTable({
+    table: "ledger_entries",
     onUpdate: () => utils.projects.invalidate(),
   });
 
@@ -186,21 +192,20 @@ export default function Analytics() {
       ].filter(d => d.value > 0)
     : [];
 
-  // Per-project budget list
-  const projectsWithBudget = (allProjects?.data ?? [])
-    .filter(p => (p.estimated_budget ?? 0) > 0)
-    .sort(
-      (a, b) =>
-        Number(b.estimated_budget ?? 0) - Number(a.estimated_budget ?? 0)
-    )
+  // Per-project budget list. Actual cost comes from the server profitability
+  // summary (derived from ledger cost_adjustment entries), not the raw
+  // projects.list row — that column is no longer kept in sync.
+  const projectsWithBudget = (profitability?.projects ?? [])
+    .filter(p => p.estimated > 0)
+    .sort((a, b) => b.estimated - a.estimated)
     .slice(0, 10)
     .map((p, i) => ({
       name:
         p.name.length > PROJECT_NAME_MAX_LEN
           ? p.name.slice(0, PROJECT_NAME_MAX_LEN) + "…"
           : p.name,
-      estimated: Number(p.estimated_budget ?? 0),
-      actual: Number(p.actual_cost ?? 0),
+      estimated: p.estimated,
+      actual: p.actualCost,
       fill: COLORS[i % COLORS.length],
     }));
 

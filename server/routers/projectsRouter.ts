@@ -4,6 +4,7 @@ import { logAdminAction } from "../_core/auditLog";
 import {
   createProject,
   deleteProject,
+  getCostAdjustmentTotals,
   getMyProject,
   getPortfolioProfitability,
   getProfitabilitySources,
@@ -175,15 +176,12 @@ export const projectsRouter = router({
       z.object({
         id: z.number().int().positive(),
         completionPercent: z.number().int().min(0).max(100).optional(),
-        actualCost: z.number().nonnegative().optional(),
       })
     )
     .mutation(async ({ input }) => {
       const updates: Record<string, unknown> = {};
       if (input.completionPercent !== undefined)
         updates.completion_percent = input.completionPercent;
-      if (input.actualCost !== undefined)
-        updates.actual_cost = input.actualCost;
       if (Object.keys(updates).length === 0) {
         return getProjectRow(input.id);
       }
@@ -200,7 +198,10 @@ export const projectsRouter = router({
     }),
 
   stats: adminProcedure.query(async () => {
-    const all = await getProjectsStats();
+    const [all, costTotals] = await Promise.all([
+      getProjectsStats(),
+      getCostAdjustmentTotals(),
+    ]);
     return {
       total: all.length,
       byStatus: {
@@ -213,7 +214,10 @@ export const projectsRouter = router({
         (s, p) => s + Number(p.estimated_budget ?? 0),
         0
       ),
-      totalActual: all.reduce((s, p) => s + Number(p.actual_cost ?? 0), 0),
+      totalActual: all.reduce(
+        (s, p) => s + (costTotals.get(p.id as number) ?? 0),
+        0
+      ),
     };
   }),
 
@@ -241,9 +245,15 @@ export const projectsRouter = router({
         )
         .reduce((sum, e) => sum + Number(e.amount_delta ?? 0), 0);
 
+      // Actual cost is derived from the ledger, not a manually maintained
+      // column: the sum of every cost_adjustment entry's amount_delta. This
+      // is the same source of truth used by profitabilitySummary/stats.
+      const actualCost = (ledgerRes.data ?? [])
+        .filter(e => e.entry_type === "cost_adjustment")
+        .reduce((sum, e) => sum + Number(e.amount_delta ?? 0), 0);
+
       const contracted = Number(project.contracted_budget ?? 0);
       const estimated = Number(project.estimated_budget ?? 0);
-      const actualCost = Number(project.actual_cost ?? 0);
       const budget = contracted || estimated;
       const projectedCost = actualCost > 0 ? actualCost : materialsCost;
       const margin = budget > 0 ? ((budget - projectedCost) / budget) * 100 : 0;
@@ -275,12 +285,15 @@ export const projectsRouter = router({
       return Number.isFinite(x) ? x : 0;
     };
 
-    const rows = await getPortfolioProfitability();
+    const [rows, costTotals] = await Promise.all([
+      getPortfolioProfitability(),
+      getCostAdjustmentTotals(),
+    ]);
 
     const projects = rows.map(p => {
       const contracted = num(p.contracted_budget);
       const estimated = num(p.estimated_budget);
-      const actualCost = num(p.actual_cost);
+      const actualCost = costTotals.get(p.id as number) ?? 0;
       // Margin is measured against the contracted value when present,
       // otherwise the estimate.
       const basis = contracted || estimated;
