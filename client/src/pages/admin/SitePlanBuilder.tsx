@@ -35,6 +35,7 @@ import { trpc } from "@/lib/trpc";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
   ChevronDown,
   Download,
@@ -573,6 +574,14 @@ export default function SitePlanBuilder() {
   const updatePlan = trpc.sitePlans.update.useMutation();
   const deletePlan = trpc.sitePlans.delete.useMutation();
   const utils = trpc.useUtils();
+
+  // Live updates: only refreshes the saved-plans sidebar list, never the
+  // active Excalidraw canvas (which is mutated explicitly via
+  // handleLoadPlan), so it's safe without a dirty-edit guard.
+  useRealtimeTable({
+    table: "site_plans",
+    onUpdate: () => refetchSavedPlans(),
+  });
 
   // Dynamic import Excalidraw (it doesn't support SSR).
   // Load exportToBlob alongside so it's cached before the first save.
