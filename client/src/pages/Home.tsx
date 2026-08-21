@@ -155,6 +155,10 @@ export default function Home() {
 /* ══════════════════════════════════════════════════════════════
    HERO (slideshow preserved from original)
 ══════════════════════════════════════════════════════════════ */
+// index.html has a static <link rel="preload"> for this first slide's URL
+// (can't wait for JS to hydrate before starting the LCP fetch) — if this
+// entry ever changes, update that preload href to match or the perf win
+// silently disappears.
 const HERO_SLIDES = [
   {
     url: "/portfolio/signature-outdoor-01.jpg",
