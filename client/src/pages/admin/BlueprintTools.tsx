@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -34,6 +35,13 @@ export default function BlueprintTools() {
     isError,
     refetch,
   } = trpc.blueprint.getConnectionStatus.useQuery();
+
+  // Live updates: a connect/disconnect completed on another device (e.g. the
+  // OAuth redirect finishing on a phone) refreshes the status shown here.
+  useRealtimeTable({
+    table: "blueprint_connections",
+    onUpdate: () => refetch(),
+  });
 
   const [apiKey, setApiKey] = useState("");
   const [apiEmail, setApiEmail] = useState("");

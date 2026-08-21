@@ -18,6 +18,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
 import { trpc } from "@/lib/trpc";
 import { TrendingUp } from "lucide-react";
@@ -72,6 +73,13 @@ function KPITile({
 export default function ProfitabilityView() {
   const { data, isLoading, isError, refetch } =
     trpc.projects.profitabilitySummary.useQuery();
+
+  // Live updates: contracted/estimated/actual cost edits on any project
+  // refresh the portfolio-wide margin math shown here.
+  useRealtimeTable({
+    table: "projects",
+    onUpdate: () => refetch(),
+  });
 
   const projects = (data?.projects ?? [])
     .filter(p => p.hasData)
