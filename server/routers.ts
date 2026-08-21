@@ -4,6 +4,7 @@ import { blueprintRouter } from "./routers/blueprintRouter";
 import { clientsRouter } from "./routers/clientsRouter";
 import { estimatesRouter } from "./routers/estimatesRouter";
 import { fieldReportsRouter } from "./routers/fieldReportsRouter";
+import { finishCatalogRouter } from "./routers/finishCatalogRouter";
 import { finishSelectionsRouter } from "./routers/finishSelectionsRouter";
 import { leadsRouter } from "./routers/leadsRouter";
 import { ledgerRouter } from "./routers/ledgerRouter";
@@ -34,6 +35,7 @@ export const appRouter = router({
   subContractors: subContractorsRouter,
   vendors: vendorsRouter,
   finishSelections: finishSelectionsRouter,
+  finishCatalog: finishCatalogRouter,
   notifications: notificationsRouter,
   portfolio: portfolioRouter,
   sitePlans: sitePlansRouter,

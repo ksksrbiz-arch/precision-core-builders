@@ -45,6 +45,7 @@ import {
   LogOut,
   Layers,
   Package,
+  Palette,
   PanelLeft,
   Pencil,
   Plus,
@@ -110,6 +111,11 @@ const BASE_NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
       { icon: Search, label: "Search", path: "/admin/search", badge: "⌘K" },
       { icon: Bell, label: "Notifications", path: "/admin/notifications" },
       { icon: Sparkles, label: "Finish Selections", path: "/admin/finishes" },
+      {
+        icon: Palette,
+        label: "Finish Catalog",
+        path: "/admin/finish-catalog",
+      },
       {
         icon: Camera,
         label: "Vision Studio",

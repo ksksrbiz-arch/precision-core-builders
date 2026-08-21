@@ -111,6 +111,10 @@ const ScheduleView = lazy(() => import("./pages/admin/ScheduleView"));
 const MaterialsView = lazy(() => import("./pages/admin/MaterialsView"));
 const BillingView = lazy(() => import("./pages/admin/BillingView"));
 const PortfolioAdmin = lazy(() => import("./pages/admin/PortfolioAdmin"));
+const FinishCatalogAdmin = lazy(
+  () => import("./pages/admin/FinishCatalogAdmin")
+);
+const Showroom = lazy(() => import("./pages/Showroom"));
 const SetupWizard = lazy(() => import("./pages/admin/SetupWizard"));
 const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
 const FieldReportsList = lazy(() => import("./pages/admin/FieldReportsList"));
@@ -233,6 +237,7 @@ function Router() {
             component={withBoundary(LazyBathroomRemodelCostEugene)}
           />
           <Route path="/portfolio" component={withBoundary(Portfolio)} />
+          <Route path="/showroom" component={withBoundary(Showroom)} />
           <Route
             path="/portfolio/:slug"
             component={withBoundary(PortfolioDetail)}
@@ -301,6 +306,10 @@ function Router() {
           <Route
             path="/admin/portfolio-cms"
             component={adminPage(PortfolioAdmin)}
+          />
+          <Route
+            path="/admin/finish-catalog"
+            component={adminPage(FinishCatalogAdmin)}
           />
           {/* Bootstrapping wizard — guarded by its own token, not AdminRoute. */}
           <Route path="/admin/setup" component={withBoundary(SetupWizard)} />

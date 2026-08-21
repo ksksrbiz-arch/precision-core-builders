@@ -334,6 +334,27 @@ CREATE POLICY "finish_selections_client_insert"
   WITH CHECK (client_id = public.client_id_for_user());
 
 -- ============================================================
+-- 11a. finish_catalog_items
+--     • Admins: full access.
+--     • Public: served via tRPC publicProcedure + service-role key, same as
+--       portfolio_projects — the anon key never queries this table directly,
+--       so this policy is defense-in-depth.
+-- ============================================================
+ALTER TABLE public.finish_catalog_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "finish_catalog_admin_all" ON public.finish_catalog_items;
+CREATE POLICY "finish_catalog_admin_all"
+  ON public.finish_catalog_items FOR ALL
+  TO authenticated
+  USING (public.is_admin());
+
+DROP POLICY IF EXISTS "finish_catalog_public_select" ON public.finish_catalog_items;
+CREATE POLICY "finish_catalog_public_select"
+  ON public.finish_catalog_items FOR SELECT
+  TO authenticated
+  USING (published = true);
+
+-- ============================================================
 -- 12. notifications
 --     • Admins: full access.
 --     • Recipients: can read/mark-read their own notifications.

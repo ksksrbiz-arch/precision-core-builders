@@ -532,6 +532,27 @@ export const finishSelections = pgTable(
   t => [index("idx_finish_selections_project_id").on(t.projectId)]
 );
 
+// ─── 11a. Finish Catalog (public showroom) ─────────────────────────────────────
+// Curated, publicly browsable list of finish products/options — distinct from
+// `finish_selections`, which tracks what a specific client picked for their
+// specific project. This table is the source for the public showroom page.
+
+export const finishCatalogItems = pgTable("finish_catalog_items", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 300 }).notNull(),
+  slug: varchar("slug", { length: 300 }).notNull().unique(),
+  category: varchar("category", { length: 100 }), // Flooring, Countertops, Cabinets, Paint, Roofing, Fixtures, etc.
+  brand: varchar("brand", { length: 200 }),
+  description: text("description"),
+  priceTier: varchar("price_tier", { length: 20 }), // "$" | "$$" | "$$$"
+  imageUrl: text("image_url"),
+  featured: boolean("featured").default(false),
+  published: boolean("published").default(false),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ─── 12. Notifications ────────────────────────────────────────────────────────
 
 export const notifications = pgTable(
@@ -597,6 +618,9 @@ export type InsertSubContractor = typeof subContractors.$inferInsert;
 
 export type FinishSelection = typeof finishSelections.$inferSelect;
 export type InsertFinishSelection = typeof finishSelections.$inferInsert;
+
+export type FinishCatalogItem = typeof finishCatalogItems.$inferSelect;
+export type InsertFinishCatalogItem = typeof finishCatalogItems.$inferInsert;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
