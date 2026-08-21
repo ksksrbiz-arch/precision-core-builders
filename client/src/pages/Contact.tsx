@@ -240,8 +240,9 @@ export default function Contact() {
                       value="project-inquiry"
                     />
                     <p className="hidden" aria-hidden>
-                      <label>
-                        Skip: <input name="bot-field" tabIndex={-1} />
+                      <label htmlFor="bot-field">
+                        Skip:{" "}
+                        <input id="bot-field" name="bot-field" tabIndex={-1} />
                       </label>
                     </p>
 
