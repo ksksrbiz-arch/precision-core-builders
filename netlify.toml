@@ -55,17 +55,19 @@
   TAILWINDCSS_DISABLE_OXIDE = "1"
   NODE_ENV = "production"
 
-# ── Custom domain redirect ───────────────────────────────────
-# After Eric sets up a custom domain, uncomment the block below
-# and replace <your-domain> with the actual domain so that the
-# www subdomain permanently redirects to the apex.
-# Netlify provisions the SSL certificate for both automatically.
-#
-# [[redirects]]
-#   from   = "https://www.<your-domain>/*"
-#   to     = "https://<your-domain>/:splat"
-#   status = 301
-#   force  = true
+# ── www → apex redirect ──────────────────────────────────────
+# robots.txt and sitemap.xml both assume precisioncorebuilders.com is the
+# sole canonical host, but this rule was never uncommented after the
+# custom domain went live — Search Console confirms www was still resolving
+# as a live, separately-crawlable duplicate of the whole site (e.g.
+# www.precisioncorebuilders.com/expertise/residential indexed alongside
+# precisioncorebuilders.com/services/residential), splitting ranking
+# signals and feeding "Discovered - currently not indexed".
+[[redirects]]
+  from   = "https://www.precisioncorebuilders.com/*"
+  to     = "https://precisioncorebuilders.com/:splat"
+  status = 301
+  force  = true
 # ────────────────────────────────────────────────────────────
 
 # Redirect API calls to serverless functions
@@ -135,6 +137,64 @@
 [[redirects]]
   from = "/estimate"
   to = "/estimator"
+  status = 301
+
+# Legacy "/expertise/*" section was renamed to "/services/*". No route
+# matches the old paths any more, so the SPA catch-all below was serving
+# them the 404 page with a 200 status — a textbook soft 404, which is
+# exactly what Search Console flagged. Explicit slugs first (these carried
+# real search impressions per Search Console), then a wildcard for
+# anything else still lingering under the old prefix.
+[[redirects]]
+  from = "/expertise/residential"
+  to = "/services/residential"
+  status = 301
+
+[[redirects]]
+  from = "/expertise/remodels"
+  to = "/services/remodels"
+  status = 301
+
+[[redirects]]
+  from = "/expertise/new-construction"
+  to = "/services/new-construction"
+  status = 301
+
+[[redirects]]
+  from = "/expertise/restoration"
+  to = "/services/restoration"
+  status = 301
+
+[[redirects]]
+  from = "/expertise/outdoor"
+  to = "/services/outdoor"
+  status = 301
+
+[[redirects]]
+  from = "/expertise/painting"
+  to = "/services/painting"
+  status = 301
+
+[[redirects]]
+  from = "/expertise/roofing"
+  to = "/services/roofing"
+  status = 301
+
+[[redirects]]
+  from = "/expertise/cabinets"
+  to = "/services/cabinets"
+  status = 301
+
+[[redirects]]
+  from = "/expertise"
+  to = "/services"
+  status = 301
+
+# Catch-all for any other stale "/expertise/*" URL still in Google's index
+# (e.g. /expertise/commercial, which has no current equivalent page).
+[[redirects]]
+  from = "/expertise/*"
+  to = "/services"
   status = 301
 
 # Redirect all other traffic to index.html for client-side routing
