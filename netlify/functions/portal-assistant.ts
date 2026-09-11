@@ -12,6 +12,8 @@ import { invokeLLM } from "../../server/_core/llm";
 import { buildPortalSnapshot } from "../../server/_core/portalSnapshot";
 import { withGuards } from "./_lib/http";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 import { z } from "zod";
 
 const portalMessageSchema = z.object({
@@ -47,13 +49,23 @@ export const handler = withGuards(
 
       const snapshot = await buildPortalSnapshot(user!.id);
 
+      // PORTAL surface: reaches client-liaison and the public contracts, and
+      // can never route into an internal operational specialist.
+      const lastUserMessage =
+        [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+      const route = routeAi({ message: lastUserMessage, surface: "portal" });
+
       const result = await invokeLLM({
         feature: "portal-assistant",
         userId: user!.id,
         messages: [
           {
             role: "system",
-            content: `${PROMPTS.portalAssistant}\n\n${snapshot.text}`,
+            content: [
+              PROMPTS.portalAssistant,
+              specialistPrompt(route.id),
+              snapshot.text,
+            ].join("\n\n"),
           },
           ...messages,
         ],
@@ -65,6 +77,8 @@ export const handler = withGuards(
         text: result.text,
         provider: result.provider,
         hasProjects: snapshot.hasProjects,
+        route: route.id,
+        routeReason: route.reason,
       });
     } catch (err) {
       console.error("[portal-assistant]", err);

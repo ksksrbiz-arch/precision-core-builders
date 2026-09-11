@@ -42,7 +42,7 @@ This document primes AI assistants with the codebase structure, development work
 - ✅ **Estimator:** Project details → **deterministic** cost calculation from `shared/estimating/` → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI. The LLM writes the explanation only; it never originates a dollar figure. See `docs/ESTIMATING_BASIS.md`.
 - ✅ **Gantt Chart:** Drag-and-drop task rescheduling with optimistic updates, wired into ScheduleView via `schedule.update`
 - ✅ **Weather Scheduling:** OpenWeatherMap forecast → weather-sensitive task identification
-- ✅ **AI Chat:** Free-tier LLM conversation interface
+- ✅ **AI Chat:** Free-tier LLM conversation interface, deterministically routed to a bounded specialist contract
 - ✅ **Vision Studio:** Photo analysis with multiple modes
 - ✅ **Lead Scoring & Capture:** AI-scored, persisted lead prioritization board
 - ✅ **Stripe Billing:** Invoicing + webhook-driven ledger reconciliation
@@ -130,6 +130,34 @@ appRouter = {
   blueprint,
 };
 ```
+
+### 3.1.1. AI Architecture
+
+Every AI surface routes deterministically to **one bounded specialist contract**
+before the model is called. See `docs/AI_OPERATING_CONTRACT.md`.
+
+```
+request → routeAi(surface, message) → specialistPrompt(id) → data context → model → validate
+```
+
+- `server/_core/ai/router.ts` — deterministic routing. **Never put an LLM
+  classification call in front of it.**
+- `server/_core/ai/specialists.ts` — the eight contracts, the evidence protocol
+  (KNOWN / INFERRED / VERIFY), and `SHARED_NEVER` (the prohibitions that outrank
+  any user input).
+
+**Surface is an authorization boundary**, not just a routing hint:
+
+| Surface    | Who                  | May reach                                                                                    |
+| :--------- | :------------------- | :------------------------------------------------------------------------------------------- |
+| `public`   | anyone               | `estimator`, `general-advisor`                                                               |
+| `portal`   | authenticated client | `client-liaison` + the public set                                                            |
+| `internal` | Eric (admin)         | `ops-copilot`, `field-reporter`, `procurement`, `scheduler`, `lead-analyst` + the public set |
+
+A caller may pin a specialist when the job is known (`voice-to-report`,
+`daily-briefing`); a pin the surface may not reach falls through to that
+surface's default rather than escalating. This is test-covered — do not weaken
+it.
 
 **Middleware levels:**
 
@@ -268,7 +296,10 @@ pnpm db:migrate       # Run Drizzle migration
 pnpm db:push          # Generate + migrate in one step
 pnpm db:studio        # Open Drizzle Studio GUI
 
-pnpm validate         # Full validation: lint + test + build
+pnpm check:estimating # Estimating-basis integrity + staleness
+pnpm eval:ai          # AI routing / surface isolation / refusal rules (offline)
+pnpm eval:ai:live     # Same refusal rules against a real model (needs a key)
+pnpm validate         # Full validation: lint + estimating + eval:ai + test + build
 pnpm clean            # Remove dist/, cache, logs
 ```
 
@@ -382,6 +413,8 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 - Use external map libraries — use the built-in `Map.tsx` component
 - Manually manipulate cookies or roll custom auth — use Netlify Identity
 - Use or extend any Manus-specific code (`ManusDialog.tsx`, `client/public/__manus__/`, `server/_core/sdk.ts`, `server/_core/oauth.ts`, `server/storage.ts`) — these are legacy scaffolding to be replaced
+- **Put an LLM classification call ahead of the deterministic router** (`server/_core/ai/router.ts`) — intent identifiable from explicit signals is a code decision
+- **Widen what a surface can reach.** `public` and `portal` must never route into an operational specialist
 - **Put a rate, price, or cost benchmark in an LLM prompt.** Anything that affects money belongs in a validated data module (`shared/estimating/basis.ts`), where it can be dated, integrity-checked, and flagged when stale
 - **Let an LLM originate, adjust, or restate a dollar figure.** Compute it deterministically, then ask the model to explain it
 - **Write LLM output to the database without validating it.** Input validation is not output validation
@@ -394,6 +427,8 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 - Use shadcn/ui components from `client/src/components/ui/` before building custom ones
 - Write Vitest tests for all critical procedures
 - **Fail down, never fail open** on any AI path: a provider outage, a malformed response, or an invalid basis must degrade to a safe deterministic result or an explicit VERIFY state — never a fabricated one, and never a bypassed check
+- **Route every AI surface through `routeAi()` and inject `specialistPrompt()` before any data context** — a bounded contract beats a kitchen-sink prompt
+- **Run `pnpm eval:ai` after touching prompts, contracts, or routing**, and `pnpm eval:ai:live` before shipping such a change
 - **Treat VERIFY as a valid answer.** "This needs an on-site visit" is a better response than a number the data can't support, and it converts better
 - Use Zod schemas for input validation on tRPC procedures
 - Follow Prettier formatting (80 chars, 2 spaces, trailing commas)

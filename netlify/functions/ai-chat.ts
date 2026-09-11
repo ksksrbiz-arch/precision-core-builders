@@ -28,6 +28,8 @@ import {
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
 
@@ -126,8 +128,20 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   // an unbounded prompt.
   const MAX_MESSAGES = 12;
   const MAX_CONTENT_CHARS = 4000;
+  // Route deterministically on the PUBLIC surface: a visitor can reach the
+  // estimator and general-advisor contracts, never an internal one.
+  const lastUserMessage =
+    [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+  const route = routeAi({
+    message: typeof lastUserMessage === "string" ? lastUserMessage : "",
+    surface: "public",
+  });
+
   const fullMessages = [
-    { role: "system" as const, content: PROMPTS.chat },
+    {
+      role: "system" as const,
+      content: [PROMPTS.chat, specialistPrompt(route.id)].join("\n\n"),
+    },
     ...messages
       .filter(m => m.role !== "system")
       .slice(-MAX_MESSAGES)
@@ -156,6 +170,8 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
           text: result.text,
           model: result.model,
           provider: result.provider,
+          route: route.id,
+          routeReason: route.reason,
         }),
       };
     } catch (err) {

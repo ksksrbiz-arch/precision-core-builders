@@ -21,7 +21,9 @@
     "lint": "pnpm check && pnpm format:check",
     "check:env": "node scripts/check-env-size.js",
     "check:estimating": "tsx scripts/check-estimating-basis.ts",
-    "validate": "pnpm lint && pnpm check:estimating && pnpm test && pnpm build",
+    "eval:ai": "tsx scripts/eval-ai.ts",
+    "eval:ai:live": "tsx scripts/eval-ai.ts --live",
+    "validate": "pnpm lint && pnpm check:estimating && pnpm eval:ai && pnpm test && pnpm build",
     "clean": "rm -rf dist/ node_modules/.cache/ .manus-logs/"
   },
   "dependencies": {

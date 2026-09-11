@@ -15,8 +15,17 @@ import { getEugeneForecast } from "../../server/_core/weather";
 import { sendEmail, sendSms } from "../../server/_core/delivery";
 import { db } from "../../server/db";
 import { PROMPTS } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 
-const SYSTEM_PROMPT = PROMPTS.dailyBriefing;
+// The briefing always does the same job, so the specialist is pinned instead
+// of routed from prose.
+const SYSTEM_PROMPT = [
+  PROMPTS.dailyBriefing,
+  specialistPrompt(
+    routeAi({ surface: "internal", specialist: "ops-copilot" }).id
+  ),
+].join("\n\n");
 
 async function getAdminRecipientIds(): Promise<string[]> {
   if (!db) return [];
