@@ -159,6 +159,13 @@ A caller may pin a specialist when the job is known (`voice-to-report`,
 surface's default rather than escalating. This is test-covered — do not weaken
 it.
 
+**Tools** (`server/_core/ai/tools.ts`) are gated by the same boundary. Public
+and portal get `estimate_project` only; the operational tools (`find_projects`,
+`project_detail`, `material_shortages`, `project_schedule`) are internal-only,
+and `executeTool()` re-checks the surface at execution time so a hallucinated
+tool name never reaches the database. `runToolLoop()` bounds rounds at 2 and
+withholds tools on the last one to force an answer.
+
 **Middleware levels:**
 
 - `publicProcedure` — No auth required

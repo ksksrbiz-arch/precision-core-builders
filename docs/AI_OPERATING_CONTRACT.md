@@ -68,6 +68,34 @@ A caller may _pin_ a specialist when the job is known (voice-to-report,
 daily-briefing). A pin the surface may not reach falls through to that surface's
 default — it never escalates. This is covered by tests; do not weaken it.
 
+## 4.1 Tools
+
+The model decides _which_ tool and _when_. Code decides _what the answer is_. A
+tool never asks a model anything, and a tool result is always derived from the
+estimating basis or the database — never generated.
+
+**Tools are surface-gated exactly like specialists**, in
+`server/_core/ai/tools.ts`:
+
+| Tool                                                                        | Surfaces                 |
+| :-------------------------------------------------------------------------- | :----------------------- |
+| `estimate_project`                                                          | public, portal, internal |
+| `find_projects`, `project_detail`, `material_shortages`, `project_schedule` | internal only            |
+
+`executeTool()` re-checks the surface **at execution time**, not just when the
+tool list is built. A model can emit any name it likes, including one it was
+never offered; that must return an error rather than reaching the database.
+Tests cover this directly — do not weaken it.
+
+Tool results project only the fields the model needs. `project_detail` returns
+budget and progress, never the joined client record or free-text notes.
+
+`runToolLoop()` bounds the conversation: `maxRounds` defaults to 2, and the
+final round is issued **without** tools so the model has to answer with what it
+has instead of spinning. A tool that throws, or arguments that are not valid
+JSON, are reported back to the model as an error result rather than aborting the
+turn.
+
 ## 5. Fail down, never fail open
 
 Provider failure, missing configuration, quota exhaustion, or malformed output

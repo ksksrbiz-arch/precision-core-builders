@@ -18,11 +18,31 @@
 import { ENV } from "./env";
 import { logAiUsage } from "./aiUsage";
 
-export type LLMRole = "system" | "user" | "assistant";
+export type LLMRole = "system" | "user" | "assistant" | "tool";
 
 export type LLMMessage = {
   role: LLMRole;
   content: string;
+  /** Set on assistant messages that requested tools, so the model sees its own call. */
+  toolCalls?: LLMToolCall[];
+  /** Set on `tool` messages, linking the result back to the request. */
+  toolCallId?: string;
+};
+
+/** An OpenAI-style function tool the model may request. */
+export type LLMTool = {
+  name: string;
+  description: string;
+  /** JSON Schema for the arguments object. */
+  parameters: Record<string, unknown>;
+};
+
+/** A tool the model asked to run. */
+export type LLMToolCall = {
+  id: string;
+  name: string;
+  /** Raw argument JSON as the model produced it; may be malformed. */
+  rawArguments: string;
 };
 
 export type LLMInvokeParams = {
@@ -35,12 +55,20 @@ export type LLMInvokeParams = {
   feature?: string;
   /** Optional user id to attribute the call to in usage logs. */
   userId?: string | null;
+  /**
+   * Tools the model may call. Presence of this array switches the request into
+   * tool-calling mode; the caller is responsible for executing any returned
+   * calls and invoking again with the results (see `runToolLoop`).
+   */
+  tools?: LLMTool[];
 };
 
 export type LLMProvider = "groq" | "openrouter";
 
 export type LLMResult = {
   text: string;
+  /** Tool calls the model requested, when tools were supplied. */
+  toolCalls?: LLMToolCall[];
   /** The concrete model id that produced the response. */
   model: string;
   /** Which provider served the request (for usage tracking / governance). */
@@ -61,8 +89,12 @@ type ResolvedParams = LLMInvokeParams & {
 
 const DEFAULT_ORDER: LLMProvider[] = ["groq", "openrouter"];
 
+// gpt-oss-120b is markedly better at tool calling than llama-3.3-70b, which
+// matters now that ai-chat and ai-copilot run a tool loop. It is the model
+// Clearview runs on Groq in production. Both remain free tier.
+// Override per-provider with GROQ_MODEL / OPENROUTER_MODEL.
 const DEFAULT_MODELS: Record<LLMProvider, string> = {
-  groq: "llama-3.3-70b-versatile",
+  groq: "openai/gpt-oss-120b",
   openrouter: "meta-llama/llama-3.3-70b-instruct:free",
 };
 
@@ -156,8 +188,16 @@ async function withRetries<T>(fn: () => Promise<T>): Promise<T> {
 
 // ─── OpenAI-compatible providers (Groq, OpenRouter) ──────────────────────────
 
+type OpenAIToolCall = {
+  id?: string;
+  function?: { name?: string; arguments?: string };
+};
+
 type OpenAIChatResponse = {
-  choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+  choices?: Array<{
+    message?: { content?: string | null; tool_calls?: OpenAIToolCall[] };
+    finish_reason?: string;
+  }>;
   model?: string;
   usage?: {
     prompt_tokens?: number;
@@ -180,9 +220,31 @@ async function invokeOpenAICompatible(
   } = params;
   const model = modelFor(provider);
 
-  const messages: Array<{ role: string; content: string }> = [];
+  const messages: Array<Record<string, unknown>> = [];
   if (system) messages.push({ role: "system", content: system });
   for (const m of conversationMsgs) {
+    if (m.role === "tool") {
+      // A tool result must carry the id of the call it answers, or the
+      // provider rejects the whole conversation.
+      messages.push({
+        role: "tool",
+        content: m.content,
+        tool_call_id: m.toolCallId,
+      });
+      continue;
+    }
+    if (m.role === "assistant" && m.toolCalls?.length) {
+      messages.push({
+        role: "assistant",
+        content: m.content || null,
+        tool_calls: m.toolCalls.map(c => ({
+          id: c.id,
+          type: "function",
+          function: { name: c.name, arguments: c.rawArguments },
+        })),
+      });
+      continue;
+    }
     messages.push({ role: m.role, content: m.content });
   }
 
@@ -204,6 +266,19 @@ async function invokeOpenAICompatible(
       messages,
       max_tokens: maxTokens,
       temperature,
+      ...(params.tools?.length
+        ? {
+            tools: params.tools.map(t => ({
+              type: "function",
+              function: {
+                name: t.name,
+                description: t.description,
+                parameters: t.parameters,
+              },
+            })),
+            tool_choice: "auto",
+          }
+        : {}),
     }),
   });
 
@@ -216,13 +291,25 @@ async function invokeOpenAICompatible(
     );
   }
 
-  const text = data.choices?.[0]?.message?.content ?? "";
-  if (!text) {
+  const message = data.choices?.[0]?.message;
+  const text = message?.content ?? "";
+  const toolCalls: LLMToolCall[] = (message?.tool_calls ?? [])
+    .filter(c => c.function?.name)
+    .map((c, i) => ({
+      id: c.id ?? `call_${i}`,
+      name: c.function!.name!,
+      rawArguments: c.function?.arguments ?? "{}",
+    }));
+
+  // A turn that requests tools legitimately has no prose content, so empty
+  // text is only an error when the model also asked for nothing.
+  if (!text && !toolCalls.length) {
     throw new ProviderError(`${provider} returned an empty response`, true);
   }
 
   return {
     text,
+    ...(toolCalls.length ? { toolCalls } : {}),
     model: data.model ?? model,
     provider,
     usage: data.usage
@@ -250,6 +337,105 @@ function callProvider(
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
+
+/** Executes one tool call and returns a JSON-serialisable result. */
+export type ToolExecutor = (
+  name: string,
+  args: Record<string, unknown>
+) => Promise<unknown> | unknown;
+
+export type ToolLoopParams = LLMInvokeParams & {
+  tools: LLMTool[];
+  execute: ToolExecutor;
+  /**
+   * Maximum tool rounds before the loop gives up. Bounded per the AI Operating
+   * Contract: a model that keeps calling tools must terminate, not spin.
+   */
+  maxRounds?: number;
+};
+
+export type ToolLoopResult = LLMResult & {
+  /** Every tool the model actually ran, in order, for observability. */
+  toolTrace: { name: string; args: Record<string, unknown>; result: unknown }[];
+};
+
+const DEFAULT_MAX_TOOL_ROUNDS = 2;
+
+/**
+ * Run a bounded tool-calling conversation: call the model, execute any tools it
+ * requests, feed the results back, and repeat until it answers in prose or the
+ * round budget is spent.
+ *
+ * Fails down, never open. A tool that throws, or arguments that are not valid
+ * JSON, are reported back to the model as an error result rather than aborting
+ * the turn — the model can then answer without that tool. If the round budget
+ * is exhausted the last text is returned; the caller always gets an answer or a
+ * thrown provider error, never a half-finished tool state.
+ */
+export async function runToolLoop(
+  params: ToolLoopParams
+): Promise<ToolLoopResult> {
+  const {
+    tools,
+    execute,
+    maxRounds = DEFAULT_MAX_TOOL_ROUNDS,
+    ...rest
+  } = params;
+  const conversation: LLMMessage[] = [...params.messages];
+  const toolTrace: ToolLoopResult["toolTrace"] = [];
+  let last: LLMResult | null = null;
+
+  for (let round = 0; round <= maxRounds; round++) {
+    // On the final round the tools are withheld, which forces the model to
+    // answer with what it already has instead of requesting more.
+    const atBudget = round === maxRounds;
+    const result = await invokeLLM({
+      ...rest,
+      messages: conversation,
+      ...(atBudget ? {} : { tools }),
+    });
+    last = result;
+
+    if (!result.toolCalls?.length) {
+      return { ...result, toolTrace };
+    }
+
+    conversation.push({
+      role: "assistant",
+      content: result.text,
+      toolCalls: result.toolCalls,
+    });
+
+    for (const call of result.toolCalls) {
+      let args: Record<string, unknown> = {};
+      let output: unknown;
+      try {
+        args = JSON.parse(call.rawArguments || "{}") as Record<string, unknown>;
+      } catch {
+        output = { error: "Tool arguments were not valid JSON." };
+      }
+      if (output === undefined) {
+        try {
+          output = await execute(call.name, args);
+        } catch (err) {
+          output = {
+            error: err instanceof Error ? err.message : "Tool failed.",
+          };
+        }
+      }
+      toolTrace.push({ name: call.name, args, result: output });
+      conversation.push({
+        role: "tool",
+        toolCallId: call.id,
+        content: JSON.stringify(output),
+      });
+    }
+  }
+
+  // Budget exhausted with the model still asking for tools. Return what it
+  // last said rather than throwing — a degraded answer beats no answer.
+  return { ...(last as LLMResult), toolTrace };
+}
 
 /**
  * Invoke the best available LLM, trying providers in free-first priority order

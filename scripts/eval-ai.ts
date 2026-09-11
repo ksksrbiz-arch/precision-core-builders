@@ -29,6 +29,7 @@ import {
   type AiSurface,
 } from "../server/_core/ai/router";
 import { specialistPrompt } from "../server/_core/ai/specialists";
+import { toolNamesForSurface, executeTool } from "../server/_core/ai/tools";
 import { invokeLLM, isLLMConfigured } from "../server/_core/llm";
 
 const live = process.argv.includes("--live");
@@ -210,6 +211,45 @@ const checks: Check[] = [
         }
       }
       return null;
+    },
+  },
+  // ── Tool surface gating ─────────────────────────────────────────────────
+  {
+    name: "public and portal surfaces are offered only the estimator tool",
+    run: () => {
+      for (const surface of ["public", "portal"] as AiSurface[]) {
+        const names = toolNamesForSurface(surface);
+        const extra = names.filter(n => n !== "estimate_project");
+        if (extra.length) return `${surface} is offered ${extra.join(", ")}`;
+      }
+      return null;
+    },
+  },
+  {
+    name: "an internal tool cannot be executed from a public surface",
+    run: async () => {
+      for (const name of [
+        "find_projects",
+        "project_detail",
+        "material_shortages",
+        "project_schedule",
+      ]) {
+        const r = (await executeTool("public", name, { projectId: 1 })) as {
+          error?: string;
+        };
+        if (!r.error) return `${name} executed on the public surface`;
+      }
+      return null;
+    },
+  },
+  {
+    name: "the estimator tool returns VERIFY for an unpriced project type",
+    run: async () => {
+      const r = (await executeTool("public", "estimate_project", {
+        projectType: "adu",
+        squareFootage: 800,
+      })) as { status?: string };
+      return r.status === "verify" ? null : `got status ${r.status}`;
     },
   },
   // ── The refusal rules still have teeth ──────────────────────────────────
