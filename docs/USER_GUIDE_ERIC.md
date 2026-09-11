@@ -6,6 +6,26 @@ Welcome, Eric. This is your complete toolset for running Precision Core Builders
 
 ---
 
+## Start Here: First Week Training
+
+If you're new to the platform, don't read this guide front to back. Go to
+**Admin → First Week Training** (`/admin/training`) instead.
+
+It's eleven short lessons spread over five days — ten to twenty minutes each,
+done on your real jobs. Check off each step as you go; your progress is saved
+on that device, so you can stop mid-lesson and pick it back up the next
+morning. Where a walkthrough video has been recorded, it plays right in the
+lesson.
+
+This guide is the reference you search when you're stuck on one thing. The
+training track is the order to learn it in.
+
+**And the one shortcut worth memorizing:** the **`?` icon** in the header of
+every admin screen opens the guide for that exact screen. You never have to
+go looking for the right page of the manual.
+
+---
+
 ## Quick Start (First 5 Minutes)
 
 1. **Log in** at `<your-domain>/admin`

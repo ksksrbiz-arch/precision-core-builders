@@ -3,6 +3,7 @@
  * No fluff. No runaround. Just what you need to know.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { GuideVideo } from "@/components/GuideVideo";
 import {
   Accordion,
   AccordionContent,
@@ -146,6 +147,11 @@ function GuideCard({
         </div>
       </div>
 
+      {/* Walkthrough video (renders nothing until one is recorded) */}
+      <div className="px-5 pt-4 empty:hidden">
+        <GuideVideo guideId={guide.id} guideTitle={guide.title} />
+      </div>
+
       {/* Sections as accordion */}
       <Accordion
         type="multiple"
@@ -261,6 +267,17 @@ export default function Guides() {
           <p className="text-sm text-muted-foreground">
             Everything you need to know about every tool. No fluff. Search or
             scroll.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            New to the platform? Start with{" "}
+            <a
+              href="/admin/training"
+              className="text-primary font-medium underline underline-offset-2"
+            >
+              First Week Training
+            </a>{" "}
+            — the same material, ordered as a lesson plan you work through one
+            day at a time.
           </p>
         </div>
 
