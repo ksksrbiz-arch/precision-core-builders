@@ -40,6 +40,7 @@ import {
   CreditCard,
   HardHat,
   HelpCircle,
+  GraduationCap,
   Image,
   LayoutDashboard,
   LogOut,
@@ -125,6 +126,11 @@ const BASE_NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
       { icon: Image, label: "Portfolio CMS", path: "/admin/portfolio-cms" },
       { icon: Settings, label: "Platform Setup", path: "/admin/setup" },
       { icon: HelpCircle, label: "System Guide", path: "/admin/guides" },
+      {
+        icon: GraduationCap,
+        label: "First Week Training",
+        path: "/admin/training",
+      },
     ],
   },
 ];

@@ -24,7 +24,7 @@ This document primes AI assistants with the codebase structure, development work
 
 ### What's Built
 
-- ✅ Page routing (36 pages: 18 admin, 4 portal, 7 public, 7 auth/services)
+- ✅ Page routing (37 pages: 19 admin, 4 portal, 7 public, 7 auth/services)
 - ✅ 50+ shadcn/ui components + 40+ custom components
 - ✅ DashboardLayout, ErrorBoundary, Map, VoiceRecorder, HeroSection, PWAInstallPrompt
 - ✅ Tailwind CSS 4 design system with custom "Quiet Luxury" theme
@@ -49,6 +49,7 @@ This document primes AI assistants with the codebase structure, development work
 - ✅ **Material Procurement:** Shortage detection + persisted, vendor-bucketed purchase orders
 - ✅ **Search:** Postgres full-text search across projects, clients, reports, and more
 - ✅ **Notifications:** Delivery pipeline (in-app / email / SMS via n8n)
+- ✅ **Training & Guides:** Contextual per-screen help, a searchable System Guide, and a guided First Week Training track (`/admin/training`) with click-to-play walkthrough videos (see `docs/TRAINING_VIDEOS.md`)
 - ✅ **Blueprint Integration:** OAuth + API-key connect, artifact sharing (flag-gated by `VITE_FEATURE_BLUEPRINT`)
 
 ### What's Scaffolded / Pending
