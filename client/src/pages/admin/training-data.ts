@@ -349,6 +349,7 @@ export const TOTAL_TRAINING_STEPS = TRAINING_MODULES.reduce(
   0
 );
 
+/** Total hands-on time across every module, shown as an up-front estimate. */
 export function totalTrainingMinutes(): number {
   return TRAINING_MODULES.reduce((sum, m) => sum + m.minutes, 0);
 }

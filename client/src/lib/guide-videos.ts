@@ -33,10 +33,12 @@ export const GUIDE_VIDEOS: Record<string, GuideVideo> = {
   // "field-reports": { youtubeId: "dQw4w9WgXcQ", duration: "3 min" },
 };
 
+/** The video for a guide, or undefined when none has been recorded yet. */
 export function getGuideVideo(guideId: string): GuideVideo | undefined {
   return GUIDE_VIDEOS[guideId];
 }
 
+/** Whether a walkthrough exists, without materializing the entry. */
 export function hasGuideVideo(guideId: string): boolean {
   return Boolean(GUIDE_VIDEOS[guideId]);
 }

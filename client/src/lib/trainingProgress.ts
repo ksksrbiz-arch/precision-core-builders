@@ -19,14 +19,23 @@ export type TrainingProgress = {
 
 const EMPTY: TrainingProgress = { completedSteps: [], completedModules: [] };
 
+/**
+ * Stable identifier for one checkbox. Steps are positional, so a module's
+ * steps must not be reordered without migrating the stored keys.
+ */
 export function stepKey(moduleId: string, stepIndex: number): string {
   return `${moduleId}:${stepIndex}`;
 }
 
+/** Guards stored JSON, which is user-writable and may be any shape. */
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(v => typeof v === "string");
 }
 
+/**
+ * Reads saved progress, falling back to empty for every failure mode:
+ * nothing stored, unparseable JSON, wrong shape, or storage that throws.
+ */
 export function loadProgress(): TrainingProgress {
   try {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
@@ -46,6 +55,7 @@ export function loadProgress(): TrainingProgress {
   }
 }
 
+/** Persists progress. Silently no-ops when storage is unavailable. */
 export function saveProgress(progress: TrainingProgress): void {
   try {
     globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(progress));
@@ -55,6 +65,7 @@ export function saveProgress(progress: TrainingProgress): void {
   }
 }
 
+/** Wipes saved progress — backs the "Start over" control. */
 export function clearProgress(): void {
   try {
     globalThis.localStorage?.removeItem(STORAGE_KEY);
@@ -63,12 +74,14 @@ export function clearProgress(): void {
   }
 }
 
+/** Adds or removes a value, returning a new array (never mutates). */
 function toggleIn(list: string[], value: string): string[] {
   return list.includes(value)
     ? list.filter(v => v !== value)
     : [...list, value];
 }
 
+/** Checks or unchecks one step, returning fresh state for React. */
 export function toggleStep(
   progress: TrainingProgress,
   key: string
@@ -79,6 +92,7 @@ export function toggleStep(
   };
 }
 
+/** Marks a whole lesson done or not done, independently of its steps. */
 export function toggleModule(
   progress: TrainingProgress,
   moduleId: string

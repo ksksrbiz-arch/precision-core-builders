@@ -42,6 +42,11 @@ import {
 import { useCallback, useEffect, useId, useState } from "react";
 import { useLocation } from "wouter";
 
+/**
+ * One lesson: objective, walkthrough, checkable steps, and the jump into the
+ * screen it teaches. Progress is owned by the page so the header total stays
+ * in sync — this component holds no state of its own.
+ */
 function ModuleCard({
   module,
   progress,
@@ -180,6 +185,10 @@ function ModuleCard({
   );
 }
 
+/**
+ * The guided first-week track. Owns progress state, mirrors every change to
+ * localStorage, and groups the curriculum by day.
+ */
 export default function Training() {
   const [progress, setProgress] = useState<TrainingProgress>(() =>
     loadProgress()

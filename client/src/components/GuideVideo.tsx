@@ -19,6 +19,11 @@ import {
 import { ExternalLink, Play, VideoOff } from "lucide-react";
 import { useState } from "react";
 
+/**
+ * Renders the walkthrough for one guide: a poster that swaps to an embedded
+ * player on click, a "not recorded yet" note when `showPending` is set, or
+ * nothing at all.
+ */
 export function GuideVideo({
   guideId,
   guideTitle,
