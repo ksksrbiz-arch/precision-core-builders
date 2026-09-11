@@ -106,9 +106,14 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   }
 
   let messages: ChatMessage[];
+  // Named requestBody rather than body: the SSE path below already binds
+  // `body` to the Readable stream it returns.
+  let requestBody: Record<string, unknown> = {};
   try {
-    const body = JSON.parse(event.body ?? "{}");
-    const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+    requestBody = JSON.parse(event.body ?? "{}") as Record<string, unknown>;
+    const rawMessages = Array.isArray(requestBody.messages)
+      ? requestBody.messages
+      : [];
     // Validate shape per-message rather than the whole array, so one
     // malformed message doesn't reject an otherwise-valid conversation —
     // just drop it, matching the existing "be lenient, then bound" style
@@ -134,10 +139,20 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   // estimator and general-advisor contracts, never an internal one.
   const lastUserMessage =
     [...messages].reverse().find(m => m.role === "user")?.content ?? "";
-  const route = routeAi({
-    message: typeof lastUserMessage === "string" ? lastUserMessage : "",
-    surface: "public",
-  });
+  const latest = typeof lastUserMessage === "string" ? lastUserMessage : "";
+  const route = routeAi({ message: latest, surface: "public" });
+
+  // Build a structured model of the visitor's project from what they have
+  // actually said. Deterministic on purpose — a model asked to "extract the
+  // project" invents a square footage nobody mentioned.
+  const priorState: ProjectState =
+    body &&
+    typeof body === "object" &&
+    body.project &&
+    typeof body.project === "object"
+      ? (body.project as ProjectState)
+      : {};
+  const project = inferProjectState(latest, priorState, messages);
 
   const fullMessages = [
     {
@@ -180,6 +195,11 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
           route: route.id,
           routeReason: route.reason,
           toolsUsed: result.toolTrace.map(t => t.name),
+          // Structured state so the UI can track the conversation and offer a
+          // next step that fits, instead of a static prompt list.
+          project,
+          suggestions: nextSteps(project),
+          estimateReady: estimateReady(project, messages),
         }),
       };
     } catch (err) {
