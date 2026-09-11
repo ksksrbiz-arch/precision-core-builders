@@ -8,7 +8,7 @@
 # The monthly schedule exists so "nobody reviewed the rates" surfaces on its own
 # instead of waiting for a wrong number to reach a customer.
 
-name: Estimating health
+name: AI & estimating health
 
 on:
   schedule:
@@ -46,3 +46,6 @@ jobs:
 
       - name: Run the estimating regression suite
         run: pnpm vitest run shared/estimating
+
+      - name: AI behaviour checks (routing, surface isolation, refusals)
+        run: pnpm eval:ai

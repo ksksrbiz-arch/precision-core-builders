@@ -31,6 +31,8 @@ import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { verifyAdmin } from "./_utils/authGuard";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -130,10 +132,23 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
     );
   }
 
+  // Route deterministically before the model is called, then inject the
+  // selected specialist contract ahead of any data. Internal surface: the
+  // router may reach the operational specialists, never the public defaults
+  // alone.
+  const lastUserMessage =
+    [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+  const route = routeAi({
+    message: lastUserMessage,
+    surface: "internal",
+  });
+
   const fullMessages = [
     {
       role: "system" as const,
-      content: `${PROMPTS.copilot}\n\n${snapshotText}`,
+      content: [PROMPTS.copilot, specialistPrompt(route.id), snapshotText].join(
+        "\n\n"
+      ),
     },
     ...messages,
   ];
@@ -155,6 +170,8 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
           text: result.text,
           model: result.model,
           provider: result.provider,
+          route: route.id,
+          routeReason: route.reason,
         }),
       };
     } catch (err) {
