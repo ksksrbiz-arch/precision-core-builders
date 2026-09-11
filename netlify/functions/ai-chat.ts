@@ -17,6 +17,7 @@ import type {
 } from "@netlify/functions";
 import {
   invokeLLM,
+  runToolLoop,
   streamLLM,
   type LLMStreamChunk,
 } from "../../server/_core/llm";
@@ -30,6 +31,7 @@ import {
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
 import { routeAi } from "../../server/_core/ai/router";
 import { specialistPrompt } from "../../server/_core/ai/specialists";
+import { toolsForSurface, toolExecutorFor } from "../../server/_core/ai/tools";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
 
@@ -157,11 +159,16 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   // Buffered fallback — preserves the original JSON contract exactly.
   const buffered = async (): Promise<StreamingResponse> => {
     try {
-      const result = await invokeLLM({
+      // The public surface gets exactly one tool: the deterministic
+      // estimator. That turns "what does a kitchen cost?" from an invented
+      // number into the same computed range /estimator serves.
+      const result = await runToolLoop({
         messages: fullMessages,
         maxTokens: 600,
         temperature: 0.4,
         feature: "ai-chat",
+        tools: toolsForSurface("public"),
+        execute: toolExecutorFor("public"),
       });
       return {
         statusCode: 200,
@@ -172,6 +179,7 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
           provider: result.provider,
           route: route.id,
           routeReason: route.reason,
+          toolsUsed: result.toolTrace.map(t => t.name),
         }),
       };
     } catch (err) {
