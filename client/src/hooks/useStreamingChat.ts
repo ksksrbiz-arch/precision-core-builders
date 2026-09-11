@@ -24,6 +24,21 @@ export type ChatMessage = {
 /** Map an HTTP status (and optional server message) to a user-facing string. */
 export type ErrorFormatter = (status: number, fallback?: string) => string;
 
+/**
+ * Structured conversation metadata the server derives from the exchange.
+ *
+ * `ai-chat` returns a project model, next-step prompts and an estimate-ready
+ * flag alongside the answer. Only the buffered JSON path carries these — SSE
+ * frames are text-only — which is fine while streaming is disabled, but means
+ * a consumer must tolerate them being absent.
+ */
+export type ChatMeta = {
+  project?: Record<string, unknown>;
+  suggestions?: { label: string; prompt: string }[];
+  estimateReady?: boolean;
+  route?: string;
+};
+
 /** Client-side retry tuning for transient failures. */
 export type RetryOptions = {
   /** Extra attempts after the first (default 2 → up to 3 total tries). */
@@ -47,6 +62,12 @@ export type UseStreamingChatOptions = {
   formatError: ErrorFormatter;
   /** Called once per response with the resolving provider id, when known. */
   onProvider?: (provider: string) => void;
+  /**
+   * Called once per response with the server's structured conversation state.
+   * Absent on the streaming path and on errors, so treat every field as
+   * optional.
+   */
+  onMeta?: (meta: ChatMeta) => void;
   /** Override client-side retry behaviour (mostly for tests). */
   retry?: RetryOptions;
 };
@@ -113,13 +134,16 @@ function nextId(prefix: string): string {
 }
 
 export function useStreamingChat(options: UseStreamingChatOptions) {
-  const { endpoint, headers, formatError, onProvider, retry } = options;
+  const { endpoint, headers, formatError, onProvider, onMeta, retry } = options;
   const retryCfg: Required<RetryOptions> = { ...DEFAULT_RETRY, ...retry };
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   // Latest messages snapshot for building the request without stale closures.
   const messagesRef = useRef<ChatMessage[]>([]);
   messagesRef.current = messages;
+  // The server's project model, echoed back on each turn so state accumulates
+  // across the conversation rather than being re-derived from scratch.
+  const projectRef = useRef<Record<string, unknown> | undefined>(undefined);
   // Synchronous in-flight guard. `loading` is async React state, so two rapid
   // synchronous calls (double-click, held Enter, two quick prompts) could both
   // read loading===false and fire concurrent requests — this ref blocks that.
@@ -170,7 +194,10 @@ export function useStreamingChat(options: UseStreamingChatOptions) {
               Accept: "text/event-stream",
               ...extraHeaders,
             },
-            body: JSON.stringify({ messages: history }),
+            body: JSON.stringify({
+              messages: history,
+              ...(projectRef.current ? { project: projectRef.current } : {}),
+            }),
           });
         } catch {
           // Network error / DNS / offline — worth a retry.
@@ -186,6 +213,20 @@ export function useStreamingChat(options: UseStreamingChatOptions) {
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
             if (data.provider) onProvider?.(data.provider);
+            if (data.project && typeof data.project === "object") {
+              projectRef.current = data.project as Record<string, unknown>;
+            }
+            onMeta?.({
+              project: data.project,
+              suggestions: Array.isArray(data.suggestions)
+                ? data.suggestions
+                : undefined,
+              estimateReady:
+                typeof data.estimateReady === "boolean"
+                  ? data.estimateReady
+                  : undefined,
+              route: typeof data.route === "string" ? data.route : undefined,
+            });
             setAssistant(assistantId, data.text ?? "No response received.");
             return { type: "done" };
           }
@@ -275,6 +316,7 @@ export function useStreamingChat(options: UseStreamingChatOptions) {
       headers,
       formatError,
       onProvider,
+      onMeta,
       loading,
       setAssistant,
       retryCfg.maxRetries,

@@ -30,6 +30,8 @@ import {
 import { verifyAuth } from "./_utils/authGuard";
 import { withGuards } from "./_lib/http";
 import { PROMPTS } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 import { z } from "zod";
 
 // Bounds are deliberately generous but finite — this is public, unauthenticated
@@ -239,7 +241,18 @@ export const handler = withGuards(
         const result = await invokeLLM({
           feature: "estimate-project",
           messages: [
-            { role: "system", content: PROMPTS.estimator },
+            {
+              role: "system",
+              // The job is fixed, so the estimator contract is pinned. It
+              // carries the shared prohibitions the prose prompt does not --
+              // no code claims, no licensing claims, no promised dates.
+              content: [
+                PROMPTS.estimator,
+                specialistPrompt(
+                  routeAi({ surface: "public", specialist: "estimator" }).id
+                ),
+              ].join("\n\n"),
+            },
             { role: "user", content: userPrompt },
           ],
           maxTokens: 400,

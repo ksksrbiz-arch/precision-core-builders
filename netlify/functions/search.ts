@@ -15,6 +15,8 @@ import { db } from "../../server/db";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { withGuards } from "./_lib/http";
 import { PROMPTS } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 
 /**
  * Strips characters that are special in PostgREST ilike patterns to prevent
@@ -248,7 +250,18 @@ async function ilikeSearch(
     const raw = await invokeLLM({
       feature: "search",
       messages: [
-        { role: "system", content: PROMPTS.searchIntent },
+        {
+          role: "system",
+          // Pinned: this step only describes what to look for. The contract's
+          // job is to stop the model inventing a status or date filter the
+          // query never implied, which would silently narrow Eric's results.
+          content: [
+            PROMPTS.searchIntent,
+            specialistPrompt(
+              routeAi({ surface: "internal", specialist: "search-intent" }).id
+            ),
+          ].join("\n\n"),
+        },
         { role: "user", content: query },
       ],
       jsonMode: true,

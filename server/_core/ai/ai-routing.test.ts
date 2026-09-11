@@ -27,6 +27,8 @@ const INTERNAL_ONLY: SpecialistId[] = [
   "procurement",
   "scheduler",
   "lead-analyst",
+  "search-intent",
+  "crew-dispatch",
 ];
 
 describe("surface isolation", () => {
@@ -111,6 +113,7 @@ describe("routing", () => {
       ["will the rain push the schedule", "scheduler"],
       ["which leads should I follow up on", "lead-analyst"],
       ["summarise today's field report", "field-reporter"],
+      ["prepare a briefing for the framing crew", "crew-dispatch"],
       ["what should I do today", "ops-copilot"],
     ];
     for (const [message, expected] of cases) {
@@ -245,6 +248,18 @@ describe("specialist contracts", () => {
     ] as SpecialistId[]) {
       expect(specialistContract(id).never).toMatch(mutation);
     }
+  });
+
+  it("forbids search-intent from answering the question itself", () => {
+    const c = specialistContract("search-intent");
+    expect(c.never).toMatch(/never invent a status, date range, or category/i);
+    expect(c.never).toMatch(/never answer the question itself/i);
+  });
+
+  it("forbids crew-dispatch from committing the sub on Eric's behalf", () => {
+    const c = specialistContract("crew-dispatch");
+    expect(c.never).toMatch(/never invent dates, scope/i);
+    expect(c.never).toMatch(/never commit the sub to a time/i);
   });
 
   it("falls back to a real contract for an unknown id", () => {

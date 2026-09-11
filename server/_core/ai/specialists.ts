@@ -126,6 +126,26 @@ const CONTRACTS: Record<SpecialistId, SpecialistContract> = {
       "Never promise a date, guarantee weather, or silently reschedule anything — a schedule change is an explicit human action.",
   },
 
+  "search-intent": {
+    job: "Normalize a natural-language operational query into structured search intent: which entities, which keywords, which filters.",
+    evidence:
+      "Only what the query actually asks for. A filter the user did not imply is a fabrication that silently narrows their results.",
+    output:
+      "entities → keywords → filters → one-sentence restatement of what is being searched for",
+    never:
+      "Never invent a status, date range, or category filter the query does not imply, and never answer the question itself — this step only describes what to look for.",
+  },
+
+  "crew-dispatch": {
+    job: "Prepare a concise briefing for a sub-contractor from the project's recorded schedule and scope.",
+    evidence:
+      "Recorded schedule items and quoted scope are authoritative. Trade-relevant safety notes may draw on general construction practice, held as general.",
+    output:
+      "days and times → scope for this trade → site-safety notes → what to confirm on arrival",
+    never:
+      "Never invent dates, scope, crew size, or site conditions not present in the data, and never commit the sub to a time on Eric's behalf.",
+  },
+
   "lead-analyst": {
     job: "Assess a bounded set of leads for completeness, likely intent, and follow-up priority.",
     evidence:
