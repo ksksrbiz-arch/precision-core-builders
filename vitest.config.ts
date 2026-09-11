@@ -28,6 +28,8 @@ export default defineConfig({
     },
     include: [
       "server/**/*.test.ts",
+      // Shared domain modules (estimating basis, etc.) carry their own tests.
+      "shared/**/*.test.ts",
       "server/**/*.spec.ts",
       // All Netlify function tests — one glob so new suites (e.g.
       // rate-limiter, admin-auth) run without having to be registered here.

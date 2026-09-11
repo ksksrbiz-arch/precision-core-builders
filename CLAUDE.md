@@ -39,7 +39,7 @@ This document primes AI assistants with the codebase structure, development work
 ### What's Implemented & Tested
 
 - ✅ **Voice-to-Report:** Recording → Whisper transcription → AI report generation → DB save
-- ✅ **Estimator:** Project details → AI cost calculation → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI
+- ✅ **Estimator:** Project details → **deterministic** cost calculation from `shared/estimating/` → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI. The LLM writes the explanation only; it never originates a dollar figure. See `docs/ESTIMATING_BASIS.md`.
 - ✅ **Gantt Chart:** Drag-and-drop task rescheduling with optimistic updates, wired into ScheduleView via `schedule.update`
 - ✅ **Weather Scheduling:** OpenWeatherMap forecast → weather-sensitive task identification
 - ✅ **AI Chat:** Free-tier LLM conversation interface
@@ -353,7 +353,7 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 
 - [ ] Client portal with live project timeline
 - [ ] Digital finish selection manager with budget impact display
-- [x] AI Project Estimator with real-time cost calculations (+ admin authoring/edit UI)
+- [x] AI Project Estimator with deterministic cost calculations (+ admin authoring/edit UI)
 - [x] "Core Values" ledger for transparent decision tracking
 
 ### Phase 4: Automation (Procurement + Sub-Contractors)
@@ -382,6 +382,9 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 - Use external map libraries — use the built-in `Map.tsx` component
 - Manually manipulate cookies or roll custom auth — use Netlify Identity
 - Use or extend any Manus-specific code (`ManusDialog.tsx`, `client/public/__manus__/`, `server/_core/sdk.ts`, `server/_core/oauth.ts`, `server/storage.ts`) — these are legacy scaffolding to be replaced
+- **Put a rate, price, or cost benchmark in an LLM prompt.** Anything that affects money belongs in a validated data module (`shared/estimating/basis.ts`), where it can be dated, integrity-checked, and flagged when stale
+- **Let an LLM originate, adjust, or restate a dollar figure.** Compute it deterministically, then ask the model to explain it
+- **Write LLM output to the database without validating it.** Input validation is not output validation
 
 ### 8.2. DO
 
@@ -390,6 +393,8 @@ The visual language is **"Warm Modern"** — minimalist, high-contrast, natural 
 - Use tRPC `protectedProcedure` / `adminProcedure` for access control
 - Use shadcn/ui components from `client/src/components/ui/` before building custom ones
 - Write Vitest tests for all critical procedures
+- **Fail down, never fail open** on any AI path: a provider outage, a malformed response, or an invalid basis must degrade to a safe deterministic result or an explicit VERIFY state — never a fabricated one, and never a bypassed check
+- **Treat VERIFY as a valid answer.** "This needs an on-site visit" is a better response than a number the data can't support, and it converts better
 - Use Zod schemas for input validation on tRPC procedures
 - Follow Prettier formatting (80 chars, 2 spaces, trailing commas)
 - Use path aliases (`@/*`, `@shared/*`) for imports
@@ -453,19 +458,19 @@ Netlify is the **sole infrastructure platform**. All services are managed throug
 
 These functions are **implemented** in `netlify/functions/` (20+ total). A representative subset:
 
-| Function                   | Purpose                                                            |
-| :------------------------- | :----------------------------------------------------------------- |
-| `voice-to-report`          | Whisper transcription + AI report generation                       |
-| `estimate-project`         | Real-time cost calculation from project params                     |
-| `weather-schedule`         | Eugene, OR weather → schedule adjustments                          |
-| `material-procurement`     | Shortage tracking + persisted purchase-order generation            |
-| `lead-score`               | AI lead prioritization by type/budget/location                     |
-| `stripe-billing`           | Invoice creation and billing actions                               |
-| `stripe-webhook`           | Stripe events → ledger/billing reconciliation                      |
-| `search`                   | Postgres full-text search across entities                          |
-| `daily-briefing`           | Scheduled morning operations briefing                              |
-| `blueprint-oauth-callback` | Blueprint.am OAuth redirect handler (token exchange)               |
-| `blueprint-proxy`          | Authenticated proxy to the Blueprint API (tokens server-side only) |
+| Function                   | Purpose                                                                          |
+| :------------------------- | :------------------------------------------------------------------------------- |
+| `voice-to-report`          | Whisper transcription + AI report generation                                     |
+| `estimate-project`         | Deterministic cost calculation + AI explanation (see `docs/ESTIMATING_BASIS.md`) |
+| `weather-schedule`         | Eugene, OR weather → schedule adjustments                                        |
+| `material-procurement`     | Shortage tracking + persisted purchase-order generation                          |
+| `lead-score`               | AI lead prioritization by type/budget/location                                   |
+| `stripe-billing`           | Invoice creation and billing actions                                             |
+| `stripe-webhook`           | Stripe events → ledger/billing reconciliation                                    |
+| `search`                   | Postgres full-text search across entities                                        |
+| `daily-briefing`           | Scheduled morning operations briefing                                            |
+| `blueprint-oauth-callback` | Blueprint.am OAuth redirect handler (token exchange)                             |
+| `blueprint-proxy`          | Authenticated proxy to the Blueprint API (tokens server-side only)               |
 
 ---
 

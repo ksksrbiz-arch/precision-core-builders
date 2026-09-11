@@ -20,7 +20,8 @@
     "db:migrate": "drizzle-kit migrate",
     "lint": "pnpm check && pnpm format:check",
     "check:env": "node scripts/check-env-size.js",
-    "validate": "pnpm lint && pnpm test && pnpm build",
+    "check:estimating": "tsx scripts/check-estimating-basis.ts",
+    "validate": "pnpm lint && pnpm check:estimating && pnpm test && pnpm build",
     "clean": "rm -rf dist/ node_modules/.cache/ .manus-logs/"
   },
   "dependencies": {
