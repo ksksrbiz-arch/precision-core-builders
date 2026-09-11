@@ -107,7 +107,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     objective:
       "Replace the 30-minute end-of-day write-up with 90 seconds of talking on the drive home.",
     guideId: "field-reports",
-    path: "/admin/reports/new",
+    path: "/admin/field-reports/new",
     minutes: 15,
     steps: [
       {

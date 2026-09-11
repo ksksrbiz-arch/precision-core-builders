@@ -33,10 +33,32 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 /**
+ * Normalizes a persisted list: drops duplicates, and — when `known` is given
+ * — anything outside it. localStorage is user-writable and survives
+ * curriculum edits, so stored entries can be repeated or stale; counting
+ * them raw would let progress exceed 100%.
+ */
+function normalize(values: string[], known?: ReadonlySet<string>): string[] {
+  const seen = new Set<string>();
+  return values.filter(v => {
+    if (seen.has(v)) return false;
+    if (known && !known.has(v)) return false;
+    seen.add(v);
+    return true;
+  });
+}
+
+/**
  * Reads saved progress, falling back to empty for every failure mode:
  * nothing stored, unparseable JSON, wrong shape, or storage that throws.
+ *
+ * Pass the current curriculum's key sets to discard entries left behind by
+ * an older curriculum — callers that omit them still get deduplication.
  */
-export function loadProgress(): TrainingProgress {
+export function loadProgress(known?: {
+  stepKeys?: ReadonlySet<string>;
+  moduleIds?: ReadonlySet<string>;
+}): TrainingProgress {
   try {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
     if (!raw) return EMPTY;
@@ -47,8 +69,14 @@ export function loadProgress(): TrainingProgress {
       unknown
     >;
     return {
-      completedSteps: isStringArray(completedSteps) ? completedSteps : [],
-      completedModules: isStringArray(completedModules) ? completedModules : [],
+      completedSteps: normalize(
+        isStringArray(completedSteps) ? completedSteps : [],
+        known?.stepKeys
+      ),
+      completedModules: normalize(
+        isStringArray(completedModules) ? completedModules : [],
+        known?.moduleIds
+      ),
     };
   } catch {
     return EMPTY;

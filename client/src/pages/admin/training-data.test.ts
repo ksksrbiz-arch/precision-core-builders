@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   DAY_LABELS,
@@ -21,9 +23,20 @@ describe("training-data", () => {
     }
   });
 
-  it("every module points at an admin route", () => {
+  it("every module points at a route actually registered in App.tsx", () => {
+    // A prefix check is not enough: "/admin/reports/new" looks like an admin
+    // route and is not registered, which shipped a dead "Open the screen"
+    // button. Compare against the real route table instead.
+    const app = readFileSync(resolve(__dirname, "../../App.tsx"), "utf8");
+    const registered = new Set(
+      Array.from(app.matchAll(/path=\s*"([^"]+)"/g), m => m[1])
+    );
+    expect(registered.size).toBeGreaterThan(10);
+
     for (const m of TRAINING_MODULES) {
-      expect(m.path.startsWith("/admin"), `${m.id} → ${m.path}`).toBe(true);
+      expect(registered.has(m.path), `${m.id} → ${m.path} is not a route`).toBe(
+        true
+      );
     }
   });
 

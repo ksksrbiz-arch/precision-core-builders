@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { getGuideById } from "@/pages/admin/guides-data";
 import {
   TOTAL_TRAINING_STEPS,
+  TRAINING_MODULES,
   modulesByDay,
   totalTrainingMinutes,
   type TrainingModule,
@@ -189,9 +190,21 @@ function ModuleCard({
  * The guided first-week track. Owns progress state, mirrors every change to
  * localStorage, and groups the curriculum by day.
  */
+/**
+ * Every step key and module id the current curriculum defines. Persisted
+ * progress is filtered against these so entries left by an earlier
+ * curriculum can't inflate the totals.
+ */
+const CURRENT_KEYS = {
+  stepKeys: new Set(
+    TRAINING_MODULES.flatMap(m => m.steps.map((_, i) => stepKey(m.id, i)))
+  ),
+  moduleIds: new Set(TRAINING_MODULES.map(m => m.id)),
+};
+
 export default function Training() {
   const [progress, setProgress] = useState<TrainingProgress>(() =>
-    loadProgress()
+    loadProgress(CURRENT_KEYS)
   );
 
   useEffect(() => {

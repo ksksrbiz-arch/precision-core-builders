@@ -69,6 +69,29 @@ describe("trainingProgress", () => {
     ).not.toThrow();
   });
 
+  it("deduplicates repeated keys so progress cannot be double-counted", () => {
+    saveProgress({
+      completedSteps: ["a:0", "a:0", "a:1"],
+      completedModules: ["a", "a"],
+    });
+    const loaded = loadProgress();
+    expect(loaded.completedSteps).toEqual(["a:0", "a:1"]);
+    expect(loaded.completedModules).toEqual(["a"]);
+  });
+
+  it("drops keys outside the current curriculum when it is provided", () => {
+    saveProgress({
+      completedSteps: ["a:0", "removed-module:3"],
+      completedModules: ["a", "removed-module"],
+    });
+    const loaded = loadProgress({
+      stepKeys: new Set(["a:0"]),
+      moduleIds: new Set(["a"]),
+    });
+    expect(loaded.completedSteps).toEqual(["a:0"]);
+    expect(loaded.completedModules).toEqual(["a"]);
+  });
+
   it("clearProgress removes the stored entry", () => {
     saveProgress({ completedSteps: ["a:0"], completedModules: [] });
     clearProgress();

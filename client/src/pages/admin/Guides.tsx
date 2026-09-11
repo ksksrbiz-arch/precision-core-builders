@@ -25,7 +25,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { GUIDES, type Guide, type GuideSection } from "./guides-data";
 
@@ -220,9 +220,42 @@ function TableOfContents({
 
 // ── Main page ─────────────────────────────────────────────────────────────
 
+/**
+ * Scrolls to the guide named by the URL hash.
+ *
+ * Wouter navigates with `history.pushState`, which — unlike a real anchor
+ * click — never scrolls to the fragment. Without this, "Read the full guide"
+ * from a training lesson lands at the top of the page instead of on the
+ * guide it named. Returns the targeted id so the TOC can highlight it.
+ */
+function useHashTarget(): string | null {
+  const [hashId, setHashId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : window.location.hash.slice(1) || null
+  );
+
+  useEffect(() => {
+    const onHashChange = () => setHashId(window.location.hash.slice(1) || null);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (!hashId) return;
+    // Wait a frame so the guide cards have painted before scrolling.
+    const raf = requestAnimationFrame(() => {
+      document
+        .getElementById(hashId)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [hashId]);
+
+  return hashId;
+}
+
 export default function Guides() {
   const [search, setSearch] = useState("");
-  const [activeId] = useState<string | null>(null);
+  const activeId = useHashTarget();
 
   const filtered = useMemo(() => {
     if (!search.trim()) return GUIDES;
