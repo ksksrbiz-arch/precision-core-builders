@@ -2,7 +2,7 @@
  * Tests for Netlify Functions
  * Integration tests for serverless API endpoints
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ─── Helper: Mock Netlify Event ─────────────────────────────
 
@@ -77,12 +77,44 @@ describe("weather-schedule function", () => {
   });
 
   it("returns forecast for Eugene, OR (admin)", async () => {
-    const { handler } = await import("../weather-schedule");
-    const event = mockEvent("GET", undefined, {
-      authorization: "Bearer dev-admin-token",
+    // This handler calls Open-Meteo, which needs no API key and so was not
+    // stubbed — the test hit the live internet and failed roughly one run in
+    // three when that call errored (fetch throws -> outer catch -> 500).
+    // Stubbed with a realistic payload so the assertions below still prove the
+    // handler parses a forecast into seven days, without depending on network.
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      return d.toISOString().split("T")[0];
     });
-    event.queryStringParameters = { projectId: "1" };
-    const response = await handler(event as any, {} as any);
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        daily: {
+          time: days,
+          temperature_2m_max: days.map(() => 58),
+          temperature_2m_min: days.map(() => 42),
+          precipitation_sum: days.map((_, i) => (i % 3 === 0 ? 0.4 : 0)),
+          precipitation_probability_max: days.map((_, i) =>
+            i % 3 === 0 ? 80 : 10
+          ),
+          weathercode: days.map((_, i) => (i % 3 === 0 ? 61 : 1)),
+        },
+      }),
+    })) as unknown as typeof globalThis.fetch;
+
+    let response;
+    try {
+      const { handler } = await import("../weather-schedule");
+      const event = mockEvent("GET", undefined, {
+        authorization: "Bearer dev-admin-token",
+      });
+      event.queryStringParameters = { projectId: "1" };
+      response = await handler(event as any, {} as any);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
