@@ -131,3 +131,108 @@ describe("useStreamingChat retry", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
   });
 });
+
+describe("useStreamingChat conversation state", () => {
+  /** Parse the JSON body of the nth fetch call. */
+  function bodyOf(n: number): Record<string, unknown> {
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[n];
+    return JSON.parse((call[1] as { body: string }).body);
+  }
+
+  it("surfaces server-derived metadata to onMeta", async () => {
+    const onMeta = vi.fn();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      jsonRes(200, {
+        text: "Kitchens vary a lot.",
+        project: { projectType: "kitchen", stage: "Researching" },
+        suggestions: [{ label: "What it costs", prompt: "What drives cost?" }],
+        estimateReady: false,
+        route: "estimator",
+      })
+    );
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        endpoint: "/api/ai-chat",
+        formatError,
+        retry: RETRY,
+        onMeta,
+      })
+    );
+    await act(async () => {
+      await result.current.send("kitchen remodel?");
+    });
+
+    expect(onMeta).toHaveBeenCalledTimes(1);
+    const meta = onMeta.mock.calls[0][0];
+    expect(meta.route).toBe("estimator");
+    expect(meta.estimateReady).toBe(false);
+    expect(meta.suggestions).toHaveLength(1);
+  });
+
+  it("echoes the project model back so state accumulates across turns", async () => {
+    (fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(
+        jsonRes(200, { text: "ok", project: { projectType: "kitchen" } })
+      )
+      .mockResolvedValueOnce(
+        jsonRes(200, {
+          text: "ok again",
+          project: { projectType: "kitchen", squareFootage: 300 },
+        })
+      );
+    const { result } = setup();
+
+    await act(async () => {
+      await result.current.send("kitchen");
+    });
+    // First turn carries no prior project.
+    expect(bodyOf(0).project).toBeUndefined();
+
+    await act(async () => {
+      await result.current.send("about 300 sq ft");
+    });
+    // Second turn sends back what the server derived on the first.
+    expect(bodyOf(1).project).toEqual({ projectType: "kitchen" });
+  });
+
+  it("does not call onMeta on an error response", async () => {
+    const onMeta = vi.fn();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      jsonRes(400, { error: "bad" })
+    );
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        endpoint: "/api/ai-chat",
+        formatError,
+        retry: RETRY,
+        onMeta,
+      })
+    );
+    await act(async () => {
+      await result.current.send("hi");
+    });
+    expect(onMeta).not.toHaveBeenCalled();
+  });
+
+  it("tolerates a response with no metadata at all", async () => {
+    const onMeta = vi.fn();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      jsonRes(200, { text: "plain answer" })
+    );
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        endpoint: "/api/ai-chat",
+        formatError,
+        retry: RETRY,
+        onMeta,
+      })
+    );
+    await act(async () => {
+      await result.current.send("hi");
+    });
+    expect(assistantText(result)).toBe("plain answer");
+    const meta = onMeta.mock.calls[0][0];
+    expect(meta.suggestions).toBeUndefined();
+    expect(meta.estimateReady).toBeUndefined();
+  });
+});

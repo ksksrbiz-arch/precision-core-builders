@@ -6,9 +6,9 @@
  */
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatComposer } from "@/components/ai/ChatComposer";
-import { useStreamingChat } from "@/hooks/useStreamingChat";
-import { Bot, User, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useStreamingChat, type ChatMeta } from "@/hooks/useStreamingChat";
+import { ArrowRight, Bot, User, Zap } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function getChatErrorMessage(status: number, fallback?: string): string {
   if (status === 429) {
@@ -28,9 +28,17 @@ const QUICK_PROMPTS = [
 ];
 
 export default function AIChatBox({ compact = false }: { compact?: boolean }) {
+  // The server derives a project model from the conversation and returns
+  // next-step prompts plus an estimate-ready flag. Held in state so the
+  // suggestion row replaces the static quick prompts once the visitor has
+  // actually told us something.
+  const [meta, setMeta] = useState<ChatMeta>({});
+  const onMeta = useCallback((next: ChatMeta) => setMeta(next), []);
+
   const { messages, loading, send } = useStreamingChat({
     endpoint: "/api/ai-chat",
     formatError: getChatErrorMessage,
+    onMeta,
   });
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -123,6 +131,57 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
           ))}
           <div ref={bottomRef} />
         </div>
+
+        {/* Server-derived next steps. Only shown once the conversation has
+            produced them, and hidden while a reply is in flight so the row
+            does not shift under the reader. */}
+        {!loading && !!meta.suggestions?.length && (
+          <div className="mt-4 space-y-2">
+            <p
+              className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              Next
+            </p>
+            <div className="flex flex-col gap-2">
+              {meta.suggestions.map(s => (
+                <button
+                  key={s.prompt}
+                  onClick={() => submit(s.prompt)}
+                  className="flex items-start gap-2 text-left text-xs min-h-11 p-3 border border-border/40 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors leading-snug"
+                >
+                  <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/60" />
+                  <span>
+                    <span className="text-foreground font-medium">
+                      {s.label}
+                    </span>
+                    {" — "}
+                    {s.prompt}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Surfaced only when the server judges real project intent, so it
+            does not nag someone asking a single question. */}
+        {!loading && meta.estimateReady && (
+          <a
+            href="/estimator"
+            className="mt-4 flex items-center justify-between gap-2 p-3 border border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors"
+          >
+            <span className="text-xs leading-snug">
+              <span className="text-foreground font-semibold">
+                Ready for a real number?
+              </span>{" "}
+              <span className="text-muted-foreground">
+                Eric confirms every estimate with a free on-site visit.
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
+          </a>
+        )}
       </ScrollArea>
 
       <ChatComposer

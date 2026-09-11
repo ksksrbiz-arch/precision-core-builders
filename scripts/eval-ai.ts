@@ -30,6 +30,8 @@ import {
 } from "../server/_core/ai/router";
 import { specialistPrompt } from "../server/_core/ai/specialists";
 import { toolNamesForSurface, executeTool } from "../server/_core/ai/tools";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { invokeLLM, isLLMConfigured } from "../server/_core/llm";
 
 const live = process.argv.includes("--live");
@@ -178,6 +180,8 @@ const checks: Check[] = [
         "procurement",
         "scheduler",
         "lead-analyst",
+        "search-intent",
+        "crew-dispatch",
       ];
       const leaked = allowedSpecialists("public").filter(id =>
         internal.includes(id)
@@ -211,6 +215,40 @@ const checks: Check[] = [
         }
       }
       return null;
+    },
+  },
+  // ── Every LLM caller carries a contract ─────────────────────────────────
+  // This check exists because "every AI surface is routed" was asserted in a
+  // PR title before anything verified it -- four callers were in fact
+  // unrouted. A static sweep is the only thing that keeps the claim honest as
+  // new functions are added.
+  {
+    name: "every LLM caller injects a specialist contract",
+    run: () => {
+      const dir = join(process.cwd(), "netlify", "functions");
+      // platform-actions is the documented exception: a diagnostic smoke test
+      // whose job is to prove the BARE provider path works, so wrapping it in
+      // a contract would let a contract bug mask a provider outage.
+      const EXEMPT = new Set(["platform-actions.ts"]);
+      const unrouted: string[] = [];
+
+      for (const file of readdirSync(dir)) {
+        if (!file.endsWith(".ts") || EXEMPT.has(file)) continue;
+        const src = readFileSync(join(dir, file), "utf8");
+        const callsModel = /\b(invokeLLM|runToolLoop|streamLLM)\s*\(/.test(src);
+        if (!callsModel) continue;
+        // Require a real call, not merely the substring: an identifier that
+        // happens to contain the name must not satisfy this.
+        const injectsContract = /\bspecialistPrompt\s*\(/.test(src);
+        const importsContract = /from\s+["'][^"']*ai\/specialists["']/.test(
+          src
+        );
+        if (!injectsContract || !importsContract) unrouted.push(file);
+      }
+
+      return unrouted.length
+        ? `unrouted LLM caller(s): ${unrouted.join(", ")}`
+        : null;
     },
   },
   // ── Tool surface gating ─────────────────────────────────────────────────

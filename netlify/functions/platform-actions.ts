@@ -288,6 +288,11 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
 
 // ─── Action: Test AI Endpoint ────────────────────────────────────────────────
 
+// Deliberately NOT routed through routeAi/specialistPrompt, unlike every other
+// LLM caller in this repo. This is a diagnostic smoke test: its job is to prove
+// the bare provider path works, so wrapping it in a specialist contract would
+// mean a contract bug could mask a provider outage. See
+// docs/AI_OPERATING_CONTRACT.md §1 — this is the documented exception.
 const testAIEndpoint: ActionHandler = async () => {
   // Exercise the same LLM router the app actually uses (free-tier: Groq
   // primary, OpenRouter fallback) rather than a deprecated provider —

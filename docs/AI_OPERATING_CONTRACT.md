@@ -96,6 +96,29 @@ has instead of spinning. A tool that throws, or arguments that are not valid
 JSON, are reported back to the model as an error result rather than aborting the
 turn.
 
+## 4.2 Every LLM caller carries a contract
+
+There is exactly one documented exception: `platform-actions.ts`'s AI smoke
+test. Its job is to prove the **bare** provider path works, so wrapping it in a
+specialist contract would let a contract bug mask a provider outage.
+
+Everything else that calls `invokeLLM`, `runToolLoop`, or `streamLLM` must
+inject `specialistPrompt()`. `pnpm eval:ai` enforces this with a static sweep
+over `netlify/functions/` — added because "every AI surface is routed" was once
+asserted without anything verifying it, and four callers were in fact unrouted.
+
+Surfaces whose job is fixed pin their specialist rather than pattern-matching
+prose:
+
+| Caller                     | Specialist       | Why pinned                          |
+| :------------------------- | :--------------- | :---------------------------------- |
+| `estimate-project`         | `estimator`      | always explains a computed estimate |
+| `search`                   | `search-intent`  | always normalizes a query           |
+| `voice-to-report`          | `field-reporter` | always structures a transcription   |
+| `daily-briefing`           | `ops-copilot`    | always summarizes operations        |
+| `ai-draft` (client-update) | `client-liaison` | client-facing copy                  |
+| `ai-draft` (sub-briefing)  | `crew-dispatch`  | crew-facing dispatch                |
+
 ## 5. Fail down, never fail open
 
 Provider failure, missing configuration, quota exhaustion, or malformed output

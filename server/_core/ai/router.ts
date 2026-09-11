@@ -28,7 +28,9 @@ export type SpecialistId =
   | "field-reporter"
   | "procurement"
   | "scheduler"
-  | "lead-analyst";
+  | "lead-analyst"
+  | "search-intent"
+  | "crew-dispatch";
 
 export type Route = {
   id: SpecialistId;
@@ -79,6 +81,14 @@ const INTERNAL_ROUTES: RouteRule[] = [
   {
     id: "lead-analyst",
     test: /\b(lead|leads|prospect|inquiry|enquiry|follow[- ]?up|followup|qualify|qualification|who should i call)\b/i,
+  },
+  {
+    id: "crew-dispatch",
+    test: /\b(brief(ing)?|dispatch|crew|sub[- ]?contractor|trade partner|send to the crew)\b/i,
+  },
+  {
+    id: "search-intent",
+    test: /\b(search for|find all|look up|query)\b/i,
   },
   {
     id: "ops-copilot",
