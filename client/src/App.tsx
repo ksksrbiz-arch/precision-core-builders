@@ -107,6 +107,7 @@ const FieldReportNew = lazy(() => import("./pages/admin/FieldReportNew"));
 const FieldReportDetail = lazy(() => import("./pages/admin/FieldReportDetail"));
 const SitePlanBuilder = lazy(() => import("./pages/admin/SitePlanBuilder"));
 const Guides = lazy(() => import("./pages/admin/Guides"));
+const Training = lazy(() => import("./pages/admin/Training"));
 const ScheduleView = lazy(() => import("./pages/admin/ScheduleView"));
 const MaterialsView = lazy(() => import("./pages/admin/MaterialsView"));
 const BillingView = lazy(() => import("./pages/admin/BillingView"));
@@ -300,6 +301,7 @@ function Router() {
             component={adminPage(SitePlanBuilder)}
           />
           <Route path="/admin/guides" component={adminPage(Guides)} />
+          <Route path="/admin/training" component={adminPage(Training)} />
           <Route path="/admin/schedule" component={adminPage(ScheduleView)} />
           <Route path="/admin/materials" component={adminPage(MaterialsView)} />
           <Route path="/admin/billing" component={adminPage(BillingView)} />

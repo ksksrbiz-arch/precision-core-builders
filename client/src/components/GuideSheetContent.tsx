@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { GuideVideo } from "@/components/GuideVideo";
 import {
   Accordion,
   AccordionContent,
@@ -127,7 +128,9 @@ export function GuideSheetContent({
         />
       </SheetHeader>
 
-      <div className="py-4">
+      <div className="py-4 space-y-3">
+        <GuideVideo guideId={guide.id} guideTitle={guide.title} compact />
+
         <Accordion
           type="multiple"
           defaultValue={guide.sections.map((_, i) => `sh-${i}`)}
