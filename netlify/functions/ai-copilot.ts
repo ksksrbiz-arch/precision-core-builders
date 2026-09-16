@@ -23,6 +23,7 @@ import type {
 } from "@netlify/functions";
 import {
   invokeLLM,
+  runToolLoop,
   streamLLM,
   type LLMStreamChunk,
 } from "../../server/_core/llm";
@@ -31,6 +32,9 @@ import { corsHeaders, checkOrigin } from "./_utils/corsGuard";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { verifyAdmin } from "./_utils/authGuard";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
+import { toolsForSurface, toolExecutorFor } from "../../server/_core/ai/tools";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -130,10 +134,23 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
     );
   }
 
+  // Route deterministically before the model is called, then inject the
+  // selected specialist contract ahead of any data. Internal surface: the
+  // router may reach the operational specialists, never the public defaults
+  // alone.
+  const lastUserMessage =
+    [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+  const route = routeAi({
+    message: lastUserMessage,
+    surface: "internal",
+  });
+
   const fullMessages = [
     {
       role: "system" as const,
-      content: `${PROMPTS.copilot}\n\n${snapshotText}`,
+      content: [PROMPTS.copilot, specialistPrompt(route.id), snapshotText].join(
+        "\n\n"
+      ),
     },
     ...messages,
   ];
@@ -141,12 +158,17 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   // Buffered fallback — preserves the original JSON contract exactly.
   const buffered = async (): Promise<StreamingResponse> => {
     try {
-      const result = await invokeLLM({
+      // Tools let the copilot drill into one project without bloating every
+      // prompt with the whole database. The snapshot stays the default
+      // context; tools are for what the snapshot deliberately leaves out.
+      const result = await runToolLoop({
         feature: "ai-copilot",
         userId: user.id,
         messages: fullMessages,
         maxTokens: 900,
         temperature: 0.3,
+        tools: toolsForSurface("internal"),
+        execute: toolExecutorFor("internal"),
       });
       return {
         statusCode: 200,
@@ -155,6 +177,9 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
           text: result.text,
           model: result.model,
           provider: result.provider,
+          route: route.id,
+          routeReason: route.reason,
+          toolsUsed: result.toolTrace.map(t => t.name),
         }),
       };
     } catch (err) {

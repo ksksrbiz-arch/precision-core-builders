@@ -1,0 +1,51 @@
+# Eric's installed cost assumptions live in shared/estimating/basis.ts and go
+# stale. This checks the basis the app actually ships — its structural integrity
+# (inverted bands, absurd spreads, shares that leave nothing for materials,
+# project types the estimator offers but the basis never priced) and its age.
+#
+# Integrity problems fail the job. Staleness is reported and does not fail: an
+# out-of-date basis is a VERIFY item for Eric, not a reason to block a deploy.
+# The monthly schedule exists so "nobody reviewed the rates" surfaces on its own
+# instead of waiting for a wrong number to reach a customer.
+
+name: AI & estimating health
+
+on:
+  schedule:
+    # 09:00 America/Los_Angeles on the 1st of each month (17:00 UTC, PDT).
+    - cron: "0 17 1 * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "shared/estimating/**"
+      - "client/src/config/projects.ts"
+      - "scripts/check-estimating-basis.ts"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate the estimating basis the site actually serves
+        run: pnpm check:estimating
+
+      - name: Run the estimating regression suite
+        run: pnpm vitest run shared/estimating
+
+      - name: AI behaviour checks (routing, surface isolation, refusals)
+        run: pnpm eval:ai

@@ -76,6 +76,17 @@ function CountCurrency({ value }: { value: number }) {
 }
 
 type Step = 1 | 2 | 3 | 4;
+/**
+ * Some project types have no reviewed cost band in the estimating basis
+ * (`shared/estimating/basis.ts`). Those return a VERIFY result instead of a
+ * fabricated range, and the results screen invites an on-site estimate.
+ */
+type EstimateVerify = {
+  status: "verify";
+  reason: string;
+  projectType: string;
+  message: string;
+};
 type EstimateResult = {
   estimatedLow: number;
   estimatedMid: number;
@@ -85,6 +96,12 @@ type EstimateResult = {
   permitsCost: number;
   contingency: number;
   aiReasoning: string;
+  /** How the number was derived — surfaced so the range is auditable. */
+  basis?: {
+    reviewedAt: string;
+    region: string;
+    stale: boolean;
+  };
 };
 
 function buildEstimateEmailBody(
@@ -129,6 +146,7 @@ export default function Estimator() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EstimateResult | null>(null);
+  const [verify, setVerify] = useState<EstimateVerify | null>(null);
   const [error, setError] = useState("");
   // Lead form
   const {
@@ -152,6 +170,8 @@ export default function Estimator() {
   const runEstimate = async () => {
     setLoading(true);
     setError("");
+    setVerify(null);
+    setResult(null);
     try {
       const res = await fetch("/api/estimate-project", {
         method: "POST",
@@ -178,6 +198,14 @@ export default function Estimator() {
         throw new Error(
           "Unable to generate estimate right now. Please try again shortly."
         );
+      }
+      // A VERIFY result is a valid answer, not a failure: this project type
+      // has no reviewed cost band, so we say so instead of inventing a range.
+      if (data?.status === "verify") {
+        setVerify(data as EstimateVerify);
+        setStep(4);
+        trackEstimatorComplete(undefined);
+        return;
       }
       setResult(data);
       setStep(4);
@@ -519,209 +547,245 @@ export default function Estimator() {
           )}
 
           {/* Step 4: Results */}
-          {step === 4 && result && (
+          {step === 4 && (result || verify) && (
             <div className="space-y-5 estimator-print-root">
-              {/* Cost range */}
-              <div className="bg-card border border-border/60 p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+              {/* No reviewed cost band for this project type — say so
+                  rather than show a number the basis cannot support. */}
+              {verify && (
+                <div className="bg-card border border-border/60 p-6">
                   <p
-                    className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
+                    className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-3"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Estimated Project Cost
+                    {verify.projectType} — On-Site Estimate Required
                   </p>
-                  <div className="flex gap-2 print:hidden">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const subject = encodeURIComponent(
-                          "Precision Core Builders – Project Estimate"
-                        );
-                        const body = encodeURIComponent(
-                          buildEstimateEmailBody(result, projectType)
-                        );
-                        window.location.href = `mailto:?subject=${subject}&body=${body}`;
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
-                      style={{ fontFamily: "var(--font-condensed)" }}
-                      aria-label="Share estimate via email"
-                    >
-                      <Mail className="h-3.5 w-3.5" />
-                      Share
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => window.print()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
-                      style={{ fontFamily: "var(--font-condensed)" }}
-                      aria-label="Print estimate"
-                    >
-                      <Printer className="h-3.5 w-3.5" />
-                      Print
-                    </button>
+                  <p className="text-base text-foreground/90 font-light leading-relaxed mb-3">
+                    {verify.message}
+                  </p>
+                  <div className="flex items-start gap-3 border-t border-border/40 pt-3">
+                    <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-muted-foreground font-light leading-relaxed">
+                      {verify.reason}
+                    </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-                  {[
-                    {
-                      label: "Conservative",
-                      value: result.estimatedLow,
-                      cls: "text-muted-foreground",
-                    },
-                    {
-                      label: "Expected",
-                      value: result.estimatedMid,
-                      cls: "text-primary text-3xl!",
-                    },
-                    {
-                      label: "Premium",
-                      value: result.estimatedHigh,
-                      cls: "text-muted-foreground",
-                    },
-                  ].map(({ label, value, cls }) => (
-                    <div key={label} className="text-center">
+              )}
+
+              {result && (
+                <>
+                  {/* Cost range */}
+                  <div className="bg-card border border-border/60 p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                       <p
-                        className={`text-xl sm:text-2xl font-bold mb-1 ${cls}`}
-                        aria-label={formatCurrency(value)}
-                      >
-                        <CountCurrency value={value} />
-                      </p>
-                      <p
-                        className="text-[10px] tracking-widest uppercase text-muted-foreground"
+                        className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
                         style={{ fontFamily: "var(--font-condensed)" }}
                       >
-                        {label}
+                        Estimated Project Cost
                       </p>
-                    </div>
-                  ))}
-                </div>
-                {(() => {
-                  const parts = [
-                    {
-                      label: "Labor",
-                      value: result.laborCost,
-                      color: "#c8a84b",
-                    },
-                    {
-                      label: "Materials",
-                      value: result.materialsCost,
-                      color: "#a89060",
-                    },
-                    {
-                      label: "Permits",
-                      value: result.permitsCost,
-                      color: "#7a9e4c",
-                    },
-                    {
-                      label: "Contingency",
-                      value: result.contingency,
-                      color: "#d4a574",
-                    },
-                  ];
-                  const total = parts.reduce((sum, p) => sum + p.value, 0) || 1;
-                  const timeline = estimateTimeline(projectType, complexity);
-                  return (
-                    <div className="pt-4 border-t border-border/40">
-                      <p
-                        className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-2.5"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        Where it goes
-                      </p>
-                      {/* Stacked proportion bar */}
-                      <div
-                        className="flex h-2.5 w-full overflow-hidden rounded-full bg-border/40"
-                        role="img"
-                        aria-label={parts
-                          .map(
-                            p =>
-                              `${p.label} ${Math.round(
-                                (p.value / total) * 100
-                              )} percent`
-                          )
-                          .join(", ")}
-                      >
-                        {parts.map((p, pi) => (
-                          <motion.div
-                            key={p.label}
-                            initial={{ width: 0 }}
-                            animate={{
-                              width: `${(p.value / total) * 100}%`,
-                            }}
-                            transition={{
-                              duration: 0.8,
-                              delay: 0.35 + pi * 0.12,
-                              ease: [0.22, 1, 0.36, 1],
-                            }}
-                            style={{ backgroundColor: p.color }}
-                          />
-                        ))}
+                      <div className="flex gap-2 print:hidden">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const subject = encodeURIComponent(
+                              "Precision Core Builders – Project Estimate"
+                            );
+                            const body = encodeURIComponent(
+                              buildEstimateEmailBody(result, projectType)
+                            );
+                            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                          aria-label="Share estimate via email"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          Share
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.print()}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border/60 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                          aria-label="Print estimate"
+                        >
+                          <Printer className="h-3.5 w-3.5" />
+                          Print
+                        </button>
                       </div>
-                      {/* Legend */}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-4">
-                        {parts.map(p => (
-                          <div
-                            key={p.label}
-                            className="flex items-center justify-between text-xs"
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                      {[
+                        {
+                          label: "Conservative",
+                          value: result.estimatedLow,
+                          cls: "text-muted-foreground",
+                        },
+                        {
+                          label: "Expected",
+                          value: result.estimatedMid,
+                          cls: "text-primary text-3xl!",
+                        },
+                        {
+                          label: "Premium",
+                          value: result.estimatedHigh,
+                          cls: "text-muted-foreground",
+                        },
+                      ].map(({ label, value, cls }) => (
+                        <div key={label} className="text-center">
+                          <p
+                            className={`text-xl sm:text-2xl font-bold mb-1 ${cls}`}
+                            aria-label={formatCurrency(value)}
                           >
-                            <span className="flex items-center gap-2 text-muted-foreground">
-                              <span
-                                aria-hidden
-                                className="h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                            <CountCurrency value={value} />
+                          </p>
+                          <p
+                            className="text-[10px] tracking-widest uppercase text-muted-foreground"
+                            style={{ fontFamily: "var(--font-condensed)" }}
+                          >
+                            {label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    {(() => {
+                      const parts = [
+                        {
+                          label: "Labor",
+                          value: result.laborCost,
+                          color: "#c8a84b",
+                        },
+                        {
+                          label: "Materials",
+                          value: result.materialsCost,
+                          color: "#a89060",
+                        },
+                        {
+                          label: "Permits",
+                          value: result.permitsCost,
+                          color: "#7a9e4c",
+                        },
+                        {
+                          label: "Contingency",
+                          value: result.contingency,
+                          color: "#d4a574",
+                        },
+                      ];
+                      const total =
+                        parts.reduce((sum, p) => sum + p.value, 0) || 1;
+                      const timeline = estimateTimeline(
+                        projectType,
+                        complexity
+                      );
+                      return (
+                        <div className="pt-4 border-t border-border/40">
+                          <p
+                            className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-2.5"
+                            style={{ fontFamily: "var(--font-condensed)" }}
+                          >
+                            Where it goes
+                          </p>
+                          {/* Stacked proportion bar */}
+                          <div
+                            className="flex h-2.5 w-full overflow-hidden rounded-full bg-border/40"
+                            role="img"
+                            aria-label={parts
+                              .map(
+                                p =>
+                                  `${p.label} ${Math.round(
+                                    (p.value / total) * 100
+                                  )} percent`
+                              )
+                              .join(", ")}
+                          >
+                            {parts.map((p, pi) => (
+                              <motion.div
+                                key={p.label}
+                                initial={{ width: 0 }}
+                                animate={{
+                                  width: `${(p.value / total) * 100}%`,
+                                }}
+                                transition={{
+                                  duration: 0.8,
+                                  delay: 0.35 + pi * 0.12,
+                                  ease: [0.22, 1, 0.36, 1],
+                                }}
                                 style={{ backgroundColor: p.color }}
                               />
-                              {p.label}
-                            </span>
-                            <span className="text-foreground font-medium tabular-nums">
-                              {formatCurrency(p.value)}
-                            </span>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                      {timeline && (
-                        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40 text-sm">
-                          <Clock className="h-4 w-4 text-primary flex-shrink-0" />
-                          <span className="text-muted-foreground">
-                            Typical timeline:
-                          </span>
-                          <span className="text-foreground font-semibold">
-                            {timeline}
-                          </span>
+                          {/* Legend */}
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-4">
+                            {parts.map(p => (
+                              <div
+                                key={p.label}
+                                className="flex items-center justify-between text-xs"
+                              >
+                                <span className="flex items-center gap-2 text-muted-foreground">
+                                  <span
+                                    aria-hidden
+                                    className="h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                                    style={{ backgroundColor: p.color }}
+                                  />
+                                  {p.label}
+                                </span>
+                                <span className="text-foreground font-medium tabular-nums">
+                                  {formatCurrency(p.value)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          {timeline && (
+                            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40 text-sm">
+                              <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                              <span className="text-muted-foreground">
+                                Typical timeline:
+                              </span>
+                              <span className="text-foreground font-semibold">
+                                {timeline}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
+                      );
+                    })()}
+                  </div>
 
-              {/* AI reasoning */}
-              <div className="bg-card border border-border/60 p-5">
-                <p
-                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-2"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  Estimate Basis
-                </p>
-                <p className="text-sm text-muted-foreground font-light leading-relaxed">
-                  {result.aiReasoning}
-                </p>
-                <p className="text-[10px] text-muted-foreground/50 mt-3 font-light">
-                  Based on current Eugene, OR market data. Actual costs may
-                  vary. Free on-site estimate available.
-                </p>
-              </div>
+                  {/* AI reasoning */}
+                  <div className="bg-card border border-border/60 p-5">
+                    <p
+                      className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground mb-2"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      Estimate Basis
+                    </p>
+                    <p className="text-sm text-muted-foreground font-light leading-relaxed">
+                      {result.aiReasoning}
+                    </p>
+                    {/* State the real provenance. Claiming "current market data"
+                    while the basis may be a year old is exactly the kind of
+                    unearned confidence the estimating rewrite removed. */}
+                    <p className="text-[10px] text-muted-foreground/50 mt-3 font-light">
+                      {result.basis
+                        ? `Published cost assumptions for ${result.basis.region}, last reviewed ${result.basis.reviewedAt}.`
+                        : "Based on published Eugene, OR cost assumptions."}{" "}
+                      Actual costs may vary. Free on-site estimate available.
+                    </p>
+                  </div>
 
-              {/* Prominent disclaimer — set expectations before the ask */}
-              <div className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/10 p-4 rounded-sm">
-                <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-foreground/90 leading-relaxed">
-                  <span className="font-semibold">
-                    This is a ballpark, not a quote.
-                  </span>{" "}
-                  Real pricing depends on site conditions, finishes, and scope.
-                  Eric confirms every number with a free on-site visit.
-                </p>
-              </div>
+                  {/* Prominent disclaimer — set expectations before the ask */}
+                  <div className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/10 p-4 rounded-sm">
+                    <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-foreground/90 leading-relaxed">
+                      <span className="font-semibold">
+                        This is a ballpark, not a quote.
+                      </span>{" "}
+                      Real pricing depends on site conditions, finishes, and
+                      scope. Eric confirms every number with a free on-site
+                      visit.
+                    </p>
+                  </div>
+                </>
+              )}
 
               {/* Lead capture */}
               {!leadSent ? (

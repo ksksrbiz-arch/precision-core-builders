@@ -14,6 +14,8 @@ import { transcribeAudio } from "../../server/_core/voiceTranscription";
 import { invokeLLM, parseLlmJson } from "../../server/_core/llm";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { withGuards } from "./_lib/http";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
 
 export const handler = withGuards(
@@ -97,7 +99,19 @@ export const handler = withGuards(
       const llmResult = await invokeLLM({
         feature: "voice-to-report",
         messages: [
-          { role: "system", content: PROMPTS.fieldReport },
+          {
+            role: "system",
+            // The job is known here, so the specialist is pinned rather than
+            // pattern-matched from a transcription. The pin is still checked
+            // against the internal surface's allow-list by the router.
+            content: [
+              PROMPTS.fieldReport,
+              specialistPrompt(
+                routeAi({ surface: "internal", specialist: "field-reporter" })
+                  .id
+              ),
+            ].join("\n\n"),
+          },
           {
             role: "user",
             content: `Field memo transcription:\n\n${transcriptionText}`,

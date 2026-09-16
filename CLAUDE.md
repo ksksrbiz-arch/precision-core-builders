@@ -1,485 +1,69 @@
-# CLAUDE.md: Precision Core Builders "Digital Foreman" Platform
-
-## Agent Priming & Implementation Guardrails
-
-This document primes AI assistants with the codebase structure, development workflows, conventions, and architectural vision for the Precision Core Builders platform. It reflects the **actual current state** of the implementation alongside the target roadmap.
-
----
-
-## 1. Project Vision & Core Mandate
-
-**Precision Core Builders** is a luxury construction management platform for Eric Tadlock (CCB #246527) that transforms how small-to-mid construction firms operate. The platform is a **thinking operational engine** that automates field reporting, procurement, scheduling, and client communication.
-
-**Core Values Embedded in Code:**
-
-- **Trust:** Transparent, immutable ledgers of all project decisions and costs.
-- **Respect:** Clients see real-time progress; Eric controls operations with precision.
-- **Diligence:** Automated workflows eliminate manual data entry and human error.
-
----
-
-## 2. Current Implementation Status
-
-> **Phase 1 is complete and the core operational feature set has shipped.** The stack has migrated to Supabase Postgres + Supabase Auth + Netlify Functions + Drizzle ORM. Field reporting, estimating, scheduling, AI features, lead scoring, billing, and procurement are all built and running. Remaining work is UI polish, real-time subscriptions in more pages, and select automation/analytics items.
-
-### What's Built
-
-- ✅ Page routing (37 pages: 19 admin, 4 portal, 7 public, 7 auth/services)
-- ✅ 50+ shadcn/ui components + 40+ custom components
-- ✅ DashboardLayout, ErrorBoundary, Map, VoiceRecorder, HeroSection, PWAInstallPrompt
-- ✅ Tailwind CSS 4 design system with custom "Quiet Luxury" theme
-- ✅ Netlify deployment configuration with security headers
-- ✅ tRPC 11 router structure with 15 feature routers plus `system`/`auth`
-- ✅ 15+ production-ready PostgreSQL tables via Drizzle ORM (Supabase) with RLS
-- ✅ 20+ Netlify Functions (voice-to-report, estimate-project, weather-schedule, ai-chat, vision-studio, lead-score, stripe-billing, stripe-webhook, material-procurement, search, etc.)
-- ✅ Full type safety (0 TypeScript errors, 100% tRPC coverage)
-- ✅ GitHub → Netlify CI/CD pipeline working
-- ✅ Supabase Auth with admin/user role system, consolidated onto a single JWT verifier
-
-### What's Implemented & Tested
-
-- ✅ **Voice-to-Report:** Recording → Whisper transcription → AI report generation → DB save
-- ✅ **Estimator:** Project details → AI cost calculation → 3-tier pricing with breakdown, plus admin estimate authoring/edit UI
-- ✅ **Gantt Chart:** Drag-and-drop task rescheduling with optimistic updates, wired into ScheduleView via `schedule.update`
-- ✅ **Weather Scheduling:** OpenWeatherMap forecast → weather-sensitive task identification
-- ✅ **AI Chat:** Free-tier LLM conversation interface
-- ✅ **Vision Studio:** Photo analysis with multiple modes
-- ✅ **Lead Scoring & Capture:** AI-scored, persisted lead prioritization board
-- ✅ **Stripe Billing:** Invoicing + webhook-driven ledger reconciliation
-- ✅ **Material Procurement:** Shortage detection + persisted, vendor-bucketed purchase orders
-- ✅ **Search:** Postgres full-text search across projects, clients, reports, and more
-- ✅ **Notifications:** Delivery pipeline (in-app / email / SMS via n8n)
-- ✅ **Training & Guides:** Contextual per-screen help, a searchable System Guide, and a guided First Week Training track (`/admin/training`) with click-to-play walkthrough videos (see `docs/TRAINING_VIDEOS.md`)
-- ✅ **Blueprint Integration:** OAuth + API-key connect, artifact sharing (flag-gated by `VITE_FEATURE_BLUEPRINT`)
-
-### What's Scaffolded / Pending
-
-⏳ **Remaining Work:**
-
-- Real-time updates in remaining portal/admin pages (live in all portal pages and several admin pages — ScheduleView, ProjectDetail, MaterialsView, CommandCenter, NotificationsView, FieldReportsList; rollout to the rest in progress)
-- Client portal dashboard polish (structure and data live, UX refinement pending)
-- Digital finish showroom product catalog population
-- n8n automation workflow authoring (functions and webhook wiring in place)
-- Portfolio showcase content/images (structure and admin CRUD ready, project data pending)
-
----
-
-## 3. Technical Architecture (Actual Stack)
-
-| Layer               | Technology                                         | Notes                                          |
-| :------------------ | :------------------------------------------------- | :--------------------------------------------- |
-| **Frontend**        | React 19 / Vite 7 / Tailwind CSS 4 / Framer Motion | shadcn/ui + Radix primitives for components    |
-| **Routing**         | Wouter 3.3                                         | Lightweight client-side router                 |
-| **State/Data**      | tRPC 11 + React Query 5                            | End-to-end type-safe API calls                 |
-| **Backend**         | Netlify Functions                                  | Serverless; legacy Express scaffolding retired |
-| **Database**        | Supabase (PostgreSQL) via Drizzle ORM              | RLS-enforced; migrations via `pnpm db:push`    |
-| **Authentication**  | Supabase Auth                                      | JWT-based, admin/user roles, single verifier   |
-| **Storage**         | Supabase Storage                                   | Media/object storage (image + PDF URLs)        |
-| **Forms**           | React Hook Form + Zod 4                            | Type-safe validation                           |
-| **Charts**          | Recharts 2                                         | Data visualization                             |
-| **Platform**        | GitHub → Netlify                                   | CI/CD with edge deployment                     |
-| **Integrations**    | blueprint.am (optional, feature-flagged)           | See `docs/integrations/blueprint.md`           |
-| **Package Manager** | pnpm 10.4.1                                        | Strict, fast, workspace-ready                  |
-
-### 3.0. Service Architecture Principle
-
-**Use native Netlify extensions for all web services.** Do not introduce standalone cloud services (AWS S3, external OAuth providers, self-hosted databases, etc.). If Netlify offers an extension or integration for a capability, use it. This keeps infrastructure unified, secrets managed in one place (Netlify dashboard), and deployment simple.
-
-### 3.0.1. Development & Deployment Workflow
-
-- **GitHub** is the single source of truth for all code.
-- All development happens via **Claude Chat** or **Claude Code** connections, pushing directly to the GitHub repo.
-- Netlify auto-deploys from GitHub on push.
-- Claude may use available connections (GitHub MCP tools, etc.) to create branches, open PRs, manage issues, and enhance the development workflow as needed.
-
-### 3.1. Server Architecture
-
-Backend logic runs as **Netlify Functions** (serverless). The tRPC app router is served from `netlify/functions/trpc.ts`; the legacy Manus Express server has been retired.
-
-**Architecture:**
-
-```
-Netlify Functions (netlify/functions/)
-├── tRPC handler (trpc.ts) exposing the app router
-├── AI/LLM calls (free-tier LLM router — Groq/Gemini/OpenRouter, Whisper transcription)
-├── Feature endpoints (estimate-project, lead-score, search, stripe-*, etc.)
-├── Scheduled tasks (daily-briefing, weather checks, procurement)
-└── Webhooks (Stripe, n8n, Netlify form submissions, notifications)
-```
-
-**tRPC Router structure** (`server/routers.ts`) — served via Netlify Functions:
-
-```typescript
-appRouter = {
-  system, // health, notifyOwner
-  auth, // me
-  // 15 feature routers:
-  projects,
-  clients,
-  fieldReports,
-  schedule,
-  estimates,
-  ledger,
-  leads,
-  materials,
-  purchaseOrders,
-  subContractors,
-  finishSelections,
-  notifications,
-  portfolio,
-  sitePlans,
-  blueprint,
-};
-```
-
-**Middleware levels:**
-
-- `publicProcedure` — No auth required
-- `protectedProcedure` — Requires authenticated user (throws UNAUTHORIZED)
-- `adminProcedure` — Requires `role = 'admin'` (throws FORBIDDEN)
-
-### 3.2. Authentication
-
-Authentication is handled by **Supabase Auth** (JWT-based). Auth verification is consolidated onto a single server-side verifier; the legacy Manus OAuth flow has been removed.
-
-- Eric is `role = 'admin'`; clients are `role = 'user'`
-- Supabase Auth handles signup, login, password reset, and sessions
-- Admin role is resolved via the `users.role` column and the `admin_emails` allowlist
-- Access control enforced via tRPC middleware (`protectedProcedure` / `adminProcedure`) against the Supabase JWT
-
-### 3.3. Database
-
-The database is **Supabase (PostgreSQL)**, accessed via **Drizzle ORM**. The schema in `drizzle/schema.ts` is Postgres (not MySQL), with row-level security (RLS) policies enforced. Migrations run via `pnpm db:push` once `SUPABASE_URL` + `DATABASE_URL` are set.
-
-**Live schema** (`drizzle/schema.ts`) — 15+ tables, all with RLS:
-
-- `users`, `admin_emails`, `profiles` — identity (extends Supabase Auth) + admin allowlist
-- `clients` — Client contact info, project history
-- `projects` — Project metadata, budget, timeline, status
-- `field_reports` — Voice memos, transcriptions, summaries
-- `schedule_items` — Gantt tasks, dependencies, weather sensitivity
-- `estimates` — Project cost breakdowns (3-tier + category costs)
-- `ledger_entries` — Immutable decision/cost log
-- `materials` — Inventory, vendors, pricing, shortages
-- `purchase_orders` / `purchase_order_items` — Persisted, vendor-bucketed POs
-- `leads` — AI-scored lead prioritization board
-- `sub_contractors`, `finish_selections`, `notifications`, `portfolio_projects`
-- `site_plans` — Excalidraw canvas data
-- `vision_studio_requests`, `ai_usage` — AI analysis + usage tracking
-- `billing_events` — Stripe webhook records
-- `blueprint_connections` / `blueprint_artifacts` — Blueprint.am integration (tokens encrypted at rest)
-
----
-
-## 4. File Structure (Actual)
-
-```
-precision-core-builders/
-├── client/
-│   ├── src/
-│   │   ├── _core/hooks/         # useAuth.ts (core auth hook)
-│   │   ├── components/
-│   │   │   ├── ui/              # 50+ shadcn/ui components (button, card, dialog, etc.)
-│   │   │   ├── AIChatBox.tsx    # AI chat interface
-│   │   │   ├── DashboardLayout.tsx
-│   │   │   ├── ErrorBoundary.tsx
-│   │   │   └── Map.tsx          # Google Maps integration
-│   │   ├── contexts/            # ThemeContext.tsx
-│   │   ├── hooks/               # useMobile, useComposition, usePersistFn
-│   │   ├── lib/
-│   │   │   ├── trpc.ts          # tRPC client setup
-│   │   │   └── utils.ts         # cn() utility (clsx + tailwind-merge)
-│   │   ├── pages/
-│   │   │   ├── Home.tsx         # Landing page
-│   │   │   ├── NotFound.tsx     # 404 page
-│   │   │   └── ComponentShowcase.tsx
-│   │   ├── App.tsx              # Router (Wouter)
-│   │   ├── main.tsx             # React + tRPC + React Query setup
-│   │   ├── const.ts             # getLoginUrl(), COOKIE_NAME
-│   │   └── index.css            # Tailwind theme + custom styles
-│   └── public/                  # Static assets
-├── server/
-│   ├── _core/
-│   │   ├── index.ts             # Express entry point (LEGACY — migrate to Netlify Functions)
-│   │   ├── trpc.ts              # Router, publicProcedure, protectedProcedure, adminProcedure
-│   │   ├── context.ts           # TrpcContext, createContext
-│   │   ├── oauth.ts             # OAuth callback (LEGACY — replace with Netlify Identity)
-│   │   ├── sdk.ts               # Manus OAuth SDK (LEGACY — replace with Netlify Identity)
-│   │   ├── cookies.ts           # Session cookie options (LEGACY)
-│   │   ├── env.ts               # Environment variable aggregation
-│   │   ├── vite.ts              # Vite dev server setup
-│   │   ├── systemRouter.ts      # health, notifyOwner endpoints
-│   │   ├── llm.ts               # LLM types (stubbed)
-│   │   ├── voiceTranscription.ts # Voice-to-text interface (stubbed)
-│   │   ├── notification.ts      # Notification delivery (stubbed)
-│   │   └── map.ts               # Map utilities
-│   ├── routers.ts               # appRouter definition
-│   ├── db.ts                    # Drizzle ORM, user queries (adapt to Netlify DB extension)
-│   ├── storage.ts               # AWS S3 helpers (LEGACY — replace with Netlify Blobs)
-│   └── auth.logout.test.ts      # Test file
-├── shared/
-│   ├── _core/errors.ts          # HttpError, BadRequestError, UnauthorizedError, ForbiddenError
-│   ├── const.ts                 # COOKIE_NAME, ONE_YEAR_MS, AXIOS_TIMEOUT_MS, error messages
-│   └── types.ts                 # Shared TypeScript types
-├── drizzle/
-│   ├── schema.ts                # Database schema (users table)
-│   ├── relations.ts             # Table relationships
-│   └── 0000_rapid_donald_blake.sql  # Initial migration
-├── netlify/
-│   └── functions/               # Serverless functions (planned, not implemented)
-├── patches/                     # pnpm patches (wouter@3.7.1)
-├── .env.example                 # Environment variable template
-├── drizzle.config.ts            # Drizzle Kit config (MySQL dialect)
-├── vite.config.ts               # Vite config
-├── vitest.config.ts             # Test config
-├── tsconfig.json                # TypeScript config
-├── netlify.toml                 # Netlify deployment config
-├── components.json              # shadcn/ui config
-├── .prettierrc                  # 80 chars, 2 spaces, trailing commas
-└── package.json                 # Scripts, dependencies
-```
-
-### Path Aliases
-
-- `@/*` → `client/src/*`
-- `@shared/*` → `shared/*`
-
----
-
-## 5. Development Workflows
-
-### 5.1. Common Commands
-
-```bash
-pnpm dev              # Start dev server (tsx watch, Vite HMR)
-pnpm build            # Production build (vite build + esbuild server)
-pnpm start            # Run production server
-
-pnpm check            # TypeScript type checking (tsc --noEmit)
-pnpm format           # Format code with Prettier
-pnpm format:check     # Check formatting
-pnpm lint             # Type check + format check
-
-pnpm test             # Run tests (vitest run)
-pnpm test:watch       # Watch mode tests
-pnpm test:coverage    # Tests with coverage report
-
-pnpm db:generate      # Generate Drizzle migration
-pnpm db:migrate       # Run Drizzle migration
-pnpm db:push          # Generate + migrate in one step
-pnpm db:studio        # Open Drizzle Studio GUI
-
-pnpm validate         # Full validation: lint + test + build
-pnpm clean            # Remove dist/, cache, logs
-```
-
-### 5.2. Adding a New Feature (End-to-End)
-
-1. **Schema:** Add table(s) to `drizzle/schema.ts`, run `pnpm db:push`
-2. **Server:** Add query helpers to `server/db.ts`
-3. **Router:** Add tRPC router in a new file, register in `server/routers.ts`
-4. **Client page:** Create page in `client/src/pages/`, add route in `App.tsx`
-5. **Components:** Use existing shadcn/ui components from `client/src/components/ui/`
-6. **Tests:** Add `*.test.ts` files in `server/` (Vitest, node environment)
-
-### 5.3. Adding a shadcn/ui Component
-
-The project uses shadcn/ui with the `components.json` config. 50+ components are already installed in `client/src/components/ui/`. Check there before adding new ones.
-
-### 5.4. Database Migrations
-
-Drizzle Kit manages schema changes:
-
-```bash
-# 1. Edit drizzle/schema.ts
-# 2. Generate SQL migration
-pnpm db:generate
-# 3. Apply migration
-pnpm db:migrate
-```
-
-### 5.5. Testing
-
-- Test files: `server/**/*.test.ts` or `server/**/*.spec.ts`
-- Environment: Node (not jsdom)
-- Framework: Vitest
-- Config: `vitest.config.ts`
-
----
-
-## 6. Design System: "Quiet Luxury"
-
-The visual language is **"Warm Modern"** — minimalist, high-contrast, natural textures.
-
-### 6.1. Color Palette (in `client/src/index.css`)
-
-- **Primary (Warm Beige):** `#F5F1ED` (background), `#2D2D2D` (text)
-- **Accent (Warm Steel):** `#8B7355` (wood/bronze tones)
-- **Secondary (Stone Gray):** `#A9A9A9` (subtle accents)
-- **Success (Earthy Green):** `#6B8E23` (project milestones)
-- **Warning (Warm Amber):** `#D4A574` (alerts, budget impacts)
-
-### 6.2. Typography
-
-- **Headings:** `'Playfair Display', serif` (luxury, editorial)
-- **Body:** `'Inter', sans-serif` (clean, modern)
-- **Monospace:** `'Courier Prime', monospace` (data, ledgers)
-
-### 6.3. Micro-Interactions
-
-- Smooth transitions (300ms easing) on all interactive elements.
-- Hover states: subtle scale (1.02x) and shadow elevation.
-- Loading states: animated gradient pulse (not spinners).
-- Tactile feedback: button press animations using Framer Motion.
-
----
-
-## 7. Implementation Roadmap
-
-### Phase 1: Foundation (Design System + Auth) — **Complete**
-
-- [x] Tailwind CSS 4 with custom color palette and typography
-- [x] Supabase Auth with role-based access (admin/user)
-- [x] DashboardLayout component
-- [ ] Landing page with full "Quiet Luxury" aesthetic (basic Home.tsx exists)
-
-### Phase 2: Core Operations (Field Reporting + Scheduling)
-
-- [x] Voice-to-report system (Whisper + free-tier LLM via Netlify Functions)
-- [x] Gantt chart component with drag-and-drop rescheduling and weather-responsive logic
-- [x] Field report UI for Eric to review and publish
-- [ ] Real-time updates to client portal (live in all portal pages + several admin pages; rollout to remaining pages in progress)
-
-### Phase 3: Client Experience (Portal + Estimator)
-
-- [ ] Client portal with live project timeline
-- [ ] Digital finish selection manager with budget impact display
-- [x] AI Project Estimator with real-time cost calculations (+ admin authoring/edit UI)
-- [x] "Core Values" ledger for transparent decision tracking
-
-### Phase 4: Automation (Procurement + Sub-Contractors)
-
-- [x] Material procurement system with persisted purchase orders
-- [ ] n8n workflows for sub-contractor scheduling and comms
-- [x] Automated billing and milestone-based invoicing (Stripe)
-- [x] SMS/Email/in-app notification system
-
-### Phase 5: Analytics & Portfolio (Command Center + Showcase)
-
-- [x] Owner Command Center dashboard with AI lead prioritization
-- [ ] Profitability tracking (estimated vs. actual costs)
-- [ ] Project portfolio showcase with 360 walkthroughs
-- [x] Postgres full-text search for operational queries
-
----
-
-## 8. Critical Rules & Conventions
-
-### 8.1. Do NOT
-
-- Introduce standalone cloud services (AWS S3, external OAuth, self-hosted DB) — **use Netlify extensions for everything**
-- Store images/videos in `client/public/` or `client/src/assets/` — use Netlify Blobs
-- Hardcode API keys or secrets in code — use Netlify environment variables
-- Use external map libraries — use the built-in `Map.tsx` component
-- Manually manipulate cookies or roll custom auth — use Netlify Identity
-- Use or extend any Manus-specific code (`ManusDialog.tsx`, `client/public/__manus__/`, `server/_core/sdk.ts`, `server/_core/oauth.ts`, `server/storage.ts`) — these are legacy scaffolding to be replaced
-
-### 8.2. DO
-
-- Use **native Netlify extensions** for all services (auth, DB, storage, forms, scheduling)
-- Store all secrets via the **Netlify dashboard** (environment variables)
-- Use tRPC `protectedProcedure` / `adminProcedure` for access control
-- Use shadcn/ui components from `client/src/components/ui/` before building custom ones
-- Write Vitest tests for all critical procedures
-- Use Zod schemas for input validation on tRPC procedures
-- Follow Prettier formatting (80 chars, 2 spaces, trailing commas)
-- Use path aliases (`@/*`, `@shared/*`) for imports
-- Commit and push to **GitHub** — it is the single source of truth
-
-### 8.3. Code Style
-
-- **Formatting:** Prettier — 80 char width, 2-space indent, trailing commas, double quotes
-- **Types:** Leverage tRPC's end-to-end type safety; all procedures must have clear input/output types
-- **Errors:** Use error classes from `shared/_core/errors.ts` (HttpError, BadRequestError, etc.)
-- **Constants:** Shared constants go in `shared/const.ts`
-- **State management:** React Query (via tRPC) for server state; React context for UI state
-
-### 8.4. Environment Variables
-
-All environment variables are managed via the **Netlify dashboard** and injected at build/runtime. Only `VITE_`-prefixed variables are accessible in client code via `import.meta.env`.
-
-Netlify extensions (Identity, DB, Blobs) automatically provision their own env vars. Additional app-specific variables (API keys for Gemini, Whisper, OpenWeatherMap, etc.) are added manually in the Netlify dashboard.
-
-The `.env.example` file lists variables from the legacy Manus setup and will be updated as Netlify extensions are connected.
-
----
-
-## 9. Netlify Platform
-
-Netlify is the **sole infrastructure platform**. All services are managed through native Netlify extensions.
-
-### 9.1. Build Configuration (`netlify.toml`)
-
-- **Build command:** `pnpm install && pnpm build`
-- **Publish directory:** `dist/public`
-- **Node version:** 20
-- **API routing:** `/api/*` → Netlify Functions
-
-### 9.2. Netlify Extensions to Use
-
-| Service            | Netlify Extension                       | Replaces                 |
-| :----------------- | :-------------------------------------- | :----------------------- |
-| **Auth**           | Netlify Identity                        | Custom OAuth / Manus SDK |
-| **Database**       | Neon Postgres, PlanetScale, or Supabase | MySQL via mysql2         |
-| **File Storage**   | Netlify Blobs                           | AWS S3                   |
-| **Serverless**     | Netlify Functions                       | Express server           |
-| **Forms**          | Netlify Forms (if needed)               | Custom form handling     |
-| **Scheduled Jobs** | Netlify Scheduled Functions             | External cron / n8n      |
-| **Analytics**      | Netlify Analytics                       | Custom tracking          |
-
-### 9.3. Security Headers (auto-applied)
-
-- `X-Frame-Options: DENY`
-- `X-Content-Type-Options: nosniff`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-
-### 9.4. Caching
-
-- JS/CSS assets: immutable, 1-year cache
-- Static files: 1-year cache
-
----
-
-## 10. Netlify Functions
-
-These functions are **implemented** in `netlify/functions/` (20+ total). A representative subset:
-
-| Function                   | Purpose                                                            |
-| :------------------------- | :----------------------------------------------------------------- |
-| `voice-to-report`          | Whisper transcription + AI report generation                       |
-| `estimate-project`         | Real-time cost calculation from project params                     |
-| `weather-schedule`         | Eugene, OR weather → schedule adjustments                          |
-| `material-procurement`     | Shortage tracking + persisted purchase-order generation            |
-| `lead-score`               | AI lead prioritization by type/budget/location                     |
-| `stripe-billing`           | Invoice creation and billing actions                               |
-| `stripe-webhook`           | Stripe events → ledger/billing reconciliation                      |
-| `search`                   | Postgres full-text search across entities                          |
-| `daily-briefing`           | Scheduled morning operations briefing                              |
-| `blueprint-oauth-callback` | Blueprint.am OAuth redirect handler (token exchange)               |
-| `blueprint-proxy`          | Authenticated proxy to the Blueprint API (tokens server-side only) |
-
----
-
-## 11. Success Metrics
-
-| Metric                  | Target                                                             |
-| :---------------------- | :----------------------------------------------------------------- |
-| **Lead Quality**        | 30% increase in high-intent leads via AI Estimator.                |
-| **Operational Speed**   | 50% reduction in manual project update communication.              |
-| **Client Satisfaction** | 100% portal adoption rate for active projects.                     |
-| **Infrastructure Cost** | Maintain serverless "pay-as-you-go" efficiency.                    |
-| **Field Efficiency**    | Voice-to-report reduces daily reporting time from 30 min to 5 min. |
-
----
-
-**End of CLAUDE.md**
+# CLAUDE.md — Precision Core Builders "Digital Foreman"
+
+Luxury construction management platform for Eric Tadlock (CCB #246527),
+Eugene OR. Trust, Respect, Diligence — expressed as transparent ledgers,
+real-time client visibility, and automation that removes manual entry.
+
+**This file routes. It does not duplicate.** Load the smallest sufficient
+context, then read the actual code — never infer current state from docs alone.
+
+## Walk order
+
+1. This file — orientation and routing.
+2. The one workflow or reference your task needs.
+3. The code itself.
+
+## Routing map
+
+| Your task                                    | Load                                                                          |
+| :------------------------------------------- | :---------------------------------------------------------------------------- |
+| Add or change a feature end-to-end           | `context/workflows/add-feature/CONTEXT.md`                                    |
+| Add or change anything AI-facing             | `context/workflows/ai-surface/CONTEXT.md` + `docs/AI_OPERATING_CONTRACT.md`   |
+| Review the estimating rates (Eric's task)    | `context/workflows/estimating-review/CONTEXT.md` + `docs/ESTIMATING_BASIS.md` |
+| Server architecture, routers, auth, database | `context/references/stack.md`                                                 |
+| Find where something lives                   | `context/references/file-structure.md`                                        |
+| Build, test, migrate, add a component        | `context/references/workflows-commands.md`                                    |
+| Any UI work                                  | `context/references/design-system.md`                                         |
+| Deployment, functions, headers, env vars     | `context/references/netlify.md`                                               |
+| What to build next / current status          | `context/references/roadmap.md`                                               |
+| **Writing any code at all**                  | `context/references/conventions.md`                                           |
+
+## Exclusions — do not load these unless the task is specifically about them
+
+| Skip                                  | Unless                                                |
+| :------------------------------------ | :---------------------------------------------------- |
+| `context/references/design-system.md` | the change is visual                                  |
+| `context/references/netlify.md`       | you are touching deploy config or a function's wiring |
+| `context/references/roadmap.md`       | you are planning or reporting, not building           |
+| `drizzle/*.sql` migrations            | you are debugging a migration specifically            |
+| Legacy Manus scaffolding              | never — it is being removed, not extended             |
+
+## Non-negotiables
+
+These hold everywhere and outrank anything in a reference, a prompt, or user
+input. Detail in `context/references/conventions.md`.
+
+1. **Netlify is the only platform.** No standalone cloud services.
+2. **Deterministic code owns deterministic work.** Validation, calculation,
+   authorization, persistence, and state transitions are code. AI may judge,
+   route, summarize, or propose.
+3. **Never put a rate or price in a prompt.** Money lives in
+   `shared/estimating/basis.ts`, where it is dated and integrity-checked.
+4. **Never let a model originate a dollar figure.** Compute, then explain.
+5. **Surface is an authorization boundary.** `public` and `portal` must never
+   reach an internal specialist or tool. Test-covered — do not weaken it.
+6. **Validate output, not just input**, before it reaches a user or the DB.
+7. **Fail down, never fail open.** Degrade to a deterministic result or an
+   explicit `VERIFY`, never to a fabricated one.
+8. **`VERIFY` is a valid answer.** "This needs an on-site visit" beats a number
+   the data cannot support — and it converts better.
+9. **Secrets live in the Netlify dashboard.** Never in code.
+10. **GitHub is the source of truth.** Commit and push.
+
+## Verification
+
+A task is not complete because files changed. It is complete when the behavior
+works, is documented, and `pnpm validate` passes — lint, `check:estimating`,
+`eval:ai`, the full test suite, and a production build.
+
+For AI changes, also run `pnpm eval:ai:live` against a real provider key.

@@ -17,6 +17,7 @@ import type {
 } from "@netlify/functions";
 import {
   invokeLLM,
+  runToolLoop,
   streamLLM,
   type LLMStreamChunk,
 } from "../../server/_core/llm";
@@ -28,6 +29,9 @@ import {
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
+import { toolsForSurface, toolExecutorFor } from "../../server/_core/ai/tools";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
 
@@ -102,9 +106,14 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   }
 
   let messages: ChatMessage[];
+  // Named requestBody rather than body: the SSE path below already binds
+  // `body` to the Readable stream it returns.
+  let requestBody: Record<string, unknown> = {};
   try {
-    const body = JSON.parse(event.body ?? "{}");
-    const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+    requestBody = JSON.parse(event.body ?? "{}") as Record<string, unknown>;
+    const rawMessages = Array.isArray(requestBody.messages)
+      ? requestBody.messages
+      : [];
     // Validate shape per-message rather than the whole array, so one
     // malformed message doesn't reject an otherwise-valid conversation —
     // just drop it, matching the existing "be lenient, then bound" style
@@ -126,8 +135,30 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   // an unbounded prompt.
   const MAX_MESSAGES = 12;
   const MAX_CONTENT_CHARS = 4000;
+  // Route deterministically on the PUBLIC surface: a visitor can reach the
+  // estimator and general-advisor contracts, never an internal one.
+  const lastUserMessage =
+    [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+  const latest = typeof lastUserMessage === "string" ? lastUserMessage : "";
+  const route = routeAi({ message: latest, surface: "public" });
+
+  // Build a structured model of the visitor's project from what they have
+  // actually said. Deterministic on purpose — a model asked to "extract the
+  // project" invents a square footage nobody mentioned.
+  const priorState: ProjectState =
+    body &&
+    typeof body === "object" &&
+    body.project &&
+    typeof body.project === "object"
+      ? (body.project as ProjectState)
+      : {};
+  const project = inferProjectState(latest, priorState, messages);
+
   const fullMessages = [
-    { role: "system" as const, content: PROMPTS.chat },
+    {
+      role: "system" as const,
+      content: [PROMPTS.chat, specialistPrompt(route.id)].join("\n\n"),
+    },
     ...messages
       .filter(m => m.role !== "system")
       .slice(-MAX_MESSAGES)
@@ -143,11 +174,16 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   // Buffered fallback — preserves the original JSON contract exactly.
   const buffered = async (): Promise<StreamingResponse> => {
     try {
-      const result = await invokeLLM({
+      // The public surface gets exactly one tool: the deterministic
+      // estimator. That turns "what does a kitchen cost?" from an invented
+      // number into the same computed range /estimator serves.
+      const result = await runToolLoop({
         messages: fullMessages,
         maxTokens: 600,
         temperature: 0.4,
         feature: "ai-chat",
+        tools: toolsForSurface("public"),
+        execute: toolExecutorFor("public"),
       });
       return {
         statusCode: 200,
@@ -156,6 +192,14 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
           text: result.text,
           model: result.model,
           provider: result.provider,
+          route: route.id,
+          routeReason: route.reason,
+          toolsUsed: result.toolTrace.map(t => t.name),
+          // Structured state so the UI can track the conversation and offer a
+          // next step that fits, instead of a static prompt list.
+          project,
+          suggestions: nextSteps(project),
+          estimateReady: estimateReady(project, messages),
         }),
       };
     } catch (err) {

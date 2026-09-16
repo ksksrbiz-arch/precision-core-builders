@@ -7,7 +7,7 @@
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
     "build": "tsx scripts/generate-sitemap.ts && vite build && tsx scripts/stamp-service-worker.ts",
     "sitemap": "tsx scripts/generate-sitemap.ts",
-    "start": "echo \"Production runs on Netlify Functions — use netlify dev locally\"",
+    "start": "echo \"Production runs on Netlify Functions \u2014 use netlify dev locally\"",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -20,7 +20,10 @@
     "db:migrate": "drizzle-kit migrate",
     "lint": "pnpm check && pnpm format:check",
     "check:env": "node scripts/check-env-size.js",
-    "validate": "pnpm lint && pnpm test && pnpm build",
+    "check:estimating": "tsx scripts/check-estimating-basis.ts",
+    "eval:ai": "tsx scripts/eval-ai.ts",
+    "eval:ai:live": "tsx scripts/eval-ai.ts --live",
+    "validate": "pnpm lint && pnpm check:estimating && pnpm eval:ai && pnpm test && pnpm build",
     "clean": "rm -rf dist/ node_modules/.cache/ .manus-logs/"
   },
   "dependencies": {
@@ -137,7 +140,8 @@
       "ws": ">=8.20.1",
       "postcss": ">=8.5.12",
       "immutable": ">=4.3.9",
-      "body-parser": ">=1.20.6"
+      "body-parser": ">=1.20.6",
+      "mysql2": ">=3.22.0"
     }
   }
 }

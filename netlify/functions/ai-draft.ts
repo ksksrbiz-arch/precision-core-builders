@@ -16,6 +16,8 @@ import { invokeLLM, parseLlmJson } from "../../server/_core/llm";
 import { getSupabaseAdmin } from "../../server/_core/supabase";
 import { withGuards } from "./_lib/http";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 
 type DraftKind = "client-update" | "sub-briefing";
 
@@ -175,7 +177,18 @@ export const handler = withGuards(
         const result = await invokeLLM({
           feature: "ai-draft:client-update",
           messages: [
-            { role: "system", content: PROMPTS.clientUpdate },
+            {
+              role: "system",
+              // Client-facing copy, so the client-liaison contract applies:
+              // no internal costs, margins, vendor pricing, or promised dates.
+              content: [
+                PROMPTS.clientUpdate,
+                specialistPrompt(
+                  routeAi({ surface: "internal", specialist: "client-liaison" })
+                    .id
+                ),
+              ].join("\n\n"),
+            },
             {
               role: "user",
               content: `PROJECT DATA (JSON):\n${JSON.stringify(context)}${steer}`,
@@ -198,7 +211,15 @@ export const handler = withGuards(
       const result = await invokeLLM({
         feature: "ai-draft:sub-briefing",
         messages: [
-          { role: "system", content: PROMPTS.subBriefing },
+          {
+            role: "system",
+            content: [
+              PROMPTS.subBriefing,
+              specialistPrompt(
+                routeAi({ surface: "internal", specialist: "crew-dispatch" }).id
+              ),
+            ].join("\n\n"),
+          },
           {
             role: "user",
             content: `PROJECT DATA (JSON):\n${JSON.stringify(context)}${tradeLine}`,
