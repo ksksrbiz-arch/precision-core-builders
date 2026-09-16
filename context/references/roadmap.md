@@ -8,7 +8,7 @@ Loaded when: deciding what to build next, or reporting progress.
 
 ### What's Built
 
-- ✅ Page routing (37 pages: 19 admin, 4 portal, 7 public, 7 auth/services)
+- ✅ Page routing across admin, client portal, public marketing, and auth/service surfaces — the route table in `client/src/App.tsx` is the count; do not restate it here, it goes stale
 - ✅ 50+ shadcn/ui components + 40+ custom components
 - ✅ DashboardLayout, ErrorBoundary, Map, VoiceRecorder, HeroSection, PWAInstallPrompt
 - ✅ Tailwind CSS 4 design system with custom "Quiet Luxury" theme
@@ -17,7 +17,7 @@ Loaded when: deciding what to build next, or reporting progress.
 - ✅ 15+ production-ready PostgreSQL tables via Drizzle ORM (Supabase) with RLS
 - ✅ 20+ Netlify Functions (voice-to-report, estimate-project, weather-schedule, ai-chat, vision-studio, lead-score, stripe-billing, stripe-webhook, material-procurement, search, etc.)
 - ✅ Full type safety (0 TypeScript errors, 100% tRPC coverage)
-- ✅ GitHub → Netlify CI/CD pipeline working
+- ⚠️ GitHub → Netlify CI/CD configured, but **GitHub Actions has been failing account-wide since 2026-08-24** — every run dies in 2-3 seconds before checkout, on PRs and pushes to `main` alike, so nothing merged since then was verified by CI. Netlify deploys are unaffected. Likely an Actions billing/usage limit; needs a human with account access
 - ✅ Supabase Auth with admin/user role system, consolidated onto a single JWT verifier
 
 ### What's Implemented & Tested
@@ -33,7 +33,7 @@ Loaded when: deciding what to build next, or reporting progress.
 - ✅ **Material Procurement:** Shortage detection + persisted, vendor-bucketed purchase orders
 - ✅ **Search:** Postgres full-text search across projects, clients, reports, and more
 - ✅ **Notifications:** Delivery pipeline (in-app / email / SMS via n8n)
-- ✅ **Training & Guides:** Contextual per-screen help, a searchable System Guide, and a guided First Week Training track (`/admin/training`) with click-to-play walkthrough videos (see `docs/TRAINING_VIDEOS.md`)
+- ✅ **Training & Guides:** Contextual per-screen help, a searchable System Guide, and a guided First Week Training track (`/admin/training`) with click-to-play walkthrough video **support** — the registry in `client/src/lib/guide-videos.ts` is still empty, so no video renders until one is recorded (see `docs/TRAINING_VIDEOS.md`)
 - ✅ **Blueprint Integration:** OAuth + API-key connect, artifact sharing (flag-gated by `VITE_FEATURE_BLUEPRINT`)
 
 ### What's Scaffolded / Pending
