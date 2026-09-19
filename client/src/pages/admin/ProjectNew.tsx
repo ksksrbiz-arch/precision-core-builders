@@ -2,9 +2,20 @@
  * ProjectNew — create a new project with full details.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { QueryError } from "@/components/QueryError";
+import { SkeletonBox, SkeletonLine } from "@/components/Skeletons";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, FolderPlus } from "lucide-react";
+import { ArrowLeft, UserPlus, Users } from "lucide-react";
 import { cloneElement, isValidElement, useId, useState } from "react";
 import { useLocation } from "wouter";
 
@@ -117,9 +128,15 @@ export default function ProjectNew() {
   const [, setLocation] = useLocation();
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
-  const { data: clientsData } = trpc.clients.list.useQuery({
-    pageSize: 100,
-  });
+  const {
+    data: clientsData,
+    isLoading: clientsLoading,
+    isError: clientsError,
+    refetch: refetchClients,
+  } = trpc.clients.list.useQuery({ pageSize: 100 });
+
+  const clients = clientsData?.data ?? [];
+  const hasClients = clients.length > 0;
 
   const utils = trpc.useUtils();
 
@@ -138,7 +155,7 @@ export default function ProjectNew() {
     setForm(prev => ({ ...prev, [key]: value }));
 
   const handleSubmit = () => {
-    if (!form.name || !form.clientId) return;
+    if (!form.name || !form.clientId || !hasClients) return;
     createMut.mutate({
       clientId: parseInt(form.clientId),
       name: form.name,
@@ -167,6 +184,25 @@ export default function ProjectNew() {
     });
   };
 
+  const submitDisabled =
+    !form.name || !form.clientId || !hasClients || createMut.isPending;
+
+  const disabledReason = createMut.isPending
+    ? null
+    : clientsLoading
+      ? "Loading your clients…"
+      : clientsError
+        ? "Clients couldn't be loaded, so a client can't be selected yet."
+        : !hasClients
+          ? "Add a client before creating a project."
+          : !form.clientId && !form.name
+            ? "Select a client and enter a project name to continue."
+            : !form.clientId
+              ? "Select a client to continue."
+              : !form.name
+                ? "Enter a project name to continue."
+                : null;
+
   const inputCls =
     "w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60";
   const selectCls =
@@ -183,15 +219,10 @@ export default function ProjectNew() {
           <ArrowLeft className="h-3.5 w-3.5" /> All Projects
         </button>
 
-        <div className="flex items-center gap-3 mb-6">
-          <FolderPlus className="h-5 w-5 text-primary" />
-          <h1
-            className="text-2xl font-semibold"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            New Project
-          </h1>
-        </div>
+        <AdminPageHeader
+          title="New Project"
+          description="Every project belongs to a client. Pick the client, name the job, and the rest can be filled in later."
+        />
 
         <div className="space-y-6">
           {/* Basic Info */}
@@ -204,20 +235,60 @@ export default function ProjectNew() {
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">
-              <LabeledInput label="Client" required>
-                <select
-                  value={form.clientId}
-                  onChange={e => set("clientId", e.target.value)}
-                  className={selectCls}
-                >
-                  <option value="">Select a client…</option>
-                  {clientsData?.data.map((c: any) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </LabeledInput>
+              {clientsLoading ? (
+                <div>
+                  <SkeletonLine width="w-16" className="h-3 mb-2" />
+                  <SkeletonBox height="h-10" />
+                </div>
+              ) : clientsError ? (
+                <div className="sm:col-span-2">
+                  <QueryError
+                    message="We couldn't load your clients, so no client can be selected yet."
+                    onRetry={() => refetchClients()}
+                  />
+                </div>
+              ) : !hasClients ? (
+                <div className="sm:col-span-2">
+                  <Empty className="bg-card border border-border/60">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Users />
+                      </EmptyMedia>
+                      <EmptyTitle>No clients yet</EmptyTitle>
+                      <EmptyDescription>
+                        A project has to belong to a client, and there aren't
+                        any yet. Add your first client, then come back here to
+                        create the project.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                    <EmptyContent>
+                      <button
+                        onClick={() => setLocation("/admin/clients")}
+                        className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <UserPlus className="h-3.5 w-3.5" /> Add your first
+                        client
+                      </button>
+                    </EmptyContent>
+                  </Empty>
+                </div>
+              ) : (
+                <LabeledInput label="Client" required>
+                  <select
+                    value={form.clientId}
+                    onChange={e => set("clientId", e.target.value)}
+                    className={selectCls}
+                  >
+                    <option value="">Select a client…</option>
+                    {clients.map((c: any) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </LabeledInput>
+              )}
 
               <LabeledInput label="Project Name" required>
                 <input
@@ -427,22 +498,29 @@ export default function ProjectNew() {
           </section>
 
           {/* Actions */}
-          <div className="flex gap-3 justify-end pb-6">
-            <button
-              onClick={() => setLocation("/admin/projects")}
-              className="px-5 py-2.5 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!form.name || !form.clientId || createMut.isPending}
-              className="px-5 py-2.5 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              {createMut.isPending ? "Creating…" : "Create Project"}
-            </button>
+          <div className="flex flex-col items-end gap-2 pb-6">
+            {disabledReason && (
+              <p className="text-xs text-muted-foreground text-right">
+                {disabledReason}
+              </p>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setLocation("/admin/projects")}
+                className="px-5 py-2.5 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitDisabled}
+                className="px-5 py-2.5 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                {createMut.isPending ? "Creating…" : "Create Project"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
