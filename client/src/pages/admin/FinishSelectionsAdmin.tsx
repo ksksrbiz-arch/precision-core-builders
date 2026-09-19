@@ -2,6 +2,7 @@
  * FinishSelectionsAdmin — Manage material & finish selections per project.
  * Add items, approve, track budget impact, and manage client-facing selections.
  */
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
 import { SkeletonCard } from "@/components/Skeletons";
 import {
@@ -30,6 +31,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Check,
   DollarSign,
+  FolderPlus,
   Image,
   Plus,
   Sparkles,
@@ -37,6 +39,16 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
+
+const LABEL_CLASS =
+  "block text-[10px] font-bold tracking-[0.18em] uppercase " +
+  "text-muted-foreground mb-1.5";
+
+const FIELD_CLASS =
+  "w-full px-3 py-2 bg-input border border-border text-sm " +
+  "text-foreground placeholder:text-muted-foreground/40 " +
+  "focus:outline-none focus:border-primary/60";
 
 const ROOMS = [
   "Kitchen",
@@ -89,12 +101,19 @@ function fmt(n: number | string | null | undefined) {
 }
 
 export default function FinishSelectionsAdmin() {
+  const [, setLocation] = useLocation();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(BLANK);
   const utils = trpc.useUtils();
 
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
+  const { data: projects, isLoading: projectsLoading } =
+    trpc.projects.list.useQuery({ pageSize: 50 });
+  const projectOptions = projects?.data ?? [];
+  // Distinguish "no projects exist" from "projects exist, none picked" —
+  // otherwise the selector is an empty strip and the instruction to pick a
+  // project is impossible to follow.
+  const hasNoProjects = !projectsLoading && projectOptions.length === 0;
   const {
     data: selections,
     isLoading,
@@ -199,54 +218,48 @@ export default function FinishSelectionsAdmin() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-6">
-          <div>
-            <p
-              className="text-[11px] font-semibold tracking-[0.28em] uppercase text-primary mb-1"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Material Selections
-            </p>
-            <h1
-              className="text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Finish Selections
-            </h1>
-            <p className="text-sm text-muted-foreground font-light mt-0.5">
-              Manage client-facing material and finish choices with budget
-              impact.
-            </p>
-          </div>
-          {selectedProject && (
-            <button
-              onClick={() => setShowAdd(v => !v)}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              <Plus className="h-3.5 w-3.5" /> Add Selection
-            </button>
-          )}
-        </div>
+        <AdminPageHeader
+          eyebrow="Material Selections"
+          title="Finish Selections"
+          description="Manage client-facing material and finish choices with budget impact."
+          actions={
+            selectedProject ? (
+              <button
+                onClick={() => setShowAdd(v => !v)}
+                className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Selection
+              </button>
+            ) : undefined
+          }
+        />
 
-        {/* Project selector */}
-        <div className="bg-card border border-border/60 p-4 mb-5">
-          <select
-            value={selectedProject ?? ""}
-            onChange={e =>
-              setSelectedProject(e.target.value ? Number(e.target.value) : null)
-            }
-            className="w-full sm:w-80 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-          >
-            <option value="">Select a project…</option>
-            {projects?.data.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Project selector — hidden when there are no projects to pick */}
+        {!hasNoProjects && (
+          <div className="bg-card border border-border/60 p-4 mb-5">
+            <label htmlFor="fs-project" className={LABEL_CLASS}>
+              Project
+            </label>
+            <select
+              id="fs-project"
+              value={selectedProject ?? ""}
+              onChange={e =>
+                setSelectedProject(
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+              className="w-full sm:w-80 px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+            >
+              <option value="">Select a project…</option>
+              {projectOptions.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Budget impact summary */}
         {budgetImpact && (
@@ -303,88 +316,154 @@ export default function FinishSelectionsAdmin() {
               </button>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
-              <select
-                value={form.room}
-                onChange={f("room")}
-                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-              >
-                <option value="">Room…</option>
-                {ROOMS.map(r => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={form.category}
-                onChange={f("category")}
-                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-              >
-                <option value="">Category…</option>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={form.itemName}
-                onChange={f("itemName")}
-                placeholder="Item name *"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
-              <input
-                value={form.brand}
-                onChange={f("brand")}
-                placeholder="Brand / manufacturer"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
-              <input
-                value={form.colorName}
-                onChange={f("colorName")}
-                placeholder="Color / finish name"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
-              <input
-                value={form.sku}
-                onChange={f("sku")}
-                placeholder="SKU / model number"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
-              <input
-                value={form.unitPrice}
-                onChange={f("unitPrice")}
-                type="number"
-                placeholder="Unit price ($)"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
-              <input
-                value={form.quantity}
-                onChange={f("quantity")}
-                type="number"
-                placeholder="Quantity"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
-              <input
-                value={form.budgetDelta}
-                onChange={f("budgetDelta")}
-                type="number"
-                placeholder="Budget impact (+ or -)"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
-              <input
-                value={form.imageUrl}
-                onChange={f("imageUrl")}
-                placeholder="Swatch / image URL"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 sm:col-span-2 lg:col-span-3"
-              />
-              <textarea
-                value={form.notes}
-                onChange={f("notes")}
-                placeholder="Notes for client…"
-                rows={2}
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none sm:col-span-2 lg:col-span-3"
-              />
+              <div>
+                <label htmlFor="fs-room" className={LABEL_CLASS}>
+                  Room
+                </label>
+                <select
+                  id="fs-room"
+                  value={form.room}
+                  onChange={f("room")}
+                  className={FIELD_CLASS}
+                >
+                  <option value="">Room…</option>
+                  {ROOMS.map(r => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="fs-category" className={LABEL_CLASS}>
+                  Category
+                </label>
+                <select
+                  id="fs-category"
+                  value={form.category}
+                  onChange={f("category")}
+                  className={FIELD_CLASS}
+                >
+                  <option value="">Category…</option>
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="fs-item-name" className={LABEL_CLASS}>
+                  Item Name *
+                </label>
+                <input
+                  id="fs-item-name"
+                  value={form.itemName}
+                  onChange={f("itemName")}
+                  placeholder="Quartz countertop"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="fs-brand" className={LABEL_CLASS}>
+                  Brand / Manufacturer
+                </label>
+                <input
+                  id="fs-brand"
+                  value={form.brand}
+                  onChange={f("brand")}
+                  placeholder="Cambria"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="fs-color" className={LABEL_CLASS}>
+                  Color / Finish Name
+                </label>
+                <input
+                  id="fs-color"
+                  value={form.colorName}
+                  onChange={f("colorName")}
+                  placeholder="Brittanicca"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="fs-sku" className={LABEL_CLASS}>
+                  SKU / Model Number
+                </label>
+                <input
+                  id="fs-sku"
+                  value={form.sku}
+                  onChange={f("sku")}
+                  placeholder="CB-1042"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="fs-unit-price" className={LABEL_CLASS}>
+                  Unit Price ($)
+                </label>
+                <input
+                  id="fs-unit-price"
+                  value={form.unitPrice}
+                  onChange={f("unitPrice")}
+                  type="number"
+                  placeholder="0.00"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="fs-quantity" className={LABEL_CLASS}>
+                  Quantity
+                </label>
+                <input
+                  id="fs-quantity"
+                  value={form.quantity}
+                  onChange={f("quantity")}
+                  type="number"
+                  placeholder="1"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="fs-budget-delta" className={LABEL_CLASS}>
+                  Budget Impact (+ or -)
+                </label>
+                <input
+                  id="fs-budget-delta"
+                  value={form.budgetDelta}
+                  onChange={f("budgetDelta")}
+                  type="number"
+                  placeholder="0.00"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label htmlFor="fs-image-url" className={LABEL_CLASS}>
+                  Swatch / Image URL
+                </label>
+                <input
+                  id="fs-image-url"
+                  value={form.imageUrl}
+                  onChange={f("imageUrl")}
+                  placeholder="https://…"
+                  className={FIELD_CLASS}
+                />
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label htmlFor="fs-notes" className={LABEL_CLASS}>
+                  Notes For Client
+                </label>
+                <textarea
+                  id="fs-notes"
+                  value={form.notes}
+                  onChange={f("notes")}
+                  placeholder="Anything the client should know about this choice…"
+                  rows={2}
+                  className={`${FIELD_CLASS} resize-none`}
+                />
+              </div>
             </div>
             <div className="flex gap-3">
               <button
@@ -407,13 +486,43 @@ export default function FinishSelectionsAdmin() {
         )}
 
         {/* No project selected */}
-        {!selectedProject ? (
-          <div className="bg-card border border-border/60 p-12 text-center">
-            <DollarSign className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm">
-              Select a project above to manage its finish selections.
-            </p>
-          </div>
+        {projectsLoading && !selectedProject ? (
+          <SkeletonCard count={1} />
+        ) : hasNoProjects ? (
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FolderPlus className="h-8 w-8 text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>No projects yet</EmptyTitle>
+              <EmptyDescription>
+                Finish selections hang off a project. Create your first project
+                and its material choices will live here.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/admin/projects/new")}
+                className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Create First Project
+              </button>
+            </EmptyContent>
+          </Empty>
+        ) : !selectedProject ? (
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <DollarSign className="h-8 w-8 text-muted-foreground/40" />
+              </EmptyMedia>
+              <EmptyTitle>Choose a project</EmptyTitle>
+              <EmptyDescription>
+                Select a project above to manage its finish selections.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent />
+          </Empty>
         ) : isLoading ? (
           <SkeletonCard count={3} />
         ) : isError ? (

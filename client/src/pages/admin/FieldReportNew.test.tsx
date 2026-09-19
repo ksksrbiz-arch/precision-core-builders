@@ -1,8 +1,26 @@
 /**
  * @vitest-environment jsdom
  */
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+
+type ProjectRow = {
+  id: number;
+  name: string;
+  city: string;
+  state: string;
+  status: string;
+};
+
+const queryState: {
+  projects: ProjectRow[];
+  isLoading: boolean;
+  isError: boolean;
+} = {
+  projects: [],
+  isLoading: false,
+  isError: false,
+};
 
 vi.mock("@/lib/trpc", () => {
   const base = {
@@ -19,17 +37,12 @@ vi.mock("@/lib/trpc", () => {
             if (routerName === "projects" && procName === "list") {
               return {
                 useQuery: () => ({
-                  data: {
-                    data: [
-                      {
-                        id: 1,
-                        name: "The Hendricks Remodel",
-                        city: "Eugene",
-                        state: "OR",
-                        status: "in_progress",
-                      },
-                    ],
-                  },
+                  data: queryState.isLoading
+                    ? undefined
+                    : { data: queryState.projects },
+                  isLoading: queryState.isLoading,
+                  isError: queryState.isError,
+                  refetch: vi.fn(),
                 }),
               };
             }
@@ -81,6 +94,20 @@ window.matchMedia =
 
 afterEach(cleanup);
 
+beforeEach(() => {
+  queryState.projects = [
+    {
+      id: 1,
+      name: "The Hendricks Remodel",
+      city: "Eugene",
+      state: "OR",
+      status: "in_progress",
+    },
+  ];
+  queryState.isLoading = false;
+  queryState.isError = false;
+});
+
 async function loadPage() {
   vi.resetModules();
   const mod = await import("./FieldReportNew");
@@ -106,5 +133,62 @@ describe("FieldReportNew", () => {
       const hasLabel = btn.hasAttribute("aria-label");
       expect(hasText || hasLabel).toBe(true);
     }
+  });
+
+  it("shows a project a lead-status project in the selectable list", async () => {
+    queryState.projects = [
+      {
+        id: 7,
+        name: "Fresh Lead Project",
+        city: "Springfield",
+        state: "OR",
+        status: "lead",
+      },
+    ];
+    const FieldReportNew = await loadPage();
+    render(<FieldReportNew />);
+    expect(
+      screen.getByRole("button", { name: /fresh lead project/i })
+    ).toBeTruthy();
+  });
+
+  it("excludes completed projects from the selectable list", async () => {
+    queryState.projects = [
+      {
+        id: 8,
+        name: "Finished Job",
+        city: "Eugene",
+        state: "OR",
+        status: "complete",
+      },
+    ];
+    const FieldReportNew = await loadPage();
+    render(<FieldReportNew />);
+    expect(screen.queryByText(/finished job/i)).toBeNull();
+    expect(screen.getByText(/no projects to report on yet/i)).toBeTruthy();
+  });
+
+  it("renders an empty-state CTA when there are zero projects", async () => {
+    queryState.projects = [];
+    const FieldReportNew = await loadPage();
+    render(<FieldReportNew />);
+    expect(screen.getByText(/no projects to report on yet/i)).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /create a project first/i })
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: /continue to recording/i })
+    ).toBeNull();
+  });
+
+  it("renders a loading skeleton while projects are loading", async () => {
+    queryState.isLoading = true;
+    queryState.projects = [];
+    const FieldReportNew = await loadPage();
+    render(<FieldReportNew />);
+    expect(screen.queryByText(/no projects to report on yet/i)).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /continue to recording/i })
+    ).toBeNull();
   });
 });

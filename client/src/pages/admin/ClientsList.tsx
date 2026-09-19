@@ -93,7 +93,6 @@ export default function ClientsList() {
       <div className="max-w-5xl mx-auto">
         <AdminPageHeader
           title="Clients"
-          guideId="clients"
           description="Manage homeowner records, contact details, and account-level actions."
           actions={
             <button
@@ -110,6 +109,7 @@ export default function ClientsList() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input
             type="text"
+            aria-label="Search clients by name or email"
             placeholder="Search by name or email..."
             value={search}
             onChange={e => {
@@ -204,25 +204,48 @@ export default function ClientsList() {
             onRetry={() => refetch()}
           />
         ) : data?.data.length === 0 ? (
-          <Empty>
+          <Empty className="bg-card border border-border/60">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <Users />
               </EmptyMedia>
-              <EmptyTitle>No clients yet</EmptyTitle>
+              <EmptyTitle>
+                {debouncedSearch
+                  ? "No clients match that search"
+                  : "Start here — add your first client"}
+              </EmptyTitle>
               <EmptyDescription>
-                Add your first client to link projects, estimates, and portal
-                access.
+                {debouncedSearch
+                  ? `Nothing matches "${debouncedSearch}". Clear the search, or add this person as a new client.`
+                  : "A client comes first: projects, estimates, and portal access all attach to a client record."}
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <button
-                onClick={() => setShowNew(true)}
-                className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                + Add your first client
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    pager.setPage(1);
+                    setShowNew(true);
+                  }}
+                  className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-5 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add your first client
+                </button>
+                {debouncedSearch && (
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      pager.setPage(1);
+                    }}
+                    className="flex min-h-11 items-center px-4 py-3 border border-border/60 text-muted-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:border-primary/40 hover:text-primary transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Clear search
+                  </button>
+                )}
+              </div>
             </EmptyContent>
           </Empty>
         ) : (

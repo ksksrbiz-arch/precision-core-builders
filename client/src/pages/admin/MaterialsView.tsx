@@ -7,7 +7,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
-import { SkeletonCard } from "@/components/Skeletons";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 type PurchaseOrder = {
   id: string;
@@ -132,12 +133,36 @@ const fmtCurrency = (n: number | null | undefined) =>
       })}`
     : "—";
 
+/**
+ * Parse an optional positive-number form field.
+ *
+ * `materials.create` validates `quantityNeeded` and `unitPriceCurrent` with
+ * `z.number().positive()`. A plain truthiness check lets the string `"0"`
+ * through as the number `0`, which the schema rejects with nothing but a
+ * generic "Add Failed" toast. Parse here instead, so `0` (or any junk) is
+ * reported on the field itself and never reaches a doomed mutation.
+ */
+function parsePositiveField(raw: string): {
+  value?: number;
+  error?: string;
+} {
+  const trimmed = raw.trim();
+  if (!trimmed) return {};
+  const n = Number(trimmed);
+  if (!Number.isFinite(n)) return { error: "Enter a number." };
+  if (n <= 0) {
+    return { error: "Must be greater than 0 — leave blank if unknown." };
+  }
+  return { value: n };
+}
+
 /** Short date, e.g. `"Mar 4, 2026"`. */
 const fmtShortDate = (d: string | null | undefined) =>
   fmtDate(d, { month: "short", day: "numeric", year: "numeric" });
 
 export default function MaterialsView() {
   const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showShortagesOnly, setShowShortagesOnly] = useState(false);
@@ -412,6 +437,16 @@ export default function MaterialsView() {
     }
   };
 
+  const quantityField = parsePositiveField(newMaterial.quantityNeeded);
+  const unitPriceField = parsePositiveField(newMaterial.unitPriceCurrent);
+  const fieldErrors: Partial<Record<MaterialTextFieldKey, string>> = {
+    quantityNeeded: quantityField.error,
+    unitPriceCurrent: unitPriceField.error,
+  };
+  const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
+
+  const hasProjects = (projects?.data ?? []).length > 0;
+
   const persistedPOs = purchaseOrdersData?.data ?? [];
 
   const filtered = (materials?.data ?? []).filter(
@@ -435,7 +470,6 @@ export default function MaterialsView() {
       <div className="max-w-6xl mx-auto">
         <AdminPageHeader
           title="Materials"
-          guideId="materials"
           description="Inventory tracking, shortage alerts, and vendor purchase orders."
           actions={
             <>
@@ -517,6 +551,34 @@ export default function MaterialsView() {
             </p>
           </div>
         </div>
+
+        {/* No projects yet — the project selector, Import-from-Estimate and
+            Generate PO all hang off a project, so say so instead of leaving
+            three disabled controls and an empty dropdown. */}
+        {projects && !hasProjects && (
+          <Empty className="bg-card border border-border/60 mb-5">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Package />
+              </EmptyMedia>
+              <EmptyTitle>No projects yet</EmptyTitle>
+              <EmptyDescription>
+                Purchase orders and estimate imports are scoped to a project.
+                Create your first project to unlock them — you can still add
+                materials to the general inventory below.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/admin/projects/new")}
+                className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={CONDENSED_FONT}
+              >
+                <Plus className="h-3.5 w-3.5" /> Create First Project
+              </button>
+            </EmptyContent>
+          </Empty>
+        )}
 
         {/* Filters row */}
         <div className="flex flex-col gap-3 mb-5 sm:flex-row sm:flex-wrap sm:items-end">
@@ -699,8 +761,22 @@ export default function MaterialsView() {
                         [f.key]: e.target.value,
                       }))
                     }
-                    className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                    aria-invalid={fieldErrors[f.key] ? true : undefined}
+                    aria-describedby={
+                      fieldErrors[f.key] ? `material-${f.key}-error` : undefined
+                    }
+                    className={`px-3 py-2 bg-input border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 ${
+                      fieldErrors[f.key] ? "border-red-400/60" : "border-border"
+                    }`}
                   />
+                  {fieldErrors[f.key] && (
+                    <p
+                      id={`material-${f.key}-error`}
+                      className="mt-1 text-[11px] text-red-400"
+                    >
+                      {fieldErrors[f.key]}
+                    </p>
+                  )}
                 </div>
               ))}
               <div className="flex flex-col">
@@ -795,17 +871,17 @@ export default function MaterialsView() {
                         : undefined,
                     vendorId: newMaterial.vendorIds[0] || undefined,
                     vendorName: newMaterial.vendorName || undefined,
-                    quantityNeeded: newMaterial.quantityNeeded
-                      ? parseFloat(newMaterial.quantityNeeded)
-                      : undefined,
-                    unitPriceCurrent: newMaterial.unitPriceCurrent
-                      ? parseFloat(newMaterial.unitPriceCurrent)
-                      : undefined,
+                    quantityNeeded: quantityField.value,
+                    unitPriceCurrent: unitPriceField.value,
                     phaseNeeded: newMaterial.phaseNeeded || undefined,
                     notes: newMaterial.notes || undefined,
                   })
                 }
-                disabled={!newMaterial.name || createMaterial.isPending}
+                disabled={
+                  !newMaterial.name ||
+                  hasFieldErrors ||
+                  createMaterial.isPending
+                }
                 className="bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -895,7 +971,7 @@ export default function MaterialsView() {
                             )}
                           </p>
                         </div>
-                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                           <div>
                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                               Quantity
@@ -917,7 +993,10 @@ export default function MaterialsView() {
                     ))}
                   </div>
                 ) : (
-                  <div className="border border-border/40 overflow-x-auto">
+                  <ResponsiveTable
+                    className="border border-border/40"
+                    label={`Line items for purchase order ${po.id}`}
+                  >
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-muted/30 border-b border-border/40">
@@ -969,7 +1048,7 @@ export default function MaterialsView() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
+                  </ResponsiveTable>
                 )}
                 <div className="flex justify-end mt-3">
                   <button
@@ -1029,19 +1108,10 @@ export default function MaterialsView() {
           )}
 
           {!poLoading && poIsError && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Couldn't load purchase orders</AlertTitle>
-              <AlertDescription>
-                <button
-                  onClick={() => refetchPOs()}
-                  className="mt-1 flex items-center gap-2 text-[11px] border border-border/60 text-muted-foreground px-3 py-1.5 tracking-wider uppercase hover:border-primary/40 hover:text-primary transition-colors"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  <RefreshCw className="h-3 w-3" /> Retry
-                </button>
-              </AlertDescription>
-            </Alert>
+            <QueryError
+              message="We couldn't load purchase orders. Check your connection and try again."
+              onRetry={() => refetchPOs()}
+            />
           )}
 
           {!poLoading && !poIsError && persistedPOs.length === 0 && (
@@ -1055,96 +1125,32 @@ export default function MaterialsView() {
           )}
 
           {!poLoading && !poIsError && persistedPOs.length > 0 && (
-            <div className="border border-border/60 overflow-x-auto">
+            <>
               {isMobile ? (
-                <div className="space-y-3 p-3">
-                  {persistedPOs.map(po => (
-                    <div
-                      key={po.id}
-                      className="rounded border border-border/40 bg-background/30 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground">
-                            {po.po_number}
-                          </p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {po.vendor_name}
+                <div className="border border-border/60">
+                  <div className="space-y-3 p-3">
+                    {persistedPOs.map(po => (
+                      <div
+                        key={po.id}
+                        className="rounded border border-border/40 bg-background/30 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">
+                              {po.po_number}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {po.vendor_name}
+                            </p>
+                          </div>
+                          <p className="text-sm font-semibold text-primary">
+                            {fmtCurrency(po.subtotal)}
                           </p>
                         </div>
-                        <p className="text-sm font-semibold text-primary">
-                          {fmtCurrency(po.subtotal)}
-                        </p>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-[11px] text-muted-foreground">
-                          {fmtShortDate(po.created_at)}
-                        </span>
-                        <select
-                          value={po.status}
-                          disabled={updatePOStatus.isPending}
-                          onChange={e =>
-                            updatePOStatus.mutate({
-                              id: po.id,
-                              status: e.target.value as PoStatus,
-                            })
-                          }
-                          className={`border bg-input px-2 py-1 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-primary/60 disabled:opacity-50 ${
-                            PO_STATUS_STYLES[po.status as PoStatus] ??
-                            "border-border/60 text-muted-foreground"
-                          }`}
-                          style={{ fontFamily: "var(--font-condensed)" }}
-                        >
-                          {PO_STATUSES.map(s => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted/30 border-b border-border/40">
-                      {[
-                        "PO Number",
-                        "Vendor",
-                        "Subtotal",
-                        "Created",
-                        "Status",
-                      ].map(h => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
-                          style={{ fontFamily: "var(--font-condensed)" }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {persistedPOs.map(po => (
-                      <tr
-                        key={po.id}
-                        className="border-b border-border/20 last:border-0 hover:bg-card/50 transition-colors"
-                      >
-                        <td className="px-4 py-3 font-medium text-foreground">
-                          {po.po_number}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {po.vendor_name}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-foreground">
-                          {fmtCurrency(po.subtotal)}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {fmtShortDate(po.created_at)}
-                        </td>
-                        <td className="px-4 py-3">
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-[11px] text-muted-foreground">
+                            {fmtShortDate(po.created_at)}
+                          </span>
                           <select
                             value={po.status}
                             disabled={updatePOStatus.isPending}
@@ -1166,13 +1172,84 @@ export default function MaterialsView() {
                               </option>
                             ))}
                           </select>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveTable
+                  className="border border-border/60"
+                  label="Purchase orders"
+                >
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/30 border-b border-border/40">
+                        {[
+                          "PO Number",
+                          "Vendor",
+                          "Subtotal",
+                          "Created",
+                          "Status",
+                        ].map(h => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
+                            style={{ fontFamily: "var(--font-condensed)" }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {persistedPOs.map(po => (
+                        <tr
+                          key={po.id}
+                          className="border-b border-border/20 last:border-0 hover:bg-card/50 transition-colors"
+                        >
+                          <td className="px-4 py-3 font-medium text-foreground">
+                            {po.po_number}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground">
+                            {po.vendor_name}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-foreground">
+                            {fmtCurrency(po.subtotal)}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground">
+                            {fmtShortDate(po.created_at)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={po.status}
+                              disabled={updatePOStatus.isPending}
+                              onChange={e =>
+                                updatePOStatus.mutate({
+                                  id: po.id,
+                                  status: e.target.value as PoStatus,
+                                })
+                              }
+                              className={`border bg-input px-2 py-1 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-primary/60 disabled:opacity-50 ${
+                                PO_STATUS_STYLES[po.status as PoStatus] ??
+                                "border-border/60 text-muted-foreground"
+                              }`}
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              {PO_STATUSES.map(s => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </ResponsiveTable>
               )}
-            </div>
+            </>
           )}
         </div>
 
@@ -1191,23 +1268,12 @@ export default function MaterialsView() {
         )}
 
         {!isLoading && isError && (
-          <Alert variant="destructive" className="my-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Couldn't load materials</AlertTitle>
-            <AlertDescription>
-              <p>
-                Something went wrong while loading the inventory. Please try
-                again.
-              </p>
-              <button
-                onClick={() => refetch()}
-                className="mt-1 flex items-center gap-2 text-[11px] border border-border/60 text-muted-foreground px-3 py-1.5 tracking-wider uppercase hover:border-primary/40 hover:text-primary transition-colors"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                <RefreshCw className="h-3 w-3" /> Retry
-              </button>
-            </AlertDescription>
-          </Alert>
+          <div className="my-4">
+            <QueryError
+              message="Something went wrong while loading the inventory. Check your connection and try again."
+              onRetry={() => refetch()}
+            />
+          </div>
         )}
 
         {!isLoading && !isError && filtered.length === 0 && (
@@ -1236,143 +1302,10 @@ export default function MaterialsView() {
         )}
 
         {!isLoading && !isError && filtered.length > 0 && (
-          <div className="border border-border/60 overflow-x-auto">
+          <>
             {isMobile ? (
-              <div className="space-y-3 p-3">
-                {filtered.map(m => {
-                  const shortage = m.is_shortage;
-                  const needed = m.quantity_needed ?? 0;
-                  const received = m.quantity_received ?? 0;
-                  const pct =
-                    needed > 0 ? Math.round((received / needed) * 100) : 100;
-
-                  return (
-                    <div
-                      key={m.id}
-                      className={`rounded border p-4 ${
-                        shortage
-                          ? "border-red-400/30 bg-red-400/5"
-                          : "border-border/40 bg-background/30"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            {shortage ? (
-                              <PackageX className="h-3.5 w-3.5 shrink-0 text-red-400" />
-                            ) : (
-                              <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                            )}
-                            <p className="text-sm font-medium text-foreground">
-                              {m.name}
-                            </p>
-                          </div>
-                          {m.category && (
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              {m.category}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs font-semibold text-foreground">
-                            {fmtCurrency(m.unit_price_current)}
-                          </p>
-                          {m.unit_price_budgeted &&
-                            m.unit_price_current &&
-                            m.unit_price_current > m.unit_price_budgeted && (
-                              <p className="mt-1 text-[9px] text-red-400">
-                                ↑ over budget
-                              </p>
-                            )}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Project
-                          </p>
-                          <p className="mt-1 text-muted-foreground">
-                            {(m as any).projects?.name ?? "—"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Vendor
-                          </p>
-                          <p className="mt-1 text-muted-foreground">
-                            {(m as any).vendors?.name ?? m.vendor_name ?? "—"}
-                          </p>
-                          {m.vendor_sku && (
-                            <p className="text-[10px] text-muted-foreground/60">
-                              SKU: {m.vendor_sku}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-3">
-                        <div className="mb-1 flex items-center justify-between text-xs">
-                          <span className="text-foreground">
-                            {received}/{needed} {m.unit ?? ""}
-                          </span>
-                          {shortage ? (
-                            <span
-                              className="rounded border border-red-400/30 bg-red-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-red-400"
-                              style={{ fontFamily: "var(--font-condensed)" }}
-                            >
-                              Shortage
-                            </span>
-                          ) : pct >= 100 ? (
-                            <span className="flex items-center gap-1 text-[10px] text-green-400">
-                              <CheckCircle2 className="h-3 w-3" /> On Hand
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground">
-                              {pct}% received
-                            </span>
-                          )}
-                        </div>
-                        <div className="h-1.5 rounded-full bg-input">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              shortage
-                                ? "bg-red-400"
-                                : pct >= 100
-                                  ? "bg-green-400"
-                                  : "bg-primary"
-                            }`}
-                            style={{ width: `${Math.min(100, pct)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-muted/30 border-b border-border/40">
-                    {[
-                      "Material",
-                      "Project",
-                      "Vendor",
-                      "Qty",
-                      "Status",
-                      "Unit Price",
-                    ].map(h => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+              <div className="border border-border/60">
+                <div className="space-y-3 p-3">
                   {filtered.map(m => {
                     const shortage = m.is_shortage;
                     const needed = m.quantity_needed ?? 0;
@@ -1381,47 +1314,93 @@ export default function MaterialsView() {
                       needed > 0 ? Math.round((received / needed) * 100) : 100;
 
                     return (
-                      <tr
+                      <div
                         key={m.id}
-                        className={`border-b border-border/20 last:border-0 hover:bg-card/50 transition-colors ${
-                          shortage ? "bg-red-400/5" : ""
+                        className={`rounded border p-4 ${
+                          shortage
+                            ? "border-red-400/30 bg-red-400/5"
+                            : "border-border/40 bg-background/30"
                         }`}
                       >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            {shortage ? (
-                              <PackageX className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                            ) : (
-                              <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            )}
-                            <div>
-                              <p className="font-medium text-foreground">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              {shortage ? (
+                                <PackageX className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                              ) : (
+                                <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                              )}
+                              <p className="text-sm font-medium text-foreground">
                                 {m.name}
                               </p>
-                              {m.category && (
-                                <p className="text-[10px] text-muted-foreground">
-                                  {m.category}
+                            </div>
+                            {m.category && (
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {m.category}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-semibold text-foreground">
+                              {fmtCurrency(m.unit_price_current)}
+                            </p>
+                            {m.unit_price_budgeted &&
+                              m.unit_price_current &&
+                              m.unit_price_current > m.unit_price_budgeted && (
+                                <p className="mt-1 text-[9px] text-red-400">
+                                  ↑ over budget
                                 </p>
                               )}
-                            </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {(m as any).projects?.name ?? "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {(m as any).vendors?.name ?? m.vendor_name ?? "—"}
-                          {m.vendor_sku && (
-                            <p className="text-[10px] text-muted-foreground/60">
-                              SKU: {m.vendor_sku}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Project
                             </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-xs text-foreground">
-                            {received}/{needed} {m.unit ?? ""}
-                          </p>
-                          <div className="mt-1 h-1 w-20 rounded-full bg-input">
+                            <p className="mt-1 text-muted-foreground">
+                              {(m as any).projects?.name ?? "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Vendor
+                            </p>
+                            <p className="mt-1 text-muted-foreground">
+                              {(m as any).vendors?.name ?? m.vendor_name ?? "—"}
+                            </p>
+                            {m.vendor_sku && (
+                              <p className="text-[10px] text-muted-foreground/60">
+                                SKU: {m.vendor_sku}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="mb-1 flex items-center justify-between text-xs">
+                            <span className="text-foreground">
+                              {received}/{needed} {m.unit ?? ""}
+                            </span>
+                            {shortage ? (
+                              <span
+                                className="rounded border border-red-400/30 bg-red-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-red-400"
+                                style={{ fontFamily: "var(--font-condensed)" }}
+                              >
+                                Shortage
+                              </span>
+                            ) : pct >= 100 ? (
+                              <span className="flex items-center gap-1 text-[10px] text-green-400">
+                                <CheckCircle2 className="h-3 w-3" /> On Hand
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">
+                                {pct}% received
+                              </span>
+                            )}
+                          </div>
+                          <div className="h-1.5 rounded-full bg-input">
                             <div
                               className={`h-full rounded-full transition-all ${
                                 shortage
@@ -1433,42 +1412,138 @@ export default function MaterialsView() {
                               style={{ width: `${Math.min(100, pct)}%` }}
                             />
                           </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          {shortage ? (
-                            <span
-                              className="text-[9px] px-2 py-1 bg-red-400/10 border border-red-400/30 text-red-400 font-bold tracking-wider uppercase"
-                              style={{ fontFamily: "var(--font-condensed)" }}
-                            >
-                              Shortage
-                            </span>
-                          ) : pct >= 100 ? (
-                            <span className="flex items-center gap-1 text-[9px] text-green-400">
-                              <CheckCircle2 className="h-3 w-3" /> On Hand
-                            </span>
-                          ) : (
-                            <span className="text-[9px] text-muted-foreground">
-                              {pct}% received
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-foreground">
-                          {fmtCurrency(m.unit_price_current)}
-                          {m.unit_price_budgeted &&
-                            m.unit_price_current &&
-                            m.unit_price_current > m.unit_price_budgeted && (
-                              <p className="text-[9px] text-red-400">
-                                ↑ over budget
-                              </p>
-                            )}
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </div>
+            ) : (
+              <ResponsiveTable
+                className="border border-border/60"
+                label="Materials inventory"
+              >
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/30 border-b border-border/40">
+                      {[
+                        "Material",
+                        "Project",
+                        "Vendor",
+                        "Qty",
+                        "Status",
+                        "Unit Price",
+                      ].map(h => (
+                        <th
+                          key={h}
+                          className="px-4 py-3 text-left text-[9px] font-bold tracking-wider uppercase text-muted-foreground"
+                          style={{ fontFamily: "var(--font-condensed)" }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(m => {
+                      const shortage = m.is_shortage;
+                      const needed = m.quantity_needed ?? 0;
+                      const received = m.quantity_received ?? 0;
+                      const pct =
+                        needed > 0
+                          ? Math.round((received / needed) * 100)
+                          : 100;
+
+                      return (
+                        <tr
+                          key={m.id}
+                          className={`border-b border-border/20 last:border-0 hover:bg-card/50 transition-colors ${
+                            shortage ? "bg-red-400/5" : ""
+                          }`}
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {shortage ? (
+                                <PackageX className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                              ) : (
+                                <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              )}
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {m.name}
+                                </p>
+                                {m.category && (
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {m.category}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground">
+                            {(m as any).projects?.name ?? "—"}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground">
+                            {(m as any).vendors?.name ?? m.vendor_name ?? "—"}
+                            {m.vendor_sku && (
+                              <p className="text-[10px] text-muted-foreground/60">
+                                SKU: {m.vendor_sku}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-xs text-foreground">
+                              {received}/{needed} {m.unit ?? ""}
+                            </p>
+                            <div className="mt-1 h-1 w-20 rounded-full bg-input">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  shortage
+                                    ? "bg-red-400"
+                                    : pct >= 100
+                                      ? "bg-green-400"
+                                      : "bg-primary"
+                                }`}
+                                style={{ width: `${Math.min(100, pct)}%` }}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {shortage ? (
+                              <span
+                                className="text-[9px] px-2 py-1 bg-red-400/10 border border-red-400/30 text-red-400 font-bold tracking-wider uppercase"
+                                style={{ fontFamily: "var(--font-condensed)" }}
+                              >
+                                Shortage
+                              </span>
+                            ) : pct >= 100 ? (
+                              <span className="flex items-center gap-1 text-[9px] text-green-400">
+                                <CheckCircle2 className="h-3 w-3" /> On Hand
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-muted-foreground">
+                                {pct}% received
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-foreground">
+                            {fmtCurrency(m.unit_price_current)}
+                            {m.unit_price_budgeted &&
+                              m.unit_price_current &&
+                              m.unit_price_current > m.unit_price_budgeted && (
+                                <p className="text-[9px] text-red-400">
+                                  ↑ over budget
+                                </p>
+                              )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </ResponsiveTable>
             )}
-          </div>
+          </>
         )}
       </div>
     </DashboardLayout>

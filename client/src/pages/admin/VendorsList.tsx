@@ -189,7 +189,6 @@ export default function VendorsList() {
       <div className="max-w-5xl mx-auto">
         <AdminPageHeader
           title="Vendors"
-          guideId="vendors"
           description="Maintain one deduped supplier list so materials and purchase orders always reference the same source of truth."
           actions={
             <button

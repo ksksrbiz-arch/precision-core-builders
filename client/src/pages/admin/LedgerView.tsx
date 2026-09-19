@@ -2,8 +2,8 @@
  * Core Values Ledger — immutable record of every decision, inspection, permit, and change.
  * "Trust through transparency" — the core principle.
  */
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
-import { GuideHelpButton } from "@/components/GuideHelpButton";
 import { QueryError } from "@/components/QueryError";
 import {
   Empty,
@@ -20,7 +20,6 @@ import { formatCurrency } from "@/lib/formatters";
 import { fmtDate } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import {
-  AlertTriangle,
   ArrowUpDown,
   CheckCircle,
   ClipboardCheck,
@@ -33,6 +32,7 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 const ENTRY_ICONS: Record<string, any> = {
   decision: Landmark,
@@ -66,7 +66,24 @@ const ENTRY_TYPES = [
 
 type EntryType = (typeof ENTRY_TYPES)[number];
 
+/** Timeline-shaped placeholder shown while projects or entries load. */
+function LedgerSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-card border border-border/60 p-4 space-y-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function LedgerView() {
+  const [, setLocation] = useLocation();
   const [projectId, setProjectId] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [showNew, setShowNew] = useState(false);
@@ -84,7 +101,11 @@ export default function LedgerView() {
     visibleToClient: true,
   });
   const utils = trpc.useUtils();
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
+  const { data: projects, isLoading: projectsLoading } =
+    trpc.projects.list.useQuery({ pageSize: 100 });
+  // Zero projects is a distinct state: the selector would be empty, so
+  // telling the user to "select a project above" is an impossible ask.
+  const hasProjects = (projects?.data.length ?? 0) > 0;
   const { data, isLoading, isError, refetch } = trpc.ledger.list.useQuery(
     { projectId: projectId!, page, pageSize: 50 },
     { enabled: !!projectId }
@@ -131,48 +152,40 @@ export default function LedgerView() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-y-3 mb-6">
-          <div className="flex items-center gap-2">
-            <h1
-              className="text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Core Values Ledger
-            </h1>
-            <GuideHelpButton guideId="ledger" />
-          </div>
-          {projectId && (
-            <button
-              onClick={() => setShowNew(true)}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              <Plus className="h-3.5 w-3.5" /> New Entry
-            </button>
-          )}
-        </div>
+        <AdminPageHeader
+          title="Core Values Ledger"
+          description="Every decision, permit, inspection, and cost change — permanently recorded. Entries cannot be edited or deleted."
+          actions={
+            projectId ? (
+              <button
+                onClick={() => setShowNew(true)}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> New Entry
+              </button>
+            ) : undefined
+          }
+        />
 
-        <p className="text-xs text-muted-foreground font-light mb-5">
-          Every decision, permit, inspection, and cost change — permanently
-          recorded. Entries cannot be edited or deleted.
-        </p>
-
-        {/* Project selector */}
-        <select
-          value={projectId ?? ""}
-          onChange={e => {
-            setProjectId(e.target.value ? Number(e.target.value) : undefined);
-            setPage(1);
-          }}
-          className="bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60 w-full sm:w-auto sm:min-w-[260px] mb-6"
-        >
-          <option value="">Select a project…</option>
-          {projects?.data.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        {/* Project selector — hidden until at least one project exists */}
+        {hasProjects && (
+          <select
+            value={projectId ?? ""}
+            onChange={e => {
+              setProjectId(e.target.value ? Number(e.target.value) : undefined);
+              setPage(1);
+            }}
+            className="bg-input border border-border text-sm text-foreground px-3 py-2.5 focus:outline-none focus:border-primary/60 w-full sm:w-auto sm:min-w-[260px] mb-6"
+          >
+            <option value="">Select a project…</option>
+            {projects?.data.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* New entry form */}
         {showNew && projectId && (
@@ -318,7 +331,31 @@ export default function LedgerView() {
         )}
 
         {/* Ledger entries — timeline style */}
-        {!projectId ? (
+        {!projectId && projectsLoading ? (
+          <LedgerSkeleton />
+        ) : !projectId && !hasProjects ? (
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Shield className="h-6 w-6 text-muted-foreground/60" />
+              </EmptyMedia>
+              <EmptyTitle>No projects yet</EmptyTitle>
+              <EmptyDescription>
+                The ledger records decisions against a project. Create your
+                first project and its decision ledger starts here.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => setLocation("/admin/projects/new")}
+                className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Create First Project
+              </button>
+            </EmptyContent>
+          </Empty>
+        ) : !projectId ? (
           <Empty className="bg-card border border-border/60">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -331,19 +368,7 @@ export default function LedgerView() {
             </EmptyHeader>
           </Empty>
         ) : isLoading ? (
-          <div className="space-y-4" aria-busy="true">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-card border border-border/60 p-4 space-y-2"
-              >
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-20" />
-              </div>
-            ))}
-          </div>
+          <LedgerSkeleton />
         ) : isError ? (
           <QueryError
             message="We couldn't load the ledger. Check your connection and try again."

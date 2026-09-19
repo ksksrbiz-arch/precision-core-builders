@@ -12,6 +12,7 @@ import { useToast } from "@/components/ToastProvider";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Empty,
+  EmptyContent,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
@@ -20,6 +21,8 @@ import {
 import { trpc } from "@/lib/trpc";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { classifyError } from "@/_core/apiError";
+import { QueryError } from "@/components/QueryError";
+import { SkeletonBox } from "@/components/Skeletons";
 import { formatNumber, fmtDate } from "@/lib/formatters";
 import {
   buildFreePaymentLinks,
@@ -40,6 +43,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 
@@ -165,8 +169,32 @@ export default function BillingView() {
   const [stripeNotConfigured, setStripeNotConfigured] = useState(false);
   const { addToast } = useToast();
 
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
-  const { data: clients } = trpc.clients.list.useQuery({ pageSize: 50 });
+  const [, setLocation] = useLocation();
+
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = trpc.projects.list.useQuery({ pageSize: 50 });
+  const {
+    data: clients,
+    isLoading: clientsLoading,
+    isError: clientsError,
+    refetch: refetchClients,
+  } = trpc.clients.list.useQuery({ pageSize: 50 });
+
+  // Reference data the invoice form depends on. While it loads the form shows
+  // a skeleton; if it fails we surface a retry instead of silently rendering
+  // empty dropdowns.
+  const refDataLoading = projectsLoading || clientsLoading;
+  const refDataError = projectsError || clientsError;
+  const retryRefData = () => {
+    void refetchProjects();
+    void refetchClients();
+  };
+  const projectOptions = projects?.data ?? [];
+  const hasProjects = projectOptions.length > 0;
 
   const selectedProjectData = projects?.data.find(
     p => p.id === selectedProject
@@ -426,13 +454,13 @@ export default function BillingView() {
         : sum + inv.amountCents,
     0
   );
+  const hasInvoices = invoices.length > 0;
 
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
         <AdminPageHeader
           title="Billing"
-          guideId="billing"
           description="Milestone-based invoicing, payment links, and Stripe billing operations."
           actions={
             <div className="flex items-center gap-2">
@@ -501,21 +529,27 @@ export default function BillingView() {
         )}
 
         {/* Stats */}
+        {/* Stats — with no invoices at all these would read as broken zeros
+            rather than "nothing yet", so we render an em dash instead. */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           {[
             {
               label: "Total Invoiced",
-              value: fmtCents(totalBilled),
+              value: hasInvoices ? fmtCents(totalBilled) : "—",
               icon: DollarSign,
             },
             {
               label: "Invoices Sent",
-              value: invoices.filter(i => i.type === "invoice").length,
+              value: hasInvoices
+                ? invoices.filter(i => i.type === "invoice").length
+                : "—",
               icon: Send,
             },
             {
               label: "Payment Links",
-              value: invoices.filter(i => i.type === "payment_link").length,
+              value: hasInvoices
+                ? invoices.filter(i => i.type === "payment_link").length
+                : "—",
               icon: CreditCard,
             },
           ].map(s => (
@@ -600,6 +634,15 @@ export default function BillingView() {
                 ))}
             </div>
 
+            {refDataError && (
+              <div className="mb-4">
+                <QueryError
+                  message="We couldn't load your projects and clients. Check your connection and try again."
+                  onRetry={retryRefData}
+                />
+              </div>
+            )}
+
             <div className="grid sm:grid-cols-2 gap-4">
               {/* Project */}
               <div>
@@ -609,25 +652,44 @@ export default function BillingView() {
                 >
                   Project
                 </label>
-                <select
-                  value={selectedProject ?? ""}
-                  onChange={e =>
-                    setSelectedProject(
-                      e.target.value ? parseInt(e.target.value) : null
-                    )
-                  }
-                  className="w-full bg-input border border-border text-sm text-foreground px-3 py-2 focus:outline-none focus:border-primary/60"
-                >
-                  <option value="">Select project…</option>
-                  {projects?.data.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                      {p.contracted_budget
-                        ? ` (${fmtDollars(Number(p.contracted_budget))})`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
+                {refDataLoading ? (
+                  <SkeletonBox width="w-full" height="h-10" />
+                ) : hasProjects ? (
+                  <select
+                    value={selectedProject ?? ""}
+                    onChange={e =>
+                      setSelectedProject(
+                        e.target.value ? parseInt(e.target.value) : null
+                      )
+                    }
+                    className="w-full bg-input border border-border text-sm text-foreground px-3 py-2 focus:outline-none focus:border-primary/60"
+                  >
+                    <option value="">Select project…</option>
+                    {projectOptions.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                        {p.contracted_budget
+                          ? ` (${fmtDollars(Number(p.contracted_budget))})`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setLocation("/admin/projects/new")}
+                      className="flex min-h-11 w-full items-center justify-center gap-2 border border-primary/40 text-primary px-3 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/10 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Create First Project
+                    </button>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">
+                      No projects yet. You can still bill by entering the client
+                      and amount below.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Client email (required for invoices) */}
@@ -655,18 +717,30 @@ export default function BillingView() {
                     >
                       Client Name
                     </label>
-                    <select
-                      value={clientName}
-                      onChange={e => setClientName(e.target.value)}
-                      className="w-full bg-input border border-border text-sm text-foreground px-3 py-2 focus:outline-none focus:border-primary/60"
-                    >
-                      <option value="">Select or type name…</option>
-                      {clients?.data.map((c: any) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
+                    {refDataLoading ? (
+                      <SkeletonBox width="w-full" height="h-10" />
+                    ) : (clients?.data?.length ?? 0) > 0 ? (
+                      <select
+                        value={clientName}
+                        onChange={e => setClientName(e.target.value)}
+                        className="w-full bg-input border border-border text-sm text-foreground px-3 py-2 focus:outline-none focus:border-primary/60"
+                      >
+                        <option value="">Select or type name…</option>
+                        {clients?.data.map((c: any) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        value={clientName}
+                        onChange={e => setClientName(e.target.value)}
+                        type="text"
+                        placeholder="Client name"
+                        className="w-full bg-input border border-border text-sm px-3 py-2 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                      />
+                    )}
                   </div>
                 </>
               )}
@@ -785,10 +859,30 @@ export default function BillingView() {
               </EmptyMedia>
               <EmptyTitle>No invoices yet</EmptyTitle>
               <EmptyDescription>
-                Create milestone invoices to send clients payment links or
-                formal Stripe invoices.
+                {hasProjects
+                  ? "Create milestone invoices to send clients payment links or formal Stripe invoices."
+                  : "Invoices bill against a project. Create your first project and you can send a milestone invoice in seconds."}
               </EmptyDescription>
             </EmptyHeader>
+            <EmptyContent>
+              {hasProjects ? (
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Create First Invoice
+                </button>
+              ) : (
+                <button
+                  onClick={() => setLocation("/admin/projects/new")}
+                  className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Create Your First Project
+                </button>
+              )}
+            </EmptyContent>
           </Empty>
         ) : (
           <div className="space-y-3">

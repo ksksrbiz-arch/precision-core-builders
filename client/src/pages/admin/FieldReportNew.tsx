@@ -6,8 +6,18 @@
  *      Whisper only as a fallback) — used when Web Speech is unavailable
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { QueryError } from "@/components/QueryError";
+import { SkeletonCard } from "@/components/Skeletons";
 import { Label } from "@/components/ui/label";
-import { GuideHelpButton } from "@/components/GuideHelpButton";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
 import { getAuthHeader } from "@/lib/authHeader";
@@ -21,11 +31,21 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
+  FolderPlus,
+  Plus,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 type Step = "select" | "record" | "processing" | "review" | "done";
+
+/**
+ * Statuses a field report cannot be filed against. New projects are created
+ * with status "lead" (drizzle/schema.ts projectStatusEnum default), so the
+ * selector must exclude only finished work — filtering to
+ * contracted/in_progress hid a project Eric had just created.
+ */
+const NON_REPORTABLE_PROJECT_STATUSES = ["complete"] as const;
 
 type SpeechRecognitionAlternativeLike = {
   transcript: string;
@@ -99,7 +119,16 @@ export default function FieldReportNew() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = trpc.projects.list.useQuery({ pageSize: 50 });
+  const reportableProjects = (projects?.data ?? []).filter(
+    p =>
+      !(NON_REPORTABLE_PROJECT_STATUSES as readonly string[]).includes(p.status)
+  );
   const utils = trpc.useUtils();
   const publishMutation = useMutationWithToast(
     trpc.fieldReports.publish.useMutation(),
@@ -399,13 +428,10 @@ export default function FieldReportNew() {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Field Reports
         </button>
-        <h1
-          className="text-2xl font-semibold mb-6 flex items-center gap-2"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          New Field Report
-          <GuideHelpButton guideId="field-reports" />
-        </h1>
+        <AdminPageHeader
+          title="New Field Report"
+          description="Record a voice memo and we'll turn it into a client-ready daily update."
+        />
 
         {(() => {
           const stages = ["Select", "Record", "Review", "Publish"];
@@ -468,39 +494,68 @@ export default function FieldReportNew() {
 
         {step === "select" && (
           <div className="bg-card border border-border/60 p-6">
-            <p className="text-sm text-muted-foreground mb-4 font-light">
-              Select the project for this field report:
-            </p>
-            <div className="space-y-2 mb-5">
-              {projects?.data
-                .filter(
-                  p => p.status === "in_progress" || p.status === "contracted"
-                )
-                .map(p => (
+            {projectsLoading ? (
+              <SkeletonCard count={3} />
+            ) : projectsError ? (
+              <QueryError
+                message="We couldn't load your projects. Check your connection and try again."
+                onRetry={() => refetchProjects()}
+              />
+            ) : reportableProjects.length === 0 ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <FolderPlus />
+                  </EmptyMedia>
+                  <EmptyTitle>No projects to report on yet</EmptyTitle>
+                  <EmptyDescription>
+                    Field reports are filed against a project. Create one and it
+                    will be selectable here right away.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
                   <button
-                    key={p.id}
-                    onClick={() => setProjectId(p.id)}
-                    className={`w-full text-left p-4 md:p-5 border transition-colors ${
-                      projectId === p.id
-                        ? "border-primary bg-primary/5 text-foreground"
-                        : "border-border/60 text-muted-foreground hover:border-primary/40"
-                    }`}
+                    onClick={() => setLocation("/admin/projects/new")}
+                    className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    <p className="text-sm font-medium">{p.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {p.city}, {p.state}
-                    </p>
+                    <Plus className="h-3.5 w-3.5" /> Create a project first
                   </button>
-                ))}
-            </div>
-            <button
-              onClick={() => projectId && setStep("record")}
-              disabled={!projectId}
-              className="w-full py-3 min-h-11 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Continue to Recording →
-            </button>
+                </EmptyContent>
+              </Empty>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground mb-4 font-light">
+                  Select the project for this field report:
+                </p>
+                <div className="space-y-2 mb-5">
+                  {reportableProjects.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setProjectId(p.id)}
+                      className={`w-full text-left p-4 md:p-5 border transition-colors ${
+                        projectId === p.id
+                          ? "border-primary bg-primary/5 text-foreground"
+                          : "border-border/60 text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="text-sm font-medium">{p.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {p.city}, {p.state}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => projectId && setStep("record")}
+                  disabled={!projectId}
+                  className="w-full py-3 min-h-11 bg-primary text-primary-foreground text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Continue to Recording →
+                </button>
+              </>
+            )}{" "}
           </div>
         )}
 
