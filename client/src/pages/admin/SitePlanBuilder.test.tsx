@@ -124,4 +124,30 @@ describe("SitePlanBuilder", () => {
     const withAriaLabel = buttons.filter(b => b.hasAttribute("aria-label"));
     expect(withAriaLabel.length).toBeGreaterThan(0);
   });
+
+  it("renders exactly one <h1> and doesn't crash on empty data", async () => {
+    queryState.data = [];
+    queryState.isError = false;
+    const SitePlanBuilder = await loadPage();
+    const { container } = render(<SitePlanBuilder />);
+    const headings = container.querySelectorAll("h1");
+    expect(headings.length).toBe(1);
+  });
+
+  it("side panels use a responsive width class, not only a fixed pixel width", async () => {
+    queryState.data = [];
+    queryState.isError = false;
+    // Desktop viewport so the operations panel renders.
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 1280,
+    });
+    const SitePlanBuilder = await loadPage();
+    const { container } = render(<SitePlanBuilder />);
+    const aside = container.querySelector("aside");
+    expect(aside).toBeTruthy();
+    expect(aside!.className).toMatch(/w-full/);
+    expect(aside!.className).toMatch(/sm:w-\[360px\]/);
+  });
 });
