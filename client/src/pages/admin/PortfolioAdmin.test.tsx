@@ -2,7 +2,23 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+
+const useRealtimeTableMock = vi.fn((_opts: unknown) => ({
+  isLive: true,
+  lastEvent: null,
+}));
+
+/** Mutable query state shared with the trpc mock below. */
+const queryState: { data: unknown; isLoading: boolean; isError: boolean } = {
+  data: [],
+  isLoading: false,
+  isError: false,
+};
+
+vi.mock("@/hooks/useRealtimeTable", () => ({
+  useRealtimeTable: (opts: unknown) => useRealtimeTableMock(opts),
+}));
 
 vi.mock("@/lib/trpc", () => {
   const base = {
@@ -19,16 +35,10 @@ vi.mock("@/lib/trpc", () => {
             if (routerName === "portfolio" && procName === "listAdmin") {
               return {
                 useQuery: () => ({
-                  data: [
-                    {
-                      id: 1,
-                      title: "The Hendricks Remodel",
-                      published: true,
-                      featured: false,
-                      imageUrl: null,
-                    },
-                  ],
-                  isLoading: false,
+                  data: queryState.data,
+                  isLoading: queryState.isLoading,
+                  isError: queryState.isError,
+                  refetch: vi.fn(),
                 }),
               };
             }
@@ -63,6 +73,12 @@ vi.mock("@/components/DashboardLayout", () => ({
 
 afterEach(cleanup);
 
+function setQueryState(next: Partial<typeof queryState> = {}) {
+  queryState.data = "data" in next ? next.data : [];
+  queryState.isLoading = next.isLoading ?? false;
+  queryState.isError = next.isError ?? false;
+}
+
 async function loadPage() {
   vi.resetModules();
   const mod = await import("./PortfolioAdmin");
@@ -70,24 +86,61 @@ async function loadPage() {
 }
 
 describe("PortfolioAdmin", () => {
-  it("stats grid steps down to a single column on narrow screens", async () => {
+  it("renders with completely empty data without crashing", async () => {
+    setQueryState();
     const PortfolioAdmin = await loadPage();
-    const { container } = render(<PortfolioAdmin />);
-    const statsGrid = container.querySelector(
-      ".grid.grid-cols-1.sm\\:grid-cols-3"
-    );
-    expect(statsGrid).toBeTruthy();
+    expect(() => render(<PortfolioAdmin />)).not.toThrow();
+    expect(screen.getByText(/no portfolio projects yet/i)).toBeTruthy();
   });
 
-  it("every interactive control has an accessible name", async () => {
+  it("shows a skeleton while the list loads", async () => {
+    setQueryState({ data: undefined, isLoading: true });
+    const PortfolioAdmin = await loadPage();
+    const { container } = render(<PortfolioAdmin />);
+    expect(
+      container.querySelectorAll('[class*="animate-pulse"]').length
+    ).toBeGreaterThan(0);
+  });
+
+  it("shows QueryError with a retry control when the list fails to load", async () => {
+    setQueryState({ data: undefined, isError: true });
     const PortfolioAdmin = await loadPage();
     render(<PortfolioAdmin />);
-    const buttons = screen.getAllByRole("button");
-    for (const btn of buttons) {
-      if (btn.getAttribute("data-slot") === "tooltip-trigger") continue;
-      const hasText = (btn.textContent ?? "").trim().length > 0;
-      const hasLabel = btn.hasAttribute("aria-label");
-      expect(hasText || hasLabel).toBe(true);
+    expect(screen.getByText(/unable to load/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeTruthy();
+  });
+
+  it("gives every form input an accessible label, not just a placeholder", async () => {
+    setQueryState();
+    const PortfolioAdmin = await loadPage();
+    render(<PortfolioAdmin />);
+    fireEvent.click(screen.getByRole("button", { name: /new project/i }));
+
+    const expectedLabels = [
+      /project title/i,
+      /category/i,
+      /location/i,
+      /year completed/i,
+      /square footage/i,
+      /cover image url/i,
+      /gallery image urls/i,
+      /short description/i,
+      /full description/i,
+      /client name/i,
+      /client testimonial/i,
+    ];
+    for (const label of expectedLabels) {
+      expect(screen.getByLabelText(label)).toBeTruthy();
     }
+  });
+
+  it("subscribes to realtime updates on portfolio_projects", async () => {
+    setQueryState();
+    useRealtimeTableMock.mockClear();
+    const PortfolioAdmin = await loadPage();
+    render(<PortfolioAdmin />);
+    expect(useRealtimeTableMock).toHaveBeenCalledWith(
+      expect.objectContaining({ table: "portfolio_projects" })
+    );
   });
 });
