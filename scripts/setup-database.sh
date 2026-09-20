@@ -128,7 +128,7 @@ if [ "$SEED_DEMO" = true ]; then
   
   curl -X POST "https://precisioncorebuilders.com/api/platform-actions" \
     -H "Content-Type: application/json" \
-    -d "{\"action\":\"seed_demo\",\"adminToken\":\"$ADMIN_TOKEN\"}" \
+    -d "{\"action\":\"seed-demo-data\",\"adminToken\":\"$ADMIN_TOKEN\"}" \
     --silent --show-error || echo "⚠️  Demo data seeding failed (expected if platform not yet deployed)"
   
   echo "✓ Demo data seed requested"
