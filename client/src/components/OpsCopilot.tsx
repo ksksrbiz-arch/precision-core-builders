@@ -28,7 +28,7 @@ const QUICK_PROMPTS = [
   "Give me a 5-line status of the whole business",
 ];
 
-export default function OpsCopilot() {
+export default function OpsCopilot({ compact = false }: { compact?: boolean }) {
   const [provider, setProvider] = useState<string | null>(null);
   const { messages, loading, send } = useStreamingChat({
     endpoint: "/api/ai-copilot",
@@ -53,7 +53,9 @@ export default function OpsCopilot() {
   };
 
   return (
-    <div className="flex flex-col border border-border/60 bg-card overflow-hidden h-full min-h-[520px]">
+    <div
+      className={`flex flex-col border border-border/60 bg-card overflow-hidden ${compact ? "min-h-0 h-[320px] sm:h-[420px]" : "h-full min-h-[520px]"}`}
+    >
       <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
         <div className="h-6 w-6 border border-primary/40 flex items-center justify-center">
           <Brain className="h-3.5 w-3.5 text-primary" />
