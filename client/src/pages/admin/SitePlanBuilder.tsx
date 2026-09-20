@@ -859,15 +859,18 @@ export default function SitePlanBuilder() {
     CONSTRUCTION_STAMPS[0];
   const isOperationsVisible = isDesktop || showStampPanel;
   const operationsPanelClassName = isDesktop
-    ? "absolute right-3 top-3 bottom-3 z-20 w-[360px] bg-card/95 border border-border/60 rounded-xl shadow-xl flex flex-col"
+    ? "absolute right-3 top-3 bottom-3 z-20 w-full sm:w-[360px] bg-card/95 border border-border/60 rounded-xl shadow-xl flex flex-col"
     : isTablet
-      ? "absolute right-3 top-3 bottom-3 z-30 w-[340px] bg-card/95 border border-border/60 rounded-xl shadow-2xl flex flex-col"
+      ? "absolute right-3 top-3 bottom-3 z-30 w-full sm:w-[340px] bg-card/95 border border-border/60 rounded-xl shadow-2xl flex flex-col"
       : "absolute inset-x-0 bottom-0 z-30 max-h-[72%] bg-card border-t border-border/60 rounded-t-2xl shadow-2xl flex flex-col pb-[max(0.75rem,env(safe-area-inset-bottom))]";
 
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-2 sm:gap-3 h-[calc(100dvh-10rem)] sm:h-[calc(100vh-2rem)]">
         <div className="flex flex-col gap-2 px-1">
+          <h1 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
+            Site Plan Builder
+          </h1>
           <div className="flex items-center gap-2 bg-card/80 backdrop-blur border border-border/50 rounded-lg px-3 py-2">
             <Pencil className="h-4 w-4 text-amber-500 shrink-0" />
             <Input
