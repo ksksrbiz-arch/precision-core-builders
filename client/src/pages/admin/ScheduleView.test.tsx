@@ -1,8 +1,8 @@
 /**
  * @vitest-environment jsdom
  */
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
 
 window.matchMedia =
   window.matchMedia ||
@@ -16,6 +16,14 @@ window.matchMedia =
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   }));
+
+const queryState: {
+  projects: Array<{ id: number; name: string }>;
+  scheduleItems: unknown[];
+} = {
+  projects: [{ id: 1, name: "The Hendricks Remodel" }],
+  scheduleItems: [],
+};
 
 vi.mock("@/hooks/useRealtimeTable", () => ({
   useRealtimeTable: () => ({ isLive: true, lastEvent: null }),
@@ -38,29 +46,14 @@ vi.mock("@/lib/trpc", () => {
             if (routerName === "projects" && procName === "list") {
               return {
                 useQuery: () => ({
-                  data: { data: [{ id: 1, name: "The Hendricks Remodel" }] },
+                  data: { data: queryState.projects },
                 }),
               };
             }
             if (routerName === "schedule" && procName === "list") {
               return {
                 useQuery: () => ({
-                  data: [
-                    {
-                      id: 1,
-                      title: "Framing",
-                      status: "complete",
-                      planned_start: "2026-01-01",
-                      planned_end: "2026-01-05",
-                    },
-                    {
-                      id: 2,
-                      title: "Roofing",
-                      status: "in_progress",
-                      planned_start: "2026-01-06",
-                      planned_end: "2026-01-10",
-                    },
-                  ],
+                  data: queryState.scheduleItems,
                   isLoading: false,
                   isError: false,
                   refetch: vi.fn(),
@@ -104,6 +97,28 @@ async function loadPage() {
   return mod.default;
 }
 
+const DEFAULT_ITEMS = [
+  {
+    id: 1,
+    title: "Framing",
+    status: "complete",
+    planned_start: "2026-01-01",
+    planned_end: "2026-01-05",
+  },
+  {
+    id: 2,
+    title: "Roofing",
+    status: "in_progress",
+    planned_start: "2026-01-06",
+    planned_end: "2026-01-10",
+  },
+];
+
+beforeEach(() => {
+  queryState.projects = [{ id: 1, name: "The Hendricks Remodel" }];
+  queryState.scheduleItems = DEFAULT_ITEMS;
+});
+
 describe("ScheduleView", () => {
   it("stats footer grid steps down on narrow screens (grid-cols-2 sm:grid-cols-4)", async () => {
     const ScheduleView = await loadPage();
@@ -112,5 +127,31 @@ describe("ScheduleView", () => {
       ".grid.grid-cols-2.sm\\:grid-cols-4"
     );
     expect(statsGrid).toBeTruthy();
+  });
+
+  it("week grid does not force a 420px floor on phone widths", async () => {
+    const ScheduleView = await loadPage();
+    const { container } = render(<ScheduleView />);
+    expect(container.querySelector(".min-w-\\[420px\\]")).toBeNull();
+  });
+
+  it("renders with zero projects and offers a create-project CTA", async () => {
+    queryState.projects = [];
+    queryState.scheduleItems = [];
+    const ScheduleView = await loadPage();
+    render(<ScheduleView />);
+    expect(screen.getAllByText(/no projects yet/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: /create first project/i })
+    ).toBeTruthy();
+    expect(screen.queryByText(/select a project above/i)).toBeNull();
+  });
+
+  it("does not show the no-projects copy when projects exist", async () => {
+    queryState.projects = [{ id: 7, name: "Riverbend Kitchen" }];
+    queryState.scheduleItems = [];
+    const ScheduleView = await loadPage();
+    render(<ScheduleView />);
+    expect(screen.queryByText(/no projects yet/i)).toBeNull();
   });
 });

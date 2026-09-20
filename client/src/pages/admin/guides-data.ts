@@ -25,6 +25,10 @@ import {
   Lock,
   Search,
   Truck,
+  GraduationCap,
+  TrendingUp,
+  Ruler,
+  Palette,
   type LucideIcon,
 } from "lucide-react";
 
@@ -605,7 +609,11 @@ export const GUIDES: Guide[] = [
     icon: BarChart3,
     tagline: "AI-assisted project estimates. Fast, accurate, defensible.",
     path: "/admin/estimates",
-    paths: ["/admin/estimates"],
+    paths: [
+      "/admin/estimates",
+      "/admin/estimates/new",
+      "/admin/estimates/:id/edit",
+    ],
     sections: [
       {
         heading: "What This Is",
@@ -1366,6 +1374,282 @@ export const GUIDES: Guide[] = [
         heading: "Critical Rule",
         warning:
           "The log tells you what happened, not always why. Use it to locate the event, then open the related record for the full story.",
+      },
+    ],
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // VENDORS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  {
+    id: "vendors",
+    title: "Vendors",
+    icon: Truck,
+    tagline: "One deduped supplier list. Every PO points back here.",
+    path: "/admin/vendors",
+    paths: ["/admin/vendors"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "Your supplier catalog — lumber yards, plumbing houses, tile shops, equipment rental. Materials and purchase orders reference this list, so a vendor entered once is a vendor priced, contacted, and paid the same way every time.",
+      },
+      {
+        heading: "Adding a Vendor",
+        steps: [
+          { action: 'Click "Add Vendor"' },
+          {
+            action: "Enter the vendor name",
+            detail:
+              "Use the legal business name, not the branch nickname. This is the field everything else dedupes against.",
+          },
+          {
+            action: "Add contact name, phone, and email",
+            detail:
+              "Put your actual rep in here, not the front counter. It saves a phone tree every time you order.",
+          },
+          {
+            action: "Add the website",
+            detail:
+              "No https needed — the system fills it in so the link opens correctly.",
+          },
+          {
+            action: "Set the category",
+            detail:
+              "Lumber, plumbing, electrical, tile, concrete, rental. Category is how you filter this list once it gets long.",
+          },
+          {
+            action: "Enter your account number and payment terms",
+            detail:
+              "Net 30, 2/10 Net 30, COD — whatever the account actually is. Terms drive when billing expects the bill.",
+          },
+          { action: "Save" },
+        ],
+      },
+      {
+        heading: "Keeping It Clean",
+        body: "Duplicates are the only way this page fails you. Two entries for the same yard means split spend history and two different sets of terms.",
+        tips: [
+          "Search before you add. If the name is close, it is probably already here.",
+          "Edit the existing vendor instead of adding a second one when a rep or number changes.",
+          "Put branch detail in the address field, not the name field.",
+          "Notes are for the things that are not on the invoice — delivery windows, who to call for a will-call, which driver actually shows up.",
+        ],
+      },
+      {
+        heading: "Deleting a Vendor",
+        warning:
+          "Deleting a vendor does not delete the materials and purchase orders that referenced it. If a vendor is gone for good, delete it. If you are just not using them this season, leave the record and stop ordering.",
+      },
+    ],
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // TRAINING
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  {
+    id: "training",
+    title: "First Week Training",
+    icon: GraduationCap,
+    tagline: "Eleven short lessons. One a day. Done by Friday.",
+    path: "/admin/training",
+    paths: ["/admin/training"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "A guided walkthrough of the platform, broken into eleven lessons you can finish in a few minutes each. It is built to be done on real jobs with real data — not a sandbox.",
+      },
+      {
+        heading: "How To Work Through It",
+        steps: [
+          { action: "Open one lesson a day, in order" },
+          {
+            action: "Do the lesson on a live project",
+            detail:
+              "File the real field report. Add the real vendor. The work counts.",
+          },
+          {
+            action: "Mark the lesson complete",
+            detail: "Your progress bar updates as you go.",
+          },
+          {
+            action: "Come back to Guides when you want the full reference",
+            detail:
+              "Training teaches the habit. Guides is the manual you keep.",
+          },
+        ],
+      },
+      {
+        heading: "Where Progress Lives",
+        warning:
+          "Progress is saved on this device, in this browser. Switch to your phone or clear your browser data and the checkmarks start over. The work you did in the app is never lost — only the checkmarks.",
+      },
+      {
+        heading: "Tips",
+        tips: [
+          "Ten minutes in the morning beats an hour on Sunday.",
+          "If a lesson does not apply to a job you have running, do it anyway on the closest one.",
+          'Every screen has a "?" in the header. Use it the moment something is unclear.',
+        ],
+      },
+    ],
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // PROFITABILITY
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  {
+    id: "profitability",
+    title: "Profitability",
+    icon: TrendingUp,
+    tagline: "Contracted vs. actual, per job and portfolio-wide.",
+    path: "/admin/profitability",
+    paths: ["/admin/profitability"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "Margin, by project and across the whole book. It compares what you contracted against the costs actually logged, so you find a job going sideways while you can still do something about it.",
+      },
+      {
+        heading: "The Four Tiles",
+        steps: [
+          {
+            action: "Total Contracted",
+            detail: "Sum of contracted budgets across all projects.",
+          },
+          {
+            action: "Projected Cost",
+            detail: "Actual costs logged to date, rolled up.",
+          },
+          {
+            action: "Portfolio Margin",
+            detail:
+              "Profit as a percentage of contracted value. This is the number that pays you.",
+          },
+          {
+            action: "Total Variance",
+            detail:
+              "How far actual costs have drifted from estimate. Positive means over.",
+          },
+        ],
+      },
+      {
+        heading: "The Project Table",
+        body: "One row per project: contracted, projected cost, margin, variance. Sort by margin and look at the bottom of the list first — that is where the money is leaking.",
+        tips: [
+          "A thin margin early in a job is normal. A thin margin at 80% complete is a problem.",
+          "Chase variance to the ledger entry that caused it before you call the client.",
+          "Compare margin by job type. The work you enjoy and the work that pays are not always the same work.",
+        ],
+      },
+      {
+        heading: "Where The Numbers Come From",
+        body: "Contracted values come from the project record. Costs come from logged ledger entries and material purchases. Nothing on this page is estimated by the system — it only adds up what you entered.",
+        warning:
+          "Blank or stale numbers mean costs are not being logged, not that a job is printing money. Fix the entry habit before you trust the margin.",
+      },
+    ],
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // BLUEPRINT
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  {
+    id: "blueprint",
+    title: "Blueprint.am",
+    icon: Ruler,
+    tagline: "Link your blueprint.am account so plans attach to projects.",
+    path: "/admin/blueprint",
+    paths: ["/admin/blueprint"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "The connection screen for blueprint.am. Once connected, plans and designs from that account can be attached to Precision Core projects instead of living in an email thread.",
+      },
+      {
+        heading: "Connecting",
+        steps: [
+          {
+            action: "Choose OAuth",
+            detail:
+              "Recommended. It sends you to blueprint.am to authorize, and nothing secret gets typed into this app.",
+          },
+          {
+            action: "Or paste an API key",
+            detail:
+              "Use this only when OAuth is not an option for the account.",
+          },
+          {
+            action: "Confirm the status card reads Connected",
+            detail:
+              "It shows which method was used and, for OAuth, when the token expires.",
+          },
+        ],
+      },
+      {
+        heading: "When It Expires",
+        body: "An expired token shows an amber notice and Blueprint features stop pulling. Reconnect from this same screen — click through the OAuth flow again and the status card goes green.",
+      },
+      {
+        heading: "Disconnecting",
+        warning:
+          "Disconnect removes this platform's access to the blueprint.am account. Plans already attached to projects stay put, but nothing new syncs until you reconnect.",
+      },
+    ],
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // FINISH CATALOG
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  {
+    id: "finish-catalog",
+    title: "Finish Catalog",
+    icon: Palette,
+    tagline: "The master product library clients choose from.",
+    path: "/admin/finish-catalog",
+    paths: ["/admin/finish-catalog"],
+    sections: [
+      {
+        heading: "What This Is",
+        body: "The library of products you are willing to install — tile, cabinets, fixtures, flooring, hardware. Finish Selections pulls from this catalog, so anything you curate here is what a client can pick on a job.",
+      },
+      {
+        heading: "Adding an Item",
+        steps: [
+          { action: "Open the new item form" },
+          {
+            action: "Enter the item name",
+            detail: "Required. Use the name the supplier uses on the invoice.",
+          },
+          {
+            action: "Pick a category and brand",
+            detail: "Category is how the catalog stays navigable at 400 items.",
+          },
+          {
+            action: "Set the price tier",
+            detail:
+              "Tier drives which allowance level an item belongs to when a client is choosing.",
+          },
+          {
+            action: "Add an image URL and description",
+            detail:
+              "The image is what the client actually looks at. Skip it and they will call you instead.",
+          },
+          { action: "Save" },
+        ],
+      },
+      {
+        heading: "Curating It",
+        tips: [
+          "Add products you have installed and would install again. This is not a distributor catalog.",
+          "Prune items that are discontinued — a client picking a dead SKU costs you a week.",
+          "Keep brand spelling consistent so filtering actually works.",
+        ],
+      },
+      {
+        heading: "Catalog vs. Selections",
+        body: "The catalog is the menu. Finish Selections is what a specific client ordered on a specific job, with the budget delta and approval history. Edit the catalog here; approve choices there.",
+        warning:
+          "Editing a catalog item does not rewrite selections already approved on a job. Approved selections are a record of what the client agreed to — change those on the project, not here.",
       },
     ],
   },

@@ -89,7 +89,7 @@ const TASK_COLORS: Record<string, string> = {
   plumbing: "bg-cyan-400/15 text-cyan-300 border-cyan-400/30",
   cabinetry: "bg-amber-400/15 text-amber-300 border-amber-400/30",
   flooring: "bg-green-400/15 text-green-300 border-green-400/30",
-  drywall: "bg-gray-400/15 text-gray-300 border-gray-400/30",
+  drywall: "bg-muted/60 text-muted-foreground border-border/50",
   indoor: "bg-primary/10 text-primary border-primary/20",
   other: "bg-border/30 text-muted-foreground border-border/40",
 };
@@ -117,7 +117,7 @@ function WeatherBar({ weather }: { weather: WeatherData }) {
         )}
       </div>
       <div className="overflow-x-auto -mx-1">
-        <div className="grid grid-cols-7 gap-2 min-w-[420px] px-1">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 min-w-0 sm:min-w-[420px] px-1">
           {days.map(day => {
             const noonLocal = day.date + "T12:00:00";
             const label = fmtDate(noonLocal, { weekday: "short" });
@@ -306,6 +306,8 @@ export default function ScheduleView() {
     }
   }, [projects]);
 
+  const hasProjects = (projects?.data.length ?? 0) > 0;
+
   const deferredTaskIds = new Set(
     weather?.adjustments.filter(a => a.action === "defer").map(a => a.taskId) ??
       []
@@ -327,7 +329,6 @@ export default function ScheduleView() {
         {/* Header */}
         <AdminPageHeader
           title="Weather Schedule"
-          guideId="schedule"
           description="Smart scheduling with Eugene OR weather integration"
           actions={
             <div className="flex flex-wrap items-center gap-2">
@@ -621,11 +622,26 @@ export default function ScheduleView() {
               <EmptyMedia variant="icon">
                 <Calendar />
               </EmptyMedia>
-              <EmptyTitle>No project selected</EmptyTitle>
+              <EmptyTitle>
+                {hasProjects ? "No project selected" : "No projects yet"}
+              </EmptyTitle>
               <EmptyDescription>
-                Select a project above to view its weather-aware schedule.
+                {hasProjects
+                  ? "Select a project above to view its weather-aware schedule."
+                  : "Create your first project and its weather-aware schedule will appear here."}
               </EmptyDescription>
             </EmptyHeader>
+            {!hasProjects && (
+              <EmptyContent>
+                <button
+                  onClick={() => setLocation("/admin/projects/new")}
+                  className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Create First Project
+                </button>
+              </EmptyContent>
+            )}
           </Empty>
         )}
 

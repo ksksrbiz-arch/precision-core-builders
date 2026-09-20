@@ -101,4 +101,59 @@ describe("ProfitabilityView", () => {
       screen.getAllByText(/no.*data|no.*projects/i).length
     ).toBeGreaterThan(0);
   });
+
+  it("renders the header with exactly one h1 when data is empty", async () => {
+    queryState.data = { projects: [] };
+    queryState.isLoading = false;
+    queryState.isError = false;
+    const ProfitabilityView = await loadPage();
+    const { container } = render(<ProfitabilityView />);
+    const headings = container.querySelectorAll("h1");
+    expect(headings.length).toBe(1);
+    expect(headings[0].textContent).toContain("Profitability");
+  });
+
+  it("does not leak internal roadmap language", async () => {
+    queryState.data = { projects: [] };
+    queryState.isLoading = false;
+    queryState.isError = false;
+    const ProfitabilityView = await loadPage();
+    const { container } = render(<ProfitabilityView />);
+    expect(container.textContent).not.toContain("Phase 5");
+  });
+
+  it("scrolls the project table instead of squashing it", async () => {
+    queryState.data = {
+      projects: [
+        {
+          id: "p1",
+          name: "Riverbend Residence",
+          contracted: 100000,
+          actualCost: 80000,
+          profit: 20000,
+          variance: 0,
+          basis: 100000,
+          marginPct: 20,
+          hasData: true,
+        },
+      ],
+      totals: {
+        contracted: 100000,
+        actualCost: 80000,
+        profit: 20000,
+        basis: 100000,
+        marginPct: 20,
+      },
+    };
+    queryState.isLoading = false;
+    queryState.isError = false;
+    const ProfitabilityView = await loadPage();
+    const { container } = render(<ProfitabilityView />);
+    const region = container.querySelector('[role="region"]');
+    expect(region).toBeTruthy();
+    expect(region?.className).toContain("overflow-x-auto");
+    expect(region?.getAttribute("tabindex")).toBe("0");
+    expect(region?.firstElementChild?.className).toContain("min-w-[640px]");
+    expect(container.querySelector("table")).toBeTruthy();
+  });
 });

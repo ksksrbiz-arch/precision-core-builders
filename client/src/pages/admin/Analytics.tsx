@@ -40,13 +40,49 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 
+/**
+ * Shared chart palette — the single source of truth for Recharts series and
+ * axis colors on BOTH admin dashboards (this page and the Command Center,
+ * which imports these). Values mirror the theme tokens in
+ * `client/src/index.css` so `/admin` and `/admin/analytics` read as one
+ * system rather than two different accent schemes.
+ */
+export const CHART_COLORS = {
+  /** `--primary` gold — the headline series. */
+  primary: "#C8A84B",
+  /** `--muted-foreground` — neutral series and every axis tick. */
+  neutral: "#7A7060",
+  positive: "#6B8E23",
+  info: "#5B7FA6",
+  warning: "#D4A574",
+  /** `--destructive`. */
+  danger: "#C0392B",
+} as const;
+
+/** Project-status colors, identical on both dashboards. */
+export const STATUS_COLORS = {
+  lead: CHART_COLORS.neutral,
+  contracted: CHART_COLORS.primary,
+  active: CHART_COLORS.positive,
+  complete: CHART_COLORS.info,
+} as const;
+
+/** Recharts `<Tooltip contentStyle>` chrome, shared by both dashboards. */
+export const CHART_TOOLTIP_STYLE = {
+  background: "var(--color-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: 0,
+  fontSize: 11,
+} as const;
+
+/** Categorical cycle for per-project series. */
 const COLORS = [
-  "#8B7355",
-  "#6B8E23",
-  "#5B7FA6",
-  "#C0392B",
-  "#7A7060",
-  "#D4A574",
+  CHART_COLORS.primary,
+  CHART_COLORS.positive,
+  CHART_COLORS.info,
+  CHART_COLORS.danger,
+  CHART_COLORS.neutral,
+  CHART_COLORS.warning,
 ];
 const PROJECT_NAME_MAX_LEN = 20;
 
@@ -181,14 +217,26 @@ export default function Analytics() {
   // Pipeline by status
   const statusData = stats
     ? [
-        { name: "Leads", value: stats.byStatus.lead, fill: COLORS[4] },
+        {
+          name: "Leads",
+          value: stats.byStatus.lead,
+          fill: STATUS_COLORS.lead,
+        },
         {
           name: "Contracted",
           value: stats.byStatus.contracted,
-          fill: COLORS[2],
+          fill: STATUS_COLORS.contracted,
         },
-        { name: "Active", value: stats.byStatus.active, fill: COLORS[1] },
-        { name: "Complete", value: stats.byStatus.complete, fill: COLORS[0] },
+        {
+          name: "Active",
+          value: stats.byStatus.active,
+          fill: STATUS_COLORS.active,
+        },
+        {
+          name: "Complete",
+          value: stats.byStatus.complete,
+          fill: STATUS_COLORS.complete,
+        },
       ].filter(d => d.value > 0)
     : [];
 
@@ -224,10 +272,10 @@ export default function Analytics() {
       margin: p.marginPct,
       fill:
         p.marginPct >= 20
-          ? "#6B8E23"
+          ? CHART_COLORS.positive
           : p.marginPct >= 10
-            ? "#D4A574"
-            : "#C0392B",
+            ? CHART_COLORS.warning
+            : CHART_COLORS.danger,
     }));
 
   const totalReports = weeklyReports?.reduce((s, w) => s + w.reports, 0) ?? 0;
@@ -246,7 +294,6 @@ export default function Analytics() {
           eyebrow="Phase 5 Analytics"
           title="Portfolio Analytics"
           description="Profitability, pipeline, and operational trends across all projects."
-          guideId="analytics"
         />
 
         {isLoading ? (
@@ -394,14 +441,7 @@ export default function Analytics() {
                           <Cell key={i} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          background: "var(--color-card)",
-                          border: "1px solid var(--color-border)",
-                          borderRadius: 0,
-                          fontSize: 11,
-                        }}
-                      />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                       <Legend iconSize={8} wrapperStyle={{ fontSize: 10 }} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -425,29 +465,22 @@ export default function Analytics() {
                     <BarChart data={weeklyReports} barSize={14}>
                       <XAxis
                         dataKey="week"
-                        tick={{ fontSize: 9, fill: "#7A7060" }}
+                        tick={{ fontSize: 9, fill: CHART_COLORS.neutral }}
                         axisLine={false}
                         tickLine={false}
                       />
                       <YAxis hide />
-                      <Tooltip
-                        contentStyle={{
-                          background: "var(--color-card)",
-                          border: "1px solid var(--color-border)",
-                          borderRadius: 0,
-                          fontSize: 11,
-                        }}
-                      />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                       <Bar
                         dataKey="reports"
                         name="Reports"
-                        fill="#8B7355"
+                        fill={CHART_COLORS.primary}
                         radius={[2, 2, 0, 0]}
                       />
                       <Bar
                         dataKey="issues"
                         name="Issues"
-                        fill="#C0392B"
+                        fill={CHART_COLORS.danger}
                         radius={[2, 2, 0, 0]}
                         opacity={0.7}
                       />
@@ -475,7 +508,7 @@ export default function Analytics() {
                   >
                     <XAxis
                       type="number"
-                      tick={{ fontSize: 9, fill: "#7A7060" }}
+                      tick={{ fontSize: 9, fill: CHART_COLORS.neutral }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={v => fmt(v)}
@@ -484,30 +517,25 @@ export default function Analytics() {
                       type="category"
                       dataKey="name"
                       width={120}
-                      tick={{ fontSize: 9, fill: "#7A7060" }}
+                      tick={{ fontSize: 9, fill: CHART_COLORS.neutral }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <Tooltip
-                      contentStyle={{
-                        background: "var(--color-card)",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: 0,
-                        fontSize: 11,
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(v: number) => fmt(v)}
                     />
                     <Bar
                       dataKey="estimated"
                       name="Estimated"
-                      fill="#8B7355"
+                      fill={CHART_COLORS.primary}
                       radius={[0, 2, 2, 0]}
                       opacity={0.6}
                     />
                     <Bar
                       dataKey="actual"
                       name="Actual"
-                      fill="#6B8E23"
+                      fill={CHART_COLORS.positive}
                       radius={[0, 2, 2, 0]}
                     />
                   </BarChart>
@@ -533,7 +561,7 @@ export default function Analytics() {
                   >
                     <XAxis
                       type="number"
-                      tick={{ fontSize: 9, fill: "#7A7060" }}
+                      tick={{ fontSize: 9, fill: CHART_COLORS.neutral }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={v => `${v.toFixed(0)}%`}
@@ -542,17 +570,12 @@ export default function Analytics() {
                       type="category"
                       dataKey="name"
                       width={120}
-                      tick={{ fontSize: 9, fill: "#7A7060" }}
+                      tick={{ fontSize: 9, fill: CHART_COLORS.neutral }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <Tooltip
-                      contentStyle={{
-                        background: "var(--color-card)",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: 0,
-                        fontSize: 11,
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number, name) =>
                         name === "margin"
                           ? [`${value.toFixed(1)}%`, "Margin"]

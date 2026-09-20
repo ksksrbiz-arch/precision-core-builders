@@ -71,7 +71,6 @@ export default function FieldReportsList() {
       <div className="max-w-5xl mx-auto">
         <AdminPageHeader
           title="Field Reports"
-          guideId="field-reports"
           description="Review voice-to-report logs, crew notes, and published daily updates."
           actions={
             <button

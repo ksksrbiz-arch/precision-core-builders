@@ -2,13 +2,14 @@
  * Client Detail — single client view with project history and inline edit.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useEntityForm } from "@/hooks/useEntityForm";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatCurrency } from "@/lib/formatters";
 import { fmtDate } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   Empty,
   EmptyHeader,
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AlertCircle,
   ArrowLeft,
   Calendar,
   DollarSign,
@@ -158,21 +158,11 @@ export default function ClientDetail() {
     return (
       <DashboardLayout>
         <div className="max-w-md mx-auto p-12">
-          <Alert variant="destructive">
-            <AlertCircle />
-            <AlertTitle>Could not load this client</AlertTitle>
-            <AlertDescription>
-              A network or authorization issue occurred. Please try again.
-            </AlertDescription>
-          </Alert>
-          <div className="flex gap-2 justify-center mt-4">
-            <button
-              onClick={() => refetch()}
-              className="text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Retry
-            </button>
+          <QueryError
+            message="We couldn't load this client. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
+          <div className="flex justify-center mt-4">
             <button
               onClick={() => setLocation("/admin/clients")}
               className="text-xs font-bold tracking-widest uppercase border border-border text-muted-foreground px-4 py-2 hover:text-foreground transition-colors"
@@ -227,6 +217,23 @@ export default function ClientDetail() {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> All Clients
         </button>
+
+        <AdminPageHeader
+          eyebrow="Client"
+          title={client.name}
+          actions={
+            !editing && (
+              <button
+                onClick={startEdit}
+                aria-label="Edit client"
+                title="Edit client"
+                className="h-11 w-11 inline-flex items-center justify-center border border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )
+          }
+        />
 
         {/* Header card */}
         <div className="bg-card border border-border/60 p-6 mb-6">
@@ -322,22 +329,6 @@ export default function ClientDetail() {
                   </span>
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h1
-                      className="text-2xl font-semibold"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {client.name}
-                    </h1>
-                    <button
-                      onClick={startEdit}
-                      aria-label="Edit client"
-                      className="text-muted-foreground/50 hover:text-primary transition-colors"
-                      title="Edit client"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                     {client.email && (
                       <a

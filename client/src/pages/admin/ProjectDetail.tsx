@@ -1,5 +1,15 @@
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
 import { QueryError } from "@/components/QueryError";
+import { SkeletonCard } from "@/components/Skeletons";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { trpc } from "@/lib/trpc";
 import { getAuthHeader } from "@/lib/authHeader";
 import { formatCurrency } from "@/lib/formatters";
@@ -10,12 +20,16 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
   ArrowLeft,
   Plus,
+  BookOpen,
   Calendar,
+  CalendarRange,
   Check,
   Copy,
   DollarSign,
   MapPin,
+  Package,
   Pencil,
+  Receipt,
   Save,
   Sparkles,
   TrendingUp,
@@ -336,7 +350,7 @@ export default function ProjectDetail() {
   // data is ready (so the caller renders its normal empty/list content).
   const tabGuard = (loading: boolean, error: boolean, retry: () => void) =>
     loading ? (
-      <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
+      <SkeletonCard count={3} />
     ) : error ? (
       <QueryError
         message="We couldn't load this tab. Try again."
@@ -356,45 +370,42 @@ export default function ProjectDetail() {
           <ArrowLeft className="h-3.5 w-3.5" /> All Projects
         </button>
 
-        <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
-              <h1
-                className="text-2xl font-semibold"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                {project.name}
-              </h1>
+        <AdminPageHeader
+          eyebrow="Project"
+          title={project.name}
+          actions={
+            <>
               <StatusBadge status={project.status} />
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              {project.city && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {project.city}, {project.state}
-                </span>
-              )}
-              {project.estimated_budget && (
-                <span className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" />
-                  {fmt(project.estimated_budget)} estimated
-                </span>
-              )}
-              {project.estimated_start_date && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {new Date(project.estimated_start_date).toLocaleDateString()}
-                </span>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={() => setLocation("/admin/field-reports/new")}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors flex-shrink-0"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            <Plus className="h-3.5 w-3.5" /> Field Report
-          </button>
+              <button
+                onClick={() => setLocation("/admin/field-reports/new")}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors flex-shrink-0"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Field Report
+              </button>
+            </>
+          }
+        />
+
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-6">
+          {project.city && (
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {project.city}, {project.state}
+            </span>
+          )}
+          {project.estimated_budget && (
+            <span className="flex items-center gap-1">
+              <DollarSign className="h-3 w-3" />
+              {fmt(project.estimated_budget)} estimated
+            </span>
+          )}
+          {project.estimated_start_date && (
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {new Date(project.estimated_start_date).toLocaleDateString()}
+            </span>
+          )}
         </div>
 
         {/* Progress bar */}
@@ -695,9 +706,27 @@ export default function ProjectDetail() {
           <div className="space-y-3">
             {tabGuard(reportsLoading, reportsError, refetchReports) ??
               (reports?.data.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">
-                  No field reports yet.
-                </p>
+                <Empty className="bg-card border border-border/60">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <BookOpen />
+                    </EmptyMedia>
+                    <EmptyTitle>No field reports yet</EmptyTitle>
+                    <EmptyDescription>
+                      Record a voice memo from the site and the daily report
+                      will appear here.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <button
+                      onClick={() => setLocation("/admin/field-reports/new")}
+                      className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Record First Report
+                    </button>
+                  </EmptyContent>
+                </Empty>
               ) : (
                 reports?.data.map(r => (
                   <button
@@ -735,9 +764,29 @@ export default function ProjectDetail() {
           <div className="space-y-2">
             {tabGuard(scheduleLoading, scheduleError, refetchSchedule) ??
               (schedule?.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">
-                  No schedule items yet.
-                </p>
+                <Empty className="bg-card border border-border/60">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <CalendarRange />
+                    </EmptyMedia>
+                    <EmptyTitle>No schedule items yet</EmptyTitle>
+                    <EmptyDescription>
+                      Lay out the phases and milestones for this build so the
+                      client can follow along.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <button
+                      onClick={() =>
+                        setLocation(`/admin/schedule?projectId=${projectId}`)
+                      }
+                      className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Plan The Schedule
+                    </button>
+                  </EmptyContent>
+                </Empty>
               ) : (
                 schedule?.map(item => (
                   <div
@@ -779,9 +828,29 @@ export default function ProjectDetail() {
           <div className="space-y-2">
             {tabGuard(materialsLoading, materialsError, refetchMaterials) ??
               (materials?.data.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">
-                  No materials tracked yet.
-                </p>
+                <Empty className="bg-card border border-border/60">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Package />
+                    </EmptyMedia>
+                    <EmptyTitle>No materials tracked yet</EmptyTitle>
+                    <EmptyDescription>
+                      Track deliveries and quantities here so shortages surface
+                      before they stall the crew.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <button
+                      onClick={() =>
+                        setLocation(`/admin/materials?projectId=${projectId}`)
+                      }
+                      className="flex min-h-11 items-center gap-2 bg-primary text-primary-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Track Materials
+                    </button>
+                  </EmptyContent>
+                </Empty>
               ) : (
                 materials?.data.map(m => (
                   <div
@@ -828,9 +897,19 @@ export default function ProjectDetail() {
             </div>
             {tabGuard(ledgerLoading, ledgerError, refetchLedger) ??
               (ledger?.data.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
-                  No ledger entries yet.
-                </p>
+                <Empty className="bg-card border border-border/60">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Receipt />
+                    </EmptyMedia>
+                    <EmptyTitle>No ledger entries yet</EmptyTitle>
+                    <EmptyDescription>
+                      Ledger entries are written automatically as a by-product
+                      of field reports. Record a report — or add an entry above
+                      — and the transparent ledger fills in.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               ) : (
                 ledger?.data.map(e => (
                   <div

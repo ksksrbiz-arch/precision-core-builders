@@ -6,7 +6,9 @@ import DashboardLayout from "@/components/DashboardLayout";
 import AIChatBox from "@/components/AIChatBox";
 import OpsCopilot from "@/components/OpsCopilot";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { LiveBadge } from "@/components/LiveBadge";
 import { QueryError } from "@/components/QueryError";
+import { SkeletonDashboard } from "@/components/Skeletons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +46,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import {
+  CHART_COLORS,
+  CHART_TOOLTIP_STYLE,
+  STATUS_COLORS,
+} from "@/pages/admin/Analytics";
 import {
   BarChart,
   Bar,
@@ -344,6 +351,7 @@ function LeadScoringPanel() {
                 value={(form as any)[key]}
                 onChange={f(key as keyof typeof form)}
                 placeholder={placeholder}
+                aria-label={placeholder}
                 className="px-3 py-3 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
               />
             ))}
@@ -351,6 +359,7 @@ function LeadScoringPanel() {
               value={form.message}
               onChange={f("message")}
               placeholder="Lead message or project description…"
+              aria-label="Lead message or project description"
               rows={2}
               className="sm:col-span-2 px-3 py-3 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors"
             />
@@ -591,6 +600,7 @@ export default function CommandCenter() {
   const utils = trpc.useUtils();
   const {
     data: stats,
+    isLoading: statsLoading,
     isError: statsError,
     refetch: refetchStats,
   } = trpc.projects.stats.useQuery(undefined, { enabled: authReady });
@@ -644,19 +654,69 @@ export default function CommandCenter() {
 
   const statusData = stats
     ? [
-        { name: "Leads", value: stats.byStatus.lead, fill: "#7A7060" },
+        {
+          name: "Leads",
+          value: stats.byStatus.lead,
+          fill: STATUS_COLORS.lead,
+        },
         {
           name: "Contracted",
           value: stats.byStatus.contracted,
-          fill: "#C8A84B",
+          fill: STATUS_COLORS.contracted,
         },
-        { name: "Active", value: stats.byStatus.active, fill: "#6B9E3F" },
-        { name: "Complete", value: stats.byStatus.complete, fill: "#5B7FA6" },
+        {
+          name: "Active",
+          value: stats.byStatus.active,
+          fill: STATUS_COLORS.active,
+        },
+        {
+          name: "Complete",
+          value: stats.byStatus.complete,
+          fill: STATUS_COLORS.complete,
+        },
       ]
     : [];
 
+  // An all-zero series makes Recharts draw bare axes and tick labels with no
+  // bars, which reads as "the chart is broken" rather than "nothing recorded
+  // yet". Hold each chart back until it has something to draw.
+  const hasStatusData = statusData.some(d => d.value > 0);
+  const hasBudgetData =
+    (stats?.totalEstimated ?? 0) > 0 || (stats?.totalActual ?? 0) > 0;
+
   const fmt = (n: number) =>
     n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
+
+  // A brand-new workspace has no measurements at all, so a literal 0 would
+  // claim a measured result. `??` alone cannot tell those apart — a resolved
+  // query returning 0 is still 0 — so an em dash stands in for "not yet
+  // measured" on every KPI tile.
+  const kpiCount = (n: number | null | undefined) => (n ? n : "—");
+  const kpiMoney = (n: number | null | undefined) => (n ? fmt(n) : "—");
+
+  // Hold the whole dashboard back on the first load: the KPI tiles and both
+  // charts are all derived from `stats`.
+  const isLoading = authLoading || statsLoading;
+
+  const today = fmtDate(new Date(), {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
+  // First load: every tile and both charts below read from `stats`, so show
+  // one skeleton rather than a grid of em dashes that then jumps to real
+  // numbers.
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-6xl mx-auto">
+          <AdminPageHeader title="Command Center" description={today} />
+          <SkeletonDashboard />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -664,31 +724,15 @@ export default function CommandCenter() {
         {/* Header */}
         <AdminPageHeader
           title="Command Center"
-          guideId="command-center"
-          description={fmtDate(new Date(), {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
+          description={today}
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 mr-1">
-                <div
-                  className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                    realtimeFlash
-                      ? "bg-green-300 scale-125"
-                      : isLive
-                        ? "bg-green-500 animate-pulse"
-                        : "bg-muted-foreground/40"
-                  }`}
-                />
-                <span
-                  className="text-[9px] tracking-widest uppercase text-muted-foreground/60"
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {isLive ? "Live" : "Offline"}
-                </span>
-              </div>
+              <LiveBadge
+                isLive={isLive}
+                className={`mr-1 transition-shadow ${
+                  realtimeFlash ? "ring-1 ring-green-400/60" : ""
+                }`}
+              />
               <button
                 onClick={() => setLocation("/admin/field-reports/new")}
                 className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
@@ -794,25 +838,25 @@ export default function CommandCenter() {
           <StatCard
             icon={ClipboardList}
             label="Total Projects"
-            value={stats?.total ?? "—"}
+            value={kpiCount(stats?.total)}
             sub="All time"
           />
           <StatCard
             icon={TrendingUp}
             label="Active"
-            value={stats?.byStatus.active ?? "—"}
+            value={kpiCount(stats?.byStatus.active)}
             sub="In progress"
           />
           <StatCard
             icon={DollarSign}
             label="Pipeline (Est.)"
-            value={stats ? fmt(stats.totalEstimated) : "—"}
+            value={kpiMoney(stats?.totalEstimated)}
             sub="Total estimated value"
           />
           <StatCard
             icon={AlertTriangle}
             label="Shortages"
-            value={shortages?.total ?? 0}
+            value={kpiCount(shortages?.total)}
             sub="Material alerts"
           />
         </div>
@@ -908,35 +952,34 @@ export default function CommandCenter() {
             >
               Project Status
             </p>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={statusData} barSize={28}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 10, fill: "#7A7060" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#7A7060" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={20}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "#141210",
-                    border: "1px solid rgba(200,168,75,0.2)",
-                    fontSize: 12,
-                  }}
-                  labelStyle={{ color: "#EDE6D9" }}
-                />
-                <Bar dataKey="value" radius={[2, 2, 0, 0]}>
-                  {statusData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {!hasStatusData ? (
+              <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+                No project data yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={statusData} barSize={28}>
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 10, fill: CHART_COLORS.neutral }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: CHART_COLORS.neutral }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={20}
+                  />
+                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Bar dataKey="value" radius={[2, 2, 0, 0]}>
+                    {statusData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           <div className="bg-card border border-border/60 p-5">
@@ -946,31 +989,37 @@ export default function CommandCenter() {
             >
               Budget Overview ($ thousands)
             </p>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={budgetData} barSize={48}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 10, fill: "#7A7060" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#7A7060" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={30}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "#141210",
-                    border: "1px solid rgba(200,168,75,0.2)",
-                    fontSize: 12,
-                  }}
-                  formatter={(v: number) => [`$${v}k`, ""]}
-                />
-                <Bar dataKey="value" fill="#C8A84B" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {!hasBudgetData ? (
+              <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+                No budget data yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={budgetData} barSize={48}>
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 10, fill: CHART_COLORS.neutral }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: CHART_COLORS.neutral }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={30}
+                  />
+                  <Tooltip
+                    contentStyle={CHART_TOOLTIP_STYLE}
+                    formatter={(v: number) => [`$${v}k`, ""]}
+                  />
+                  <Bar
+                    dataKey="value"
+                    fill={CHART_COLORS.primary}
+                    radius={[2, 2, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -1108,29 +1157,22 @@ export default function CommandCenter() {
               <BarChart data={weeklyReports} barSize={16}>
                 <XAxis
                   dataKey="week"
-                  tick={{ fontSize: 9, fill: "#7A7060" }}
+                  tick={{ fontSize: 9, fill: CHART_COLORS.neutral }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis hide />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 0,
-                    fontSize: 11,
-                  }}
-                />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                 <Bar
                   dataKey="reports"
                   name="Reports"
-                  fill="#8B7355"
+                  fill={CHART_COLORS.primary}
                   radius={[2, 2, 0, 0]}
                 />
                 <Bar
                   dataKey="issues"
                   name="Issues"
-                  fill="#C0392B"
+                  fill={CHART_COLORS.danger}
                   radius={[2, 2, 0, 0]}
                   opacity={0.7}
                 />

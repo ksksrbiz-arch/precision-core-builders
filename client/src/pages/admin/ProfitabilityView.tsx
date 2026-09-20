@@ -11,15 +11,9 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { QueryError } from "@/components/QueryError";
 import { SkeletonCard } from "@/components/Skeletons";
 import { Badge } from "@/components/ui/badge";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { trpc } from "@/lib/trpc";
 import { TrendingUp } from "lucide-react";
 
@@ -98,24 +92,14 @@ export default function ProfitabilityView() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <p
-            className="text-[11px] font-semibold tracking-[0.28em] uppercase text-primary mb-2"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            Phase 5 Analytics
-          </p>
-          <h1
-            className="text-2xl font-semibold"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Profitability
-          </h1>
-          <p className="text-sm text-muted-foreground font-light mt-0.5">
-            Contracted value, projected cost, and margin across every project.
-          </p>
-        </div>
+        {/* Header. `guideId` is intentionally omitted: DashboardLayout already
+            renders a GuideHelpButton in the shell header, and passing one here
+            would duplicate the "?" control. */}
+        <AdminPageHeader
+          eyebrow="Financial Overview"
+          title="Profitability"
+          description="Contracted value, projected cost, and margin across every project."
+        />
 
         {isLoading ? (
           <SkeletonCard count={4} />
@@ -180,7 +164,7 @@ export default function ProfitabilityView() {
                 </h2>
               </div>
 
-              <div className="overflow-x-auto">
+              <ResponsiveTable label="Project profitability">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-[10px] uppercase tracking-wider text-muted-foreground/70 border-b border-border/40">
@@ -284,7 +268,7 @@ export default function ProfitabilityView() {
                     </tr>
                   </tfoot>
                 </table>
-              </div>
+              </ResponsiveTable>
             </div>
           </>
         )}

@@ -114,6 +114,8 @@ describe("FieldReportDetail", () => {
     queryState.isError = true;
     const FieldReportDetail = await loadPage();
     render(<FieldReportDetail />);
-    expect(screen.getByRole("button", { name: /retry/i })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /retry|try again/i })
+    ).toBeTruthy();
   });
 });

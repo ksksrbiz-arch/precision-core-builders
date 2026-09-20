@@ -2,12 +2,13 @@
  * FieldReportDetail — view a single field report with full AI-structured content.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { fmtDate as fmtDateSafe, fmtDateTime } from "@/lib/utils";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   Empty,
   EmptyHeader,
@@ -25,7 +26,6 @@ import {
   EyeOff,
   FileX,
   Loader2,
-  Mic,
   Package,
   RefreshCw,
   ShieldAlert,
@@ -194,21 +194,11 @@ export default function FieldReportDetail() {
     return (
       <DashboardLayout>
         <div className="max-w-md mx-auto p-12">
-          <Alert variant="destructive">
-            <AlertCircle />
-            <AlertTitle>Could not load this report</AlertTitle>
-            <AlertDescription>
-              A network or authorization issue occurred. Please try again.
-            </AlertDescription>
-          </Alert>
+          <QueryError
+            message="We couldn't load this field report. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
           <div className="flex gap-2 justify-center mt-4">
-            <button
-              onClick={() => refetch()}
-              className="text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Retry
-            </button>
             <button
               onClick={() => setLocation("/admin/field-reports")}
               className="text-xs font-bold tracking-widest uppercase border border-border text-muted-foreground px-4 py-2 hover:text-foreground transition-colors"
@@ -252,6 +242,7 @@ export default function FieldReportDetail() {
     );
   }
 
+  const linkedProjectId = (report as any).projects?.id as number | undefined;
   const projectName = (report as any).projects?.name ?? "Unknown Project";
   const isPublished = report.published_to_client;
 
@@ -279,39 +270,41 @@ export default function FieldReportDetail() {
         </button>
 
         {/* Header */}
+        <AdminPageHeader
+          title="Field Report"
+          actions={
+            <span
+              className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase self-start ${
+                isPublished
+                  ? "text-green-400 border-green-400/30 bg-green-400/5"
+                  : "text-muted-foreground border-border/60"
+              }`}
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              {isPublished ? "Published" : "Draft"}
+            </span>
+          }
+        />
+
         <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <Mic className="h-5 w-5 text-primary" />
-              <h1
-                className="text-2xl font-semibold"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Field Report
-              </h1>
-              <span
-                className={`text-[9px] px-2 py-1 border font-semibold tracking-widest uppercase ${
-                  isPublished
-                    ? "text-green-400 border-green-400/30 bg-green-400/5"
-                    : "text-muted-foreground border-border/60"
-                }`}
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                {isPublished ? "Published" : "Draft"}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {fmtDate(report.report_date)} ·{" "}
-              <button
-                onClick={() =>
-                  setLocation(`/admin/projects/${(report as any).projects?.id}`)
-                }
-                className="text-primary hover:underline"
-              >
-                {projectName}
-              </button>
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            {fmtDate(report.report_date)}
+            {linkedProjectId ? (
+              <>
+                {" · "}
+                <button
+                  onClick={() =>
+                    setLocation(`/admin/projects/${linkedProjectId}`)
+                  }
+                  className="text-primary hover:underline"
+                >
+                  {projectName}
+                </button>
+              </>
+            ) : (
+              <> · {projectName}</>
+            )}
+          </p>
 
           <button
             onClick={() => {
