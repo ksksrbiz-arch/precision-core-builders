@@ -124,4 +124,24 @@ describe("ActivityLog", () => {
       expect(hasText || hasLabel).toBe(true);
     }
   });
+
+  it("renders with empty data without crashing, with a single h1, an accessibly-named search input, and a status realtime badge", async () => {
+    queryState.data = [];
+    queryState.isPending = false;
+    queryState.isError = false;
+    const ActivityLog = await loadPage();
+    render(<ActivityLog />);
+
+    const headings = screen.getAllByRole("heading", { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0].textContent).toContain("Activity Log");
+
+    const search = screen.getByRole("textbox", { name: /search/i });
+    expect(search).toBeTruthy();
+
+    const statuses = screen.getAllByRole("status");
+    expect(
+      statuses.some(el => el.textContent?.match(/live|reconnecting/i))
+    ).toBe(true);
+  });
 });
