@@ -3,7 +3,17 @@
  * Uses portfolioRouter: listAdmin, create, update, togglePublished, delete.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
+import { QueryError } from "@/components/QueryError";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -77,7 +87,12 @@ export default function PortfolioAdmin() {
     setCoverPreviewBroken(false);
   }, [form.coverImageUrl]);
   const utils = trpc.useUtils();
-  const { data: projects, isLoading } = trpc.portfolio.listAdmin.useQuery();
+  const {
+    data: projects,
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.portfolio.listAdmin.useQuery();
 
   // Live updates: portfolio edits from another device refresh the list.
   useRealtimeTable({
@@ -247,32 +262,23 @@ export default function PortfolioAdmin() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-6">
-          <div>
-            <h1
-              className="text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
+        <AdminPageHeader
+          title="Portfolio CMS"
+          description="Manage public portfolio — publish, feature, and add project showcases"
+          actions={
+            <button
+              onClick={() => {
+                setEditId(null);
+                setForm(BLANK_FORM);
+                setShowForm(v => !v);
+              }}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Portfolio CMS
-            </h1>
-            <p className="text-sm text-muted-foreground font-light mt-0.5">
-              Manage public portfolio — publish, feature, and add project
-              showcases
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setEditId(null);
-              setForm(BLANK_FORM);
-              setShowForm(v => !v);
-            }}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            <Plus className="h-3.5 w-3.5" /> New Project
-          </button>
-        </div>
+              <Plus className="h-3.5 w-3.5" /> New Project
+            </button>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
@@ -327,93 +333,203 @@ export default function PortfolioAdmin() {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <input
-                value={form.title}
-                onChange={f("title")}
-                placeholder="Project title *"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 lg:col-span-2"
-              />
+              <div className="lg:col-span-2">
+                <label
+                  htmlFor="portfolio-title"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Project Title *
+                </label>
+                <input
+                  id="portfolio-title"
+                  value={form.title}
+                  onChange={f("title")}
+                  placeholder="Project title"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <select
-                value={form.category}
-                onChange={f("category")}
-                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-              >
-                <option value="">Category…</option>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label
+                  htmlFor="portfolio-category"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Category
+                </label>
+                <select
+                  id="portfolio-category"
+                  value={form.category}
+                  onChange={f("category")}
+                  className="w-full px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+                >
+                  <option value="">Category…</option>
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <input
-                value={form.location}
-                onChange={f("location")}
-                placeholder="Location (Eugene, OR)"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
+              <div>
+                <label
+                  htmlFor="portfolio-location"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Location
+                </label>
+                <input
+                  id="portfolio-location"
+                  value={form.location}
+                  onChange={f("location")}
+                  placeholder="Eugene, OR"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <input
-                value={form.completionYear}
-                onChange={f("completionYear")}
-                type="number"
-                placeholder="Year completed"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
+              <div>
+                <label
+                  htmlFor="portfolio-year"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Year Completed
+                </label>
+                <input
+                  id="portfolio-year"
+                  value={form.completionYear}
+                  onChange={f("completionYear")}
+                  type="number"
+                  placeholder="Year completed"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <input
-                value={form.squareFootage}
-                onChange={f("squareFootage")}
-                type="number"
-                placeholder="Square footage"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
+              <div>
+                <label
+                  htmlFor="portfolio-sqft"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Square Footage
+                </label>
+                <input
+                  id="portfolio-sqft"
+                  value={form.squareFootage}
+                  onChange={f("squareFootage")}
+                  type="number"
+                  placeholder="Square footage"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <input
-                value={form.coverImageUrl}
-                onChange={f("coverImageUrl")}
-                placeholder="Cover image URL"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 lg:col-span-3"
-              />
+              <div className="lg:col-span-3">
+                <label
+                  htmlFor="portfolio-cover-url"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Cover Image URL
+                </label>
+                <input
+                  id="portfolio-cover-url"
+                  value={form.coverImageUrl}
+                  onChange={f("coverImageUrl")}
+                  placeholder="Cover image URL"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <input
-                value={form.galleryImageUrls}
-                onChange={f("galleryImageUrls")}
-                placeholder="Gallery image URLs (comma-separated)"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 lg:col-span-3"
-              />
+              <div className="lg:col-span-3">
+                <label
+                  htmlFor="portfolio-gallery-urls"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Gallery Image URLs
+                </label>
+                <input
+                  id="portfolio-gallery-urls"
+                  value={form.galleryImageUrls}
+                  onChange={f("galleryImageUrls")}
+                  placeholder="Comma-separated URLs"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <textarea
-                value={form.shortDescription}
-                onChange={f("shortDescription")}
-                placeholder="Short description (shown in portfolio grid, max 500 chars)"
-                rows={2}
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none sm:col-span-2 lg:col-span-3"
-              />
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label
+                  htmlFor="portfolio-short-description"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Short Description
+                </label>
+                <textarea
+                  id="portfolio-short-description"
+                  value={form.shortDescription}
+                  onChange={f("shortDescription")}
+                  placeholder="Shown in portfolio grid, max 500 chars"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
+                />
+              </div>
 
-              <textarea
-                value={form.description}
-                onChange={f("description")}
-                placeholder="Full project description"
-                rows={4}
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none sm:col-span-2 lg:col-span-3"
-              />
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label
+                  htmlFor="portfolio-description"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Full Description
+                </label>
+                <textarea
+                  id="portfolio-description"
+                  value={form.description}
+                  onChange={f("description")}
+                  placeholder="Full project description"
+                  rows={4}
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
+                />
+              </div>
 
-              <input
-                value={form.clientName}
-                onChange={f("clientName")}
-                placeholder="Client name (for testimonial)"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
+              <div>
+                <label
+                  htmlFor="portfolio-client-name"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Client Name
+                </label>
+                <input
+                  id="portfolio-client-name"
+                  value={form.clientName}
+                  onChange={f("clientName")}
+                  placeholder="For testimonial"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <textarea
-                value={form.clientTestimonial}
-                onChange={f("clientTestimonial")}
-                placeholder="Client testimonial quote"
-                rows={2}
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none lg:col-span-2"
-              />
+              <div className="lg:col-span-2">
+                <label
+                  htmlFor="portfolio-client-testimonial"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Client Testimonial
+                </label>
+                <textarea
+                  id="portfolio-client-testimonial"
+                  value={form.clientTestimonial}
+                  onChange={f("clientTestimonial")}
+                  placeholder="Client testimonial quote"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
+                />
+              </div>
             </div>
 
             {/* Toggles */}
@@ -482,136 +598,156 @@ export default function PortfolioAdmin() {
         )}
 
         {/* Project list */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">
-              Loading portfolio…
-            </span>
-          </div>
+        {isLoading && <SkeletonCard count={3} />}
+
+        {!isLoading && isError && (
+          <QueryError
+            message="We couldn't load the portfolio. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         )}
 
-        {!isLoading && (!projects || projects.length === 0) && (
-          <div className="py-20 text-center">
-            <Image className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light mb-1">
-              No portfolio projects yet
-            </p>
-            <p className="text-xs text-muted-foreground/60">
-              Add your first project to start building Eric's public portfolio.
-            </p>
-          </div>
+        {!isLoading && !isError && (!projects || projects.length === 0) && (
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Image />
+              </EmptyMedia>
+              <EmptyTitle>No portfolio projects yet</EmptyTitle>
+              <EmptyDescription>
+                Add your first project to start building Eric's public
+                portfolio.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => {
+                  setEditId(null);
+                  setForm(BLANK_FORM);
+                  setShowForm(true);
+                }}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Your First Project
+              </button>
+            </EmptyContent>
+          </Empty>
         )}
 
         <div className="space-y-3">
-          {projects?.map(p => (
-            <div
-              key={p.id}
-              className={`bg-card border p-4 flex gap-4 ${
-                p.published ? "border-border/60" : "border-border/30 opacity-80"
-              }`}
-            >
-              {/* Cover thumbnail */}
-              <div className="w-20 h-16 shrink-0 border border-border/40 overflow-hidden bg-muted/20">
-                {p.cover_image_url && !brokenCovers[p.id] ? (
-                  <img
-                    src={p.cover_image_url}
-                    alt={p.title}
-                    className="w-full h-full object-cover"
-                    onError={() =>
-                      setBrokenCovers(prev => ({ ...prev, [p.id]: true }))
-                    }
-                  />
-                ) : p.cover_image_url ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-muted-foreground/30 text-[10px]">
-                      No img
-                    </span>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Image className="h-5 w-5 text-muted-foreground/30" />
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-semibold text-foreground">
-                    {p.title}
-                  </p>
-                  {p.featured && (
-                    <Star className="h-3.5 w-3.5 text-primary fill-primary" />
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                  {p.category && <span>{p.category}</span>}
-                  {p.location && <span>· {p.location}</span>}
-                  {p.completion_year && <span>· {p.completion_year}</span>}
-                  {p.square_footage && (
-                    <span>· {p.square_footage.toLocaleString()} sqft</span>
-                  )}
-                </div>
-                {p.short_description && (
-                  <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-1">
-                    {p.short_description}
-                  </p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Publish toggle */}
-                <button
-                  onClick={() =>
-                    togglePublished.mutate({
-                      id: p.id,
-                      published: !p.published,
-                    })
-                  }
-                  disabled={togglePublished.isPending}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-bold tracking-widest uppercase border transition-colors ${
-                    p.published
-                      ? "text-green-400 border-green-400/30 bg-green-400/10 hover:bg-green-400/20"
-                      : "text-muted-foreground border-border/60 hover:border-primary/40 hover:text-primary"
-                  }`}
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {p.published ? (
-                    <Globe className="h-2.5 w-2.5" />
+          {!isLoading &&
+            !isError &&
+            projects?.map(p => (
+              <div
+                key={p.id}
+                className={`bg-card border p-4 flex gap-4 ${
+                  p.published
+                    ? "border-border/60"
+                    : "border-border/30 opacity-80"
+                }`}
+              >
+                {/* Cover thumbnail */}
+                <div className="w-20 h-16 shrink-0 border border-border/40 overflow-hidden bg-muted/20">
+                  {p.cover_image_url && !brokenCovers[p.id] ? (
+                    <img
+                      src={p.cover_image_url}
+                      alt={p.title}
+                      className="w-full h-full object-cover"
+                      onError={() =>
+                        setBrokenCovers(prev => ({ ...prev, [p.id]: true }))
+                      }
+                    />
+                  ) : p.cover_image_url ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-muted-foreground/30 text-[10px]">
+                        No img
+                      </span>
+                    </div>
                   ) : (
-                    <EyeOff className="h-2.5 w-2.5" />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Image className="h-5 w-5 text-muted-foreground/30" />
+                    </div>
                   )}
-                  {p.published ? "Live" : "Draft"}
-                </button>
+                </div>
 
-                {/* Edit */}
-                <button
-                  onClick={() => handleEdit(p)}
-                  className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors"
-                  title="Edit"
-                  aria-label={`Edit ${p.title}`}
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </button>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-sm font-semibold text-foreground">
+                      {p.title}
+                    </p>
+                    {p.featured && (
+                      <Star className="h-3.5 w-3.5 text-primary fill-primary" />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                    {p.category && <span>{p.category}</span>}
+                    {p.location && <span>· {p.location}</span>}
+                    {p.completion_year && <span>· {p.completion_year}</span>}
+                    {p.square_footage && (
+                      <span>· {p.square_footage.toLocaleString()} sqft</span>
+                    )}
+                  </div>
+                  {p.short_description && (
+                    <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-1">
+                      {p.short_description}
+                    </p>
+                  )}
+                </div>
 
-                {/* Delete */}
-                {deleteProject && (
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Publish toggle */}
                   <button
                     onClick={() =>
-                      setDeleteTarget({ id: p.id, title: p.title })
+                      togglePublished.mutate({
+                        id: p.id,
+                        published: !p.published,
+                      })
                     }
-                    className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-red-400/40 hover:text-red-400 text-muted-foreground transition-colors"
-                    title="Delete"
-                    aria-label={`Delete ${p.title}`}
+                    disabled={togglePublished.isPending}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-bold tracking-widest uppercase border transition-colors ${
+                      p.published
+                        ? "text-green-400 border-green-400/30 bg-green-400/10 hover:bg-green-400/20"
+                        : "text-muted-foreground border-border/60 hover:border-primary/40 hover:text-primary"
+                    }`}
+                    style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    {p.published ? (
+                      <Globe className="h-2.5 w-2.5" />
+                    ) : (
+                      <EyeOff className="h-2.5 w-2.5" />
+                    )}
+                    {p.published ? "Live" : "Draft"}
                   </button>
-                )}
+
+                  {/* Edit */}
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors"
+                    title="Edit"
+                    aria-label={`Edit ${p.title}`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </button>
+
+                  {/* Delete */}
+                  {deleteProject && (
+                    <button
+                      onClick={() =>
+                        setDeleteTarget({ id: p.id, title: p.title })
+                      }
+                      className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-red-400/40 hover:text-red-400 text-muted-foreground transition-colors"
+                      title="Delete"
+                      aria-label={`Delete ${p.title}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 

@@ -7,6 +7,17 @@
  * products shown to prospects on the public /showroom page.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { SkeletonCard } from "@/components/Skeletons";
+import { QueryError } from "@/components/QueryError";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useToast } from "@/components/ToastProvider";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -77,7 +88,12 @@ export default function FinishCatalogAdmin() {
   }, [form.imageUrl]);
 
   const utils = trpc.useUtils();
-  const { data: items, isLoading } = trpc.finishCatalog.listAdmin.useQuery();
+  const {
+    data: items,
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.finishCatalog.listAdmin.useQuery();
 
   // Live updates: catalog edits from another device refresh the list.
   useRealtimeTable({
@@ -202,32 +218,23 @@ export default function FinishCatalogAdmin() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-y-3 mb-6">
-          <div>
-            <h1
-              className="text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
+        <AdminPageHeader
+          title="Finish Catalog"
+          description="Manage the public finish showroom — publish, feature, and add products"
+          actions={
+            <button
+              onClick={() => {
+                setEditId(null);
+                setForm(BLANK_FORM);
+                setShowForm(v => !v);
+              }}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+              style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Finish Catalog
-            </h1>
-            <p className="text-sm text-muted-foreground font-light mt-0.5">
-              Manage the public finish showroom — publish, feature, and add
-              products
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setEditId(null);
-              setForm(BLANK_FORM);
-              setShowForm(v => !v);
-            }}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            <Plus className="h-3.5 w-3.5" /> New Item
-          </button>
-        </div>
+              <Plus className="h-3.5 w-3.5" /> New Item
+            </button>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
@@ -282,60 +289,120 @@ export default function FinishCatalogAdmin() {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <input
-                value={form.name}
-                onChange={f("name")}
-                placeholder="Item name *"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 lg:col-span-2"
-              />
+              <div className="lg:col-span-2">
+                <label
+                  htmlFor="finish-name"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Item Name *
+                </label>
+                <input
+                  id="finish-name"
+                  value={form.name}
+                  onChange={f("name")}
+                  placeholder="Item name"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <select
-                value={form.category}
-                onChange={f("category")}
-                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-              >
-                <option value="">Category…</option>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label
+                  htmlFor="finish-category"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Category
+                </label>
+                <select
+                  id="finish-category"
+                  value={form.category}
+                  onChange={f("category")}
+                  className="w-full px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+                >
+                  <option value="">Category…</option>
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <input
-                value={form.brand}
-                onChange={f("brand")}
-                placeholder="Brand"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
-              />
+              <div>
+                <label
+                  htmlFor="finish-brand"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Brand
+                </label>
+                <input
+                  id="finish-brand"
+                  value={form.brand}
+                  onChange={f("brand")}
+                  placeholder="Brand"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <select
-                value={form.priceTier}
-                onChange={f("priceTier")}
-                className="px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
-              >
-                <option value="">Price tier…</option>
-                {PRICE_TIERS.map(t => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label
+                  htmlFor="finish-price-tier"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Price Tier
+                </label>
+                <select
+                  id="finish-price-tier"
+                  value={form.priceTier}
+                  onChange={f("priceTier")}
+                  className="w-full px-3 py-2 bg-input border border-border text-sm text-foreground focus:outline-none focus:border-primary/60"
+                >
+                  <option value="">Price tier…</option>
+                  {PRICE_TIERS.map(t => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <input
-                value={form.imageUrl}
-                onChange={f("imageUrl")}
-                placeholder="Image URL"
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 lg:col-span-3"
-              />
+              <div className="lg:col-span-3">
+                <label
+                  htmlFor="finish-image-url"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Image URL
+                </label>
+                <input
+                  id="finish-image-url"
+                  value={form.imageUrl}
+                  onChange={f("imageUrl")}
+                  placeholder="Image URL"
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60"
+                />
+              </div>
 
-              <textarea
-                value={form.description}
-                onChange={f("description")}
-                placeholder="Description"
-                rows={3}
-                className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none sm:col-span-2 lg:col-span-3"
-              />
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label
+                  htmlFor="finish-description"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Description
+                </label>
+                <textarea
+                  id="finish-description"
+                  value={form.description}
+                  onChange={f("description")}
+                  placeholder="Description"
+                  rows={3}
+                  className="w-full px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none"
+                />
+              </div>
             </div>
 
             {/* Toggles */}
@@ -402,135 +469,152 @@ export default function FinishCatalogAdmin() {
         )}
 
         {/* Item list */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">
-              Loading catalog…
-            </span>
-          </div>
+        {isLoading && <SkeletonCard count={3} />}
+
+        {!isLoading && isError && (
+          <QueryError
+            message="We couldn't load the finish catalog. Check your connection and try again."
+            onRetry={() => refetch()}
+          />
         )}
 
-        {!isLoading && (!items || items.length === 0) && (
-          <div className="py-20 text-center">
-            <Image className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground font-light mb-1">
-              No catalog items yet
-            </p>
-            <p className="text-xs text-muted-foreground/60">
-              Add your first product to start building the public showroom.
-            </p>
-          </div>
+        {!isLoading && !isError && (!items || items.length === 0) && (
+          <Empty className="bg-card border border-border/60">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Image />
+              </EmptyMedia>
+              <EmptyTitle>No catalog items yet</EmptyTitle>
+              <EmptyDescription>
+                Add your first product to start building the public showroom.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <button
+                onClick={() => {
+                  setEditId(null);
+                  setForm(BLANK_FORM);
+                  setShowForm(true);
+                }}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Your First Item
+              </button>
+            </EmptyContent>
+          </Empty>
         )}
 
         <div className="space-y-3">
-          {items?.map(item => (
-            <div
-              key={item.id}
-              className={`bg-card border p-4 flex gap-4 ${
-                item.published
-                  ? "border-border/60"
-                  : "border-border/30 opacity-80"
-              }`}
-            >
-              {/* Thumbnail */}
-              <div className="w-20 h-16 shrink-0 border border-border/40 overflow-hidden bg-muted/20">
-                {item.image_url && !brokenImages[item.id] ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                    onError={() =>
-                      setBrokenImages(prev => ({ ...prev, [item.id]: true }))
-                    }
-                  />
-                ) : item.image_url ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-muted-foreground/30 text-[10px]">
-                      No img
-                    </span>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Image className="h-5 w-5 text-muted-foreground/30" />
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-semibold text-foreground">
-                    {item.name}
-                  </p>
-                  {item.featured && (
-                    <Star className="h-3.5 w-3.5 text-primary fill-primary" />
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                  {item.category && <span>{item.category}</span>}
-                  {item.brand && <span>· {item.brand}</span>}
-                  {item.price_tier && <span>· {item.price_tier}</span>}
-                </div>
-                {item.description && (
-                  <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-1">
-                    {item.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Publish toggle */}
-                <button
-                  onClick={() =>
-                    togglePublished.mutate({
-                      id: item.id,
-                      published: !item.published,
-                    })
-                  }
-                  disabled={togglePublished.isPending}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-bold tracking-widest uppercase border transition-colors ${
-                    item.published
-                      ? "text-green-400 border-green-400/30 bg-green-400/10 hover:bg-green-400/20"
-                      : "text-muted-foreground border-border/60 hover:border-primary/40 hover:text-primary"
-                  }`}
-                  style={{ fontFamily: "var(--font-condensed)" }}
-                >
-                  {item.published ? (
-                    <Globe className="h-2.5 w-2.5" />
+          {!isLoading &&
+            !isError &&
+            items?.map(item => (
+              <div
+                key={item.id}
+                className={`bg-card border p-4 flex gap-4 ${
+                  item.published
+                    ? "border-border/60"
+                    : "border-border/30 opacity-80"
+                }`}
+              >
+                {/* Thumbnail */}
+                <div className="w-20 h-16 shrink-0 border border-border/40 overflow-hidden bg-muted/20">
+                  {item.image_url && !brokenImages[item.id] ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      onError={() =>
+                        setBrokenImages(prev => ({ ...prev, [item.id]: true }))
+                      }
+                    />
+                  ) : item.image_url ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-muted-foreground/30 text-[10px]">
+                        No img
+                      </span>
+                    </div>
                   ) : (
-                    <EyeOff className="h-2.5 w-2.5" />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Image className="h-5 w-5 text-muted-foreground/30" />
+                    </div>
                   )}
-                  {item.published ? "Live" : "Draft"}
-                </button>
+                </div>
 
-                {/* Edit */}
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors"
-                  title="Edit"
-                  aria-label={`Edit ${item.name}`}
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </button>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-sm font-semibold text-foreground">
+                      {item.name}
+                    </p>
+                    {item.featured && (
+                      <Star className="h-3.5 w-3.5 text-primary fill-primary" />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                    {item.category && <span>{item.category}</span>}
+                    {item.brand && <span>· {item.brand}</span>}
+                    {item.price_tier && <span>· {item.price_tier}</span>}
+                  </div>
+                  {item.description && (
+                    <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-1">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
 
-                {/* Delete */}
-                {deleteItem && (
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Publish toggle */}
                   <button
                     onClick={() =>
-                      setDeleteTarget({ id: item.id, name: item.name })
+                      togglePublished.mutate({
+                        id: item.id,
+                        published: !item.published,
+                      })
                     }
-                    className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-red-400/40 hover:text-red-400 text-muted-foreground transition-colors"
-                    title="Delete"
-                    aria-label={`Delete ${item.name}`}
+                    disabled={togglePublished.isPending}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-bold tracking-widest uppercase border transition-colors ${
+                      item.published
+                        ? "text-green-400 border-green-400/30 bg-green-400/10 hover:bg-green-400/20"
+                        : "text-muted-foreground border-border/60 hover:border-primary/40 hover:text-primary"
+                    }`}
+                    style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    {item.published ? (
+                      <Globe className="h-2.5 w-2.5" />
+                    ) : (
+                      <EyeOff className="h-2.5 w-2.5" />
+                    )}
+                    {item.published ? "Live" : "Draft"}
                   </button>
-                )}
+
+                  {/* Edit */}
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors"
+                    title="Edit"
+                    aria-label={`Edit ${item.name}`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </button>
+
+                  {/* Delete */}
+                  {deleteItem && (
+                    <button
+                      onClick={() =>
+                        setDeleteTarget({ id: item.id, name: item.name })
+                      }
+                      className="h-8 w-8 border border-border/60 flex items-center justify-center hover:border-red-400/40 hover:text-red-400 text-muted-foreground transition-colors"
+                      title="Delete"
+                      aria-label={`Delete ${item.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 
