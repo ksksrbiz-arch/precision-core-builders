@@ -1202,7 +1202,7 @@ export default function CommandCenter() {
               Ops Co-pilot · Live Data
             </p>
           </div>
-          <OpsCopilot />
+          <OpsCopilot compact />
         </div>
 
         {/* AI Chat */}

@@ -98,4 +98,21 @@ describe("OpsCopilot", () => {
     // so this stays valid as the token-sourcing implementation evolves.
     expect(typeof opts.headers).toBe("function");
   });
+
+  it("bounds its height with the compact prop instead of growing unbounded", async () => {
+    const OpsCopilot = await loadCopilot();
+    const { container, rerender } = render(<OpsCopilot />);
+
+    const defaultRoot = container.firstChild as HTMLElement;
+    expect(defaultRoot.className).toContain("h-full");
+    expect(defaultRoot.className).toContain("min-h-[520px]");
+
+    rerender(<OpsCopilot compact />);
+    const compactRoot = container.firstChild as HTMLElement;
+    // A fixed pixel height (not h-full/min-h) is what actually lets the
+    // inner ScrollArea scroll instead of the whole page growing as the
+    // conversation gets long — this is the embedded Command Center case.
+    expect(compactRoot.className).toContain("h-[320px]");
+    expect(compactRoot.className).not.toContain("h-full");
+  });
 });
