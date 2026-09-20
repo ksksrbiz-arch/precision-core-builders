@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard, SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -86,7 +87,6 @@ export default function EstimatesList() {
       <div className="max-w-5xl mx-auto">
         <AdminPageHeader
           title="Estimates"
-          guideId="estimates"
           description="Manage pricing proposals, send approvals, and monitor estimate lifecycle."
           actions={
             <button
@@ -266,7 +266,7 @@ export default function EstimatesList() {
           </div>
         ) : (
           <div className="bg-card border border-border/60 overflow-hidden">
-            <div className="overflow-x-auto">
+            <ResponsiveTable label="Estimates">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/40">
@@ -410,7 +410,7 @@ export default function EstimatesList() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTable>
           </div>
         )}
 
