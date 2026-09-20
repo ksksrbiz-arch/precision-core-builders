@@ -8,8 +8,10 @@
  * Gated behind the `VITE_FEATURE_BLUEPRINT=true` feature flag at the
  * route level in App.tsx — the page assumes the flag is on when rendered.
  */
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
 import { QueryError } from "@/components/QueryError";
+import { SkeletonCard } from "@/components/Skeletons";
 import { fmtDateTime } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,23 +101,20 @@ export default function BlueprintTools() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto p-6 space-y-6">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-serif tracking-tight">Blueprint.am</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Connect your blueprint.am account to attach plans and designs to
-              Precision Core projects.
-            </p>
-          </div>
-          <a
-            href="https://blueprint.am"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
-          >
-            Open blueprint.am <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </header>
+        <AdminPageHeader
+          title="Blueprint.am"
+          description="Connect your blueprint.am account to attach plans and designs to Precision Core projects."
+          actions={
+            <a
+              href="https://blueprint.am"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
+            >
+              Open blueprint.am <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          }
+        />
 
         {errorMsg && (
           <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
@@ -136,7 +135,7 @@ export default function BlueprintTools() {
         <section className="rounded-xl border border-border/50 bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold">Connection status</h2>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <SkeletonCard count={1} />
           ) : isError ? (
             <QueryError
               message="We couldn't load your Blueprint connection status. Check your connection and try again."

@@ -75,13 +75,15 @@ async function loadPage() {
 }
 
 describe("BlueprintTools", () => {
-  it("shows a loading state while connection status is pending", async () => {
+  it("shows a loading skeleton while connection status is pending", async () => {
     queryState.data = undefined;
     queryState.isLoading = true;
     queryState.isError = false;
     const BlueprintTools = await loadPage();
-    render(<BlueprintTools />);
-    expect(screen.getByText(/loading/i)).toBeTruthy();
+    const { container } = render(<BlueprintTools />);
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(
+      0
+    );
   });
 
   it("shows QueryError with a retry control on error", async () => {
@@ -108,5 +110,18 @@ describe("BlueprintTools", () => {
       const hasLabel = btn.hasAttribute("aria-label");
       expect(hasText || hasLabel).toBe(true);
     }
+  });
+
+  it("renders cleanly with empty data and uses exactly one heading-font h1", async () => {
+    queryState.data = { connected: false, connection: null };
+    queryState.isLoading = false;
+    queryState.isError = false;
+    const BlueprintTools = await loadPage();
+    const { container } = render(<BlueprintTools />);
+    const headings = container.querySelectorAll("h1");
+    expect(headings.length).toBe(1);
+    expect((headings[0] as HTMLElement).style.fontFamily).toBe(
+      "var(--font-heading)"
+    );
   });
 });
