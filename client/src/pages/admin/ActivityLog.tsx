@@ -6,7 +6,9 @@
  * backoff) so the dev/admin can see every platform action as it happens.
  * Provides filtering by level and free-text search.
  */
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
+import { LiveBadge } from "@/components/LiveBadge";
 import { QueryError } from "@/components/QueryError";
 import { SkeletonList } from "@/components/Skeletons";
 import {
@@ -32,8 +34,6 @@ import {
   RefreshCw,
   Search,
   Trash2,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -324,75 +324,42 @@ export default function ActivityLog() {
     <DashboardLayout>
       <div className="space-y-5 max-w-5xl">
         {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <span
-              className="block text-[10px] font-bold tracking-[0.18em] uppercase text-primary mb-1"
-              style={{ fontFamily: "var(--font-condensed)" }}
-            >
-              Developer Tools
-            </span>
-            <h1
-              className="text-2xl font-semibold tracking-tight"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Activity Log
-            </h1>
-            <p className="text-sm text-muted-foreground/60 font-light mt-1">
-              Real-time stream of all platform events and admin actions.
-            </p>
-          </div>
+        <AdminPageHeader
+          eyebrow="Developer Tools"
+          title="Activity Log"
+          description="Real-time stream of all platform events and admin actions."
+          actions={
+            <div className="flex items-center gap-2 flex-wrap">
+              <LiveBadge isLive={isLive} />
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Realtime indicator */}
-            <div
-              role="status"
-              aria-label={
-                isLive
-                  ? "Realtime connected"
-                  : "Realtime offline — reconnecting"
-              }
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border ${
-                isLive
-                  ? "border-green-500/30 bg-green-500/10 text-green-400"
-                  : "border-border/40 bg-muted/20 text-muted-foreground/50"
-              }`}
-            >
-              {isLive ? (
-                <Wifi aria-hidden="true" className="h-3 w-3" />
-              ) : (
-                <WifiOff aria-hidden="true" className="h-3 w-3" />
-              )}
-              {isLive ? "Live" : "Offline"}
+              {/* Refresh */}
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={isPending}
+                aria-label="Refresh activity log"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border border-border/40 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50"
+              >
+                <RefreshCw
+                  aria-hidden="true"
+                  className={`h-3 w-3 ${isPending ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+
+              {/* Clear */}
+              <button
+                type="button"
+                onClick={handleClear}
+                aria-label="Clear activity log view"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border border-border/40 hover:border-destructive/40 hover:text-destructive transition-colors"
+              >
+                <Trash2 aria-hidden="true" className="h-3 w-3" />
+                Clear
+              </button>
             </div>
-
-            {/* Refresh */}
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isPending}
-              aria-label="Refresh activity log"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border border-border/40 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50"
-            >
-              <RefreshCw
-                aria-hidden="true"
-                className={`h-3 w-3 ${isPending ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </button>
-
-            {/* Clear */}
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label="Clear activity log view"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium border border-border/40 hover:border-destructive/40 hover:text-destructive transition-colors"
-            >
-              <Trash2 aria-hidden="true" className="h-3 w-3" />
-              Clear
-            </button>
-          </div>
-        </div>
+          }
+        />
 
         {/* ── KPI bar ─────────────────────────────────────────────────── */}
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
