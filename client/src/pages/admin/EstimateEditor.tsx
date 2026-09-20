@@ -13,12 +13,15 @@
  * happens only when the admin submits this form.
  */
 import DashboardLayout from "@/components/DashboardLayout";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
+import { SkeletonCard } from "@/components/Skeletons";
+import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { getAuthHeader } from "@/lib/authHeader";
 import { trpc } from "@/lib/trpc";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { PROJECT_TYPES } from "@/config/projects";
-import { ArrowLeft, Calculator, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
@@ -306,8 +309,12 @@ export default function EstimateEditor() {
   if (isEdit && loadingExisting) {
     return (
       <DashboardLayout>
-        <div className="max-w-3xl mx-auto py-20 text-center">
-          <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
+        <div className="max-w-3xl mx-auto">
+          <AdminPageHeader
+            title="Edit Estimate"
+            description="Loading estimate details…"
+          />
+          <SkeletonCard count={2} />
         </div>
       </DashboardLayout>
     );
@@ -316,10 +323,12 @@ export default function EstimateEditor() {
   if (isEdit && existingError) {
     return (
       <DashboardLayout>
-        <div className="max-w-3xl mx-auto py-20 text-center">
-          <p className="text-sm text-muted-foreground">
-            We couldn&apos;t load this estimate.
-          </p>
+        <div className="max-w-3xl mx-auto">
+          <AdminPageHeader title="Edit Estimate" />
+          <QueryError
+            message="We couldn't load this estimate. Check your connection and try again."
+            onRetry={() => refetchExisting()}
+          />
           <button
             onClick={() => setLocation("/admin/estimates")}
             className="mt-4 text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
@@ -343,15 +352,14 @@ export default function EstimateEditor() {
           <ArrowLeft className="h-3.5 w-3.5" /> All Estimates
         </button>
 
-        <div className="flex items-center gap-3 mb-6">
-          <Calculator className="h-5 w-5 text-primary" />
-          <h1
-            className="text-2xl font-semibold"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            {isEdit ? "Edit Estimate" : "New Estimate"}
-          </h1>
-        </div>
+        <AdminPageHeader
+          title={isEdit ? "Edit Estimate" : "New Estimate"}
+          description={
+            isEdit
+              ? "Update pricing details for this estimate."
+              : "Build a new tiered cost estimate for a client."
+          }
+        />
 
         <div className="space-y-6">
           {/* Project Details */}
