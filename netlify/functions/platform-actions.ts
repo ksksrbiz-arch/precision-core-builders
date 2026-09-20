@@ -63,6 +63,12 @@ function getSupabase() {
 
 // ─── Action: Seed Demo Data ──────────────────────────────────────────────────
 
+/** Days-from-now helper, returned as an ISO timestamp (matches `timestamp`
+ * columns in drizzle/schema.ts — these are not `date`-only columns). */
+function daysFromNow(days: number): string {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 const seedDemoData: ActionHandler = async () => {
   const supabase = getSupabase();
 
@@ -70,7 +76,7 @@ const seedDemoData: ActionHandler = async () => {
   const { data: existing, error: existingErr } = await supabase
     .from("projects")
     .select("id")
-    .eq("name", "Demo: Miller Residence Remodel")
+    .eq("name", "Demo: Canby Farmhouse Remodel")
     .limit(1);
   throwIfActionError("seed-demo-data", "project lookup", existingErr);
 
@@ -86,10 +92,13 @@ const seedDemoData: ActionHandler = async () => {
   const { data: client, error: clientErr } = await supabase
     .from("clients")
     .insert({
-      name: "Demo Client - The Millers",
+      name: "Demo Client - The Reynolds",
       email: "demo@example.com",
       phone: "541-555-0100",
-      address: "123 Demo Lane, Eugene, OR 97401",
+      address: "482 River Rd",
+      city: "Canby",
+      state: "OR",
+      zip: "97013",
       notes: "Demo client for testing the platform",
     })
     .select()
@@ -97,68 +106,260 @@ const seedDemoData: ActionHandler = async () => {
 
   if (clientErr) throw new Error(`Client insert failed: ${clientErr.message}`);
 
-  // Create demo project
+  // Create demo project — status "in_progress" so it is visible to reporting
+  // flows (FieldReportNew.tsx only excludes "complete" projects).
   const { data: project, error: projErr } = await supabase
     .from("projects")
     .insert({
-      name: "Demo: Miller Residence Remodel",
+      name: "Demo: Canby Farmhouse Remodel",
       client_id: client.id,
       status: "in_progress",
-      description: "Kitchen and bathroom remodel with custom cabinetry",
-      address: "123 Demo Lane, Eugene, OR 97401",
-      start_date: new Date().toISOString().split("T")[0],
-      estimated_completion: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      budget: 75000,
+      project_type: "Kitchen & Bath Remodel",
+      description:
+        "Full kitchen and primary bath remodel with custom cabinetry and quartz counters.",
+      address: "482 River Rd",
+      city: "Canby",
+      state: "OR",
+      zip: "97013",
+      estimated_budget: "82500.00",
+      contracted_budget: "79000.00",
+      estimated_start_date: daysFromNow(-21),
+      estimated_end_date: daysFromNow(69),
     })
     .select()
     .single();
 
   if (projErr) throw new Error(`Project insert failed: ${projErr.message}`);
 
-  // Create demo field report
-  const { error: reportErr } = await supabase.from("field_reports").insert({
-    project_id: project.id,
-    report_date: new Date().toISOString().split("T")[0],
-    weather: "Partly cloudy, 62°F",
-    summary:
-      "Demo field report - Completed framing inspection, passed. Starting drywall tomorrow.",
-    hours_worked: 8,
-    crew_size: 3,
-    materials_used: "2x4 lumber, drywall sheets, screws",
-    issues: null,
-  });
+  // Create demo field reports
+  const { error: reportErr } = await supabase.from("field_reports").insert([
+    {
+      project_id: project.id,
+      report_date: daysFromNow(-14),
+      summary:
+        "Demolition of kitchen and primary bath complete. Framing inspection passed.",
+      tasks_completed: "Kitchen demo, bath demo, rough framing inspection",
+      materials_used: "2x4 lumber, disposal bin rental",
+      issues_flagged: null,
+      material_shortages: null,
+    },
+    {
+      project_id: project.id,
+      report_date: daysFromNow(-7),
+      summary:
+        "Rough electrical and plumbing roughed in. Drywall starts Monday pending inspection.",
+      tasks_completed: "Electrical rough-in, plumbing rough-in",
+      materials_used: "Romex wire, PEX tubing, junction boxes",
+      issues_flagged: "Inspector requested an added outlet near the island.",
+      material_shortages: null,
+    },
+    {
+      project_id: project.id,
+      report_date: daysFromNow(-2),
+      summary:
+        "Drywall hung and taped in kitchen. Cabinet delivery confirmed for next week.",
+      tasks_completed: "Drywall hang, first coat of mud",
+      materials_used: "Drywall sheets, joint compound, tape",
+      issues_flagged: null,
+      material_shortages: "Quartz countertop slab delayed at fabricator.",
+    },
+  ]);
 
   if (reportErr)
     throw new Error(`Field report insert failed: ${reportErr.message}`);
 
-  // Create demo materials
-  const { error: matErr } = await supabase.from("materials").insert([
-    {
+  // Create demo schedule items spanning several weeks
+  const { error: scheduleErr } = await supabase.from("schedule_items").insert(
+    [
+      {
+        title: "Demolition",
+        taskType: "other",
+        status: "complete",
+        plannedStart: -21,
+        plannedEnd: -18,
+      },
+      {
+        title: "Framing inspection",
+        taskType: "inspection",
+        status: "complete",
+        plannedStart: -18,
+        plannedEnd: -17,
+      },
+      {
+        title: "Electrical rough-in",
+        taskType: "electrical",
+        status: "complete",
+        plannedStart: -14,
+        plannedEnd: -10,
+      },
+      {
+        title: "Plumbing rough-in",
+        taskType: "plumbing",
+        status: "complete",
+        plannedStart: -14,
+        plannedEnd: -9,
+      },
+      {
+        title: "Insulation",
+        taskType: "insulation",
+        status: "complete",
+        plannedStart: -9,
+        plannedEnd: -7,
+      },
+      {
+        title: "Drywall hang & finish",
+        taskType: "drywall",
+        status: "in_progress",
+        plannedStart: -7,
+        plannedEnd: 3,
+      },
+      {
+        title: "Cabinetry install",
+        taskType: "cabinetry",
+        status: "pending",
+        plannedStart: 5,
+        plannedEnd: 12,
+      },
+      {
+        title: "Final paint & punch list",
+        taskType: "painting",
+        status: "pending",
+        plannedStart: 55,
+        plannedEnd: 68,
+      },
+    ].map((item, i) => ({
       project_id: project.id,
-      name: "Kitchen Cabinets - Custom Oak",
-      quantity: 12,
-      unit: "units",
-      unit_cost: 450,
-      status: "ordered",
-      vendor: "Oregon Cabinet Works",
-      expected_delivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-    },
-    {
-      project_id: project.id,
-      name: "Quartz Countertop",
-      quantity: 45,
-      unit: "sq ft",
-      unit_cost: 85,
-      status: "pending",
-      vendor: "Pacific Stone Supply",
-    },
-  ]);
+      title: item.title,
+      task_type: item.taskType,
+      status: item.status,
+      planned_start: daysFromNow(item.plannedStart),
+      planned_end: daysFromNow(item.plannedEnd),
+      duration_days: item.plannedEnd - item.plannedStart,
+      sort_order: i,
+    }))
+  );
+
+  if (scheduleErr)
+    throw new Error(`Schedule item insert failed: ${scheduleErr.message}`);
+
+  // Create demo materials — one flagged as a shortage
+  const { data: materials, error: matErr } = await supabase
+    .from("materials")
+    .insert([
+      {
+        project_id: project.id,
+        name: "Kitchen Cabinets - Custom Oak",
+        category: "Cabinetry",
+        unit: "units",
+        quantity_needed: "12.00",
+        unit_price_current: "450.00",
+        vendor_name: "Oregon Cabinet Works",
+        expected_delivery: daysFromNow(6),
+        is_shortage: false,
+      },
+      {
+        project_id: project.id,
+        name: "Quartz Countertop Slab",
+        category: "Countertops",
+        unit: "sq ft",
+        quantity_needed: "45.00",
+        unit_price_current: "85.00",
+        vendor_name: "Pacific Stone Supply",
+        is_shortage: true,
+        notes: "Fabricator delayed slab delivery; flagged in latest report.",
+      },
+      {
+        project_id: project.id,
+        name: "PEX Tubing",
+        category: "Plumbing",
+        unit: "ft",
+        quantity_needed: "200.00",
+        unit_price_current: "1.25",
+        vendor_name: "Pacific Plumbing Supply",
+        is_shortage: false,
+      },
+      {
+        project_id: project.id,
+        name: "Romex 12/2 Wire",
+        category: "Electrical",
+        unit: "ft",
+        quantity_needed: "500.00",
+        unit_price_current: "0.85",
+        vendor_name: "Eugene Electric Supply",
+        is_shortage: false,
+      },
+      {
+        project_id: project.id,
+        name: 'Drywall Sheets 1/2"',
+        category: "Drywall",
+        unit: "sheets",
+        quantity_needed: "60.00",
+        unit_price_current: "14.50",
+        vendor_name: "Pro Build Supply",
+        is_shortage: false,
+      },
+    ])
+    .select();
 
   if (matErr) throw new Error(`Materials insert failed: ${matErr.message}`);
+
+  // Create a demo estimate (mirrors the contracted budget)
+  const { error: estimateErr } = await supabase.from("estimates").insert({
+    project_id: project.id,
+    client_id: client.id,
+    square_footage: "1450.00",
+    project_type: "kitchen",
+    complexity: "medium",
+    estimated_low: "68000.00",
+    estimated_mid: "79000.00",
+    estimated_high: "92000.00",
+    labor_cost: "34000.00",
+    materials_cost: "38000.00",
+    permits_cost: "1800.00",
+    contingency: "5200.00",
+    sent_to_client: true,
+    approved_by_client: true,
+  });
+
+  if (estimateErr)
+    throw new Error(`Estimate insert failed: ${estimateErr.message}`);
+
+  // Create a demo purchase order for the shortage material — the line
+  // amounts are derived from that material's own quantity/price rather than
+  // duplicated as separate literals, so they can't drift out of sync.
+  const shortageMaterial = materials?.find(m => m.is_shortage);
+  const poQuantity = 45;
+  const poUnitPrice = 85;
+  const poLineTotal = (poQuantity * poUnitPrice).toFixed(2);
+
+  const { data: po, error: poErr } = await supabase
+    .from("purchase_orders")
+    .insert({
+      project_id: project.id,
+      po_number: "PO-DEMO-0001",
+      vendor_name: "Pacific Stone Supply",
+      status: "issued",
+      subtotal: poLineTotal,
+      notes: "Demo purchase order for the flagged quartz shortage.",
+    })
+    .select()
+    .single();
+
+  if (poErr) throw new Error(`Purchase order insert failed: ${poErr.message}`);
+
+  const { error: poItemErr } = await supabase
+    .from("purchase_order_items")
+    .insert({
+      purchase_order_id: po.id,
+      material_id: shortageMaterial?.id ?? null,
+      description: "Quartz Countertop Slab",
+      quantity: poQuantity.toFixed(2),
+      unit_price: poUnitPrice.toFixed(2),
+      line_total: poLineTotal,
+    });
+
+  if (poItemErr)
+    throw new Error(`Purchase order item insert failed: ${poItemErr.message}`);
 
   return {
     success: true,
