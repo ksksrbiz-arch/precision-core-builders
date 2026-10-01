@@ -58,6 +58,14 @@
   TAILWINDCSS_DISABLE_OXIDE = "1"
   NODE_ENV = "production"
 
+# Redirect only the default production hostname; deploy-preview, branch and
+# immutable deploy URLs must remain available for testing and rollbacks.
+[[redirects]]
+  from   = "https://precision-core.netlify.app/*"
+  to     = "https://precisioncorebuilders.com/:splat"
+  status = 301
+  force  = true
+
 # ── www → apex redirect ──────────────────────────────────────
 # robots.txt and sitemap.xml both assume precisioncorebuilders.com is the
 # sole canonical host, but this rule was never uncommented after the

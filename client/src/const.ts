@@ -10,7 +10,7 @@ export const SITE = {
   phoneHref: "tel:+15418525144",
   email: "erictadlock@precisioncorebuilders.com",
   emailHref: "mailto:erictadlock@precisioncorebuilders.com",
-  website: "https://precision-core.netlify.app",
+  website: "https://precisioncorebuilders.com",
   /** Production/canonical domain — used for all SEO metadata and JSON-LD. */
   url: "https://precisioncorebuilders.com",
   license: "CCB #246527",

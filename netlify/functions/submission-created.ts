@@ -22,6 +22,7 @@ import {
 } from "./_utils/rateLimiter";
 import { isOriginAllowed } from "./_utils/corsGuard";
 import deliverLead from "./_utils/leadDelivery";
+import { sendInquiryEmails } from "./_utils/inquiryEmail";
 
 /** Lead-capture `form-name`s this trigger acts on. Other forms are ignored. */
 const INQUIRY_FORM = "project-inquiry";
@@ -37,6 +38,12 @@ const HANDLED_FORMS = [
   "painting-inquiry",
   "roofing-inquiry",
   "custom-cabinets-inquiry",
+  "springfield-inquiry",
+  "coburg-inquiry",
+  "creswell-inquiry",
+  "cottage-grove-inquiry",
+  "junction-city-inquiry",
+  "florence-inquiry",
 ];
 
 type SubmissionPayload = {
@@ -226,6 +233,16 @@ export const handler: Handler = async event => {
     const projectType = (data.projectType || data.service)?.trim();
     if (!name && !projectType) {
       return { statusCode: 200, body: "skipped (empty)" };
+    }
+
+    // Email delivery is independent of CRM configuration and AI scoring.
+    // Stable submission IDs keep retries from sending duplicate notifications.
+    if (payload.id && formName && HANDLED_FORMS.includes(formName)) {
+      try {
+        await sendInquiryEmails(payload.id, data);
+      } catch (error) {
+        console.error("[submission-created] Email delivery failed:", error);
+      }
     }
 
     if (!db) {
