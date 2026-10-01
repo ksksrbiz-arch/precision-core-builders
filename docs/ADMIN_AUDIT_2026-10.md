@@ -149,7 +149,7 @@ These are deliberate omissions, not oversights.
    `scripts/setup-database.sh` loop picks it up automatically). Until then the
    AI Usage panel keeps showing "table not available".
 2. **Confirm your own account has a confirmed email.** Admin now requires
-   `email_confirmed_at`. Magic-link and dashboard "Auto Confirm" users are
+   `email_confirmed_at`. Dashboard-created and "Auto Confirm" users are
    confirmed; an account created with confirmation off would be treated as a
    plain user. If you're ever locked out: confirm the email in Supabase → Auth.
 3. No new environment variables. `RESEND_API_KEY` (already optional) now also
@@ -167,3 +167,28 @@ These are deliberate omissions, not oversights.
 - Re-selecting a PO's current status does nothing.
 - Portal clients can no longer call `projects.list`, `/api/search`, or
   `/api/voice-to-report`.
+
+## 6. Follow-up: login, loading screens, redirects, 404 (same PR)
+
+- **Login is password-only.** Magic link, the password-form toggle and Facebook
+  OAuth are gone from `/auth/login`; `/auth/callback`, `/callback` and
+  `/auth/resend` (pages deleted) now 302 to the login page. Sign-in logic lives
+  in `client/src/lib/signIn.ts` (tested). `/dev-login` is unchanged — it is
+  gated by `VITE_DEV_MODE` and is a developer tool, not part of this page.
+- **No bare first render.** `client/index.html` paints a branded splash (logo +
+  gold bar, inline critical CSS, `<noscript>` message, "still loading" note
+  after 12 s) inside `#root`. `<BrandLoader />` has the same markup and replaces
+  it for every Suspense/auth loading state, so there is no flash between them.
+  The `ErrorBoundary` fallback is branded too.
+- **Redirects were dead.** Netlify reads `_redirects` before `netlify.toml`, and
+  the `/* /index.html 200` line there shadowed every toml rule: legacy
+  `/expertise/*` 301s and the www→apex redirect never fired, and every unknown
+  URL answered 200. All rules now come from `shared/siteRoutes.ts` →
+  generated `client/public/_redirects` (host canonicalisation → API → legacy →
+  explicit SPA routes → `/* /404.html 404`). `netlify.toml` has no redirects.
+- **Real 404s.** Static branded `client/public/404.html` served with status 404;
+  in-app `NotFound` suggestions now use the shared route list. The sitemap uses
+  the same list (two blog posts that were missing from it are now included).
+- **Verify after deploy:** `curl -sI https://precisioncorebuilders.com/nope`
+  → 404; `/expertise/roofing` → 301 `/services/roofing`;
+  `https://www.…/about` → 301 to the apex.

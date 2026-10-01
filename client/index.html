@@ -187,6 +187,110 @@
     </script>
 
     <!--
+      Branded loading screen — critical CSS, inlined so it paints before any
+      bundle or stylesheet arrives. These .pcb-loader* rules are shared with
+      the <BrandLoader /> React component (client/src/components/BrandLoader.tsx),
+      whose markup mirrors the static splash inside #root below, so the hand-off
+      from splash to React is seamless. Colours are the fixed brand palette
+      (not theme tokens) because this renders before the theme exists.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #0c0a08;
+      }
+      .pcb-loader {
+        position: relative;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 24px;
+        background: #0c0a08;
+        color: #ede6d9;
+        font-family:
+          "Barlow",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      .pcb-loader__logo {
+        display: block;
+        width: 149px;
+        height: 56px;
+      }
+      .pcb-loader__bar {
+        position: relative;
+        width: 148px;
+        height: 2px;
+        overflow: hidden;
+        background: rgba(200, 168, 75, 0.18);
+      }
+      .pcb-loader__bar > span {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 40%;
+        background: #c8a84b;
+        animation: pcb-loader-slide 1.4s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+      }
+      .pcb-loader__sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .pcb-loader__note {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 12vh;
+        padding: 0 24px;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #a89f8d;
+      }
+      .pcb-loader__note a {
+        color: #c8a84b;
+      }
+      @keyframes pcb-loader-slide {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(250%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pcb-loader__bar > span {
+          animation: none;
+          width: 100%;
+          opacity: 0.55;
+        }
+      }
+    </style>
+    <noscript>
+      <style>
+        .pcb-loader__bar {
+          display: none;
+        }
+      </style>
+    </noscript>
+
+    <!--
       Preload the LCP element: first hero slideshow image.
       This lets the browser fetch it in parallel with JS, dramatically
       reducing Largest Contentful Paint time.
@@ -245,7 +349,49 @@
     ></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        Static splash — painted by the HTML itself, replaced by React on first
+        render. Mirrors <BrandLoader /> exactly (see the style block above).
+      -->
+      <div class="pcb-loader" role="status" aria-live="polite">
+        <img
+          class="pcb-loader__logo"
+          src="/logo.svg"
+          alt="Precision Core Builders"
+          width="149"
+          height="56"
+        />
+        <div class="pcb-loader__bar" aria-hidden="true"><span></span></div>
+        <span class="pcb-loader__sr">Loading…</span>
+        <noscript>
+          <p class="pcb-loader__note">
+            Precision Core Builders needs JavaScript to run. Please enable it,
+            or call us at <a href="tel:+15418525144">541-852-5144</a>.
+          </p>
+        </noscript>
+        <p class="pcb-loader__note" id="pcb-slow" hidden>
+          Still loading — this is taking longer than usual.
+          <a
+            href=""
+            onclick="
+              location.reload();
+              return false;
+            "
+            >Reload</a
+          >
+          or call <a href="tel:+15418525144">541-852-5144</a>.
+        </p>
+      </div>
+    </div>
+    <script>
+      // If the app bundle never replaces the splash (blocked script, stale
+      // deploy, flaky network), say so after 12s instead of spinning forever.
+      setTimeout(function () {
+        var note = document.getElementById("pcb-slow");
+        if (note) note.hidden = false;
+      }, 12000);
+    </script>
 
     <!--
       Netlify Forms registration. Netlify's build-time HTML scanner only

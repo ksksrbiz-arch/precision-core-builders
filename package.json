@@ -5,8 +5,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
-    "build": "tsx scripts/generate-sitemap.ts && vite build && tsx scripts/stamp-service-worker.ts",
+    "build": "tsx scripts/generate-sitemap.ts && tsx scripts/generate-redirects.ts && vite build && tsx scripts/stamp-service-worker.ts",
     "sitemap": "tsx scripts/generate-sitemap.ts",
+    "redirects": "tsx scripts/generate-redirects.ts",
     "start": "echo \"Production runs on Netlify Functions \u2014 use netlify dev locally\"",
     "check": "tsc --noEmit",
     "format": "prettier --write .",

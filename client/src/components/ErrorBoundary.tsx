@@ -1,5 +1,6 @@
+import { ASSETS, SITE } from "@/const";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -25,22 +26,34 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       const showDetails = import.meta.env.DEV;
       return (
-        <div className="flex items-center justify-center min-h-screen p-8 bg-background">
+        <div
+          role="alert"
+          className="flex items-center justify-center min-h-screen p-8 bg-background"
+        >
           <div className="flex flex-col items-center w-full max-w-2xl p-8 text-center">
-            <AlertTriangle
-              size={48}
-              className="text-destructive mb-6 flex-shrink-0"
+            <img
+              src={ASSETS.logo}
+              alt="Precision Core Builders"
+              width={149}
+              height={56}
+              className="h-14 w-auto mb-8"
+            />
+            <span
+              className="heading-bar heading-bar-center mb-6"
+              aria-hidden="true"
             />
 
-            <h2 className="text-xl mb-2">Something went wrong.</h2>
+            <h2
+              className="text-2xl mb-3 text-foreground"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Something went wrong.
+            </h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-md">
               We hit an unexpected error. Reloading the page usually fixes it.
               If the problem persists, please contact us at{" "}
-              <a
-                href="tel:+15418525144"
-                className="text-primary hover:underline"
-              >
-                541-852-5144
+              <a href={SITE.phoneHref} className="text-primary hover:underline">
+                {SITE.phone}
               </a>
               .
             </p>

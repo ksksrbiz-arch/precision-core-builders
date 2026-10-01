@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
+import { BrandLoader } from "./components/BrandLoader";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./components/ToastProvider";
 import { MobileBottomNav } from "./components/MobileBottomNav";
@@ -94,8 +95,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Auth pages
 const AuthLogin = lazy(() => import("./pages/auth/Login"));
-const AuthCallback = lazy(() => import("./pages/auth/Callback"));
-const ResendLink = lazy(() => import("./pages/auth/ResendLink"));
 const DevLogin = lazy(() => import("./pages/auth/DevLogin"));
 
 // Admin pages
@@ -193,21 +192,10 @@ const LazyFlorence = lazy(() =>
   import("./pages/locations/index").then(m => ({ default: m.Florence }))
 );
 
-function PageLoader() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div
-        className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
-        aria-label="Loading"
-      />
-    </div>
-  );
-}
-
 function Router() {
   const blueprintEnabled = import.meta.env.VITE_FEATURE_BLUEPRINT === "true";
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense fallback={<BrandLoader />}>
       <PageTransition>
         <Switch>
           {/* Public */}
@@ -249,9 +237,6 @@ function Router() {
 
           {/* Auth */}
           <Route path="/auth/login" component={withBoundary(AuthLogin)} />
-          <Route path="/auth/callback" component={withBoundary(AuthCallback)} />
-          <Route path="/callback" component={withBoundary(AuthCallback)} />
-          <Route path="/auth/resend" component={withBoundary(ResendLink)} />
           <Route path="/dev-login" component={withBoundary(DevLogin)} />
 
           {/* Admin — all routes require role=admin via AdminRoute guard.

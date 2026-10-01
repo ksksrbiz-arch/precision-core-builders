@@ -10,62 +10,18 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { PROJECTS } from "../client/src/data/projects";
+import { CANONICAL_HOST, PUBLIC_ROUTES } from "../shared/siteRoutes";
 
 // Production domain (www 301-redirects to the apex). Priority scheme:
 // home 1.0 · estimator/contact 0.9 · services/portfolio/about/faq 0.8 ·
 // individual project pages 0.7. <lastmod> is the build date.
-const BASE = "https://precisioncorebuilders.com";
+const BASE = `https://${CANONICAL_HOST}`;
 
 type Entry = { path: string; priority: number; changefreq: string };
 
-const STATIC_ROUTES: Entry[] = [
-  { path: "/", priority: 1.0, changefreq: "weekly" },
-  { path: "/about", priority: 0.8, changefreq: "monthly" },
-  { path: "/services", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/residential", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/remodels", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/new-construction", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/restoration", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/outdoor", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/painting", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/roofing", priority: 0.8, changefreq: "monthly" },
-  { path: "/services/cabinets", priority: 0.8, changefreq: "monthly" },
-  { path: "/service-areas/springfield", priority: 0.7, changefreq: "monthly" },
-  { path: "/service-areas/coburg", priority: 0.7, changefreq: "monthly" },
-  { path: "/service-areas/creswell", priority: 0.7, changefreq: "monthly" },
-  {
-    path: "/service-areas/cottage-grove",
-    priority: 0.7,
-    changefreq: "monthly",
-  },
-  {
-    path: "/service-areas/junction-city",
-    priority: 0.7,
-    changefreq: "monthly",
-  },
-  { path: "/service-areas/florence", priority: 0.7, changefreq: "monthly" },
-  { path: "/portfolio", priority: 0.8, changefreq: "weekly" },
-  { path: "/showroom", priority: 0.7, changefreq: "weekly" },
-  { path: "/blog", priority: 0.7, changefreq: "weekly" },
-  {
-    path: "/blog/kitchen-remodel-cost-eugene-oregon",
-    priority: 0.7,
-    changefreq: "monthly",
-  },
-  {
-    path: "/blog/verify-oregon-ccb-license",
-    priority: 0.7,
-    changefreq: "monthly",
-  },
-  {
-    path: "/blog/tadlock-residence-case-study",
-    priority: 0.6,
-    changefreq: "monthly",
-  },
-  { path: "/estimator", priority: 0.9, changefreq: "monthly" },
-  { path: "/faq", priority: 0.8, changefreq: "monthly" },
-  { path: "/contact", priority: 0.9, changefreq: "monthly" },
-];
+// Static pages come from shared/siteRoutes.ts, the same list that drives
+// client/public/_redirects, so the sitemap and the redirects cannot drift.
+const STATIC_ROUTES: readonly Entry[] = PUBLIC_ROUTES;
 
 const PROJECT_ROUTES: Entry[] = PROJECTS.map(p => ({
   path: `/portfolio/${p.slug}`,

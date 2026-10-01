@@ -5,17 +5,9 @@
  * - ClientRoute: alias for ProtectedRoute (any auth user including admin)
  */
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { BrandLoader } from "@/components/BrandLoader";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-
-function AuthLoader() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Loader2 className="h-6 w-6 text-primary animate-spin" />
-    </div>
-  );
-}
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { loading, isAuthenticated } = useAuth();
@@ -27,7 +19,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }, [loading, isAuthenticated, setLocation]);
 
-  if (loading) return <AuthLoader />;
+  if (loading) return <BrandLoader label="Checking your session" />;
   if (!isAuthenticated) return null;
   return <>{children}</>;
 }
@@ -46,7 +38,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     }
   }, [loading, isAuthenticated, isAdmin, setLocation]);
 
-  if (loading) return <AuthLoader />;
+  if (loading) return <BrandLoader label="Checking your session" />;
   if (!isAuthenticated || !isAdmin) return null;
   return <>{children}</>;
 }

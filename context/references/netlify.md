@@ -57,3 +57,11 @@ These functions are **implemented** in `netlify/functions/` (20+ total). A repre
 | `blueprint-proxy`          | Authenticated proxy to the Blueprint API (tokens server-side only)               |
 
 ---
+
+## Redirects and 404
+
+All redirects live in the **generated** `client/public/_redirects` (Netlify
+reads it before `netlify.toml`, so toml redirects would be shadowed — keep none
+there). Source of truth: `shared/siteRoutes.ts`; regenerate with `pnpm
+redirects` (also in `pnpm build`). Unknown URLs serve `client/public/404.html`
+with a real 404 status. `shared/siteRoutes.test.ts` guards drift.
