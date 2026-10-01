@@ -1,5 +1,6 @@
 import { db } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { assertProjectAccess } from "../_core/access";
 import { logAdminAction } from "../_core/auditLog";
 import {
   createProject,
@@ -27,29 +28,68 @@ const ProjectStatusEnum = z.enum([
   "on_hold",
 ]);
 
-const CreateProjectInput = z.object({
+/**
+ * Fields shared by create and update. NO defaults live here on purpose: Zod 4
+ * applies `.default()` values even inside `.partial()`, so deriving the update
+ * schema from a default-bearing one made every update silently write
+ * `status: "lead"`, `state: "OR"` and `clientPortalEnabled: true` — e.g.
+ * renaming an in-progress project reset it to "lead" and re-enabled a client
+ * portal Eric had switched off. Defaults are applied to create only.
+ */
+const ProjectFields = z.object({
   clientId: z.number().int().positive(),
   name: z.string().min(1).max(300),
   startDate: z.string().datetime().optional(),
   budget: z.number().positive().optional(),
   description: z.string().optional(),
-  status: ProjectStatusEnum.optional().default("lead"),
+  status: ProjectStatusEnum.optional(),
   projectType: z.string().max(100).optional(),
   address: z.string().optional(),
   city: z.string().max(100).optional(),
-  state: z.string().max(50).optional().default("OR"),
+  state: z.string().max(50).optional(),
   zip: z.string().max(10).optional(),
   estimatedBudget: z.number().positive().optional(),
   contractedBudget: z.number().positive().optional(),
   estimatedStartDate: z.string().datetime().optional(),
   estimatedEndDate: z.string().datetime().optional(),
-  clientPortalEnabled: z.boolean().optional().default(true),
+  clientPortalEnabled: z.boolean().optional(),
   siteCamUrl: z.string().url().optional(),
   permitNumbers: z.string().optional(),
 });
 
+const CreateProjectInput = ProjectFields.extend({
+  status: ProjectStatusEnum.optional().default("lead"),
+  state: z.string().max(50).optional().default("OR"),
+  clientPortalEnabled: z.boolean().optional().default(true),
+});
+
+/**
+ * Update: every field optional (`undefined` = leave unchanged). Fields a user
+ * can legitimately blank out are also `.nullable()` (`null` = set the column
+ * NULL), otherwise an edit form could never clear a budget, date, address, etc.
+ */
+const UpdateProjectInput = z
+  .object({ id: z.number().int().positive() })
+  .merge(ProjectFields.partial())
+  .extend({
+    description: z.string().nullable().optional(),
+    projectType: z.string().max(100).nullable().optional(),
+    address: z.string().nullable().optional(),
+    city: z.string().max(100).nullable().optional(),
+    zip: z.string().max(10).nullable().optional(),
+    estimatedBudget: z.number().positive().nullable().optional(),
+    contractedBudget: z.number().positive().nullable().optional(),
+    estimatedStartDate: z.string().datetime().nullable().optional(),
+    estimatedEndDate: z.string().datetime().nullable().optional(),
+    siteCamUrl: z.string().url().nullable().optional(),
+    permitNumbers: z.string().nullable().optional(),
+  });
+
 export const projectsRouter = router({
-  list: protectedProcedure
+  // Admin-only. This returns every project with its client's name/email/phone,
+  // and used to be protectedProcedure — so any signed-in portal client could
+  // list the whole book of business. Portal clients use `myProject`.
+  list: adminProcedure
     .input(
       z
         .object({
@@ -78,17 +118,11 @@ export const projectsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input, ctx }) => {
-      const data = await getProjectById(input.id);
-      // Clients can only view their own projects
-      if (ctx.user?.role !== "admin") {
-        if (
-          data.clients?.user_id !== ctx.user?.id ||
-          !data.client_portal_enabled
-        ) {
-          throw new Error("Unauthorized");
-        }
-      }
-      return data;
+      // Admins pass unconditionally; a portal client only gets their own,
+      // portal-enabled project (FORBIDDEN otherwise, without leaking whether
+      // the id exists).
+      const owned = await assertProjectAccess(ctx, input.id);
+      return owned ?? (await getProjectById(input.id));
     }),
 
   create: adminProcedure
@@ -121,14 +155,14 @@ export const projectsRouter = router({
     }),
 
   update: adminProcedure
-    .input(
-      z
-        .object({ id: z.number().int().positive() })
-        .merge(CreateProjectInput.partial())
-    )
+    .input(UpdateProjectInput)
     .mutation(async ({ input, ctx }) => {
       const {
         id,
+        // `startDate`/`budget` are accepted for backwards compatibility but map
+        // to no column; spreading them into the patch made Postgres reject it.
+        startDate: _startDate,
+        budget: _budget,
         clientId,
         projectType,
         estimatedBudget,

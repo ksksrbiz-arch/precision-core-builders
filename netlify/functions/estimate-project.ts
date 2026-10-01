@@ -44,8 +44,11 @@ const estimateRequestSchema = z.object({
   materials: z.array(z.string().trim().max(100)).max(30).optional(),
   location: z.string().trim().max(200).optional(),
   additionalNotes: z.string().trim().max(2_000).optional(),
-  projectId: z.string().uuid().optional(),
-  clientId: z.string().uuid().optional(),
+  // estimates.project_id / client_id are integer FKs (serial ids). These used to
+  // be validated as UUIDs, so any persist attempt failed at the database and the
+  // error was swallowed. Only an authenticated admin may persist (see below).
+  projectId: z.coerce.number().int().positive().optional(),
+  clientId: z.coerce.number().int().positive().optional(),
 });
 
 /**
@@ -124,6 +127,7 @@ export const handler = withGuards(
     const ip = getClientIp(event.headers);
     let limitKey = `estimate-anon:${ip}`;
     let maxRequests = 10;
+    let isAdmin = false;
 
     const authHeader = event.headers["authorization"];
     if (authHeader?.startsWith("Bearer ")) {
@@ -131,6 +135,7 @@ export const handler = withGuards(
       if (authResult.ok) {
         limitKey = `estimate-user:${authResult.user.id}`;
         maxRequests = 30;
+        isAdmin = authResult.user.role === "admin";
       }
     }
 
@@ -284,10 +289,14 @@ export const handler = withGuards(
       }
 
       // ── 4. Persist ──────────────────────────────────────────────────────
+      // Writing a row through the service-role client is an admin action. This
+      // endpoint is also the PUBLIC estimator (auth: "none"), so an anonymous
+      // caller who supplied a projectId/clientId used to be able to attach
+      // estimates to any project or client and read the saved row back.
       let savedEstimate = null;
       const db = getSupabaseAdmin();
-      if (db && (projectId || clientId)) {
-        const { data } = await db
+      if (db && isAdmin && (projectId || clientId)) {
+        const { data, error: insertError } = await db
           .from("estimates")
           .insert({
             project_id: projectId,
@@ -312,6 +321,9 @@ export const handler = withGuards(
           })
           .select()
           .single();
+        if (insertError) {
+          console.error("[estimate-project] persist failed:", insertError);
+        }
         savedEstimate = data;
       }
 

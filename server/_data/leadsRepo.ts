@@ -19,7 +19,7 @@ export type LeadInsert = {
   reasoning?: string;
   suggested_action?: string;
   estimated_value: number | null;
-  scored_by: string;
+  scored_by: string | null;
 };
 
 export const leadsRepo = {

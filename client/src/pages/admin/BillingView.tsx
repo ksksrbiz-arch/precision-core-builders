@@ -5,6 +5,7 @@
  * page reloads even when Stripe is not yet configured. On mount the view also
  * attempts to list recent invoices from Stripe and merges them with the cache.
  */
+import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
@@ -364,6 +365,9 @@ export default function BillingView() {
         amountCents,
         description,
         projectName: selectedProjectData?.name,
+        // Stamped into the Stripe invoice metadata so the webhook can post the
+        // payment to this project's ledger when the client pays.
+        projectId: selectedProject ?? undefined,
         clientEmail: clientEmail || undefined,
         clientName: clientName || undefined,
       };
@@ -402,22 +406,16 @@ export default function BillingView() {
       });
 
       // Fire payment_received / invoice sent event via n8n-webhook
-      fetch("/api/n8n-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "milestone_complete",
-          payload: {
-            projectId: selectedProject,
-            projectName: selectedProjectData?.name,
-            milestoneLabel: description,
-            amountDollars: amountCents / 100,
-            clientEmail: clientEmail || undefined,
-            type: mode,
-          },
-        }),
-      }).catch(() => {
-        // Non-fatal
+      relayAdminEvent({
+        event: "milestone_complete",
+        payload: {
+          projectId: selectedProject,
+          projectName: selectedProjectData?.name,
+          milestoneLabel: description,
+          amountDollars: amountCents / 100,
+          clientEmail: clientEmail || undefined,
+          type: mode,
+        },
       });
 
       addToast({

@@ -65,7 +65,10 @@ function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
   };
 }
 
-const admin = () => appRouter.createCaller(ctx("admin-1", "admin"));
+const ADMIN_UUID = "3f2b8c1e-5d4a-4b7e-9a10-0c2d3e4f5a6b";
+const admin = () => appRouter.createCaller(ctx(ADMIN_UUID, "admin"));
+// Shared admin session token => synthetic, non-UUID id.
+const sharedAdmin = () => appRouter.createCaller(ctx("admin", "admin"));
 
 const validLead = {
   name: "Jane Contractor",
@@ -155,7 +158,7 @@ describe("Leads Router — repo delegation", () => {
       reasoning: "High budget, clear timeline.",
       suggested_action: "Call within 24h.",
       estimated_value: 62000,
-      scored_by: "admin-1",
+      scored_by: ADMIN_UUID,
     });
   });
 
@@ -166,7 +169,7 @@ describe("Leads Router — repo delegation", () => {
     expect(createMock).toHaveBeenCalledTimes(1);
     expect(createMock.mock.calls[0][0]).toMatchObject({
       estimated_value: null,
-      scored_by: "admin-1",
+      scored_by: ADMIN_UUID,
     });
   });
 

@@ -13,6 +13,7 @@ import {
   updateMaterial,
 } from "../_data/materialsRepo";
 import { appendLedgerEntry } from "../_data/ledgerRepo";
+import { authorUuid } from "../_core/identity";
 import { z } from "zod";
 
 const MaterialInput = z.object({
@@ -39,6 +40,34 @@ const MaterialInput = z.object({
   phaseNeeded: z.string().max(100).optional(),
   notes: z.string().optional(),
 });
+
+/**
+ * Update: `undefined` = leave unchanged, `null` = clear. Quantities/prices and
+ * free-text columns are clearable so the edit form can blank them; a material
+ * always keeps a name and (when set) its project.
+ */
+const MaterialUpdateInput = z
+  .object({ id: z.number().int().positive() })
+  .merge(MaterialInput.partial())
+  .extend({
+    description: z.string().nullable().optional(),
+    category: z.string().max(100).nullable().optional(),
+    unit: z.string().max(50).nullable().optional(),
+    quantityNeeded: z.number().positive().nullable().optional(),
+    quantityOrdered: z.number().nonnegative().nullable().optional(),
+    quantityReceived: z.number().nonnegative().nullable().optional(),
+    unitPriceCurrent: z.number().positive().nullable().optional(),
+    unitPriceBudgeted: z.number().positive().nullable().optional(),
+    vendorName: z.string().max(200).nullable().optional(),
+    vendorSku: z.string().max(100).nullable().optional(),
+    vendorUrl: z.string().url().nullable().optional(),
+    poNumber: z.string().max(100).nullable().optional(),
+    orderedAt: z.string().datetime().nullable().optional(),
+    expectedDelivery: z.string().datetime().nullable().optional(),
+    receivedAt: z.string().datetime().nullable().optional(),
+    phaseNeeded: z.string().max(100).nullable().optional(),
+    notes: z.string().nullable().optional(),
+  });
 
 export const materialsRouter = router({
   // Admin-only: exposes internal pricing (unit_price_current /
@@ -98,7 +127,7 @@ export const materialsRouter = router({
 
       // Field-report → materials push (or any bulk shortage import) shows on ledger.
       try {
-        const authorId = ctx.user?.id;
+        const authorId = authorUuid(ctx.user);
         const byProject = new Map<number, string[]>();
         for (const item of input.items) {
           if (!item.projectId) continue;
@@ -106,27 +135,25 @@ export const materialsRouter = router({
           list.push(item.name);
           byProject.set(item.projectId, list);
         }
-        if (authorId) {
-          for (const [projectId, names] of byProject) {
-            const fromField = input.items.some(
-              i =>
-                i.projectId === projectId &&
-                typeof i.notes === "string" &&
-                i.notes.toLowerCase().includes("field report")
-            );
-            await appendLedgerEntry({
-              projectId,
-              authorId,
-              entryType: "note",
-              title: fromField
-                ? `Field shortages synced (${names.length})`
-                : `Materials imported (${names.length})`,
-              description:
-                names.slice(0, 12).join(", ") +
-                (names.length > 12 ? ` (+${names.length - 12} more)` : ""),
-              visibleToClient: true,
-            });
-          }
+        for (const [projectId, names] of byProject) {
+          const fromField = input.items.some(
+            i =>
+              i.projectId === projectId &&
+              typeof i.notes === "string" &&
+              i.notes.toLowerCase().includes("field report")
+          );
+          await appendLedgerEntry({
+            projectId,
+            authorId,
+            entryType: "note",
+            title: fromField
+              ? `Field shortages synced (${names.length})`
+              : `Materials imported (${names.length})`,
+            description:
+              names.slice(0, 12).join(", ") +
+              (names.length > 12 ? ` (+${names.length - 12} more)` : ""),
+            visibleToClient: true,
+          });
         }
       } catch (err) {
         console.warn("[ledger] materials createMany append failed:", err);
@@ -136,11 +163,7 @@ export const materialsRouter = router({
     }),
 
   update: adminProcedure
-    .input(
-      z
-        .object({ id: z.number().int().positive() })
-        .merge(MaterialInput.partial())
-    )
+    .input(MaterialUpdateInput)
     .mutation(async ({ input }) => {
       const {
         id,
@@ -168,8 +191,16 @@ export const materialsRouter = router({
       let shortagePatch: { is_shortage?: boolean } = {};
       if (quantityNeeded !== undefined || quantityOrdered !== undefined) {
         const current = await getMaterialQuantities(id);
-        const finalNeeded = quantityNeeded ?? current?.quantity_needed;
-        const finalOrdered = quantityOrdered ?? current?.quantity_ordered ?? 0;
+        // `null` means "cleared", so only fall back to the stored value when the
+        // caller didn't touch the field at all (`??` would resurrect it).
+        const finalNeeded =
+          quantityNeeded !== undefined
+            ? quantityNeeded
+            : current?.quantity_needed;
+        const finalOrdered =
+          (quantityOrdered !== undefined
+            ? quantityOrdered
+            : current?.quantity_ordered) ?? 0;
         shortagePatch = {
           is_shortage: computeIsShortage(finalNeeded, finalOrdered),
         };
@@ -204,6 +235,10 @@ export const materialsRouter = router({
         ...((primaryFromIds ?? vendorId) !== undefined && {
           vendor_id: primaryFromIds ?? vendorId,
         }),
+        // An emptied vendor set also clears the primary vendor link.
+        ...(vendorIds !== undefined &&
+          vendorIds.length === 0 &&
+          vendorId === undefined && { vendor_id: null }),
         ...(vendorName !== undefined && { vendor_name: vendorName }),
         ...(vendorSku !== undefined && { vendor_sku: vendorSku }),
         ...(vendorUrl !== undefined && { vendor_url: vendorUrl }),

@@ -24,9 +24,8 @@ import { useLocation } from "wouter";
 type Role = "admin" | "user";
 
 function roleFromMetadata(user: User): Role {
-  return (user.app_metadata?.role ?? user.user_metadata?.role) === "admin"
-    ? "admin"
-    : "user";
+  // Only app_metadata is tamper-proof; user_metadata is user-writable.
+  return user.app_metadata?.role === "admin" ? "admin" : "user";
 }
 
 async function resolveRoleFromSyncApi(

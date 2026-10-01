@@ -60,8 +60,14 @@ export const handler = withGuards(
       return error(400, "Authenticated user has no email");
     }
 
+    // An allowlisted address only earns admin once Supabase has confirmed the
+    // caller actually controls it — otherwise anyone could claim an admin
+    // address at sign-up and be promoted on the strength of the string alone.
+    const emailConfirmed = Boolean(
+      authUser.email_confirmed_at ?? authUser.confirmed_at
+    );
     const adminEmails = await getAdminEmailSetWithDb(supabase);
-    const isAdminEmail = adminEmails.has(email);
+    const isAdminEmail = adminEmails.has(email) && emailConfirmed;
 
     // 2. Look up any existing public.users row so we don't downgrade admins
     //    who aren't currently on the allowlist (e.g. legacy accounts).
@@ -117,10 +123,10 @@ export const handler = withGuards(
     // Also persist role in Supabase Auth metadata so the JWT carries the
     // role even when the client-side `public.users` read fails (e.g. RLS
     // not yet applied, table latency, or network hiccup).  `app_metadata`
-    // is preferred because only the service role can write to it — the
-    // user cannot escalate their own privileges.  We also mirror the value
-    // into `user_metadata` so legacy fallback paths that read it continue
-    // to work.
+    // is the authoritative copy because only the service role can write to
+    // it — the user cannot escalate their own privileges.  `user_metadata`
+    // is mirrored for display only; no server or client code grants a role
+    // from it (it is user-writable).
     try {
       await supabase.auth.admin.updateUserById(authUser.id, {
         app_metadata: { role: nextRole },

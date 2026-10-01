@@ -12,12 +12,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const listProjects = vi.fn();
 const getProjectById = vi.fn();
+const getCostAdjustmentTotals = vi.fn();
+const getProjectActualCost = vi.fn();
 const listMaterials = vi.fn();
 const listScheduleItems = vi.fn();
 
 vi.mock("../../_data/projectsRepo", () => ({
   listProjects: (...a: unknown[]) => listProjects(...a),
   getProjectById: (...a: unknown[]) => getProjectById(...a),
+  getCostAdjustmentTotals: (...a: unknown[]) => getCostAdjustmentTotals(...a),
+  getProjectActualCost: (...a: unknown[]) => getProjectActualCost(...a),
 }));
 vi.mock("../../_data/materialsRepo", () => ({
   listMaterials: (...a: unknown[]) => listMaterials(...a),
@@ -45,6 +49,10 @@ const INTERNAL_ONLY = [
 beforeEach(() => {
   listProjects.mockReset();
   getProjectById.mockReset();
+  getCostAdjustmentTotals.mockReset();
+  getCostAdjustmentTotals.mockResolvedValue(new Map());
+  getProjectActualCost.mockReset();
+  getProjectActualCost.mockResolvedValue(0);
   listMaterials.mockReset();
   listScheduleItems.mockReset();
 });
@@ -198,8 +206,11 @@ describe("internal tools", () => {
       name: "Tadlock Residence",
       status: "in_progress",
       contracted_budget: 500000,
-      actual_cost: 120000,
-      progress: 24,
+      // Stale column — must be ignored in favour of the ledger total below.
+      actual_cost: 1,
+      completion_percent: 24,
+      estimated_start_date: "2026-03-01T00:00:00",
+      estimated_end_date: "2026-09-01T00:00:00",
       // Fields that must not reach the model:
       client_secret_notes: "do not leak",
       clients: { email: "client@example.com", user_id: "uuid" },
@@ -211,6 +222,57 @@ describe("internal tools", () => {
     expect(result.name).toBe("Tadlock Residence");
     expect(result).not.toHaveProperty("client_secret_notes");
     expect(result).not.toHaveProperty("clients");
+  });
+
+  it("derives actual cost from the ledger and reads the real columns", async () => {
+    getProjectById.mockResolvedValue({
+      id: 7,
+      name: "Tadlock Residence",
+      status: "in_progress",
+      contracted_budget: 500000,
+      actual_cost: 1,
+      completion_percent: 24,
+      estimated_start_date: "2026-03-01T00:00:00",
+      estimated_end_date: "2026-09-01T00:00:00",
+    });
+    getProjectActualCost.mockResolvedValue(120000);
+    const result = (await executeTool("internal", "project_detail", {
+      projectId: 7,
+    })) as Record<string, unknown>;
+
+    expect(getProjectActualCost).toHaveBeenCalledWith(7);
+    expect(result.actual_cost).toBe(120000);
+    expect(result.completion_percent).toBe(24);
+    expect(result.estimated_start_date).toBe("2026-03-01T00:00:00");
+    expect(result.estimated_end_date).toBe("2026-09-01T00:00:00");
+    // The old (nonexistent) column names must be gone.
+    expect(result).not.toHaveProperty("progress");
+    expect(result).not.toHaveProperty("start_date");
+    expect(result).not.toHaveProperty("target_end_date");
+  });
+
+  it("find_projects reports ledger-derived actual cost per project", async () => {
+    listProjects.mockResolvedValue({
+      data: [
+        { id: 1, name: "A", actual_cost: 0, completion_percent: 10 },
+        { id: 2, name: "B", actual_cost: 0, completion_percent: 50 },
+      ],
+      total: 2,
+    });
+    getCostAdjustmentTotals.mockResolvedValue(new Map([[2, 9500]]));
+    const result = (await executeTool("internal", "find_projects", {})) as {
+      projects: Array<{ id: number; actual_cost: number }>;
+    };
+    expect(result.projects.find(p => p.id === 1)?.actual_cost).toBe(0);
+    expect(result.projects.find(p => p.id === 2)?.actual_cost).toBe(9500);
+  });
+
+  it("treats a rejected lookup (no such row) as 'not found'", async () => {
+    getProjectById.mockRejectedValue(new Error("no rows returned"));
+    const result = (await executeTool("internal", "project_detail", {
+      projectId: 404,
+    })) as { error?: string };
+    expect(result.error).toMatch(/No project with id 404/);
   });
 
   it("reports a missing project rather than inventing one", async () => {

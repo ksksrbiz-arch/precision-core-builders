@@ -73,12 +73,11 @@ export function getStoredAdminSessionToken(): string | null {
 }
 
 function authUserFromMetadata(user: User): AuthUser {
-  // Prefer app_metadata.role (set server-side by auth-sync-role, tamper-proof)
-  // over user_metadata.role (can be set by the user themselves).
+  // Only app_metadata.role is trusted (set server-side by auth-sync-role,
+  // tamper-proof). user_metadata.role is user-writable, so it must never grant
+  // admin — the server ignores it too (see verifyToken).
   const role: "admin" | "user" =
-    (user.app_metadata?.role as "admin" | "user") ??
-    (user.user_metadata?.role as "admin" | "user") ??
-    "user";
+    user.app_metadata?.role === "admin" ? "admin" : "user";
   return {
     id: user.id,
     email: user.email ?? "",

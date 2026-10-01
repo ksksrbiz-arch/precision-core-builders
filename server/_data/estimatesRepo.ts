@@ -89,7 +89,12 @@ export async function createEstimate(input: CreateEstimateInput) {
  * edit never clobbers untouched columns. Bumps `updated_at`. Does NOT touch
  * `sent_at`/`approved_at` send/approve semantics.
  */
-export async function updateEstimate(id: number, input: CreateEstimateInput) {
+/** Partial-update input: `undefined` = unchanged, `null` = clear the column. */
+export type UpdateEstimateInput = {
+  [K in keyof CreateEstimateInput]?: CreateEstimateInput[K] | null;
+};
+
+export async function updateEstimate(id: number, input: UpdateEstimateInput) {
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };

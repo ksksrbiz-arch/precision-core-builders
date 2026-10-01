@@ -2,6 +2,7 @@
  * ScheduleView — Weather-responsive project schedule with 7-day forecast overlay.
  * Calls /api/weather-schedule for Eugene OR forecast and task recommendations.
  */
+import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
@@ -219,19 +220,15 @@ export default function ScheduleView() {
           status?: string;
         } | null;
         if (task?.status === "complete") {
-          fetch("/api/n8n-webhook", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              event: "milestone_complete",
-              payload: {
-                projectId: task.project_id,
-                taskId: task.id,
-                title: task.title,
-                status: "complete",
-              },
-            }),
-          }).catch(() => {});
+          relayAdminEvent({
+            event: "milestone_complete",
+            payload: {
+              projectId: task.project_id,
+              taskId: task.id,
+              title: task.title,
+              status: "complete",
+            },
+          });
         }
       },
     }
@@ -459,18 +456,14 @@ export default function ScheduleView() {
                 });
                 // Fire inspection_scheduled n8n event
                 if (isInspection) {
-                  fetch("/api/n8n-webhook", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      event: "inspection_scheduled",
-                      payload: {
-                        projectId: selectedProject,
-                        title: newTask.title,
-                        scheduledDate: newTask.plannedStartDate,
-                      },
-                    }),
-                  }).catch(() => {});
+                  relayAdminEvent({
+                    event: "inspection_scheduled",
+                    payload: {
+                      projectId: selectedProject,
+                      title: newTask.title,
+                      scheduledDate: newTask.plannedStartDate,
+                    },
+                  });
                 }
               }}
               disabled={!newTask.title || createTask.isPending}
@@ -572,8 +565,10 @@ export default function ScheduleView() {
                   status: updates.status,
                   plannedStart: updates.plannedStart,
                   plannedEnd: updates.plannedEnd,
-                  assignedTo: updates.assignedTo ?? undefined,
-                  notes: updates.notes ?? undefined,
+                  // null (blank in the modal) clears the column; undefined would
+                  // mean "unchanged" and the old assignee/notes would come back.
+                  assignedTo: updates.assignedTo,
+                  notes: updates.notes,
                   weatherSensitive: updates.weatherSensitive,
                 });
               }}

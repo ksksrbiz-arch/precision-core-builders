@@ -2,7 +2,11 @@ import { portfolioRepo } from "../_data/portfolioRepo";
 import { adminProcedure, publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
-const PortfolioInput = z.object({
+// No defaults in the shared shape: Zod 4 applies `.default()` inside
+// `.partial()`, so an update that didn't mention `published`/`featured` used to
+// write `published: false` — silently pulling a live project off the public
+// site on any edit. Defaults are applied to create only.
+const PortfolioFields = z.object({
   title: z.string().min(1).max(300),
   slug: z.string().min(1).max(300),
   category: z.string().max(100).optional(),
@@ -15,6 +19,12 @@ const PortfolioInput = z.object({
   galleryImageUrls: z.array(z.string().url()).optional(),
   clientTestimonial: z.string().optional(),
   clientName: z.string().max(200).optional(),
+  featured: z.boolean().optional(),
+  published: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+const PortfolioInput = PortfolioFields.extend({
   featured: z.boolean().optional().default(false),
   published: z.boolean().optional().default(false),
   sortOrder: z.number().int().optional().default(0),
@@ -61,7 +71,7 @@ export const portfolioRouter = router({
     .input(
       z
         .object({ id: z.number().int().positive() })
-        .merge(PortfolioInput.partial())
+        .merge(PortfolioFields.partial())
     )
     .mutation(async ({ input }) => {
       const {

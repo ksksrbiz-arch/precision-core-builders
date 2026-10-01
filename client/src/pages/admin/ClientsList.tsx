@@ -79,6 +79,8 @@ export default function ClientsList() {
     successMessage: "Client record removed.",
     error: "Delete Failed",
     errorMessage: "Failed to delete client. Please try again.",
+    // e.g. "This client still has 2 projects…" — safe, user-facing guidance.
+    showServerMessageFor: ["CONFLICT"],
     invalidate: () => utils.clients.list.invalidate(),
   });
 

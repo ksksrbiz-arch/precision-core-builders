@@ -25,11 +25,37 @@ const EstimateFields = z.object({
   estimatedLow: z.number().positive().optional(),
   estimatedMid: z.number().positive().optional(),
   estimatedHigh: z.number().positive().optional(),
-  laborCost: z.number().positive().optional(),
-  materialsCost: z.number().positive().optional(),
-  permitsCost: z.number().positive().optional(),
-  contingency: z.number().positive().optional(),
+  // A cost line can legitimately be $0 (no permits needed, no contingency);
+  // `.positive()` rejected 0, so the editor couldn't save such an estimate.
+  laborCost: z.number().nonnegative().optional(),
+  materialsCost: z.number().nonnegative().optional(),
+  permitsCost: z.number().nonnegative().optional(),
+  contingency: z.number().nonnegative().optional(),
   aiReasoning: z.string().optional(),
+});
+
+/**
+ * Update: `undefined` = leave unchanged, `null` = clear. Every editable column
+ * is clearable (the editor's blank inputs used to be sent as `undefined`, so
+ * emptying a field silently kept the old value).
+ */
+const EstimateUpdateFields = z.object({
+  projectId: EstimateFields.shape.projectId.nullable(),
+  clientId: EstimateFields.shape.clientId.nullable(),
+  squareFootage: EstimateFields.shape.squareFootage.nullable(),
+  projectType: EstimateFields.shape.projectType.nullable(),
+  complexity: EstimateFields.shape.complexity.nullable(),
+  materials: EstimateFields.shape.materials.nullable(),
+  location: EstimateFields.shape.location.nullable(),
+  additionalNotes: EstimateFields.shape.additionalNotes.nullable(),
+  estimatedLow: EstimateFields.shape.estimatedLow.nullable(),
+  estimatedMid: EstimateFields.shape.estimatedMid.nullable(),
+  estimatedHigh: EstimateFields.shape.estimatedHigh.nullable(),
+  laborCost: EstimateFields.shape.laborCost.nullable(),
+  materialsCost: EstimateFields.shape.materialsCost.nullable(),
+  permitsCost: EstimateFields.shape.permitsCost.nullable(),
+  contingency: EstimateFields.shape.contingency.nullable(),
+  aiReasoning: EstimateFields.shape.aiReasoning.nullable(),
 });
 
 export const estimatesRouter = router({
@@ -57,7 +83,9 @@ export const estimatesRouter = router({
   // Admin: edit an existing estimate. Same optional fields as `create` plus the
   // required target `id`.
   update: adminProcedure
-    .input(z.object({ id: z.number().int().positive() }).merge(EstimateFields))
+    .input(
+      z.object({ id: z.number().int().positive() }).merge(EstimateUpdateFields)
+    )
     .mutation(async ({ input }) => {
       const { id, ...fields } = input;
       return updateEstimate(id, fields);

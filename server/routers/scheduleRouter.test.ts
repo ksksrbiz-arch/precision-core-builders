@@ -220,12 +220,10 @@ describe("Schedule Router — repo delegation", () => {
       taskType: "roofing",
       isOutdoor: true,
     });
-    // The update input merges `ScheduleItemInput.partial()`, whose Zod defaults
-    // (status, sortOrder, weatherSensitive) still apply, so those land in the
-    // mapped payload alongside the explicitly-provided fields.
     const [id, values] = vi.mocked(updateScheduleItem).mock.calls[0];
     expect(id).toBe(9);
-    expect(values).toMatchObject({
+    // Exactly what was sent — no injected defaults.
+    expect(values).toEqual({
       title: "New title",
       task_type: "roofing",
       is_outdoor: true,
@@ -233,6 +231,49 @@ describe("Schedule Router — repo delegation", () => {
     expect(values).not.toHaveProperty("projectId");
     expect(values).not.toHaveProperty("taskType");
     expect(values).not.toHaveProperty("isOutdoor");
+  });
+
+  it("a Gantt drag (dates only) does not reset status, type, flags or order", async () => {
+    // Zod 4 applies `.default()` inside `.partial()`, so a dates-only update used
+    // to write status "pending", task_type "other", is_outdoor/weather_sensitive
+    // false and sort_order 0 — un-completing the task and losing its weather flag.
+    await admin().schedule.update({
+      id: 4,
+      plannedStart: "2026-07-01T00:00:00.000Z",
+      plannedEnd: "2026-07-05T00:00:00.000Z",
+    });
+    expect(vi.mocked(updateScheduleItem).mock.calls[0]).toEqual([
+      4,
+      {
+        planned_start: "2026-07-01T00:00:00.000Z",
+        planned_end: "2026-07-05T00:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("update can clear optional free-text fields with null", async () => {
+    await admin().schedule.update({
+      id: 4,
+      assignedTo: null,
+      notes: null,
+      dependsOn: null,
+    });
+    expect(vi.mocked(updateScheduleItem).mock.calls[0][1]).toEqual({
+      assigned_to: null,
+      notes: null,
+      depends_on: null,
+    });
+  });
+
+  it("create still applies the defaults", async () => {
+    await admin().schedule.create({ projectId: 9, title: "Pour slab" });
+    expect(vi.mocked(createScheduleItem).mock.calls[0][0]).toMatchObject({
+      task_type: "other",
+      status: "pending",
+      is_outdoor: false,
+      weather_sensitive: false,
+      sort_order: 0,
+    });
   });
 
   it("updateStatus forwards status and optional actual timestamps", async () => {

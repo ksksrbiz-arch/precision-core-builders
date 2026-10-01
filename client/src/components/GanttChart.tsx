@@ -331,8 +331,12 @@ export function GanttChart({
               status: updates.status ?? t.status,
               planned_start: updates.plannedStart ?? t.planned_start,
               planned_end: updates.plannedEnd ?? t.planned_end,
-              assigned_to: updates.assignedTo ?? t.assigned_to,
-              notes: updates.notes ?? t.notes,
+              // `null` means "cleared" — `??` would resurrect the old value.
+              assigned_to:
+                updates.assignedTo !== undefined
+                  ? updates.assignedTo
+                  : t.assigned_to,
+              notes: updates.notes !== undefined ? updates.notes : t.notes,
               weather_sensitive:
                 updates.weatherSensitive ?? t.weather_sensitive,
             }

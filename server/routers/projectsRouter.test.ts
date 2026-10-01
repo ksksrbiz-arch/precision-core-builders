@@ -137,6 +137,70 @@ describe("Projects Router — repo delegation", () => {
     expect(patch).toMatchObject({ name: "Renamed", client_id: 3 });
   });
 
+  it("update never injects create-time defaults (status/state/portal flag)", async () => {
+    // Zod 4 applies `.default()` inside `.partial()`: a rename used to write
+    // status "lead", state "OR" and client_portal_enabled true.
+    await admin().projects.update({ id: 8, name: "Renamed" });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({ name: "Renamed" });
+  });
+
+  it("update still changes status/portal flag when asked", async () => {
+    await admin().projects.update({
+      id: 8,
+      status: "in_progress",
+      clientPortalEnabled: false,
+    });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({
+      status: "in_progress",
+      client_portal_enabled: false,
+    });
+  });
+
+  it("update can clear optional fields with null", async () => {
+    await admin().projects.update({
+      id: 8,
+      description: null,
+      address: null,
+      estimatedBudget: null,
+      contractedBudget: null,
+      estimatedStartDate: null,
+      siteCamUrl: null,
+      permitNumbers: null,
+    });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({
+      description: null,
+      address: null,
+      estimated_budget: null,
+      contracted_budget: null,
+      estimated_start_date: null,
+      site_cam_url: null,
+      permit_numbers: null,
+    });
+  });
+
+  it("update does not forward legacy startDate/budget (no such columns)", async () => {
+    await admin().projects.update({
+      id: 8,
+      startDate: "2026-01-01T00:00:00.000Z",
+      budget: 5000,
+    });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({});
+  });
+
+  it("create still applies the defaults", async () => {
+    await admin().projects.create({ clientId: 1, name: "New" });
+    const [values] = vi.mocked(repo.createProject).mock.calls[0];
+    expect(values).toMatchObject({
+      status: "lead",
+      state: "OR",
+      client_portal_enabled: true,
+    });
+  });
+
   it("updateProgress maps completion percent to snake_case", async () => {
     await admin().projects.updateProgress({
       id: 8,
@@ -255,7 +319,7 @@ describe("Projects Router — getById ownership guard", () => {
       client_portal_enabled: true,
     } as any);
     await expect(user().projects.getById({ id: 1 })).rejects.toThrow(
-      /unauthorized/i
+      /do not have access/i
     );
   });
 
@@ -266,8 +330,17 @@ describe("Projects Router — getById ownership guard", () => {
       client_portal_enabled: false,
     } as any);
     await expect(user().projects.getById({ id: 1 })).rejects.toThrow(
-      /unauthorized/i
+      /do not have access/i
     );
+  });
+
+  it("rejects with FORBIDDEN (not a bare Error) and does not leak existence", async () => {
+    vi.mocked(repo.getProjectById).mockRejectedValueOnce(
+      new Error("JSON object requested, multiple (or no) rows returned")
+    );
+    await expect(user().projects.getById({ id: 999 })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
@@ -282,6 +355,9 @@ describe("Projects Router — authorization", () => {
 
   it("admin procedures reject non-admin users (forbidden)", async () => {
     const u = user();
+    // list returns the whole book of business + client contact details.
+    await expect(u.projects.list()).rejects.toThrow(/forbidden/i);
+    expect(repo.listProjects).not.toHaveBeenCalled();
     await expect(u.projects.create({ clientId: 1, name: "x" })).rejects.toThrow(
       /forbidden/i
     );

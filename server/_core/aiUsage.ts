@@ -4,6 +4,7 @@
  * logging must not break the AI feature that triggered it.
  */
 import { db } from "../db";
+import { isUuid } from "./identity";
 import type { LLMProvider } from "./llm";
 
 export type AiUsageEntry = {
@@ -26,7 +27,8 @@ export async function logAiUsage(entry: AiUsageEntry): Promise<void> {
       prompt_tokens: entry.promptTokens ?? 0,
       completion_tokens: entry.completionTokens ?? 0,
       total_tokens: entry.totalTokens ?? 0,
-      user_id: entry.userId ?? null,
+      // user_id is a uuid FK; synthetic admin-session ids are stored as null.
+      user_id: isUuid(entry.userId) ? entry.userId : null,
     });
   } catch {
     // Swallow — usage logging is non-critical.

@@ -102,6 +102,17 @@ export async function getPurchaseOrderById(id: number) {
   );
 }
 
+/** Current status of a PO (throws when it doesn't exist). */
+export async function getPurchaseOrderStatus(
+  id: number
+): Promise<PurchaseOrderStatus> {
+  const db = requireSupabaseAdmin();
+  const row = unwrapOne(
+    await db.from("purchase_orders").select("status").eq("id", id).single()
+  );
+  return row.status as PurchaseOrderStatus;
+}
+
 /**
  * Update PO status. When moving to `received` or `partial`, apply line-item
  * quantities to linked materials' quantity_received and recompute is_shortage

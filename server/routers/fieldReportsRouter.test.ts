@@ -53,6 +53,15 @@ vi.mock("../_data/fieldReportsRepo", () => ({
   getWeeklyStatsRows: vi.fn(),
 }));
 
+vi.mock("../_data/projectsRepo", () => ({
+  // client-1 owns project 88 (portal enabled); project 99 belongs to someone else.
+  getProjectById: vi.fn(async (id: number) => ({
+    id,
+    client_portal_enabled: true,
+    clients: { user_id: id === 88 ? "client-1" : "someone-else" },
+  })),
+}));
+
 vi.mock("../_core/visionTagging", () => ({
   isVisionTaggingConfigured: vi.fn(() => true),
   tagFieldReportPhotos: vi.fn(),
@@ -79,7 +88,10 @@ function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
   };
 }
 
-const admin = () => appRouter.createCaller(ctx("admin-1", "admin"));
+const ADMIN_UUID = "3f2b8c1e-5d4a-4b7e-9a10-0c2d3e4f5a6b";
+const admin = () => appRouter.createCaller(ctx(ADMIN_UUID, "admin"));
+// Shared admin session token => synthetic, non-UUID id.
+const sharedAdmin = () => appRouter.createCaller(ctx("admin", "admin"));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -89,6 +101,7 @@ beforeEach(() => {
   } as any);
   vi.mocked(repo.getFieldReportById).mockResolvedValue({
     id: 1,
+    published_to_client: true,
     projects: { clients: { user_id: "client-1" } },
   } as any);
   vi.mocked(repo.createFieldReport).mockResolvedValue({
@@ -200,6 +213,28 @@ describe("Field Reports Router — client scoping (getById)", () => {
     );
   });
 
+  it("forbids a client from reading an unpublished draft of their own project", async () => {
+    vi.mocked(repo.getFieldReportById).mockResolvedValueOnce({
+      id: 1,
+      published_to_client: false,
+      projects: { clients: { user_id: "client-1" } },
+    } as any);
+    const caller = appRouter.createCaller(ctx("client-1", "user"));
+    await expect(caller.fieldReports.getById({ id: 1 })).rejects.toThrow(
+      /do not have permission/i
+    );
+  });
+
+  it("lets an admin read an unpublished draft", async () => {
+    vi.mocked(repo.getFieldReportById).mockResolvedValueOnce({
+      id: 1,
+      published_to_client: false,
+      projects: { clients: { user_id: "client-1" } },
+    } as any);
+    const res = await admin().fieldReports.getById({ id: 1 });
+    expect(res).toMatchObject({ id: 1 });
+  });
+
   it("allows an admin to read any report regardless of ownership", async () => {
     const res = await admin().fieldReports.getById({ id: 1 });
     expect(res).toMatchObject({ id: 1 });
@@ -235,7 +270,7 @@ describe("Field Reports Router — repo delegation & field mapping", () => {
     const values = vi.mocked(repo.createFieldReport).mock.calls[0][0];
     expect(values).toMatchObject({
       project_id: 5,
-      author_id: "admin-1",
+      author_id: ADMIN_UUID,
       summary: "Poured footings",
       tasks_completed: JSON.stringify(["dig", "pour"]),
       issues_flagged: JSON.stringify(["rebar short"]),
@@ -306,6 +341,21 @@ describe("Field Reports Router — repo delegation & field mapping", () => {
     const caller = appRouter.createCaller(ctx("client-1", "user"));
     await caller.fieldReports.listPublished({ projectId: 88 });
     expect(repo.listPublishedFieldReports).toHaveBeenCalledWith(88);
+  });
+
+  it("listPublished refuses a client reading another client's project", async () => {
+    const caller = appRouter.createCaller(ctx("client-1", "user"));
+    await expect(
+      caller.fieldReports.listPublished({ projectId: 99 })
+    ).rejects.toThrow(/do not have access/i);
+    expect(repo.listPublishedFieldReports).not.toHaveBeenCalled();
+  });
+
+  it("create stores a null author for the shared admin session", async () => {
+    await sharedAdmin().fieldReports.create({ projectId: 5 });
+    expect(repo.createFieldReport).toHaveBeenCalledWith(
+      expect.objectContaining({ author_id: null })
+    );
   });
 
   it("weeklyStats aggregates repo rows into per-week buckets", async () => {
@@ -404,7 +454,7 @@ describe("Field Reports Router — tagPhotos (AI vision)", () => {
     const res = await admin().fieldReports.tagPhotos({ id: 10 });
     expect(vision.tagFieldReportPhotos).toHaveBeenCalledWith(
       ["https://cdn.example/a.jpg"],
-      "admin-1"
+      ADMIN_UUID
     );
     expect(repo.saveFieldReportPhotoTags).toHaveBeenCalledWith(
       10,

@@ -1,5 +1,7 @@
 import { adminProcedure, router } from "../_core/trpc";
+import { TRPCError } from "@trpc/server";
 import {
+  countClientProjects,
   createClient,
   deleteClient,
   getClientById,
@@ -20,6 +22,26 @@ const ClientInput = z.object({
   leadSource: z.string().max(100).optional(),
   userId: z.string().uuid().optional(),
 });
+
+/**
+ * Update: `undefined` = leave unchanged; `null` = clear the column. Without
+ * `.nullable()` an edit form could never blank a phone/address/notes value
+ * (blank was sent as `undefined`, i.e. "no change", while the toast said saved).
+ */
+const ClientUpdateInput = z
+  .object({ id: z.number().int().positive() })
+  .merge(ClientInput.partial())
+  .extend({
+    phone: ClientInput.shape.phone.nullable(),
+    address: ClientInput.shape.address.nullable(),
+    city: ClientInput.shape.city.nullable(),
+    state: ClientInput.shape.state.nullable(),
+    zip: ClientInput.shape.zip.nullable(),
+    notes: ClientInput.shape.notes.nullable(),
+    leadSource: ClientInput.shape.leadSource.nullable(),
+    // null unlinks the portal login from this client.
+    userId: ClientInput.shape.userId.nullable(),
+  });
 
 export const clientsRouter = router({
   // Admin-only: client records are sensitive and this endpoint is only used by
@@ -48,9 +70,7 @@ export const clientsRouter = router({
   }),
 
   update: adminProcedure
-    .input(
-      z.object({ id: z.number().int().positive() }).merge(ClientInput.partial())
-    )
+    .input(ClientUpdateInput)
     .mutation(async ({ input }) => {
       const { id, leadSource, userId, ...rest } = input;
       return updateClient(id, {
@@ -63,6 +83,16 @@ export const clientsRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
+      // projects.client_id is ON DELETE RESTRICT: deleting a client that still
+      // owns projects fails at the database with a raw FK-violation message.
+      // Say what's actually wrong instead.
+      const projectCount = await countClientProjects(input.id);
+      if (projectCount > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `This client still has ${projectCount} project${projectCount === 1 ? "" : "s"}. Delete or reassign ${projectCount === 1 ? "it" : "them"} before deleting the client.`,
+        });
+      }
       return deleteClient(input.id);
     }),
 });

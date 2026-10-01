@@ -3,6 +3,7 @@
  * Calls /api/material-procurement to generate vendor-grouped Purchase Orders
  * for shortages.
  */
+import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/empty";
 import { fmtDate, formatCurrency, formatNumber } from "@/lib/formatters";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { useToast } from "@/components/ToastProvider";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -37,6 +39,8 @@ import {
   RefreshCw,
   Search,
   X,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -92,6 +96,30 @@ type MaterialTextFieldKey =
   | "quantityNeeded"
   | "unitPriceCurrent"
   | "phaseNeeded";
+
+/** Extra fields shown only when editing an existing material. */
+const EDIT_ONLY_FIELDS: ReadonlyArray<{
+  key: "quantityOrdered" | "quantityReceived";
+  label: string;
+  placeholder: string;
+}> = [
+  { key: "quantityOrdered", label: "Quantity ordered", placeholder: "0" },
+  { key: "quantityReceived", label: "Quantity received", placeholder: "0" },
+];
+
+const EMPTY_MATERIAL = {
+  name: "",
+  category: "",
+  unit: "",
+  vendorIds: [] as number[],
+  vendorName: "",
+  quantityNeeded: "",
+  unitPriceCurrent: "",
+  phaseNeeded: "",
+  notes: "",
+  quantityOrdered: "",
+  quantityReceived: "",
+};
 
 const MATERIAL_FIELDS: ReadonlyArray<{
   key: MaterialTextFieldKey;
@@ -156,9 +184,66 @@ function parsePositiveField(raw: string): {
   return { value: n };
 }
 
+/**
+ * Like `parsePositiveField` but 0 is valid — "ordered 0 / received 0" is a real
+ * state, and `materials.update` accepts it (`nonnegative`).
+ */
+function parseNonNegativeField(raw: string): {
+  value?: number;
+  error?: string;
+} {
+  const trimmed = raw.trim();
+  if (!trimmed) return {};
+  const n = Number(trimmed);
+  if (!Number.isFinite(n)) return { error: "Enter a number." };
+  if (n < 0) return { error: "Can't be negative." };
+  return { value: n };
+}
+
 /** Short date, e.g. `"Mar 4, 2026"`. */
 const fmtShortDate = (d: string | null | undefined) =>
   fmtDate(d, { month: "short", day: "numeric", year: "numeric" });
+
+/** Edit / delete controls for one inventory row (shared by table + cards). */
+function MaterialRowActions({
+  material,
+  onEdit,
+  onDelete,
+}: {
+  material: { id: number; name: string };
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-3">
+      <button
+        type="button"
+        onClick={onEdit}
+        aria-label={`Edit ${material.name}`}
+        title="Edit"
+        className="text-muted-foreground/60 hover:text-primary transition-colors"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </button>
+      <ConfirmDelete
+        trigger={
+          <button
+            type="button"
+            aria-label={`Delete ${material.name}`}
+            title="Delete"
+            className="text-muted-foreground/40 hover:text-destructive transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        }
+        title={`Delete ${material.name}?`}
+        description="This removes the material from inventory. Purchase order lines that reference it are kept."
+        confirmLabel="Delete"
+        onConfirm={onDelete}
+      />
+    </div>
+  );
+}
 
 export default function MaterialsView() {
   const isMobile = useIsMobile();
@@ -172,17 +257,14 @@ export default function MaterialsView() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importEstimateId, setImportEstimateId] = useState<number | "">("");
-  const [newMaterial, setNewMaterial] = useState({
-    name: "",
-    category: "",
-    unit: "",
-    vendorIds: [] as number[],
-    vendorName: "",
-    quantityNeeded: "",
-    unitPriceCurrent: "",
-    phaseNeeded: "",
-    notes: "",
-  });
+  const [newMaterial, setNewMaterial] = useState(EMPTY_MATERIAL);
+  // Non-null while the form is editing an existing material instead of adding.
+  const [editingMaterialId, setEditingMaterialId] = useState<number | null>(
+    null
+  );
+  // Whether the junction vendor set was loaded for the row being edited; if it
+  // failed to load we must not send `vendorIds` (an empty list would wipe it).
+  const [editVendorIdsLoaded, setEditVendorIdsLoaded] = useState(false);
   const { addToast } = useToast();
 
   const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
@@ -256,21 +338,76 @@ export default function MaterialsView() {
       errorMessage: "Failed to add material. Please try again.",
       onSuccess: () => {
         refetch();
-        setShowAddForm(false);
-        setNewMaterial({
-          name: "",
-          category: "",
-          unit: "",
-          vendorIds: [],
-          vendorName: "",
-          quantityNeeded: "",
-          unitPriceCurrent: "",
-          phaseNeeded: "",
-          notes: "",
-        });
+        closeMaterialForm();
       },
     }
   );
+
+  const updateMaterial = useMutationWithToast(
+    trpc.materials.update.useMutation(),
+    {
+      success: "Material Updated",
+      successMessage: "Material details saved.",
+      error: "Update Failed",
+      errorMessage: "Failed to update material. Please try again.",
+      onSuccess: () => {
+        refetch();
+        utils.materials.list.invalidate();
+        closeMaterialForm();
+      },
+    }
+  );
+
+  const deleteMaterial = useMutationWithToast(
+    trpc.materials.delete.useMutation(),
+    {
+      success: "Material Removed",
+      successMessage: "Material deleted from inventory.",
+      error: "Delete Failed",
+      errorMessage: "Failed to delete material. Please try again.",
+      onSuccess: () => {
+        refetch();
+        utils.materials.list.invalidate();
+      },
+    }
+  );
+
+  function closeMaterialForm() {
+    setShowAddForm(false);
+    setEditingMaterialId(null);
+    setEditVendorIdsLoaded(false);
+    setNewMaterial(EMPTY_MATERIAL);
+  }
+
+  const startEditMaterial = async (m: any) => {
+    setShowImport(false);
+    setEditingMaterialId(m.id);
+    setEditVendorIdsLoaded(false);
+    const asText = (v: unknown) => (v == null ? "" : String(v));
+    setNewMaterial({
+      name: m.name ?? "",
+      category: m.category ?? "",
+      unit: m.unit ?? "",
+      vendorIds: [],
+      vendorName: m.vendor_name ?? "",
+      quantityNeeded: asText(m.quantity_needed),
+      unitPriceCurrent: asText(m.unit_price_current),
+      phaseNeeded: m.phase_needed ?? "",
+      notes: m.notes ?? "",
+      quantityOrdered: asText(m.quantity_ordered),
+      quantityReceived: asText(m.quantity_received),
+    });
+    setShowAddForm(true);
+    try {
+      const ids = await utils.materials.listVendorIds.fetch({
+        materialId: m.id,
+      });
+      setNewMaterial(prev => ({ ...prev, vendorIds: ids ?? [] }));
+      setEditVendorIdsLoaded(true);
+    } catch {
+      // Leave vendorIds untouched on save rather than risk wiping the set.
+    }
+  };
 
   const createManyMaterials = useMutationWithToast(
     trpc.materials.createMany.useMutation(),
@@ -399,18 +536,14 @@ export default function MaterialsView() {
         });
 
         // Fire material_shortage n8n event
-        fetch("/api/n8n-webhook", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event: "material_shortage",
-            payload: {
-              projectId: selectedProject,
-              shortagesFound: data.shortagesFound,
-              purchaseOrderCount: data.purchaseOrders.length,
-            },
-          }),
-        }).catch(() => {});
+        relayAdminEvent({
+          event: "material_shortage",
+          payload: {
+            projectId: selectedProject,
+            shortagesFound: data.shortagesFound,
+            purchaseOrderCount: data.purchaseOrders.length,
+          },
+        });
 
         refetch();
         // Surface the freshly persisted POs in the table below.
@@ -439,9 +572,20 @@ export default function MaterialsView() {
 
   const quantityField = parsePositiveField(newMaterial.quantityNeeded);
   const unitPriceField = parsePositiveField(newMaterial.unitPriceCurrent);
-  const fieldErrors: Partial<Record<MaterialTextFieldKey, string>> = {
+  const orderedField = parseNonNegativeField(newMaterial.quantityOrdered);
+  const receivedField = parseNonNegativeField(newMaterial.quantityReceived);
+  const fieldErrors: Partial<
+    Record<
+      MaterialTextFieldKey | "quantityOrdered" | "quantityReceived",
+      string
+    >
+  > = {
     quantityNeeded: quantityField.error,
     unitPriceCurrent: unitPriceField.error,
+    quantityOrdered:
+      editingMaterialId !== null ? orderedField.error : undefined,
+    quantityReceived:
+      editingMaterialId !== null ? receivedField.error : undefined,
   };
   const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
 
@@ -486,7 +630,11 @@ export default function MaterialsView() {
               </button>
               <button
                 onClick={() => {
-                  setShowAddForm(v => !v);
+                  if (showAddForm || editingMaterialId !== null) {
+                    closeMaterialForm();
+                  } else {
+                    setShowAddForm(true);
+                  }
                   setShowImport(false);
                 }}
                 className="flex min-h-11 items-center gap-2 border border-border/60 text-muted-foreground px-4 py-3 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:text-primary hover:border-primary/40 transition-colors"
@@ -729,10 +877,10 @@ export default function MaterialsView() {
                 className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                Add Material
+                {editingMaterialId !== null ? "Edit Material" : "Add Material"}
               </p>
               <button
-                onClick={() => setShowAddForm(false)}
+                onClick={closeMaterialForm}
                 aria-label="Close add material form"
               >
                 <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
@@ -779,6 +927,50 @@ export default function MaterialsView() {
                   )}
                 </div>
               ))}
+              {editingMaterialId !== null &&
+                EDIT_ONLY_FIELDS.map(f => (
+                  <div key={f.key} className="flex flex-col">
+                    <Label
+                      htmlFor={`material-${f.key}`}
+                      className={FILTER_LABEL_CLASS}
+                      style={CONDENSED_FONT}
+                    >
+                      {f.label}
+                    </Label>
+                    <input
+                      id={`material-${f.key}`}
+                      type="number"
+                      min={0}
+                      placeholder={f.placeholder}
+                      value={newMaterial[f.key]}
+                      onChange={e =>
+                        setNewMaterial(prev => ({
+                          ...prev,
+                          [f.key]: e.target.value,
+                        }))
+                      }
+                      aria-invalid={fieldErrors[f.key] ? true : undefined}
+                      aria-describedby={
+                        fieldErrors[f.key]
+                          ? `material-${f.key}-error`
+                          : undefined
+                      }
+                      className={`px-3 py-2 bg-input border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 ${
+                        fieldErrors[f.key]
+                          ? "border-red-400/60"
+                          : "border-border"
+                      }`}
+                    />
+                    {fieldErrors[f.key] && (
+                      <p
+                        id={`material-${f.key}-error`}
+                        className="mt-1 text-[11px] text-red-400"
+                      >
+                        {fieldErrors[f.key]}
+                      </p>
+                    )}
+                  </div>
+                ))}
               <div className="flex flex-col">
                 <Label
                   htmlFor="material-notes"
@@ -859,7 +1051,28 @@ export default function MaterialsView() {
 
             <div className="flex gap-2 mt-3">
               <button
-                onClick={() =>
+                onClick={() => {
+                  if (editingMaterialId !== null) {
+                    // Edit: blank => null so the column is actually cleared
+                    // (`undefined` means "leave unchanged" server-side).
+                    updateMaterial.mutate({
+                      id: editingMaterialId,
+                      name: newMaterial.name.trim(),
+                      category: newMaterial.category.trim() || null,
+                      unit: newMaterial.unit.trim() || null,
+                      vendorName: newMaterial.vendorName.trim() || null,
+                      quantityNeeded: quantityField.value ?? null,
+                      unitPriceCurrent: unitPriceField.value ?? null,
+                      quantityOrdered: orderedField.value ?? null,
+                      quantityReceived: receivedField.value ?? null,
+                      phaseNeeded: newMaterial.phaseNeeded.trim() || null,
+                      notes: newMaterial.notes.trim() || null,
+                      ...(editVendorIdsLoaded && {
+                        vendorIds: newMaterial.vendorIds,
+                      }),
+                    });
+                    return;
+                  }
                   createMaterial.mutate({
                     name: newMaterial.name,
                     projectId: selectedProject ?? undefined,
@@ -875,20 +1088,27 @@ export default function MaterialsView() {
                     unitPriceCurrent: unitPriceField.value,
                     phaseNeeded: newMaterial.phaseNeeded || undefined,
                     notes: newMaterial.notes || undefined,
-                  })
-                }
+                  });
+                }}
                 disabled={
-                  !newMaterial.name ||
+                  !newMaterial.name.trim() ||
                   hasFieldErrors ||
-                  createMaterial.isPending
+                  createMaterial.isPending ||
+                  updateMaterial.isPending
                 }
                 className="bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                {createMaterial.isPending ? "Adding…" : "Add Material"}
+                {editingMaterialId !== null
+                  ? updateMaterial.isPending
+                    ? "Saving…"
+                    : "Save Changes"
+                  : createMaterial.isPending
+                    ? "Adding…"
+                    : "Add Material"}
               </button>
               <button
-                onClick={() => setShowAddForm(false)}
+                onClick={closeMaterialForm}
                 className="border border-border/60 text-muted-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:text-foreground transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
@@ -1413,6 +1633,13 @@ export default function MaterialsView() {
                             />
                           </div>
                         </div>
+                        <div className="mt-3 border-t border-border/30 pt-3">
+                          <MaterialRowActions
+                            material={m}
+                            onEdit={() => startEditMaterial(m)}
+                            onDelete={() => deleteMaterial.mutate({ id: m.id })}
+                          />
+                        </div>
                       </div>
                     );
                   })}
@@ -1433,6 +1660,7 @@ export default function MaterialsView() {
                         "Qty",
                         "Status",
                         "Unit Price",
+                        "Actions",
                       ].map(h => (
                         <th
                           key={h}
@@ -1535,6 +1763,15 @@ export default function MaterialsView() {
                                   ↑ over budget
                                 </p>
                               )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <MaterialRowActions
+                              material={m}
+                              onEdit={() => startEditMaterial(m)}
+                              onDelete={() =>
+                                deleteMaterial.mutate({ id: m.id })
+                              }
+                            />
                           </td>
                         </tr>
                       );

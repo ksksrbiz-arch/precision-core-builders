@@ -8,9 +8,15 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../_data/ledgerRepo", () => ({
+  appendLedgerEntry: vi.fn(async () => ({ id: 1 })),
+}));
+
 vi.mock("../_data/purchaseOrdersRepo", () => ({
   listPurchaseOrders: vi.fn(async () => ({ data: [], count: 0 })),
   getPurchaseOrderById: vi.fn(async () => ({ id: 1 })),
+  // Sentinel "no previous status" so every target status is a real transition.
+  getPurchaseOrderStatus: vi.fn(async () => "none" as any),
   updatePurchaseOrderStatus: vi.fn(async () => ({ id: 1, status: "issued" })),
   deletePurchaseOrder: vi.fn(async () => undefined),
 }));
@@ -20,9 +26,11 @@ import type { TrpcContext } from "../_core/context";
 import {
   deletePurchaseOrder,
   getPurchaseOrderById,
+  getPurchaseOrderStatus,
   listPurchaseOrders,
   updatePurchaseOrderStatus,
 } from "../_data/purchaseOrdersRepo";
+import { appendLedgerEntry } from "../_data/ledgerRepo";
 
 const listMock = vi.mocked(listPurchaseOrders);
 const getByIdMock = vi.mocked(getPurchaseOrderById);
@@ -142,6 +150,64 @@ describe("Purchase Orders Router — updateStatus delegation", () => {
       expect(updateStatusMock).toHaveBeenCalledWith(1, status);
     }
   );
+
+  describe("idempotency + ledger", () => {
+    const ledgerMock = vi.mocked(appendLedgerEntry);
+    const statusMock = vi.mocked(getPurchaseOrderStatus);
+
+    it("does nothing (no receipt, no ledger entry) when the status is unchanged", async () => {
+      // A "partial" receipt ADDS the line quantity each time it is applied, so
+      // re-selecting "partial" used to double-count received inventory.
+      statusMock.mockResolvedValueOnce("partial");
+      await admin().purchaseOrders.updateStatus({ id: 3, status: "partial" });
+      expect(updateStatusMock).not.toHaveBeenCalled();
+      expect(ledgerMock).not.toHaveBeenCalled();
+      expect(getByIdMock).toHaveBeenCalledWith(3);
+    });
+
+    it("applies the receipt and logs a milestone on a real transition", async () => {
+      statusMock.mockResolvedValueOnce("issued");
+      updateStatusMock.mockResolvedValueOnce({
+        id: 3,
+        status: "received",
+        project_id: 12,
+        po_number: "PO-7",
+      } as any);
+      await admin().purchaseOrders.updateStatus({ id: 3, status: "received" });
+      expect(updateStatusMock).toHaveBeenCalledWith(3, "received");
+      expect(ledgerMock).toHaveBeenCalledTimes(1);
+      // Typed "milestone": no amount is recorded, so it must not masquerade as
+      // a cost_adjustment (which feeds actual-cost totals).
+      expect(ledgerMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: 12,
+          entryType: "milestone",
+          title: "PO PO-7 → received",
+        })
+      );
+    });
+
+    it("still logs for the shared admin session (null author)", async () => {
+      statusMock.mockResolvedValueOnce("draft");
+      updateStatusMock.mockResolvedValueOnce({
+        id: 4,
+        project_id: 5,
+        po_number: "PO-9",
+      } as any);
+      await appRouter
+        .createCaller(ctx("admin", "admin"))
+        .purchaseOrders.updateStatus({ id: 4, status: "issued" });
+      expect(ledgerMock).toHaveBeenCalledWith(
+        expect.objectContaining({ authorId: null, projectId: 5 })
+      );
+    });
+
+    it("does not log cancelled/draft transitions", async () => {
+      statusMock.mockResolvedValueOnce("issued");
+      await admin().purchaseOrders.updateStatus({ id: 3, status: "cancelled" });
+      expect(ledgerMock).not.toHaveBeenCalled();
+    });
+  });
 
   it("rejects an invalid status value", async () => {
     await expect(

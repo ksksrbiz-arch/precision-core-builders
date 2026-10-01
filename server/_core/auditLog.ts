@@ -14,6 +14,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { authorUuid } from "./identity";
 
 export type AuditAction =
   | "project.create"
@@ -92,7 +93,10 @@ export async function logAdminAction(
   try {
     const { error } = await db.from("ledger_entries").insert({
       project_id: projectId,
-      author_id: userId,
+      // The shared admin session / dev bypass carry non-UUID ids; a uuid FK
+      // column would reject the whole row, so store a null author for those
+      // (the description still names the acting user).
+      author_id: authorUuid(ctx.user),
       entry_type: "note",
       title: `[AUDIT] ${action}`,
       description,

@@ -25,8 +25,23 @@ export interface MutationToastOptions<TData = unknown> {
   error?: string;
   /** Toast message body on error. Defaults to "Something went wrong. Please try again." */
   errorMessage?: string;
+  /**
+   * tRPC error codes (e.g. "CONFLICT", "PRECONDITION_FAILED") whose server
+   * message is intentionally user-facing and should replace `errorMessage`.
+   * Everything else keeps the generic message so raw database errors never
+   * reach the toast.
+   */
+  showServerMessageFor?: string[];
   /** Called after successful mutation to invalidate queries */
   invalidate?: () => void | Promise<void>;
+  /**
+   * Some mutations resolve normally but report a domain-level failure in their
+   * result (e.g. a notification row recorded as `failed` because the email
+   * provider isn't configured). Return a message from the result to show an
+   * error toast instead of the success one; the query invalidation still runs
+   * (so the failed row appears) but `onSuccess` is skipped.
+   */
+  failed?: (data: TData) => string | null | undefined;
   /** Called with the result data on success */
   onSuccess?: (data: TData) => void;
   /** Called with the error on failure */
@@ -70,6 +85,17 @@ export function useMutationWithToast<TInput, TData>(
 
         await options.invalidate?.();
 
+        const failure = options.failed?.(data);
+        if (failure) {
+          addToast({
+            type: "error",
+            title: options.error ?? "Error",
+            message: failure,
+            duration: 6000,
+          });
+          return data;
+        }
+
         addToast({
           type: "success",
           title: options.success,
@@ -80,7 +106,12 @@ export function useMutationWithToast<TInput, TData>(
         options.onSuccess?.(data);
         return data;
       } catch (err) {
-        const msg = options.errorMessage ?? extractErrorMessage(err);
+        const code = (err as { data?: { code?: string } } | null)?.data?.code;
+        const showServer =
+          !!code && !!options.showServerMessageFor?.includes(code);
+        const msg = showServer
+          ? extractErrorMessage(err)
+          : (options.errorMessage ?? extractErrorMessage(err));
         addToast({
           type: "error",
           title: options.error ?? "Error",

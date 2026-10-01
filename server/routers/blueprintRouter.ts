@@ -21,6 +21,8 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db";
 import { logAdminAction } from "../_core/auditLog";
+import { assertProjectAccess } from "../_core/access";
+import { authorUuid } from "../_core/identity";
 import {
   decryptSecret,
   encryptSecret,
@@ -332,7 +334,16 @@ export const blueprintRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const url = new URL(input.path ?? "/", ENV.blueprintBaseUrl);
+      const base = new URL(ENV.blueprintBaseUrl);
+      const url = new URL(input.path ?? "/", base);
+      // `new URL("//evil.example", base)` or an absolute URL in `path` would
+      // escape the Blueprint origin and hand the caller an open redirect.
+      if (url.origin !== base.origin) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "path must stay on the Blueprint host.",
+        });
+      }
       url.searchParams.set("utm_source", "precision-core-builders");
       if (input.projectId) {
         url.searchParams.set("pcb_project", String(input.projectId));
@@ -349,6 +360,8 @@ export const blueprintRouter = router({
   listArtifacts: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
+      // A portal client may only list artifacts on their own project.
+      await assertProjectAccess(ctx, input.projectId);
       let q = db
         .from("blueprint_artifacts")
         .select("*")
@@ -376,7 +389,7 @@ export const blueprintRouter = router({
           title: input.title ?? null,
           url: input.url ?? null,
           metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-          attached_by: ctx.user!.id,
+          attached_by: authorUuid(ctx.user),
           visible_to_client: input.visibleToClient,
         })
         .select()

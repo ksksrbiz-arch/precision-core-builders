@@ -12,6 +12,10 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../_data/projectsRepo", () => ({
+  getProjectById: vi.fn(),
+}));
+
 vi.mock("../_data/ledgerRepo", () => ({
   appendLedgerEntry: vi.fn(),
   listLedgerEntries: vi.fn(),
@@ -22,6 +26,7 @@ vi.mock("../_data/ledgerRepo", () => ({
 import { appRouter } from "../routers";
 import { ledgerRouter } from "./ledgerRouter";
 import type { TrpcContext } from "../_core/context";
+import { getProjectById } from "../_data/projectsRepo";
 import {
   appendLedgerEntry,
   listAuditLedgerEntries,
@@ -41,7 +46,10 @@ function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
 
 const anon = () => appRouter.createCaller(ctx());
 const user = () => appRouter.createCaller(ctx("u1", "user"));
-const admin = () => appRouter.createCaller(ctx("admin-1", "admin"));
+const ADMIN_UUID = "3f2b8c1e-5d4a-4b7e-9a10-0c2d3e4f5a6b";
+const admin = () => appRouter.createCaller(ctx(ADMIN_UUID, "admin"));
+// The shared admin session token authenticates as the synthetic id "admin".
+const sharedAdmin = () => appRouter.createCaller(ctx("admin", "admin"));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -52,6 +60,12 @@ beforeEach(() => {
   } as any);
   vi.mocked(listVisibleLedgerEntries).mockResolvedValue([] as any);
   vi.mocked(listAuditLedgerEntries).mockResolvedValue([] as any);
+  // u1 owns project 42 (portal enabled); everything else belongs to someone else.
+  vi.mocked(getProjectById).mockImplementation(async (id: number) => ({
+    id,
+    client_portal_enabled: true,
+    clients: { user_id: id === 42 ? "u1" : "someone-else" },
+  }));
 });
 
 describe("Ledger Router — authorization", () => {
@@ -123,6 +137,29 @@ describe("Ledger Router — read delegation", () => {
     expect(listVisibleLedgerEntries).toHaveBeenCalledWith(42);
   });
 
+  it("listVisible refuses a client reading another client's project ledger", async () => {
+    await expect(user().ledger.listVisible({ projectId: 7 })).rejects.toThrow(
+      /do not have access/i
+    );
+    expect(listVisibleLedgerEntries).not.toHaveBeenCalled();
+  });
+
+  it("listVisible refuses a client when the portal is disabled", async () => {
+    vi.mocked(getProjectById).mockResolvedValueOnce({
+      id: 42,
+      client_portal_enabled: false,
+      clients: { user_id: "u1" },
+    });
+    await expect(user().ledger.listVisible({ projectId: 42 })).rejects.toThrow(
+      /do not have access/i
+    );
+  });
+
+  it("listVisible lets an admin read any project", async () => {
+    await admin().ledger.listVisible({ projectId: 7 });
+    expect(listVisibleLedgerEntries).toHaveBeenCalledWith(7);
+  });
+
   it("auditLog defaults the limit to 100 when omitted", async () => {
     await admin().ledger.auditLog();
     expect(listAuditLedgerEntries).toHaveBeenCalledWith(100);
@@ -150,7 +187,7 @@ describe("Ledger Router — append delegation", () => {
     expect(appendLedgerEntry).toHaveBeenCalledTimes(1);
     expect(appendLedgerEntry).toHaveBeenCalledWith({
       projectId: 5,
-      authorId: "admin-1",
+      authorId: ADMIN_UUID,
       entryType: "change_order",
       title: "Change order #3",
       description: "Client approved upgraded fixtures",
@@ -159,6 +196,18 @@ describe("Ledger Router — append delegation", () => {
       documentName: "co3.pdf",
       visibleToClient: true,
     });
+  });
+
+  it("stores a null author for the shared admin session (non-UUID id)", async () => {
+    await sharedAdmin().ledger.append({
+      projectId: 5,
+      entryType: "note",
+      title: "t",
+      description: "d",
+    });
+    expect(appendLedgerEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ authorId: null })
+    );
   });
 
   it("passes an explicit visibleToClient=false through unchanged", async () => {
@@ -174,7 +223,7 @@ describe("Ledger Router — append delegation", () => {
     expect(appendLedgerEntry).toHaveBeenCalledWith(
       expect.objectContaining({
         projectId: 8,
-        authorId: "admin-1",
+        authorId: ADMIN_UUID,
         entryType: "cost_adjustment",
         amountDelta: -300,
         visibleToClient: false,

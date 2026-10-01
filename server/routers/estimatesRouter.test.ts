@@ -89,6 +89,47 @@ describe("Estimates Router — repo delegation", () => {
     });
   });
 
+  it("accepts $0 cost lines (no permits / no contingency) on create and update", async () => {
+    await admin().estimates.create({
+      projectType: "kitchen",
+      estimatedMid: 5000,
+      permitsCost: 0,
+      contingency: 0,
+    });
+    expect(repo.createEstimate).toHaveBeenCalledWith(
+      expect.objectContaining({ permitsCost: 0, contingency: 0 })
+    );
+    await admin().estimates.update({ id: 8, permitsCost: 0 });
+    expect(repo.updateEstimate).toHaveBeenCalledWith(8, { permitsCost: 0 });
+  });
+
+  it("still rejects negative cost lines and non-positive totals", async () => {
+    await expect(admin().estimates.create({ laborCost: -1 })).rejects.toThrow();
+    await expect(
+      admin().estimates.update({ id: 8, estimatedMid: 0 })
+    ).rejects.toThrow();
+  });
+
+  it("update can clear fields with null", async () => {
+    await admin().estimates.update({
+      id: 8,
+      additionalNotes: null,
+      contingency: null,
+      projectId: null,
+    });
+    expect(repo.updateEstimate).toHaveBeenCalledWith(8, {
+      additionalNotes: null,
+      contingency: null,
+      projectId: null,
+    });
+  });
+
+  it("create does not accept null (only update can clear)", async () => {
+    await expect(
+      admin().estimates.create({ projectType: null } as any)
+    ).rejects.toThrow();
+  });
+
   it("update with only an id sends an empty patch", async () => {
     await admin().estimates.update({ id: 4 });
     expect(repo.updateEstimate).toHaveBeenCalledWith(4, {});

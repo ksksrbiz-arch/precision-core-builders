@@ -625,7 +625,10 @@ describe("Authorization Matrix", () => {
 
   it("protected procedures require authentication", async () => {
     await expect(anonCaller.projects.list()).rejects.toThrow(/unauthorized/i);
-    await expect(userCaller.projects.list()).resolves.toBeDefined();
+    // projects.list returns every project + client contact: admin-only.
+    await expect(userCaller.projects.list()).rejects.toThrow(/forbidden/i);
+    await expect(adminCaller.projects.list()).resolves.toBeDefined();
+    await expect(userCaller.auth.me()).resolves.toBeDefined();
   });
 
   it("admin procedures require admin role", async () => {
