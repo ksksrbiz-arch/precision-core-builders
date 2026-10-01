@@ -5,6 +5,7 @@
  * - Horizontal task bars with date ranges (stacked bar chart: spacer + duration)
  * - Drag-and-drop task rescheduling via onTaskUpdate callback
  * - Weather-sensitive task highlighting
+ * - Finish-to-start dependency connectors (red when a task starts too early)
  * - Real-time updates via Supabase
  * - Mobile responsive
  */
@@ -19,6 +20,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  Rectangle,
 } from "recharts";
 import { CloudRain, Trash2 } from "lucide-react";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
@@ -34,8 +36,15 @@ import {
 } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
+  findDependencyProblem,
+  formatDependsOn,
+  parseDependsOn,
+} from "@shared/scheduleDeps";
+import {
+  BAR_CATEGORY_GAP,
   STATUS_COLORS,
   dateToISO,
+  dependencyConnector,
   dragDaysFromPixels,
   getBarColor as barColorFor,
   getDateNum,
@@ -55,6 +64,8 @@ export interface ScheduleItem {
   planned_end?: string | null;
   assigned_to?: string | null;
   notes?: string | null;
+  /** Comma-separated predecessor task ids (finish-to-start). */
+  depends_on?: string | null;
 }
 
 /** Partial updates accepted by the task edit modal / save callback. */
@@ -66,6 +77,8 @@ export type ScheduleTaskPatch = {
   assignedTo?: string | null;
   notes?: string | null;
   weatherSensitive?: boolean;
+  /** Predecessor ids as stored; `null` clears them. Omitted = unchanged. */
+  dependsOn?: string | null;
 };
 
 export interface GanttChartProps {
@@ -91,6 +104,8 @@ interface GanttBarData {
   weatherSensitive: boolean;
   startDate: string;
   endDate: string;
+  /** Predecessor task ids that exist in this project. */
+  deps: number[];
 }
 
 function getBarColor(bar: GanttBarData): string {
@@ -118,6 +133,7 @@ export function GanttChart({
     assignedTo: string;
     notes: string;
     weatherSensitive: boolean;
+    dependsOn: number[];
   }>({
     title: "",
     status: "pending",
@@ -126,6 +142,7 @@ export function GanttChart({
     assignedTo: "",
     notes: "",
     weatherSensitive: false,
+    dependsOn: [],
   });
   const [saving, setSaving] = useState(false);
   const isMobile = useIsMobile();
@@ -152,6 +169,7 @@ export function GanttChart({
         planned_end: row.planned_end ?? null,
         assigned_to: row.assigned_to ?? null,
         notes: row.notes ?? null,
+        depends_on: row.depends_on ?? null,
       }));
       setTasks(mapped);
     } else if (items.length > 0) {
@@ -189,6 +207,7 @@ export function GanttChart({
         weatherSensitive: task.weather_sensitive,
         startDate: task.planned_start!,
         endDate: task.planned_end!,
+        deps: parseDependsOn(task.depends_on).filter(id => id !== task.id),
       };
     });
 
@@ -207,6 +226,7 @@ export function GanttChart({
       assignedTo: task.assigned_to ?? "",
       notes: task.notes ?? "",
       weatherSensitive: !!task.weather_sensitive,
+      dependsOn: parseDependsOn(task.depends_on),
     });
   };
 
@@ -296,6 +316,11 @@ export function GanttChart({
             Weather-sensitive
           </p>
         )}
+        {bar.deps.length > 0 && (
+          <p className="text-muted-foreground text-[10px] mt-1">
+            After: {predecessorNames(bar.deps).join(", ")}
+          </p>
+        )}
       </div>
     );
   };
@@ -331,6 +356,12 @@ export function GanttChart({
       notes: editForm.notes.trim() || null,
       weatherSensitive: editForm.weatherSensitive,
     };
+    // Send predecessors only when they changed (undefined = leave as is).
+    const originalDeps = formatDependsOn(
+      parseDependsOn(editingTask.depends_on)
+    );
+    const nextDeps = formatDependsOn(editForm.dependsOn);
+    if (nextDeps !== originalDeps) updates.dependsOn = nextDeps;
 
     setSaving(true);
 
@@ -352,6 +383,10 @@ export function GanttChart({
               notes: updates.notes !== undefined ? updates.notes : t.notes,
               weather_sensitive:
                 updates.weatherSensitive ?? t.weather_sensitive,
+              depends_on:
+                updates.dependsOn !== undefined
+                  ? updates.dependsOn
+                  : t.depends_on,
             }
           : t
       )
@@ -389,6 +424,71 @@ export function GanttChart({
   }
 
   const chartHeight = Math.max(300, chartData.length * 44);
+
+  // Dependency lookups for the connector lines, tooltip and mobile list.
+  const barById = new Map(chartData.map(b => [b.id, b]));
+  const rowById = new Map(chartData.map((b, i) => [b.id, i]));
+  const titleById = new Map(tasks.map(t => [t.id, t.title]));
+  const predecessorNames = (ids: number[]) =>
+    ids.map(id => titleById.get(id)).filter((t): t is string => !!t);
+  const hasConnectors = chartData.some(b => b.deps.some(d => barById.has(d)));
+
+  /**
+   * Duration bar with its incoming dependency connectors. The chart only gives
+   * a bar its own rect, so each successor draws the line back to its
+   * predecessors (see dependencyConnector). Red = it starts before a
+   * predecessor finishes.
+   */
+  const renderBar = (props: any) => {
+    const { x, y, width, height, payload } = props;
+    const bar = barById.get(payload?.id);
+    const connectors = !bar
+      ? []
+      : bar.deps.flatMap(depId => {
+          const pred = barById.get(depId);
+          if (!pred) return [];
+          const c = dependencyConnector(
+            { x, y, width, height },
+            {
+              start: bar.start,
+              duration: bar.duration,
+              index: rowById.get(bar.id)!,
+            },
+            {
+              start: pred.start,
+              duration: pred.duration,
+              index: rowById.get(depId)!,
+            }
+          );
+          return c ? [{ depId, ...c }] : [];
+        });
+    return (
+      <g>
+        {connectors.map(c => (
+          <g
+            key={c.depId}
+            data-testid="dependency-link"
+            data-conflict={c.conflict ? "true" : "false"}
+            pointerEvents="none"
+          >
+            <path
+              d={c.path}
+              fill="none"
+              stroke={c.conflict ? "#ef4444" : "var(--muted-foreground)"}
+              strokeWidth={1.25}
+              strokeOpacity={c.conflict ? 0.95 : 0.75}
+            />
+            <path
+              d={c.arrow}
+              fill={c.conflict ? "#ef4444" : "var(--muted-foreground)"}
+              fillOpacity={c.conflict ? 0.95 : 0.75}
+            />
+          </g>
+        ))}
+        <Rectangle {...props} />
+      </g>
+    );
+  };
 
   return (
     <Card ref={dragRef}>
@@ -451,6 +551,11 @@ export function GanttChart({
                       </span>
                     )}
                   </div>
+                  {bar.deps.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      After: {predecessorNames(bar.deps).join(", ")}
+                    </p>
+                  )}
                 </div>
               </li>
             ))}
@@ -462,7 +567,7 @@ export function GanttChart({
                 data={chartData}
                 layout="vertical"
                 margin={{ top: 10, right: 30, left: 180, bottom: 10 }}
-                barCategoryGap="20%"
+                barCategoryGap={`${BAR_CATEGORY_GAP * 100}%`}
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -492,6 +597,10 @@ export function GanttChart({
                   dataKey="duration"
                   stackId="gantt"
                   radius={[2, 2, 2, 2]}
+                  shape={renderBar}
+                  // Connector geometry reads the bar's final width, so no
+                  // grow-in animation (it would also lag drag updates).
+                  isAnimationActive={false}
                   style={{
                     cursor: readOnly
                       ? "pointer"
@@ -537,6 +646,13 @@ export function GanttChart({
             <ul className="text-muted-foreground space-y-1">
               <li>• Yellow bars: Weather-sensitive tasks</li>
               <li>• Click a bar to {readOnly ? "view" : "edit"} details</li>
+              {hasConnectors && (
+                <li>
+                  • Lines link a task to the one it follows;{" "}
+                  <span className="text-red-500">red</span> means it starts
+                  before that task ends
+                </li>
+              )}
               {!readOnly && <li>• Drag bars horizontally to reschedule</li>}
               <li>• Only tasks with dates are shown</li>
             </ul>
@@ -557,7 +673,7 @@ export function GanttChart({
             <DialogDescription>
               {readOnly
                 ? "View-only schedule item details."
-                : "Update title, status, dates, assignee, or notes."}
+                : "Update title, status, dates, what it follows, assignee, or notes."}
             </DialogDescription>
           </DialogHeader>
 
@@ -669,6 +785,68 @@ export function GanttChart({
                 className="px-3 py-2 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 disabled:opacity-60"
               />
             </div>
+
+            {tasks.length > 1 && (
+              <fieldset className="grid gap-1.5">
+                <legend
+                  className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-1.5"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Starts after
+                </legend>
+                <div className="max-h-36 overflow-y-auto border border-border divide-y divide-border/50">
+                  {tasks
+                    .filter(t => t.id !== editingTask?.id)
+                    .map(t => {
+                      const checked = editForm.dependsOn.includes(t.id);
+                      const loops =
+                        !checked &&
+                        editingTask !== null &&
+                        findDependencyProblem(
+                          editingTask.id,
+                          [...editForm.dependsOn, t.id],
+                          tasks.map(x => ({
+                            id: x.id,
+                            dependsOn: x.depends_on,
+                          }))
+                        ) !== null;
+                      return (
+                        <label
+                          key={t.id}
+                          className={`flex items-center gap-2 px-3 py-2 text-sm ${
+                            readOnly || loops
+                              ? "opacity-60"
+                              : "cursor-pointer hover:bg-muted/30"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={readOnly || loops}
+                            onChange={e =>
+                              setEditForm(f => ({
+                                ...f,
+                                dependsOn: e.target.checked
+                                  ? [...f.dependsOn, t.id]
+                                  : f.dependsOn.filter(id => id !== t.id),
+                              }))
+                            }
+                            className="h-4 w-4 accent-primary"
+                          />
+                          <span className="min-w-0 flex-1 truncate">
+                            {t.title}
+                          </span>
+                          {loops && (
+                            <span className="text-[10px] text-muted-foreground">
+                              would loop
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                </div>
+              </fieldset>
+            )}
 
             <div className="grid gap-1.5">
               <label

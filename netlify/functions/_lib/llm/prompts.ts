@@ -121,6 +121,23 @@ Use ONLY the PROJECT DATA provided. Respond ONLY with valid JSON in this exact f
 }
 Be specific and practical. Never invent dates or scope not present in the data; if the schedule is empty, set scheduleDetails to "See project schedule" and safetyNotes to "".`,
 
+  /**
+   * vision-studio — the domain brief for photo analysis. The hard limits and
+   * the KNOWN/INFERRED/VERIFY protocol come from the `vision-analyst`
+   * specialist contract (server/_core/ai/specialists.ts), injected alongside.
+   */
+  vision: `You are the Vision AI for ${BRAND_CONTEXT}
+
+You analyze construction site photos for Eric. Depending on the mode requested you cover:
+- Progress: which trades/phases are visible and roughly how far along each looks
+- Materials: what is visible, brands only where legible, and visible condition
+- Safety: visible hazards, PPE and housekeeping concerns
+- Defects: visible damage, water staining, cracking, settling, workmanship problems
+- Code: visible indicators worth confirming against Oregon residential code
+- Quality: workmanship rated 1-10, with the visible evidence for the rating
+
+Be specific about where in the image each observation is. Respond in clear sections with headers.`,
+
   /** search — operational search intent extractor. */
   searchIntent: `You are a search assistant for Precision Core Builders, a construction management platform.
 Given a natural-language query, extract the search intent and return JSON:
@@ -138,6 +155,35 @@ Return only valid JSON.`,
 } as const;
 
 export type PromptKey = keyof typeof PROMPTS;
+
+/**
+ * vision-studio — the per-mode instruction sent with the photo. (Hard limits
+ * such as "no dollar figures" live in the specialist contract, not here, so a
+ * mode can't relax them.)
+ */
+export const VISION_MODE_PROMPTS = {
+  progress:
+    "Analyze this construction site photo for project progress. For each visible trade or phase give a rough completion range (INFERRED, not a measurement). Note what looks recently completed, in progress, or not started.",
+  safety:
+    "Review this construction site photo for visible safety concerns: fall hazards, PPE, housekeeping, unsafe conditions. Describe each visible concern and mark it VERIFY — a photo cannot establish a violation. Give an overall site-safety impression from 1-10 with the visible reasons.",
+  material:
+    "Identify the building materials visible in this photo. Note brands only where legible and the visible condition of each. Count or quantify only what can actually be counted in the frame; otherwise say it can't be determined. Flag anything that looks damaged or unsuitable.",
+  defect:
+    "Inspect this construction photo for visible defects, damage, or quality issues: water damage, cracking, settling, improper installations, workmanship problems. Say what is visible and what would need to be opened up or inspected to confirm.",
+  general:
+    "Provide a comprehensive analysis of this construction photo covering progress, materials, quality, and any notable observations.",
+  estimate:
+    "Based on this construction photo, produce a scope-of-work takeoff: list each visible work item and trade, the scope questions that change cost, and what must be measured or confirmed on site. Do NOT state any prices, costs, rates or dollar amounts — the estimating engine prices the work from the reviewed cost basis.",
+} as const;
+
+export type VisionMode = keyof typeof VISION_MODE_PROMPTS;
+
+export function isVisionMode(value: unknown): value is VisionMode {
+  return (
+    typeof value === "string" &&
+    Object.prototype.hasOwnProperty.call(VISION_MODE_PROMPTS, value)
+  );
+}
 
 /**
  * True when an error originates from missing LLM provider configuration rather

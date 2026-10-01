@@ -3,6 +3,7 @@ import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { assertProjectAccess } from "../_core/access";
 import { logAdminAction } from "../_core/auditLog";
 import {
+  countProjectLedgerEntries,
   createProject,
   deleteProject,
   getCostAdjustmentTotals,
@@ -13,9 +14,11 @@ import {
   getProjectRow,
   getProjectsStats,
   listProjects,
+  setProjectArchived,
   updateProject,
   updateProjectProgress,
 } from "../_data/projectsRepo";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const ProjectStatusEnum = z.enum([
@@ -97,6 +100,8 @@ export const projectsRouter = router({
           pageSize: z.number().int().min(1).max(100).optional(),
           status: ProjectStatusEnum.optional(),
           search: z.string().optional(),
+          // Archived projects are hidden by default (lists, pickers).
+          archived: z.enum(["exclude", "only", "include"]).optional(),
         })
         .optional()
         .default({})
@@ -222,9 +227,43 @@ export const projectsRouter = router({
       return updateProjectProgress(input.id, updates);
     }),
 
+  // Archive hides a project from lists, pickers and the dashboard but keeps
+  // every record (ledger, reports, estimates) intact; `unarchive` restores it.
+  // Client-portal access is a separate switch (`clientPortalEnabled`).
+  archive: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const row = await setProjectArchived(input.id, new Date().toISOString());
+      await logAdminAction(db, ctx, "project.archive", input.id, {
+        projectId: input.id,
+      });
+      return row;
+    }),
+
+  unarchive: adminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const row = await setProjectArchived(input.id, null);
+      await logAdminAction(db, ctx, "project.unarchive", input.id, {
+        projectId: input.id,
+      });
+      return row;
+    }),
+
+  // Hard delete is only for a project with no financial history (e.g. a lead
+  // created by mistake). Deleting cascades into the immutable ledger, so
+  // anything with ledger entries must be archived instead. No UI calls this.
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
+      const entries = await countProjectLedgerEntries(input.id);
+      if (entries > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message:
+            "This project has financial history in the ledger and can't be deleted. Archive it instead.",
+        });
+      }
       await logAdminAction(db, ctx, "project.delete", input.id, {
         projectId: input.id,
       });

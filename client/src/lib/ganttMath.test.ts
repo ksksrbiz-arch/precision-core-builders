@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   STATUS_COLORS,
   WEATHER_SENSITIVE_COLOR,
+  BAR_ROW_FILL,
   dateToISO,
+  dependencyConnector,
   dragDaysFromPixels,
   getBarColor,
   getDateNum,
@@ -107,5 +109,61 @@ describe("dragDaysFromPixels", () => {
 describe("MS_PER_DAY constant", () => {
   it("is 24 hours in ms", () => {
     expect(MS_PER_DAY).toBe(86_400_000);
+  });
+});
+
+describe("dependencyConnector", () => {
+  // Successor: row 1, starts day 5, 4 days long, drawn 40px wide (10px/day),
+  // 30px tall (bars fill 60% of a row => 50px row spacing), top-left (100, 60).
+  const rect = { x: 100, y: 60, width: 40, height: 30 };
+  const succ = { start: 5, duration: 4, index: 1 };
+
+  it("draws a finish-to-start elbow from the predecessor's end", () => {
+    // Predecessor row 0, days 0..3 => ends 2 days (20px) before the successor.
+    const c = dependencyConnector(rect, succ, {
+      start: 0,
+      duration: 3,
+      index: 0,
+    })!;
+    expect(c.conflict).toBe(false);
+    // x1 = 100 - 20 = 80; y2 = 60 + 15 = 75; y1 = 75 - 50 = 25;
+    // the elbow bends 10px out, then down to y2.
+    expect(c.path).toBe("M80,25 H90 V75 H100");
+    expect(c.arrow).toContain("L100,75");
+  });
+
+  it("flags a conflict when the successor starts before the predecessor ends", () => {
+    const c = dependencyConnector(rect, succ, {
+      start: 2,
+      duration: 6,
+      index: 0,
+    })!;
+    expect(c.conflict).toBe(true);
+    expect(c.path.startsWith("M")).toBe(true);
+    // Routes between the rows and re-enters from the left of the successor.
+    expect(c.path).toContain("H92");
+  });
+
+  it("treats finish == start as fine", () => {
+    const c = dependencyConnector(rect, succ, {
+      start: 2,
+      duration: 3,
+      index: 0,
+    })!;
+    expect(c.conflict).toBe(false);
+  });
+
+  it("uses the gap the chart is configured with (bars fill 60% of a row)", () => {
+    expect(BAR_ROW_FILL).toBeCloseTo(0.6);
+  });
+
+  it("returns null for a degenerate bar", () => {
+    expect(
+      dependencyConnector({ ...rect, width: 0 }, succ, {
+        start: 0,
+        duration: 1,
+        index: 0,
+      })
+    ).toBeNull();
   });
 });

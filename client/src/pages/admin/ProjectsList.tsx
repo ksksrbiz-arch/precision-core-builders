@@ -31,6 +31,7 @@ export default function ProjectsList() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [status, setStatus] = useState<string | undefined>(undefined);
+  const [showArchived, setShowArchived] = useState(false);
   const [page, setPage] = useState(1);
   const isMobile = useIsMobile();
   const utils = trpc.useUtils();
@@ -40,6 +41,8 @@ export default function ProjectsList() {
     pageSize: 20,
     search: debouncedSearch || undefined,
     status: (status as any) || undefined,
+    // Archived jobs are hidden unless the Archived view is open.
+    archived: showArchived ? "only" : undefined,
   });
 
   // Live updates: project status/progress changes refresh the list.
@@ -101,6 +104,34 @@ export default function ProjectsList() {
             <option value="complete">Complete</option>
             <option value="on_hold">On Hold</option>
           </select>
+          <div
+            role="group"
+            aria-label="Project view"
+            className="flex border border-border text-[11px] font-bold tracking-widest uppercase"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            {[
+              { label: "Active", value: false },
+              { label: "Archived", value: true },
+            ].map(opt => (
+              <button
+                key={opt.label}
+                type="button"
+                aria-pressed={showArchived === opt.value}
+                onClick={() => {
+                  setShowArchived(opt.value);
+                  setPage(1);
+                }}
+                className={`px-4 py-3 min-h-11 transition-colors ${
+                  showArchived === opt.value
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {isLoading ? (
@@ -118,20 +149,33 @@ export default function ProjectsList() {
               <EmptyMedia variant="icon">
                 <ClipboardList />
               </EmptyMedia>
-              <EmptyTitle>No projects yet</EmptyTitle>
+              <EmptyTitle>
+                {showArchived ? "No archived projects" : "No projects yet"}
+              </EmptyTitle>
               <EmptyDescription>
-                Create your first project to start tracking budgets, schedule,
-                and field reports.
+                {showArchived
+                  ? "Projects you archive from their detail page show up here and can be restored."
+                  : "Create your first project to start tracking budgets, schedule, and field reports."}
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <button
-                onClick={() => setLocation("/admin/projects/new")}
-                className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                + Create your first project
-              </button>
+              {showArchived ? (
+                <button
+                  onClick={() => setShowArchived(false)}
+                  className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Back to active projects
+                </button>
+              ) : (
+                <button
+                  onClick={() => setLocation("/admin/projects/new")}
+                  className="text-[11px] text-primary border border-primary/40 px-4 py-2 tracking-wider uppercase hover:bg-primary/10 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  + Create your first project
+                </button>
+              )}
             </EmptyContent>
           </Empty>
         ) : isMobile ? (

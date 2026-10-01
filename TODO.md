@@ -14,8 +14,10 @@ Fixed in the audit PR; these remain **decisions or larger builds**, not bugs:
 - [ ] Price portal finish options server-side (finish catalog) — the client hard-codes dollar deltas and the server writes client-supplied `budgetImpact` into the immutable ledger
 - [ ] PO receipt UI with a received-quantity input ("partial" currently applies the full line); decide when PO cost counts toward actual cost
 - [ ] Paginate / search-as-you-type the project & client pickers (capped at 50–100 today)
-- [ ] Project archive (instead of delete) policy; schedule dependency lines + reorder UI
-- [ ] Route `vision-studio` through `routeAi()` / `specialistPrompt()`
+- [x] Project archive (instead of delete) — `archived_at`, Archive/Restore UI, hard delete refused when ledger history exists (migration 0011)
+- [x] Schedule dependency lines + reorder UI — "Starts after" editor, finish-to-start connectors (red when violated), Up/Down reorder
+- [x] Route `vision-studio` through `routeAi()` / `specialistPrompt()` — pinned `vision-analyst` specialist
+- [ ] Field-report photo tagging (`server/_core/visionTagging.ts`) still uses its own JSON prompt without the specialist contract
 
 ---
 

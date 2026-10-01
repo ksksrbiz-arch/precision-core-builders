@@ -84,3 +84,73 @@ export function getBarColor(status: string, weatherSensitive: boolean): string {
 export function dragDaysFromPixels(deltaX: number): number {
   return Math.round(deltaX / PIXELS_PER_DAY);
 }
+
+/**
+ * Gap (as a fraction of a row's band) the chart leaves above AND below each
+ * bar — i.e. the `barCategoryGap` prop. Recharts applies it on both sides, so
+ * a bar fills `1 - 2 × gap` of its row. The connector math recovers the row
+ * spacing from a bar's rendered height with this, so the chart and the math
+ * must share it.
+ */
+export const BAR_CATEGORY_GAP = 0.2;
+export const BAR_ROW_FILL = 1 - 2 * BAR_CATEGORY_GAP;
+
+export type ConnectorBar = {
+  /** Days from the earliest task start to this bar's start. */
+  start: number;
+  /** Bar length in days. */
+  duration: number;
+  /** Row index (top = 0). */
+  index: number;
+};
+
+export type DependencyConnector = {
+  /** SVG path of the elbow from the predecessor's end to the successor's start. */
+  path: string;
+  /** Small right-pointing arrowhead at the successor's start. */
+  arrow: string;
+  /** True when the successor starts before the predecessor finishes. */
+  conflict: boolean;
+};
+
+/**
+ * Finish-to-start connector, expressed in the successor bar's pixel rect.
+ *
+ * The chart only hands each bar its own rect, so the predecessor's end is
+ * recovered from the day offsets: pixels-per-day is the successor's width over
+ * its duration, row spacing is its height over BAR_ROW_FILL.
+ */
+export function dependencyConnector(
+  succRect: { x: number; y: number; width: number; height: number },
+  succ: ConnectorBar,
+  pred: ConnectorBar
+): DependencyConnector | null {
+  if (!(succ.duration > 0) || !(succRect.width > 0)) return null;
+  const pxPerDay = succRect.width / succ.duration;
+  const rowStep = succRect.height / BAR_ROW_FILL;
+
+  const x2 = succRect.x;
+  const y2 = succRect.y + succRect.height / 2;
+  const x1 = x2 + (pred.start + pred.duration - succ.start) * pxPerDay;
+  const y1 = y2 + (pred.index - succ.index) * rowStep;
+  const conflict = x2 < x1 - 0.5;
+
+  const arrow = `M${x2 - 5},${y2 - 3} L${x2},${y2} L${x2 - 5},${y2 + 3} Z`;
+
+  if (!conflict) {
+    const xm = x1 + Math.min(10, (x2 - x1) / 2);
+    return {
+      path: `M${x1},${y1} H${xm} V${y2} H${x2}`,
+      arrow,
+      conflict,
+    };
+  }
+  // Successor starts before the predecessor ends: loop out past the
+  // predecessor, run between the rows, and come back in from the left.
+  const ym = y1 + (y2 >= y1 ? rowStep / 2 : -rowStep / 2);
+  return {
+    path: `M${x1},${y1} H${x1 + 8} V${ym} H${x2 - 8} V${y2} H${x2}`,
+    arrow,
+    conflict,
+  };
+}
