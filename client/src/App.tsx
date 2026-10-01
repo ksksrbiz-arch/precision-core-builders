@@ -17,6 +17,7 @@ import {
 } from "./components/SiteEnhancements";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { PageTransition } from "./components/ui/PageTransition";
+import "./marketing-readability.css";
 import { AdminRoute, ProtectedRoute } from "./components/RouteGuards";
 import type { ComponentType } from "react";
 import { MarketingDesign } from "./components/layout/MarketingDesign";
