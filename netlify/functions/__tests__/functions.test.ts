@@ -42,7 +42,7 @@ describe("estimate-project function", () => {
     expect(response.statusCode).toBe(405);
   });
 
-  it("validates required projectType field", async () => {
+  it("rejects anonymous estimate generation before validating project input", async () => {
     const { handler } = await import("../estimate-project");
     const event = mockEvent("POST", {
       squareFootage: 2000,
@@ -50,9 +50,10 @@ describe("estimate-project function", () => {
     });
     const response = await handler(event as any, {} as any);
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(401);
     const body = JSON.parse(response.body);
-    expect(body.error).toMatch(/projectType/i);
+    expect(body.error).toBeTruthy();
+    expect(body).not.toHaveProperty("estimatedMid");
   });
 });
 

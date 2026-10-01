@@ -11,6 +11,11 @@ import { computeEstimate } from "../../../shared/estimating";
 
 const invokeLLM = vi.fn();
 const getSupabaseAdmin = vi.fn(() => null);
+const { verifyAdmin } = vi.hoisted(() => ({ verifyAdmin: vi.fn() }));
+vi.mock("../_utils/authGuard", () => ({
+  verifyAdmin,
+  verifyAuth: vi.fn(),
+}));
 
 vi.mock("../../../server/_core/llm", () => ({
   invokeLLM: (...args: unknown[]) => invokeLLM(...args),
@@ -44,9 +49,31 @@ let ipCounter = 0;
 const nextIp = () => `198.51.100.${++ipCounter}`;
 
 beforeEach(() => {
+  verifyAdmin.mockResolvedValue({
+    ok: true,
+    user: { id: "eric", email: "eric@example.com", role: "admin" },
+  });
   invokeLLM.mockReset();
   getSupabaseAdmin.mockReset();
   getSupabaseAdmin.mockReturnValue(null);
+});
+
+describe("estimate-project — Eric-only access", () => {
+  it.each([401, 403])(
+    "rejects a non-admin request with %s before pricing or calling AI",
+    async statusCode => {
+      verifyAdmin.mockResolvedValue({
+        ok: false,
+        statusCode,
+        message: "Admin access required",
+      });
+      const result = await post({ projectType: "kitchen" }, nextIp());
+      expect(result.statusCode).toBe(statusCode);
+      expect(result.body).not.toHaveProperty("estimatedMid");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(getSupabaseAdmin).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe("estimate-project — deterministic figures", () => {

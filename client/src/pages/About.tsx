@@ -508,7 +508,7 @@ export default function About() {
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-primary/85 hover:gap-3 transition-all min-h-[52px]"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Get Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+                  Request a Consultation <ArrowRight className="h-3.5 w-3.5" />
                 </a>
                 <a
                   href="/portfolio"

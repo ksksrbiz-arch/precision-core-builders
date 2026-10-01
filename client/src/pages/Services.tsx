@@ -355,8 +355,8 @@ export default function ServicesPage() {
                   Ready to start? Let's scope your project.
                 </h2>
                 <p className="text-muted-foreground font-light text-sm">
-                  Tell Eric what you're planning — get a clear, no-pressure
-                  estimate and a straight answer on next steps.
+                  Tell Eric what you're planning and discuss the scope, site
+                  conditions, and next steps with him.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
@@ -368,11 +368,11 @@ export default function ServicesPage() {
                   <Phone className="h-3.5 w-3.5" /> {SITE.phone}
                 </a>
                 <Link
-                  href="/estimator"
+                  href="/contact"
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 hover:gap-3 transition-all min-h-[48px]"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+                  Consultation <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>

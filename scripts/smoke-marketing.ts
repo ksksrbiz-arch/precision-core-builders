@@ -56,7 +56,18 @@ try {
     "/services",
     "/contact",
     "/privacy",
+    "/services/residential",
+    "/services/remodels",
+    "/services/new-construction",
+    "/services/restoration",
+    "/services/outdoor",
+    "/services/painting",
+    "/services/roofing",
+    "/services/cabinets",
+    "/faq",
     "/blog/kitchen-remodel-cost-eugene-oregon",
+    "/blog/deck-cost-eugene-oregon",
+    "/blog/bathroom-remodel-cost-eugene-oregon",
   ]) {
     await page.goto(`http://127.0.0.1:4174${path}`);
     await page.waitForFunction(
@@ -68,6 +79,8 @@ try {
       path
     );
     assert.equal(await page.locator("main h1").count(), 1, path);
+    assert.equal(await page.locator('a[href="/estimator"]').count(), 0, path);
+    assert.equal(await page.locator('[name="budget"]').count(), 0, path);
     assert.ok(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth + 2
@@ -75,6 +88,9 @@ try {
       `Mobile overflow: ${path}`
     );
   }
+  await page.goto("http://127.0.0.1:4174/estimator");
+  await page.waitForURL("**/contact");
+  assert.equal(await page.locator('[name="budget"]').count(), 0);
   console.log(
     "Mobile marketing smoke passed: route rendering, overflow checks, showroom inquiry prefill, and mocked form attribution. No real inquiry sent."
   );

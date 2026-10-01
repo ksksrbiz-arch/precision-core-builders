@@ -25,7 +25,7 @@ export default function Privacy() {
         </p>
         <h2 className="text-2xl">Website services and measurement</h2>
         <p>
-          Our website uses Netlify to host pages and receive forms. Estimate
+          Our website uses Netlify to host pages and receive forms. Project
           inquiries may also be sent to our project follow-up automation. We
           include the page you submitted from, a referring website origin when
           available, and campaign parameters to understand how inquiries reach

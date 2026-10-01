@@ -32,6 +32,16 @@ import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
 import { routeAi } from "../../server/_core/ai/router";
 import { specialistPrompt } from "../../server/_core/ai/specialists";
 import { toolsForSurface, toolExecutorFor } from "../../server/_core/ai/tools";
+import {
+  inferProjectState,
+  nextSteps,
+  type ProjectState,
+} from "../../server/_core/ai/projectState";
+import {
+  ERIC_PRICING_RESPONSE,
+  isPricingRequest,
+  publicProjectAnswer,
+} from "./_utils/publicPricingPolicy";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
 
@@ -140,24 +150,42 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   const lastUserMessage =
     [...messages].reverse().find(m => m.role === "user")?.content ?? "";
   const latest = typeof lastUserMessage === "string" ? lastUserMessage : "";
-  const route = routeAi({ message: latest, surface: "public" });
+  if (isPricingRequest(latest)) {
+    return {
+      statusCode: 200,
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        text: ERIC_PRICING_RESPONSE,
+        route: "general-advisor",
+        toolsUsed: [],
+        suggestions: [],
+        estimateReady: false,
+      }),
+    };
+  }
+  const route = routeAi({
+    message: latest,
+    surface: "public",
+    specialist: "general-advisor",
+  });
 
   // Build a structured model of the visitor's project from what they have
   // actually said. Deterministic on purpose — a model asked to "extract the
   // project" invents a square footage nobody mentioned.
   const priorState: ProjectState =
-    body &&
-    typeof body === "object" &&
-    body.project &&
-    typeof body.project === "object"
-      ? (body.project as ProjectState)
+    requestBody.project && typeof requestBody.project === "object"
+      ? (requestBody.project as ProjectState)
       : {};
   const project = inferProjectState(latest, priorState, messages);
 
   const fullMessages = [
     {
       role: "system" as const,
-      content: [PROMPTS.chat, specialistPrompt(route.id)].join("\n\n"),
+      content: [
+        PROMPTS.chat,
+        specialistPrompt(route.id),
+        "Never provide a price, cost estimate, budget range, or financial projection. Eric personally prepares all project pricing. Refer pricing questions to Eric at /contact.",
+      ].join("\n\n"),
     },
     ...messages
       .filter(m => m.role !== "system")
@@ -174,9 +202,7 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
   // Buffered fallback — preserves the original JSON contract exactly.
   const buffered = async (): Promise<StreamingResponse> => {
     try {
-      // The public surface gets exactly one tool: the deterministic
-      // estimator. That turns "what does a kitchen cost?" from an invented
-      // number into the same computed range /estimator serves.
+      // Public visitors get project guidance only; pricing tools are Eric-only.
       const result = await runToolLoop({
         messages: fullMessages,
         maxTokens: 600,
@@ -189,7 +215,7 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
         statusCode: 200,
         headers: jsonHeaders,
         body: JSON.stringify({
-          text: result.text,
+          text: publicProjectAnswer(result.text),
           model: result.model,
           provider: result.provider,
           route: route.id,
@@ -198,8 +224,10 @@ const serveInner = async (event: HandlerEvent): Promise<StreamingResponse> => {
           // Structured state so the UI can track the conversation and offer a
           // next step that fits, instead of a static prompt list.
           project,
-          suggestions: nextSteps(project),
-          estimateReady: estimateReady(project, messages),
+          suggestions: nextSteps(project).filter(
+            step => !isPricingRequest(step.prompt)
+          ),
+          estimateReady: false,
         }),
       };
     } catch (err) {

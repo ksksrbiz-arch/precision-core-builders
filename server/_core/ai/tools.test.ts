@@ -50,14 +50,23 @@ beforeEach(() => {
 });
 
 describe("surface gating", () => {
-  it("offers only the estimator to the public surface", () => {
-    expect(toolNamesForSurface("public")).toEqual(["estimate_project"]);
+  it("refuses pricing requests on public and portal surfaces even for valid projects", async () => {
+    for (const surface of ["public", "portal"] as const) {
+      const result = await executeTool(surface, "estimate_project", {
+        projectType: "kitchen",
+      });
+      expect(result).toHaveProperty("error");
+      expect(result).not.toHaveProperty("estimatedMid");
+    }
+  });
+  it("offers no pricing tools to the public surface", () => {
+    expect(toolNamesForSurface("public")).toEqual([]);
   });
 
-  it("offers only the estimator to the portal surface", () => {
+  it("offers no pricing tools to the portal surface", () => {
     // A client asking a cost question is fine; reading the materials table
     // or another project is not.
-    expect(toolNamesForSurface("portal")).toEqual(["estimate_project"]);
+    expect(toolNamesForSurface("portal")).toEqual([]);
   });
 
   it("offers the operational tools to the internal surface", () => {
@@ -126,7 +135,7 @@ describe("surface gating", () => {
 
 describe("estimate_project", () => {
   it("returns exactly what the deterministic basis computes", async () => {
-    const result = (await executeTool("public", "estimate_project", {
+    const result = (await executeTool("internal", "estimate_project", {
       projectType: "kitchen",
       complexity: "medium",
     })) as Record<string, number | string>;
@@ -144,7 +153,7 @@ describe("estimate_project", () => {
   });
 
   it("returns VERIFY rather than a number for an unpriced type", async () => {
-    const result = (await executeTool("public", "estimate_project", {
+    const result = (await executeTool("internal", "estimate_project", {
       projectType: "adu",
       squareFootage: 800,
     })) as Record<string, string | undefined>;
@@ -155,21 +164,21 @@ describe("estimate_project", () => {
   });
 
   it("returns VERIFY for an unknown project type", async () => {
-    const result = (await executeTool("public", "estimate_project", {
+    const result = (await executeTool("internal", "estimate_project", {
       projectType: "moon base",
     })) as { status?: string };
     expect(result.status).toBe("verify");
   });
 
   it("tells the model the figures are final", async () => {
-    const result = (await executeTool("public", "estimate_project", {
+    const result = (await executeTool("internal", "estimate_project", {
       projectType: "roofing",
     })) as { instruction?: string };
     expect(result.instruction).toMatch(/never restate them differently/i);
   });
 
   it("ignores junk arguments instead of throwing", async () => {
-    const result = (await executeTool("public", "estimate_project", {
+    const result = (await executeTool("internal", "estimate_project", {
       projectType: "kitchen",
       squareFootage: "not a number",
       complexity: "extremely",

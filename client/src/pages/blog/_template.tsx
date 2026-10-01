@@ -119,17 +119,6 @@ export function ArticlePage(p: ArticlePageProps) {
 
         {/* ── Article body ─────────────────────────────────────── */}
         <article className="py-16 sm:py-20">
-          {p.category === "Cost Guides" && (
-            <aside
-              className="container max-w-2xl mb-8 border border-primary/40 p-5 text-sm"
-              aria-label="Cost guide assumptions"
-            >
-              Planning guidance, not a quote or a published market index. Costs
-              depend on project scope, site conditions, permits, materials, and
-              current trade pricing. Confirm inclusions and allowances in a
-              written estimate after an on-site consultation.
-            </aside>
-          )}
           <div className="container">
             <div className="max-w-2xl mx-auto">
               <p className="text-lg sm:text-xl text-muted-foreground font-light leading-relaxed mb-10 border-l-2 border-primary pl-5">
@@ -235,16 +224,16 @@ export function ArticlePage(p: ArticlePageProps) {
                   Ready to talk about your project?
                 </p>
                 <p className="text-sm text-muted-foreground font-light mb-6">
-                  Free on-site consultation, no obligation. Or try our instant
-                  AI estimator for a ballpark first.
+                  Discuss your goals with Eric during an on-site consultation.
+                  He prepares pricing after reviewing your project.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <a
-                    href="/estimator"
+                    href="/contact"
                     className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-all hover:gap-3 min-h-[44px]"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Try the AI Estimator <ArrowRight className="h-3.5 w-3.5" />
+                    Talk with Eric <ArrowRight className="h-3.5 w-3.5" />
                   </a>
                   <a
                     href={SITE.phoneHref}

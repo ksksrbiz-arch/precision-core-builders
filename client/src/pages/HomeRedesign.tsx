@@ -315,7 +315,7 @@ export default function HomeRedesign() {
               },
               {
                 title: "Build with a shared plan",
-                body: "Review a written estimate and agree on the work before moving into construction.",
+                body: "Review Eric's project-specific proposal and agree on the scope before construction.",
               },
             ].map((step, index) => (
               <div key={step.title}>
@@ -326,10 +326,9 @@ export default function HomeRedesign() {
             ))}
           </div>
           <p className="premium-planning-note">
-            Still exploring your budget?{" "}
-            <a href="/estimator">
-              Try the preliminary cost estimator{" "}
-              <ArrowUpRight size={15} aria-hidden />
+            Have questions about your project?{" "}
+            <a href="/contact">
+              Talk with Eric <ArrowUpRight size={14} aria-hidden />
             </a>
           </p>
         </section>
@@ -379,7 +378,7 @@ export default function HomeRedesign() {
         <div>
           <h2>Plan your project</h2>
           <a href="/contact">Request a consultation</a>
-          <a href="/estimator">Preliminary cost estimator</a>
+          <a href="/contact">Contact Eric</a>
           <a href="/blog">Homeowner resources</a>
           <a href="/faq">Common questions</a>
         </div>

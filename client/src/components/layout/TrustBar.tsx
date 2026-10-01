@@ -15,7 +15,7 @@ const SIGNALS = [
   {
     icon: ThumbsUp,
     label: "Consultation",
-    value: "Free On-Site Estimate",
+    value: "On-Site Consultation",
   },
 ] as const;
 

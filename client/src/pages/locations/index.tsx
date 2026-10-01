@@ -27,7 +27,7 @@ export function Springfield() {
         </>
       }
       metaTitle="Springfield OR General Contractor | Precision Core Builders"
-      metaDescription="Licensed general contractor serving Springfield, Oregon. Custom homes, remodels & additions. CCB #246527. Free on-site estimates."
+      metaDescription="Licensed general contractor serving Springfield, Oregon. Custom homes, remodels & additions. CCB #246527. On-site consultations."
       intro="Springfield runs its own full-service building department, separate from both Eugene and Lane County — and knowing exactly how that system works is the difference between a smooth permit and months of back-and-forth."
       body={[
         "We've built and remodeled homes throughout Springfield for years — kitchen and bath remodels near downtown, second-story additions on the Thurston side, and outdoor living builds on larger lots toward the edges. Every project starts the same way: a free on-site consultation where we walk the property, review your goals, and give you a real, itemized estimate.",
@@ -43,7 +43,7 @@ export function Springfield() {
       faqs={[
         {
           q: "Do you build and remodel homes in Springfield, OR?",
-          a: "Yes. Springfield is one of our core service areas alongside Eugene. We handle everything from custom home builds to kitchen and bath remodels, additions, and outdoor living spaces throughout the city. Start with our free online cost estimator for a directional range, then call for an on-site visit.",
+          a: "Yes. Springfield is one of our core service areas alongside Eugene. We handle everything from custom home builds to kitchen and bath remodels, additions, and outdoor living spaces throughout the city. Contact Eric to arrange an on-site consultation and discuss your project.",
         },
         {
           q: "Who handles my building permit in Springfield?",
@@ -82,7 +82,7 @@ export function Coburg() {
         </>
       }
       metaTitle="Coburg OR General Contractor | Precision Core Builders"
-      metaDescription="Licensed general contractor serving Coburg, Oregon. Custom homes, remodels & additions. CCB #246527. Free on-site estimates."
+      metaDescription="Licensed general contractor serving Coburg, Oregon. Custom homes, remodels & additions. CCB #246527. On-site consultations."
       intro="Coburg is a small town with its own Planning Department — and a few local requirements that catch homeowners off guard if they're expecting the same process as Eugene or Springfield."
       body={[
         "We've worked on homes throughout Coburg's historic district and surrounding residential streets. Every project starts with a free, no-obligation on-site consultation so you get a real estimate, not a guess.",
@@ -136,7 +136,7 @@ export function Creswell() {
         </>
       }
       metaTitle="Creswell OR General Contractor | Precision Core Builders"
-      metaDescription="Licensed general contractor serving Creswell, Oregon. Custom homes, remodels & additions. CCB #246527. Free on-site estimates."
+      metaDescription="Licensed general contractor serving Creswell, Oregon. Custom homes, remodels & additions. CCB #246527. On-site consultations."
       intro="Creswell doesn't run its own building department — permitting here is handled through the City of Cottage Grove's Building Department, a detail a lot of homeowners don't realize until their permit gets routed somewhere they didn't expect."
       body={[
         "We build and remodel homes throughout Creswell, from the compact city core to the larger lots that stretch toward unincorporated Lane County. A free on-site consultation is always the first step, so you get an itemized estimate grounded in your actual property.",
@@ -150,7 +150,7 @@ export function Creswell() {
       faqs={[
         {
           q: "Do you build and remodel homes in Creswell, OR?",
-          a: "Yes — and you can start with our free online cost estimator for a directional budget before the site visit. Creswell is one of our regular service areas, and we're familiar with how permitting works here — including the fact that it routes through Cottage Grove's building department rather than a separate Creswell office.",
+          a: "Yes — contact Eric to schedule an on-site consultation. Creswell is one of our regular service areas, and we're familiar with how permitting works here — including the fact that it routes through Cottage Grove's building department rather than a separate Creswell office.",
         },
         {
           q: "Why does my Creswell permit go through Cottage Grove?",
@@ -189,7 +189,7 @@ export function CottageGrove() {
         </>
       }
       metaTitle="Cottage Grove OR General Contractor | Precision Core Builders"
-      metaDescription="Licensed general contractor serving Cottage Grove, Oregon. Custom homes, remodels & additions. CCB #246527. Free on-site estimates."
+      metaDescription="Licensed general contractor serving Cottage Grove, Oregon. Custom homes, remodels & additions. CCB #246527. On-site consultations."
       intro="Known as the Covered Bridge Capital of Oregon, Cottage Grove runs its own full-service building department — one that also handles inspections for the surrounding communities of Creswell, Coburg, and Veneta."
       body={[
         "We've built and remodeled homes throughout Cottage Grove, from the historic core near downtown to the residential streets further out. Every project begins with a free on-site consultation and a real, itemized estimate.",
@@ -243,7 +243,7 @@ export function JunctionCity() {
         </>
       }
       metaTitle="Junction City OR General Contractor | Precision Core Builders"
-      metaDescription="Licensed general contractor serving Junction City, Oregon. Custom homes, remodels & additions. CCB #246527. Free on-site estimates."
+      metaDescription="Licensed general contractor serving Junction City, Oregon. Custom homes, remodels & additions. CCB #246527. On-site consultations."
       intro="Junction City maintains its own Building Department, and sits in flat Willamette Valley farmland along the Long Tom River drainage — which changes what we check before design work even begins."
       body={[
         "We build and remodel homes throughout Junction City, from in-town residential lots to properties further out toward the surrounding farmland. A free on-site consultation and itemized estimate come first, always.",
@@ -257,7 +257,7 @@ export function JunctionCity() {
       faqs={[
         {
           q: "Do you build and remodel homes in Junction City, OR?",
-          a: "Yes — and you can start with our free online cost estimator for a directional budget before the site visit. Junction City is one of our regular service areas, and we're familiar with the floodplain and wetland considerations that come up more often here due to the flat, river-adjacent terrain.",
+          a: "Yes — contact Eric to schedule an on-site consultation. Junction City is one of our regular service areas, and we're familiar with the floodplain and wetland considerations that come up more often here due to the flat, river-adjacent terrain.",
         },
         {
           q: "Why does floodplain mapping matter for my Junction City project?",
@@ -292,7 +292,7 @@ export function Florence() {
         </>
       }
       metaTitle="Florence OR General Contractor | Precision Core Builders"
-      metaDescription="Licensed general contractor serving Florence, Oregon and the coast. Custom homes, remodels & additions. CCB #246527. Free on-site estimates."
+      metaDescription="Licensed general contractor serving Florence, Oregon and the coast. Custom homes, remodels & additions. CCB #246527. On-site consultations."
       intro="Florence is coastal, and that changes the permitting conversation in ways that don't come up anywhere else in our service area — between dune sand terrain, flood hazard zones, and a designated Tsunami Hazard Overlay Zone."
       body={[
         "We build and remodel homes along the Florence coastline and throughout the surrounding area, and we plan for the coastal-specific requirements from the very first conversation rather than after a permit gets kicked back.",
@@ -307,7 +307,7 @@ export function Florence() {
       faqs={[
         {
           q: "Do you build and remodel homes in Florence, OR?",
-          a: "Yes — and you can start with our free online cost estimator for a directional budget before the site visit. Florence is one of our service areas, and we have experience with the coastal-specific permitting — flood hazard review, elevation certificates, and dune terrain — that inland Lane County projects don't require.",
+          a: "Yes — contact Eric to schedule an on-site consultation. Florence is one of our service areas, and we have experience with the coastal-specific permitting — flood hazard review, elevation certificates, and dune terrain — that inland Lane County projects don't require.",
         },
         {
           q: "Why does my Florence project need an elevation certificate?",

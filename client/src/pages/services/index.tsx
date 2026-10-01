@@ -16,17 +16,6 @@ const SERVICE_AREAS = [
   "Lane County, OR",
 ];
 
-/**
- * Prepends a prominent "Typical budget" range to a service intro. The
- * template renders `intro` as a highlighted callout at the top of each page,
- * so this surfaces budget guidance up front. Ranges are derived from the cost
- * figures already cited in each service's FAQ/body copy where available, and
- * otherwise set to sensible Eugene-market ranges.
- */
-function withBudget(range: string, intro: string): string {
-  return `Typical budget: ${range}. ${intro}`;
-}
-
 // ─── 1. Residential ──────────────────────────────────────────────────────────
 export function Residential() {
   return (
@@ -48,11 +37,8 @@ export function Residential() {
         "Interior Remodels",
       ]}
       metaTitle="Residential Contractor Eugene OR | CCB #246527"
-      metaDescription="Licensed residential contractor in Eugene, Oregon (CCB #246527). Custom homes, renovations & additions by Eric Tadlock, 20+ years in the trade. Free estimates."
-      intro={withBudget(
-        "$50,000 – $500,000+",
-        "With over 20 years of hands-on residential construction experience in Eugene, our lead carpenters have built the expertise to handle every dimension of home construction — from the foundation pour to the final coat of paint."
-      )}
+      metaDescription="Licensed residential contractor in Eugene, Oregon (CCB #246527). Custom homes, renovations & additions by Eric Tadlock, 20+ years in the trade. Consultations."
+      intro="With over 20 years of hands-on residential construction experience in Eugene, our lead carpenters have built the expertise to handle every dimension of home construction — from the foundation pour to the final coat of paint."
       body={[
         "Residential construction in Eugene, Oregon requires a contractor who understands both the craft and the local landscape. Oregon's climate demands precise material selection, weatherproofing standards, and building techniques that stand up to wet winters and dry summers. Eric and Mitch Tadlock have spent two decades mastering exactly that.",
         "Every residential project starts with a free on-site consultation. We review your plans, walk the property, and give you a real, itemized estimate — not a ballpark. We coordinate permits through Lane County and the City of Eugene, manage subcontractors, and keep you informed throughout every phase.",
@@ -113,11 +99,8 @@ export function Remodels() {
       heroImageAlt="Kitchen and bathroom remodel Eugene Oregon"
       projectCategories={["Interior Remodels", "Bath & Kitchen"]}
       metaTitle="Home Remodeling Contractor Eugene OR | CCB #246527"
-      metaDescription="Expert home remodeling in Eugene, Oregon — kitchens, baths, and whole-home renovations. Licensed CCB #246527, 20+ years of experience. Free estimates."
-      intro={withBudget(
-        "$25,000 – $150,000+",
-        "We transform outdated Eugene homes into modern, functional spaces that match how you actually live. Kitchens, bathrooms, living spaces, basements — we tackle remodels and renovations of every scale with the same level of craftsmanship."
-      )}
+      metaDescription="Expert home remodeling in Eugene, Oregon — kitchens, baths, and whole-home renovations. Licensed CCB #246527, 20+ years of experience. Consultations."
+      intro="We transform outdated Eugene homes into modern, functional spaces that match how you actually live. Kitchens, bathrooms, living spaces, basements — we tackle remodels and renovations of every scale with the same level of craftsmanship."
       body={[
         "A remodel is more than cosmetic. Behind every great kitchen renovation or bathroom update is proper structural work, updated plumbing and electrical coordination, and finish carpentry that holds up for decades. We bring all of that together under one roof.",
         "Eugene homeowners trust us because we're straight with them from day one. You get a detailed scope of work before a single tool comes out. Change orders are documented. Timelines are real. And we clean up every day before we leave.",
@@ -137,7 +120,7 @@ export function Remodels() {
       faqs={[
         {
           q: "How much does a kitchen remodel cost in Eugene?",
-          a: "Kitchen remodels in Eugene typically range from $25,000 to $80,000+ depending on scope, materials, and layout changes. We provide itemized estimates so you know exactly where every dollar goes.",
+          a: "Eric reviews the layout, site conditions, material selections, and scope during an on-site consultation. He prepares project-specific pricing after that review.",
         },
         {
           q: "Do we need to move out during a remodel?",
@@ -178,11 +161,8 @@ export function NewConstruction() {
       heroImageAlt="New home construction Eugene Oregon"
       projectCategories={["Custom Homes", "Signature Outdoor Living"]}
       metaTitle="Custom Home Builder Eugene OR | New Construction"
-      metaDescription="Custom home builder in Eugene, Oregon. Ground-up construction from permits to final walkthrough. Licensed CCB #246527, 20+ years of experience. Free estimates."
-      intro={withBudget(
-        "$350,000 – $1,500,000+",
-        "Building a new home in Eugene is one of the most significant investments you'll make. We manage every phase — site prep, permits, foundation, framing, systems, and finish — so you get the home you envisioned, built correctly from the ground up."
-      )}
+      metaDescription="Custom home builder in Eugene, Oregon. Ground-up construction from permits to final walkthrough. Licensed CCB #246527, 20+ years of experience. Consultations."
+      intro="Building a new home in Eugene is one of the most significant investments you'll make. We manage every phase — site prep, permits, foundation, framing, systems, and finish — so you get the home you envisioned, built correctly from the ground up."
       body={[
         "New construction requires a contractor who can see the whole picture while executing every detail. Eric and Mitch Tadlock have been doing exactly that across Lane County for two decades — coordinating subcontractors, managing material timelines, and holding the line on quality at every stage.",
         "We work with your architect and designer, or help connect you with local Eugene professionals. Once plans are finalized, we handle everything: Lane County permits, utility coordination, subcontractor scheduling, framing, systems rough-in, insulation, drywall, finish carpentry, and final inspections.",
@@ -243,11 +223,8 @@ export function Restoration() {
       heroImageAlt="Home restoration project Eugene Oregon — before and after"
       projectCategories={["Exterior & Restoration"]}
       metaTitle="Home Restoration Contractor Eugene OR | CCB #246527"
-      metaDescription="Professional home restoration in Eugene, Oregon — water and fire damage, structural repairs, historic preservation. Licensed CCB #246527. Free estimates."
-      intro={withBudget(
-        "$15,000 – $200,000+",
-        "Restoration work demands a contractor with deep structural knowledge and a respect for what makes a home worth preserving. We bring both — restoring Eugene homes from damage, deterioration, or decades of deferred maintenance back to their full potential."
-      )}
+      metaDescription="Professional home restoration in Eugene, Oregon — water and fire damage, structural repairs, historic preservation. Licensed CCB #246527. Consultations."
+      intro="Restoration work demands a contractor with deep structural knowledge and a respect for what makes a home worth preserving. We bring both — restoring Eugene homes from damage, deterioration, or decades of deferred maintenance back to their full potential."
       body={[
         "Whether it's water damage from Oregon's wet winters, fire damage, dry rot, pest damage, or simply years of wear that have caught up with a structure, we approach every restoration project with the same thoroughness we bring to new construction.",
         "We assess the full extent of damage before quoting — no surprises mid-project. Structural repairs come first, then weatherproofing, then finish work. Every phase is documented for insurance purposes when applicable.",
@@ -304,11 +281,8 @@ export function Outdoor() {
       heroImageAlt="Custom deck and outdoor living space Eugene Oregon"
       projectCategories={["Decks & Outdoor", "Fencing & Structures"]}
       metaTitle="Deck Builder & Outdoor Contractor Eugene OR"
-      metaDescription="Custom decks, patios, pergolas, and outdoor living spaces in Eugene, Oregon. Designed and built for Oregon's climate. Licensed CCB #246527. Free estimates."
-      intro={withBudget(
-        "$10,000 – $100,000+",
-        "Eugene's outdoor lifestyle deserves spaces built to match — and to last through Oregon's seasons. We design and build decks, patios, pergolas, fencing, and full outdoor living environments that hold up to the wet winters and shine in the dry summers."
-      )}
+      metaDescription="Custom decks, patios, pergolas, and outdoor living spaces in Eugene, Oregon. Designed and built for Oregon's climate. Licensed CCB #246527. Consultations."
+      intro="Eugene's outdoor lifestyle deserves spaces built to match — and to last through Oregon's seasons. We design and build decks, patios, pergolas, fencing, and full outdoor living environments that hold up to the wet winters and shine in the dry summers."
       body={[
         "Outdoor construction in Oregon requires material choices and build techniques that go beyond what works in dryer climates. We use properly treated lumber, stainless fasteners, and drainage details that prevent the rot and moisture problems that take down cheaper builds within a few years.",
         "From a simple pressure-treated deck to a full covered outdoor kitchen with pergola, built-in seating, and privacy fencing — we handle the full spectrum of outdoor living projects throughout the Eugene area.",
@@ -365,11 +339,8 @@ export function Painting() {
       heroImageAlt="Professional interior and exterior painting Eugene Oregon"
       projectCategories={["Exterior & Restoration", "Interior Remodels"]}
       metaTitle="Painting Contractor Eugene OR | Interior & Exterior"
-      metaDescription="Professional interior and exterior painting in Eugene, Oregon. Proper prep, quality materials, clean results that last. Licensed CCB #246527. Free estimates."
-      intro={withBudget(
-        "$3,000 – $30,000+",
-        "Painting done right starts with preparation — not the brush. We take the time to properly prep every surface before a drop of paint goes on, which is why our finishes hold up to Eugene's climate for years without peeling, fading, or cracking."
-      )}
+      metaDescription="Professional interior and exterior painting in Eugene, Oregon. Proper prep, quality materials, clean results that last. Licensed CCB #246527. Consultations."
+      intro="Painting done right starts with preparation — not the brush. We take the time to properly prep every surface before a drop of paint goes on, which is why our finishes hold up to Eugene's climate for years without peeling, fading, or cracking."
       body={[
         "Most painting problems — bubbling, peeling, early fading — trace back to skipped prep work. We sand, prime, and address any moisture or adhesion issues before applying finish coats. The difference shows immediately and lasts for years.",
         "For exterior work in Eugene, we use premium exterior coatings rated for high-moisture environments. For interiors, we match paint sheen, product type, and application method to the room's function — low-VOC options available throughout.",
@@ -426,11 +397,8 @@ export function Roofing() {
       heroImageAlt="Roof replacement and roofing services Eugene Oregon"
       projectCategories={["Exterior & Restoration"]}
       metaTitle="Roofing Contractor Eugene OR | Replacement & Repair"
-      metaDescription="Expert roofing in Eugene, Oregon — replacements, repairs, and inspections built for Oregon's climate. Licensed contractor CCB #246527. Free estimates."
-      intro={withBudget(
-        "$8,000 – $40,000+",
-        "A roof in Eugene, Oregon has to perform. With 48+ inches of annual rainfall, your roof is your home's first and most critical line of defense. We install, repair, and replace roofs built to handle what Oregon throws at them."
-      )}
+      metaDescription="Expert roofing in Eugene, Oregon — replacements, repairs, and inspections built for Oregon's climate. Licensed contractor CCB #246527. Consultations."
+      intro="A roof in Eugene, Oregon has to perform. With 48+ inches of annual rainfall, your roof is your home's first and most critical line of defense. We install, repair, and replace roofs built to handle what Oregon throws at them."
       body={[
         "Roofing failures in Eugene are almost always the result of improper installation — failed flashings, inadequate underlayment, poor ventilation, or cheap materials that degrade quickly in wet conditions. We don't cut those corners.",
         "We work with architectural shingles, metal roofing, and standing seam systems — recommending the right material for your home's structure, pitch, and budget. Every installation includes proper ice and water shield at eaves and valleys, ridge ventilation, and fully sealed flashings at all penetrations.",
@@ -487,11 +455,8 @@ export function Cabinets() {
       heroImageAlt="Custom cabinetry and millwork Eugene Oregon"
       projectCategories={["Bath & Kitchen", "Interior Remodels"]}
       metaTitle="Custom Cabinet Builder Eugene OR | Built-Ins & Millwork"
-      metaDescription="Custom cabinetry, built-ins, and finish millwork in Eugene, Oregon. Designed for your space and built by hand. Licensed CCB #246527. Free on-site estimates."
-      intro={withBudget(
-        "$12,000 – $60,000+",
-        "Eric and Mitch Tadlock spent 20+ years as finish carpenters before founding Precision Core Builders. Custom cabinetry is in their DNA — built for your specific space, proportioned correctly, and crafted to outlast stock cabinet alternatives by decades."
-      )}
+      metaDescription="Custom cabinetry, built-ins, and finish millwork in Eugene, Oregon. Designed for your space and built by hand. Licensed CCB #246527. On-site consultations."
+      intro="Eric and Mitch Tadlock spent 20+ years as finish carpenters before founding Precision Core Builders. Custom cabinetry is in their DNA — built for your specific space, proportioned correctly, and crafted to outlast stock cabinet alternatives by decades."
       body={[
         "Stock cabinets are built to fit a showroom. Custom cabinets are built to fit your home. The difference matters in every kitchen, bathroom, and living space where the layout isn't perfectly standard — which is most Eugene homes, particularly in older neighborhoods.",
         "We build kitchen cabinets, bathroom vanities, laundry room built-ins, mudroom storage, bookcases, entertainment centers, and any millwork element your home needs. Every piece is measured on-site, built to those dimensions, and installed by the same carpenters who built it.",

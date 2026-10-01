@@ -22,6 +22,7 @@ import {
 } from "./specialists";
 
 const INTERNAL_ONLY: SpecialistId[] = [
+  "estimator",
   "ops-copilot",
   "field-reporter",
   "procurement",
@@ -84,14 +85,16 @@ describe("surface isolation", () => {
 });
 
 describe("routing", () => {
-  it("routes public cost questions to the estimator", () => {
+  it("keeps public cost questions out of the estimator", () => {
     for (const message of [
       "how much does a kitchen remodel cost",
       "what's your pricing for an addition",
       "can I get an estimate",
       "what would this run per square foot",
     ]) {
-      expect(routeAi({ message, surface: "public" }).id).toBe("estimator");
+      expect(routeAi({ message, surface: "public" }).id).toBe(
+        "general-advisor"
+      );
     }
   });
 
@@ -131,12 +134,12 @@ describe("routing", () => {
     }
   });
 
-  it("lets a portal user still reach the estimator for a cost question", () => {
+  it("keeps a portal cost question with the client liaison", () => {
     const route = routeAi({
       message: "how much would upgrading the countertops cost",
       surface: "portal",
     });
-    expect(route.id).toBe("estimator");
+    expect(route.id).toBe("client-liaison");
   });
 
   it("falls back to a bounded default rather than an unbounded prompt", () => {
@@ -177,7 +180,7 @@ describe("routing", () => {
   it("summarises a route for logging", () => {
     const route = routeAi({ message: "what does it cost", surface: "public" });
     expect(routeSummary(route)).toBe(
-      "AI route: estimator (explicit-message-match)"
+      "AI route: general-advisor (default-advisor)"
     );
   });
 });

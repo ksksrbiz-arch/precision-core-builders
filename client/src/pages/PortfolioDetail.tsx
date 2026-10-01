@@ -398,17 +398,17 @@ export default function PortfolioDetail() {
                   Ready to start yours?
                 </h2>
                 <p className="mt-3 text-white/75 max-w-md">
-                  Get a free cost range online, or walk the site with Eric —
-                  honest numbers, no pressure.
+                  Walk the site with Eric to discuss your project — honest
+                  numbers, no pressure.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Magnetic strength={0.3}>
                     <a
-                      href="/estimator"
+                      href="/contact"
                       className="inline-flex items-center gap-2 bg-[#C8A84B] text-neutral-900 px-6 py-3 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#d4b866] transition-all hover:gap-3"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      Free Cost Estimate <ArrowRight className="h-3.5 w-3.5" />
+                      Talk with Eric <ArrowRight className="h-3.5 w-3.5" />
                     </a>
                   </Magnetic>
                   <Magnetic strength={0.3}>

@@ -144,13 +144,13 @@ const SHOULD_PASS: string[] = [
 const checks: Check[] = [
   // ── Routing has not drifted ─────────────────────────────────────────────
   {
-    name: "public cost question routes to the estimator",
+    name: "public cost question stays with the general advisor",
     run: () => {
       const r = routeAi({
         message: "how much for a kitchen remodel",
         surface: "public",
       });
-      return r.id === "estimator" ? null : `routed to ${r.id}`;
+      return r.id === "general-advisor" ? null : `routed to ${r.id}`;
     },
   },
   {
@@ -253,11 +253,11 @@ const checks: Check[] = [
   },
   // ── Tool surface gating ─────────────────────────────────────────────────
   {
-    name: "public and portal surfaces are offered only the estimator tool",
+    name: "public and portal surfaces are offered no tools",
     run: () => {
       for (const surface of ["public", "portal"] as AiSurface[]) {
         const names = toolNamesForSurface(surface);
-        const extra = names.filter(n => n !== "estimate_project");
+        const extra = names;
         if (extra.length) return `${surface} is offered ${extra.join(", ")}`;
       }
       return null;
@@ -283,7 +283,7 @@ const checks: Check[] = [
   {
     name: "the estimator tool returns VERIFY for an unpriced project type",
     run: async () => {
-      const r = (await executeTool("public", "estimate_project", {
+      const r = (await executeTool("internal", "estimate_project", {
         projectType: "adu",
         squareFootage: 800,
       })) as { status?: string };

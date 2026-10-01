@@ -1,5 +1,5 @@
 /**
- * POST /api/estimate-project — planning-level construction cost estimate.
+ * POST /api/estimate-project — Eric's admin-only construction estimate tool.
  *
  * Code owns every dollar figure (`shared/estimating/`); the LLM only writes the
  * narrative explaining it. Previously the model produced the numbers from
@@ -118,7 +118,7 @@ function reasoningViolations(
 }
 
 export const handler = withGuards(
-  { methods: ["POST"], auth: "none" },
+  { methods: ["POST"], auth: "admin" },
   async ({ event, json, error }) => {
     // Rate limit: 10 req/min anonymous, 30 req/min authenticated.
     const ip = getClientIp(event.headers);
@@ -249,7 +249,7 @@ export const handler = withGuards(
               content: [
                 PROMPTS.estimator,
                 specialistPrompt(
-                  routeAi({ surface: "public", specialist: "estimator" }).id
+                  routeAi({ surface: "internal", specialist: "estimator" }).id
                 ),
               ].join("\n\n"),
             },
