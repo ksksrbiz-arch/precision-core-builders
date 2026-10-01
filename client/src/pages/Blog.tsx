@@ -77,7 +77,7 @@ export default function Blog() {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="pt-[68px]">
+      <main id="main-content" className="pt-[68px]">
         <section className="py-20 sm:py-28 border-b border-border/40">
           <div className="container">
             <motion.div

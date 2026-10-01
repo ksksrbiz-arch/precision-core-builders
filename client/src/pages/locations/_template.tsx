@@ -137,7 +137,7 @@ export function LocationPage(p: LocationPageProps) {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="pt-[68px]">
+      <main id="main-content" className="pt-[68px]">
         {/* ── Hero ──────────────────────────────────────────────── */}
         <section className="relative h-[55vh] min-h-[380px] flex items-end pb-12 overflow-hidden">
           <img

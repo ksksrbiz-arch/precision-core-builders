@@ -22,7 +22,7 @@ const SIGNALS = [
 export function TrustBar({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`border-y border-border/50 bg-card/50 py-4 ${className}`}
+      className={`marketing-trust border-y border-border/50 bg-card/50 py-4 ${className}`}
       aria-label="Credentials and trust signals"
     >
       <div className="container">

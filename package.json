@@ -8,6 +8,7 @@
     "build": "tsx scripts/generate-sitemap.ts && vite build && playwright install chromium && tsx scripts/prerender-marketing.ts && tsx scripts/stamp-service-worker.ts",
     "sitemap": "tsx scripts/generate-sitemap.ts",
     "check:marketing": "tsx scripts/verify-marketing.ts",
+    "check:marketing:design": "tsx scripts/verify-marketing-design.ts",
     "test:marketing:smoke": "tsx scripts/smoke-marketing.ts",
     "start": "echo \"Production runs on Netlify Functions — use netlify dev locally\"",
     "check": "tsc --noEmit",

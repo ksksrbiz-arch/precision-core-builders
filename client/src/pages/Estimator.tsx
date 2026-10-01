@@ -284,13 +284,13 @@ export default function Estimator() {
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="marketing-estimator-intro text-center mb-12"
           >
             <span
               className="block text-primary text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              AI Project Estimator
+              Plan your project
             </span>
             <h1
               className="text-4xl sm:text-5xl font-semibold mb-4"
@@ -311,8 +311,8 @@ export default function Estimator() {
               />
             </h1>
             <p className="text-muted-foreground font-light text-lg">
-              Get a real estimate for Eugene, OR construction — powered by local
-              market data.
+              Explore a preliminary budget for your Eugene or Lane County
+              project. A written estimate follows an on-site consultation.
             </p>
           </motion.div>
 

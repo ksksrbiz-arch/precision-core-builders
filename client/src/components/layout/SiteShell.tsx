@@ -25,6 +25,7 @@ const NAV_LINKS = [
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
   { label: "Our Work", href: "/portfolio" },
+  { label: "Showroom", href: "/showroom" },
   { label: "Estimator", href: "/estimator" },
   { label: "Insights", href: "/blog" },
   { label: "FAQ", href: "/faq" },
@@ -203,7 +204,7 @@ export function SiteNav() {
         Skip to content
       </a>
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
+        className={`marketing-nav fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
           scrolled
             ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
             : "bg-transparent"
@@ -229,7 +230,7 @@ export function SiteNav() {
 
           {/* Desktop nav */}
           <nav
-            className="hidden lg:flex items-center gap-7"
+            className="hidden lg:flex items-center gap-4 xl:gap-5"
             aria-label="Primary navigation"
           >
             {NAV_LINKS.map(n => {
@@ -267,7 +268,7 @@ export function SiteNav() {
             <a
               href={SITE.phoneHref}
               onClick={() => trackPhoneClick("nav_desktop")}
-              className="hidden md:flex items-center gap-2 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
+              className="hidden 2xl:flex items-center gap-2 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
               aria-label={`Call ${SITE.phone}`}
             >
@@ -276,12 +277,12 @@ export function SiteNav() {
             </a>
             <Magnetic className="hidden sm:inline-block" strength={0.25}>
               <a
-                href="/estimator"
+                href="/contact"
                 onClick={() => trackCtaClick("nav_free_estimate")}
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+                Let’s talk <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </Magnetic>
             <button
@@ -416,7 +417,7 @@ const SERVICES_FOOTER = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border/40 bg-card/40 pb-20 sm:pb-0">
+    <footer className="marketing-footer border-t border-border/40 bg-card/40 pb-20 sm:pb-0">
       <div className="container pt-14 pb-10">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
           {/* Brand */}

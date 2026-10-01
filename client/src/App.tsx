@@ -19,6 +19,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { PageTransition } from "./components/ui/PageTransition";
 import { AdminRoute, ProtectedRoute } from "./components/RouteGuards";
 import type { ComponentType } from "react";
+import { MarketingDesign } from "./components/layout/MarketingDesign";
 
 /**
  * Wrap a page component in its own ErrorBoundary so a crash in one route is
@@ -30,6 +31,17 @@ function withBoundary<P extends object>(Component: ComponentType<P>) {
     <ErrorBoundary>
       <Component {...props} />
     </ErrorBoundary>
+  );
+}
+
+/** Apply the blended visual system only to public marketing routes. */
+function publicPage<P extends object>(Component: ComponentType<P>) {
+  return (props: P) => (
+    <MarketingDesign>
+      <ErrorBoundary>
+        <Component {...props} />
+      </ErrorBoundary>
+    </MarketingDesign>
   );
 }
 
@@ -213,41 +225,41 @@ function Router() {
         <Switch>
           {/* Public */}
           <Route path="/" component={withBoundary(Home)} />
-          <Route path="/about" component={withBoundary(About)} />
-          <Route path="/services" component={withBoundary(Services)} />
+          <Route path="/about" component={publicPage(About)} />
+          <Route path="/services" component={publicPage(Services)} />
 
           {/* Blog */}
-          <Route path="/blog" component={withBoundary(Blog)} />
+          <Route path="/blog" component={publicPage(Blog)} />
           <Route
             path="/blog/kitchen-remodel-cost-eugene-oregon"
-            component={withBoundary(LazyKitchenRemodelCost)}
+            component={publicPage(LazyKitchenRemodelCost)}
           />
           <Route
             path="/blog/verify-oregon-ccb-license"
-            component={withBoundary(LazyCCBLicensingGuide)}
+            component={publicPage(LazyCCBLicensingGuide)}
           />
           <Route
             path="/blog/tadlock-residence-case-study"
-            component={withBoundary(LazyTadlockResidenceCaseStudy)}
+            component={publicPage(LazyTadlockResidenceCaseStudy)}
           />
           <Route
             path="/blog/deck-cost-eugene-oregon"
-            component={withBoundary(LazyDeckCostEugene)}
+            component={publicPage(LazyDeckCostEugene)}
           />
           <Route
             path="/blog/bathroom-remodel-cost-eugene-oregon"
-            component={withBoundary(LazyBathroomRemodelCostEugene)}
+            component={publicPage(LazyBathroomRemodelCostEugene)}
           />
-          <Route path="/portfolio" component={withBoundary(Portfolio)} />
-          <Route path="/showroom" component={withBoundary(Showroom)} />
+          <Route path="/portfolio" component={publicPage(Portfolio)} />
+          <Route path="/showroom" component={publicPage(Showroom)} />
           <Route
             path="/portfolio/:slug"
-            component={withBoundary(PortfolioDetail)}
+            component={publicPage(PortfolioDetail)}
           />
-          <Route path="/faq" component={withBoundary(FAQ)} />
-          <Route path="/contact" component={withBoundary(Contact)} />
-          <Route path="/privacy" component={withBoundary(Privacy)} />
-          <Route path="/estimator" component={withBoundary(Estimator)} />
+          <Route path="/faq" component={publicPage(FAQ)} />
+          <Route path="/contact" component={publicPage(Contact)} />
+          <Route path="/privacy" component={publicPage(Privacy)} />
+          <Route path="/estimator" component={publicPage(Estimator)} />
 
           {/* Auth */}
           <Route path="/auth/login" component={withBoundary(AuthLogin)} />
@@ -380,61 +392,55 @@ function Router() {
           {/* Service pages */}
           <Route
             path="/services/residential"
-            component={withBoundary(LazyResidential)}
+            component={publicPage(LazyResidential)}
           />
           <Route
             path="/services/remodels"
-            component={withBoundary(LazyRemodels)}
+            component={publicPage(LazyRemodels)}
           />
           <Route
             path="/services/new-construction"
-            component={withBoundary(LazyNewConstruction)}
+            component={publicPage(LazyNewConstruction)}
           />
           <Route
             path="/services/restoration"
-            component={withBoundary(LazyRestoration)}
+            component={publicPage(LazyRestoration)}
           />
-          <Route
-            path="/services/outdoor"
-            component={withBoundary(LazyOutdoor)}
-          />
+          <Route path="/services/outdoor" component={publicPage(LazyOutdoor)} />
           <Route
             path="/services/painting"
-            component={withBoundary(LazyPainting)}
+            component={publicPage(LazyPainting)}
           />
-          <Route
-            path="/services/roofing"
-            component={withBoundary(LazyRoofing)}
-          />
+          <Route path="/services/roofing" component={publicPage(LazyRoofing)} />
           <Route
             path="/services/cabinets"
-            component={withBoundary(LazyCabinets)}
+            component={publicPage(LazyCabinets)}
           />
 
           {/* Location (service-area) pages */}
           <Route
             path="/service-areas/springfield"
-            component={withBoundary(LazySpringfield)}
+            component={publicPage(LazySpringfield)}
           />
           <Route
             path="/service-areas/coburg"
-            component={withBoundary(LazyCoburg)}
+            component={publicPage(LazyCoburg)}
           />
           <Route
             path="/service-areas/creswell"
-            component={withBoundary(LazyCreswell)}
+            component={publicPage(LazyCreswell)}
           />
           <Route
             path="/service-areas/cottage-grove"
-            component={withBoundary(LazyCottageGrove)}
+            component={publicPage(LazyCottageGrove)}
           />
           <Route
             path="/service-areas/junction-city"
-            component={withBoundary(LazyJunctionCity)}
+            component={publicPage(LazyJunctionCity)}
           />
           <Route
             path="/service-areas/florence"
-            component={withBoundary(LazyFlorence)}
+            component={publicPage(LazyFlorence)}
           />
 
           <Route path="/404" component={withBoundary(NotFound)} />

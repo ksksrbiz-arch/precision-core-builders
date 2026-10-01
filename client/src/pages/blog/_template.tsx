@@ -131,7 +131,7 @@ export function ArticlePage(p: ArticlePageProps) {
             </aside>
           )}
           <div className="container">
-            <div className="max-w-2xl mx-auto">
+            <div className="marketing-article max-w-2xl mx-auto">
               <p className="text-lg sm:text-xl text-muted-foreground font-light leading-relaxed mb-10 border-l-2 border-primary pl-5">
                 {p.dek}
               </p>

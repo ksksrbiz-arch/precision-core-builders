@@ -250,7 +250,7 @@ export default function Contact() {
                     netlify-honeypot="bot-field"
                     onSubmit={e => void onSubmit(e)}
                     noValidate
-                    className="space-y-5"
+                    className="marketing-inquiry-form space-y-5"
                     aria-label="Project inquiry form"
                   >
                     <input
