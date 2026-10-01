@@ -23,8 +23,9 @@ what was added, how the pieces fit together, and what is left to do.
 generates `client/public/sitemap.xml` and `client/public/_redirects` (`pnpm
 redirects`, also run by `pnpm build`). Netlify reads `_redirects` before
 `netlify.toml`, so all rules live there in this order: www→apex, `/api/*`,
-legacy 301s, explicit SPA routes (200), then `/* /404.html 404`. Unknown URLs
-get a real 404 (static, branded `client/public/404.html`) rather than a
+legacy 301s, explicit client-rendered routes (200, rewritten to the branded
+`app-shell.html`), then `/* /404.html 404`. Unknown URLs
+get a real 404 (the prerendered, branded `NotFound` page, `404.html`) rather than a
 soft-404 200. `shared/siteRoutes.test.ts` fails if `_redirects` is stale or an
 `App.tsx` route isn't covered. To add a page: add the `<Route>`, add it to
 `PUBLIC_ROUTES` (or `APP_ROUTES`), run `pnpm redirects` and `pnpm sitemap`.

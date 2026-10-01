@@ -186,7 +186,8 @@ These are deliberate omissions, not oversights.
   URL answered 200. All rules now come from `shared/siteRoutes.ts` →
   generated `client/public/_redirects` (host canonicalisation → API → legacy →
   explicit SPA routes → `/* /404.html 404`). `netlify.toml` has no redirects.
-- **Real 404s.** Static branded `client/public/404.html` served with status 404;
+- **Real 404s.** The prerendered in-app `NotFound` page (`dist/public/404.html`, built by
+  `scripts/prerender-marketing.ts`) is served with status 404;
   in-app `NotFound` suggestions now use the shared route list. The sitemap uses
   the same list (two blog posts that were missing from it are now included).
 - **Verify after deploy:** `curl -sI https://precisioncorebuilders.com/nope`

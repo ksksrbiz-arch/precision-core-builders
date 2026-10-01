@@ -23,7 +23,7 @@ export function BrandLoader({ label = "Loading" }: Props) {
         className="pcb-loader__logo"
         src={ASSETS.logo}
         alt="Precision Core Builders"
-        width={149}
+        width={145}
         height={56}
       />
       <div className="pcb-loader__bar" aria-hidden="true">

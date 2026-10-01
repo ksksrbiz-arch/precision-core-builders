@@ -1,5 +1,5 @@
 /**
- * POST /api/estimate-project — planning-level construction cost estimate.
+ * POST /api/estimate-project — Eric's admin-only construction estimate tool.
  *
  * Code owns every dollar figure (`shared/estimating/`); the LLM only writes the
  * narrative explaining it. Previously the model produced the numbers from
@@ -22,12 +22,7 @@ import {
   validateBasis,
   ESTIMATING_BASIS,
 } from "../../shared/estimating";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitHeaders,
-} from "./_utils/rateLimiter";
-import { verifyAuth } from "./_utils/authGuard";
+import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { withGuards } from "./_lib/http";
 import { PROMPTS } from "./_lib/llm/prompts";
 import { routeAi } from "../../server/_core/ai/router";
@@ -121,23 +116,12 @@ function reasoningViolations(
 }
 
 export const handler = withGuards(
-  { methods: ["POST"], auth: "none" },
-  async ({ event, json, error }) => {
-    // Rate limit: 10 req/min anonymous, 30 req/min authenticated.
-    const ip = getClientIp(event.headers);
-    let limitKey = `estimate-anon:${ip}`;
-    let maxRequests = 10;
-    let isAdmin = false;
-
-    const authHeader = event.headers["authorization"];
-    if (authHeader?.startsWith("Bearer ")) {
-      const authResult = await verifyAuth(event.headers);
-      if (authResult.ok) {
-        limitKey = `estimate-user:${authResult.user.id}`;
-        maxRequests = 30;
-        isAdmin = authResult.user.role === "admin";
-      }
-    }
+  { methods: ["POST"], auth: "admin" },
+  async ({ event, json, error, user }) => {
+    // The guard above only lets a verified admin through, so `user` is set.
+    // Rate limit: 30 req/min per signed-in user.
+    const limitKey = `estimate-user:${user!.id}`;
+    const maxRequests = 30;
 
     const rl = checkRateLimit(limitKey, { maxRequests, windowMs: 60_000 });
     if (!rl.allowed) {
@@ -254,7 +238,7 @@ export const handler = withGuards(
               content: [
                 PROMPTS.estimator,
                 specialistPrompt(
-                  routeAi({ surface: "public", specialist: "estimator" }).id
+                  routeAi({ surface: "internal", specialist: "estimator" }).id
                 ),
               ].join("\n\n"),
             },
@@ -289,13 +273,11 @@ export const handler = withGuards(
       }
 
       // ── 4. Persist ──────────────────────────────────────────────────────
-      // Writing a row through the service-role client is an admin action. This
-      // endpoint is also the PUBLIC estimator (auth: "none"), so an anonymous
-      // caller who supplied a projectId/clientId used to be able to attach
-      // estimates to any project or client and read the saved row back.
+      // Writing a row through the service-role client is an admin action; the
+      // handler is admin-only (see withGuards above), so reaching here is enough.
       let savedEstimate = null;
       const db = getSupabaseAdmin();
-      if (db && isAdmin && (projectId || clientId)) {
+      if (db && (projectId || clientId)) {
         const { data, error: insertError } = await db
           .from("estimates")
           .insert({

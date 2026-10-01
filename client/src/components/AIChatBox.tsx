@@ -168,15 +168,15 @@ export default function AIChatBox({ compact = false }: { compact?: boolean }) {
             does not nag someone asking a single question. */}
         {!loading && meta.estimateReady && (
           <a
-            href="/estimator"
+            href="/contact"
             className="mt-4 flex items-center justify-between gap-2 p-3 border border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors"
           >
             <span className="text-xs leading-snug">
               <span className="text-foreground font-semibold">
-                Ready for a real number?
+                Ready to discuss your project?
               </span>{" "}
               <span className="text-muted-foreground">
-                Eric confirms every estimate with a free on-site visit.
+                Schedule an on-site consultation with Eric.
               </span>
             </span>
             <ArrowRight className="h-4 w-4 shrink-0 text-primary" />

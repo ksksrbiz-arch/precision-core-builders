@@ -137,7 +137,7 @@ export function LocationPage(p: LocationPageProps) {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="pt-[68px]">
+      <main id="main-content" className="pt-[68px]">
         {/* ── Hero ──────────────────────────────────────────────── */}
         <section className="relative h-[55vh] min-h-[380px] flex items-end pb-12 overflow-hidden">
           <img
@@ -246,7 +246,8 @@ export function LocationPage(p: LocationPageProps) {
                       className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-all hover:gap-3 min-h-[44px]"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      Get Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+                      Request a Consultation{" "}
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </a>
                   </div>
                 </div>
@@ -362,7 +363,7 @@ export function LocationPage(p: LocationPageProps) {
                         className="text-xl font-semibold mb-6"
                         style={{ fontFamily: "var(--font-heading)" }}
                       >
-                        Get Your Free {p.city} Estimate
+                        Discuss Your {p.city} Project
                       </h3>
                       <form
                         name={formName}
@@ -477,7 +478,7 @@ export function LocationPage(p: LocationPageProps) {
                             "Sending…"
                           ) : (
                             <>
-                              {`Request ${p.city} Estimate`}{" "}
+                              {`Discuss Your ${p.city} Project`}{" "}
                               <ArrowRight className="h-3.5 w-3.5" />
                             </>
                           )}

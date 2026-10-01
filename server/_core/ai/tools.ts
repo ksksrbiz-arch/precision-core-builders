@@ -7,7 +7,7 @@
  * generated.
  *
  * Surface gates tool access exactly as it gates specialists. A public visitor
- * can price a hypothetical project; only Eric's authenticated admin surface can
+ * receives no pricing tools; only Eric's authenticated admin surface can
  * read a real project, its materials, or its schedule. `toolsForSurface()` is
  * the single place that decides, and `executeTool()` re-checks the surface at
  * execution time — so a model that hallucinates a tool name it was never
@@ -42,9 +42,9 @@ const num = (v: unknown): number | undefined => {
 const MAX_ROWS = 15;
 
 const DEFS: Record<string, ToolDef> = {
-  // ── Available to everyone ────────────────────────────────────────────────
+  // ── Eric's internal estimating tools ─────────────────────────────────────
   estimate_project: {
-    surfaces: ["public", "portal", "internal"],
+    surfaces: ["internal"],
     tool: {
       name: "estimate_project",
       description:

@@ -15,6 +15,10 @@ import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
 import { routeAi } from "../../server/_core/ai/router";
 import { specialistPrompt } from "../../server/_core/ai/specialists";
 import { z } from "zod";
+import {
+  ERIC_PRICING_RESPONSE,
+  isPricingRequest,
+} from "./_utils/publicPricingPolicy";
 
 const portalMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -47,12 +51,17 @@ export const handler = withGuards(
         return error(400, "No messages provided.");
       }
 
-      const snapshot = await buildPortalSnapshot(user!.id);
-
       // PORTAL surface: reaches client-liaison and the public contracts, and
       // can never route into an internal operational specialist.
       const lastUserMessage =
         [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+      if (isPricingRequest(lastUserMessage)) {
+        return json(200, {
+          text: ERIC_PRICING_RESPONSE,
+          route: "client-liaison",
+        });
+      }
+      const snapshot = await buildPortalSnapshot(user!.id);
       const route = routeAi({ message: lastUserMessage, surface: "portal" });
 
       const result = await invokeLLM({
@@ -64,6 +73,7 @@ export const handler = withGuards(
             content: [
               PROMPTS.portalAssistant,
               specialistPrompt(route.id),
+              "Never calculate a new price, cost estimate, or budget range. Eric prepares all project pricing. Refer new pricing questions to Eric.",
               snapshot.text,
             ].join("\n\n"),
           },

@@ -9,9 +9,11 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
+import { appendLeadAttribution } from "@/lib/leadAttribution";
+import { trackContactSubmit } from "@/lib/analytics";
 import { PROJECTS, photoUrl, type ProjectCategory } from "@/data/projects";
 import { netlifySrcSet } from "@/lib/netlifyImage";
-import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
+import { breadcrumbJsonLd, canonicalUrl, absoluteAssetUrl } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { useLocation } from "wouter";
@@ -57,6 +59,7 @@ export function ServicePage(p: ServicePageProps) {
     title: p.metaTitle,
     description: p.metaDescription,
     canonical: canonicalUrl(location),
+    image: absoluteAssetUrl(p.heroImage),
   });
   const [status, setStatus] = useState<FormStatus>("idle");
   const [fields, setFields] = useState({
@@ -74,6 +77,7 @@ export function ServicePage(p: ServicePageProps) {
     setStatus("submitting");
     try {
       const data = new FormData(e.currentTarget);
+      appendLeadAttribution(data);
       const res = await fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -82,6 +86,7 @@ export function ServicePage(p: ServicePageProps) {
         ).toString(),
       });
       setStatus(res.ok ? "success" : "error");
+      if (res.ok) trackContactSubmit();
     } catch {
       setStatus("error");
     }
@@ -145,7 +150,7 @@ export function ServicePage(p: ServicePageProps) {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="pt-[68px]">
+      <main id="main-content" className="pt-[68px]">
         {/* ── Hero ──────────────────────────────────────────────── */}
         <section className="relative h-[55vh] min-h-[380px] flex items-end pb-12 overflow-hidden">
           <img
@@ -258,7 +263,8 @@ export function ServicePage(p: ServicePageProps) {
                       className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-all hover:gap-3 min-h-[44px]"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      Get Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+                      Request a Consultation{" "}
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </a>
                   </div>
                 </div>
@@ -422,7 +428,7 @@ export function ServicePage(p: ServicePageProps) {
                         className="text-xl font-semibold mb-6"
                         style={{ fontFamily: "var(--font-heading)" }}
                       >
-                        Get Your Free Estimate
+                        Discuss Your Project
                       </h3>
                       <form
                         name={formName}
@@ -533,7 +539,7 @@ export function ServicePage(p: ServicePageProps) {
                             "Sending…"
                           ) : (
                             <>
-                              {`Request ${p.title} Estimate`}{" "}
+                              {`Discuss ${p.title}`}{" "}
                               <ArrowRight className="h-3.5 w-3.5" />
                             </>
                           )}
@@ -546,7 +552,10 @@ export function ServicePage(p: ServicePageProps) {
                           <Phone className="h-3.5 w-3.5" /> Or Call {SITE.phone}
                         </a>
                         <p className="text-[10px] text-center text-muted-foreground/50 font-light">
-                          Free · No obligation · {SITE.license}
+                          Free · No obligation · {SITE.license}.{" "}
+                          <a href="/privacy" className="underline">
+                            Privacy information
+                          </a>
                         </p>
                       </form>
                     </>

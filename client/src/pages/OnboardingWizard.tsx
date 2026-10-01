@@ -42,13 +42,13 @@ import {
   CreditCard,
   Database,
   ExternalLink,
-  Github,
   KeyRound,
   Loader2,
   PartyPopper,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { Github } from "@/components/ui/brand-icons";
 import {
   useCallback,
   useEffect,

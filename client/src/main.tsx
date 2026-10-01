@@ -11,6 +11,9 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import "./index.css";
+import { captureLeadAttribution } from "@/lib/leadAttribution";
+
+captureLeadAttribution();
 
 // A deploy can remove a lazy-loaded, content-hashed chunk while an already
 // open tab still has the previous app shell. Recover once by clearing this

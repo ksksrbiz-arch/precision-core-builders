@@ -21,13 +21,26 @@ import {
   rateLimitHeaders,
 } from "./_utils/rateLimiter";
 import { isOriginAllowed } from "./_utils/corsGuard";
+import deliverLead from "./_utils/leadDelivery";
 
 /** Lead-capture `form-name`s this trigger acts on. Other forms are ignored. */
 const INQUIRY_FORM = "project-inquiry";
 const ESTIMATOR_FORM = "estimator-lead";
-const HANDLED_FORMS = [INQUIRY_FORM, ESTIMATOR_FORM];
+const HANDLED_FORMS = [
+  INQUIRY_FORM,
+  ESTIMATOR_FORM,
+  "residential-construction-inquiry",
+  "remodels-renovations-inquiry",
+  "new-construction-inquiry",
+  "restoration-inquiry",
+  "outdoor-spaces-inquiry",
+  "painting-inquiry",
+  "roofing-inquiry",
+  "custom-cabinets-inquiry",
+];
 
 type SubmissionPayload = {
+  id?: string;
   form_name?: string;
   data?: Record<string, string>;
 };
@@ -210,12 +223,21 @@ export const handler: Handler = async event => {
     }
 
     const name = data.name?.trim();
-    const projectType = data.projectType?.trim();
+    const projectType = (data.projectType || data.service)?.trim();
     if (!name && !projectType) {
       return { statusCode: 200, body: "skipped (empty)" };
     }
 
     if (!db) {
+      if (payload.id)
+        await deliverLead(
+          new Request("https://internal.invalid", {
+            method: "POST",
+            body: JSON.stringify({
+              payload: { id: payload.id, form_name: formName, data },
+            }),
+          })
+        );
       console.warn("[submission-created] DB not configured — skipping.");
       return { statusCode: 200, body: "no db" };
     }
@@ -224,6 +246,16 @@ export const handler: Handler = async event => {
       formName === ESTIMATOR_FORM
         ? buildEstimatorLead(data, name, projectType)
         : buildInquiryLead(data, name, projectType);
+
+    if (payload.id)
+      await deliverLead(
+        new Request("https://internal.invalid", {
+          method: "POST",
+          body: JSON.stringify({
+            payload: { id: payload.id, form_name: formName, data },
+          }),
+        })
+      );
 
     let scored;
     try {

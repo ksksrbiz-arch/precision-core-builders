@@ -103,9 +103,9 @@ const QUICK_LINKS: QuickLink[] = [
     icon: Hammer,
   },
   {
-    label: "Estimator",
-    description: "Get a ballpark for your project.",
-    href: "/estimator",
+    label: "Consultation",
+    description: "Discuss your project with Eric.",
+    href: "/contact",
     icon: Calculator,
   },
   {

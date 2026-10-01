@@ -11,7 +11,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
-import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
+import { breadcrumbJsonLd, canonicalUrl, absoluteAssetUrl } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { useLocation } from "wouter";
@@ -45,6 +45,7 @@ export function ArticlePage(p: ArticlePageProps) {
     title: p.metaTitle,
     description: p.metaDescription,
     canonical: canonicalUrl(location),
+    image: absoluteAssetUrl(p.heroImage),
   });
 
   const articleJsonLd = {
@@ -85,7 +86,7 @@ export function ArticlePage(p: ArticlePageProps) {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="pt-[68px]">
+      <main id="main-content" className="pt-[68px]">
         {/* ── Hero ──────────────────────────────────────────────── */}
         <section className="relative h-[42vh] min-h-[300px] flex items-end pb-10 overflow-hidden">
           <img
@@ -119,7 +120,7 @@ export function ArticlePage(p: ArticlePageProps) {
         {/* ── Article body ─────────────────────────────────────── */}
         <article className="py-16 sm:py-20">
           <div className="container">
-            <div className="max-w-2xl mx-auto">
+            <div className="marketing-article max-w-2xl mx-auto">
               <p className="text-lg sm:text-xl text-muted-foreground font-light leading-relaxed mb-10 border-l-2 border-primary pl-5">
                 {p.dek}
               </p>
@@ -223,16 +224,16 @@ export function ArticlePage(p: ArticlePageProps) {
                   Ready to talk about your project?
                 </p>
                 <p className="text-sm text-muted-foreground font-light mb-6">
-                  Free on-site consultation, no obligation. Or try our instant
-                  AI estimator for a ballpark first.
+                  Discuss your goals with Eric during an on-site consultation.
+                  He prepares pricing after reviewing your project.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <a
-                    href="/estimator"
+                    href="/contact"
                     className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-all hover:gap-3 min-h-[44px]"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Try the AI Estimator <ArrowRight className="h-3.5 w-3.5" />
+                    Talk with Eric <ArrowRight className="h-3.5 w-3.5" />
                   </a>
                   <a
                     href={SITE.phoneHref}

@@ -9,6 +9,7 @@ import {
 import { TrustBar } from "@/components/layout/TrustBar";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/const";
+import { appendLeadAttribution } from "@/lib/leadAttribution";
 import { useSEO } from "@/hooks/useSEO";
 import { trackContactSubmit, trackPhoneClick } from "@/lib/analytics";
 import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
@@ -18,13 +19,13 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  Facebook,
   Loader2,
   Mail,
   MapPin,
   Phone,
   Shield,
 } from "lucide-react";
+import { Facebook } from "@/components/ui/brand-icons";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,10 +40,26 @@ const contactSchema = z.object({
     .email("Enter a valid email address"),
   phone: z.string().trim().optional(),
   projectType: z.string().trim().optional(),
-  budget: z.string().trim().optional(),
   message: z.string().trim().min(1, "Tell us a bit about your project"),
 });
 type ContactFormValues = z.infer<typeof contactSchema>;
+
+function selectedFinishesMessage(): string {
+  try {
+    const raw = new URLSearchParams(window.location.search).get("finishes");
+    if (!raw || raw.length > 3000) return "";
+    const names: unknown = JSON.parse(raw);
+    if (
+      !Array.isArray(names) ||
+      names.length > 10 ||
+      !names.every(name => typeof name === "string" && name.length <= 200)
+    )
+      return "";
+    return `I'd like to discuss these finishes: ${names.join(", ")}.\n\nProject details: `;
+  } catch {
+    return "";
+  }
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -55,23 +72,14 @@ const fadeUp = {
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-const BUDGET_OPTIONS = [
-  "Under $10k",
-  "$10–25k",
-  "$25–50k",
-  "$50–100k",
-  "$100k+",
-  "Not sure",
-] as const;
-
 const inputCls =
   "w-full px-4 py-3 bg-input border border-border text-foreground text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 transition-colors";
 
 export default function Contact() {
   useSEO({
-    title: "Contact Us — Free Estimates in Eugene, OR",
+    title: "Contact Us — Consultations in Eugene, OR",
     description:
-      "Contact Precision Core Builders for a free on-site estimate. Call Eric Tadlock at 541-852-5144 or send a message. Serving Eugene, Springfield & Lane County, OR.",
+      "Contact Precision Core Builders for a on-site consultation. Call Eric Tadlock at 541-852-5144 or send a message. Serving Eugene, Springfield & Lane County, OR.",
     canonical: canonicalUrl("/contact"),
   });
 
@@ -79,8 +87,6 @@ export default function Contact() {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     reset,
     formState: { errors },
   } = useForm<ContactFormValues>({
@@ -90,16 +96,15 @@ export default function Contact() {
       email: "",
       phone: "",
       projectType: "",
-      budget: "",
-      message: "",
+      message: selectedFinishesMessage(),
     },
   });
-  const budget = watch("budget");
 
   const onSubmit = handleSubmit(async (_values, e) => {
     setStatus("submitting");
     try {
       const data = new FormData(e?.target as HTMLFormElement);
+      appendLeadAttribution(data);
       const res = await fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -173,7 +178,7 @@ export default function Contact() {
                 className="text-muted-foreground text-lg leading-relaxed font-light"
               >
                 Free on-site consultation. We come to you, review your project,
-                and give you a real written estimate — no obligation.
+                and discuss the next steps for your project — no obligation.
               </motion.p>
             </motion.div>
           </div>
@@ -231,7 +236,7 @@ export default function Contact() {
                     netlify-honeypot="bot-field"
                     onSubmit={e => void onSubmit(e)}
                     noValidate
-                    className="space-y-5"
+                    className="marketing-inquiry-form space-y-5"
                     aria-label="Project inquiry form"
                   >
                     <input
@@ -321,46 +326,6 @@ export default function Contact() {
                           )}
                         </div>
                       ))}
-                    </div>
-
-                    <div>
-                      <span
-                        id="budget-label"
-                        className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mb-2 font-medium"
-                        style={{ fontFamily: "var(--font-condensed)" }}
-                      >
-                        Project Budget
-                      </span>
-                      {/* Hidden field carries the selected value into the
-                          Netlify form submission (FormData picks it up). */}
-                      <input type="hidden" {...register("budget")} />
-                      <div
-                        role="radiogroup"
-                        aria-labelledby="budget-label"
-                        className="grid grid-cols-2 sm:grid-cols-3 gap-2"
-                      >
-                        {BUDGET_OPTIONS.map(opt => {
-                          const selected = budget === opt;
-                          return (
-                            <button
-                              key={opt}
-                              type="button"
-                              role="radio"
-                              aria-checked={selected}
-                              onClick={() =>
-                                setValue("budget", selected ? "" : opt)
-                              }
-                              className={`min-h-[44px] px-3 py-2 text-xs font-medium border transition-colors focus:outline-none focus:ring-1 focus:ring-primary/40 ${
-                                selected
-                                  ? "border-primary bg-primary/10 text-primary"
-                                  : "border-border bg-input text-foreground hover:border-primary/40"
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
                     </div>
 
                     <div>
@@ -458,7 +423,11 @@ export default function Contact() {
                     </button>
 
                     <p className="text-[10px] text-center text-muted-foreground/50 font-light">
-                      Free · No obligation · {SITE.license}
+                      Free · No obligation · {SITE.license}. Your inquiry is
+                      used to respond to your project request.{" "}
+                      <a href="/privacy" className="underline">
+                        Privacy information
+                      </a>
                     </p>
                   </form>
                 )}

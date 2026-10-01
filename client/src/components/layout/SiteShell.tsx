@@ -9,7 +9,6 @@ import { trackCtaClick, trackPhoneClick } from "@/lib/analytics";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
-  Facebook,
   Lock,
   Mail,
   MapPin,
@@ -18,6 +17,7 @@ import {
   Shield,
   X,
 } from "lucide-react";
+import { Facebook } from "@/components/ui/brand-icons";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
@@ -25,7 +25,7 @@ const NAV_LINKS = [
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
   { label: "Our Work", href: "/portfolio" },
-  { label: "Estimator", href: "/estimator" },
+  { label: "Showroom", href: "/showroom" },
   { label: "Insights", href: "/blog" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
@@ -203,7 +203,7 @@ export function SiteNav() {
         Skip to content
       </a>
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
+        className={`marketing-nav fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
           scrolled
             ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-lg shadow-black/20"
             : "bg-transparent"
@@ -221,15 +221,15 @@ export function SiteNav() {
               src={ASSETS.logo}
               alt="Precision Core Builders"
               className="h-9 w-auto"
-              width="180"
-              height="36"
+              width="748"
+              height="290"
               fetchPriority="high"
             />
           </a>
 
           {/* Desktop nav */}
           <nav
-            className="hidden lg:flex items-center gap-7"
+            className="hidden lg:flex items-center gap-4 xl:gap-5"
             aria-label="Primary navigation"
           >
             {NAV_LINKS.map(n => {
@@ -267,7 +267,7 @@ export function SiteNav() {
             <a
               href={SITE.phoneHref}
               onClick={() => trackPhoneClick("nav_desktop")}
-              className="hidden md:flex items-center gap-2 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
+              className="hidden 2xl:flex items-center gap-2 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
               style={{ fontFamily: "var(--font-condensed)" }}
               aria-label={`Call ${SITE.phone}`}
             >
@@ -276,12 +276,12 @@ export function SiteNav() {
             </a>
             <Magnetic className="hidden sm:inline-block" strength={0.25}>
               <a
-                href="/estimator"
+                href="/contact"
                 onClick={() => trackCtaClick("nav_free_estimate")}
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all duration-200 hover:gap-3"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+                Let’s talk <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </Magnetic>
             <button
@@ -343,12 +343,12 @@ export function SiteNav() {
                     <Phone className="h-4 w-4" /> {SITE.phone}
                   </a>
                   <a
-                    href="/estimator"
+                    href="/contact"
                     onClick={() => setOpen(false)}
                     className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Get Free Estimate <ArrowRight className="h-4 w-4" />
+                    Request a Consultation <ArrowRight className="h-4 w-4" />
                   </a>
                 </div>
               </nav>
@@ -390,12 +390,12 @@ export function MobileCTABar() {
           <Phone className="h-4 w-4" /> Call Now
         </a>
         <a
-          href="/estimator"
+          href="/contact"
           onClick={() => trackCtaClick("mobile_sticky_estimate")}
           className="flex-1 flex items-center justify-center gap-2 py-4 text-[12px] font-bold tracking-widest uppercase bg-primary text-primary-foreground min-h-[56px] active:bg-primary/80"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
-          Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+          Consultation <ArrowRight className="h-3.5 w-3.5" />
         </a>
       </div>
     </div>
@@ -416,23 +416,23 @@ const SERVICES_FOOTER = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border/40 bg-card/40 pb-20 sm:pb-0">
+    <footer className="marketing-footer border-t border-border/40 bg-card/40 pb-20 sm:pb-0">
       <div className="container pt-14 pb-10">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
           {/* Brand */}
           <div className="lg:col-span-1">
             <img
-              src={ASSETS.logo}
+              src={ASSETS.logoDepth}
               alt="Precision Core Builders"
-              className="h-9 w-auto mb-4"
-              width="180"
-              height="36"
+              className="w-48 max-w-full h-auto mb-4"
+              width="748"
+              height="290"
               loading="lazy"
               decoding="async"
             />
             <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">
               Precision Construction, Core Values. Serving Eugene, Oregon and
-              surrounding Lane County since 2014.
+              surrounding Lane County.
             </p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <Shield
@@ -478,7 +478,7 @@ export function SiteFooter() {
                 { label: "About Us", href: "/about" },
                 { label: "Our Team", href: "/about#team" },
                 { label: "Our Work", href: "/portfolio" },
-                { label: "Cost Estimator", href: "/estimator" },
+                { label: "Consultation", href: "/contact" },
                 { label: "Insights", href: "/blog" },
                 { label: "FAQ", href: "/faq" },
                 { label: "Contact", href: "/contact" },
@@ -530,11 +530,11 @@ export function SiteFooter() {
               ))}
             </div>
             <a
-              href="/estimator"
+              href="/contact"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all hover:gap-3"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+              Consultation <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
         </div>
@@ -573,6 +573,9 @@ export function SiteFooter() {
             rights reserved.
           </p>
           <div className="flex items-center gap-4">
+            <a href="/privacy" className="hover:text-primary transition-colors">
+              Privacy
+            </a>
             <a
               href={SITE.facebook}
               target="_blank"

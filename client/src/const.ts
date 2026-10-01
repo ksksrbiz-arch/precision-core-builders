@@ -1,3 +1,6 @@
+import logoClean from "../brand/logo-clean.svg";
+import logoDepth from "../brand/logo-depth.svg";
+
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
 export const SITE = {
@@ -20,10 +23,11 @@ export const SITE = {
     "https://www.google.com/maps/search/?api=1&query=Precision+Core+Builders+Eugene+OR",
 } as const;
 
-/** All real assets hosted on the existing Webflow CDN */
+/** Local brand artwork and project imagery, plus the existing hero video. */
 export const ASSETS = {
-  // Logo + hero video remain on Webflow CDN (no local equivalents yet)
-  logo: "/logo.svg",
+  // Scalable originals: clean lettering for small navigation, depth for branding.
+  logo: logoClean,
+  logoDepth,
   heroVideo:
     "https://cdn.prod.website-files.com/65300180be390eef2e927062/65308f58afaa8e053210676a_Construction-Consultation%20-%2002-transcode.mp4",
 

@@ -1,6 +1,7 @@
 [build]
   base = "/"
   publish = "dist/public"
+  # pnpm build downloads Chromium for SEO prerendering without root-only OS installs.
   command = "pnpm install --prod=false && pnpm build"
 
 [build.environment]
@@ -14,6 +15,8 @@
   # `Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite`
   # before it could even install dependencies.
   NODE_VERSION = "22"
+  # Chromium is used only to prerender public marketing pages during builds.
+  PLAYWRIGHT_BROWSERS_PATH = "0"
   # Kept as a hint/pin attempt, but see the note above — verify in the
   # Netlify dashboard (Site configuration → Environment variables) whether a
   # PNPM_VERSION set there is overriding this file, and align it with
@@ -62,6 +65,7 @@
 # www → apex, /api/* → functions, legacy URLs, real SPA routes, and the final
 # 404 — live in the generated client/public/_redirects. Edit
 # shared/siteRoutes.ts and run `pnpm redirects` (also runs in `pnpm build`).
+# Prerendered marketing pages are real files and are served before any rule.
 # ────────────────────────────────────────────────────────────
 
 # Functions configuration

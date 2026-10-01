@@ -14,108 +14,44 @@ import { ArticlePage } from "./_template";
 export function KitchenRemodelCost() {
   return (
     <ArticlePage
-      title="How Much Does a Kitchen Remodel Cost in Eugene, OR?"
-      category="Cost Guides"
-      heroImage="/portfolio/signature-kitchen-01.jpg"
-      heroImageAlt="Completed kitchen remodel in Eugene, Oregon"
-      metaTitle="Kitchen Remodel Cost in Eugene, OR (2026 Guide) | Precision Core Builders"
-      metaDescription="What a kitchen remodel actually costs in Eugene, Oregon in 2026 — by tier, what drives the price, and where homeowners get surprised. From a licensed local contractor."
-      publishedDate="2026-08-04"
-      dek="It's the first question almost every homeowner asks us, and the honest answer is: it depends on tier. Here's what that actually means in dollars, based on 2026 Eugene-area data and what we see quoting real local kitchens."
+      title="Planning a Kitchen Remodel in Eugene, OR"
+      category="Project Planning"
+      heroImage="/portfolio/category-remodels.jpg"
+      heroImageAlt="Planning a Kitchen Remodel in Eugene, OR"
+      metaTitle="Planning a Kitchen Remodel in Eugene, OR | Precision Core Builders"
+      metaDescription="Plan your kitchen layout, cabinetry, finishes, and project scope with Eric before construction begins."
+      publishedDate="2026-08-16"
+      dek="Plan your kitchen layout, cabinetry, finishes, and project scope with Eric before construction begins."
       blocks={[
+        { type: "h2", content: "Define the scope" },
         {
           type: "p",
           content:
-            "Search “kitchen remodel cost Eugene Oregon” and you'll get numbers ranging from $9,000 to $90,000 — which isn't a typo or bad data, it's because “kitchen remodel” covers wildly different scopes. A cosmetic refresh and a full gut-to-studs renovation are both technically kitchen remodels, and they cost roughly ten times apart. So instead of one number, here's how the tiers actually break down for a Eugene-area kitchen.",
+            "A cosmetic refresh can retain the existing layout. A larger renovation may include cabinetry, flooring, plumbing, electrical work, or structural changes. Gather your priorities so Eric can review them with you.",
         },
-        { type: "h2", content: "The three real tiers" },
-        {
-          type: "list",
-          items: [
-            <>
-              <strong className="text-foreground">
-                Cosmetic refresh — roughly $10,000–$20,000.
-              </strong>{" "}
-              Repainting, cabinet refacing or refinishing, new hardware, updated
-              sink and faucet, new backsplash tile. Layout stays exactly the
-              same — no plumbing or electrical moves.
-            </>,
-            <>
-              <strong className="text-foreground">
-                Mid-range remodel — roughly $25,000–$50,000.
-              </strong>{" "}
-              This is where most Eugene kitchen projects actually land. New
-              cabinets (semi-custom is the sweet spot for most homeowners),
-              stone or quartz countertops, new appliances, and often some layout
-              adjustment — moving a sink or relocating an island.
-            </>,
-            <>
-              <strong className="text-foreground">
-                Full custom / high-end — $50,000 and up, sometimes well past
-                $90,000.
-              </strong>{" "}
-              Structural changes, fully custom cabinetry, premium appliance
-              packages, and layout changes that touch plumbing and electrical
-              throughout.
-            </>,
-          ],
-        },
+        { type: "h2", content: "Consider layout and materials" },
         {
           type: "p",
           content:
-            "Oregon labor costs run noticeably above the national average — roughly 12% higher by most regional construction indices — which is one reason Eugene numbers tend to sit above generic “national average” kitchen remodel figures you'll find in broader searches.",
+            "Discuss storage, work surfaces, lighting, appliances, and how you use the room. Existing utilities and site conditions help determine the work required.",
         },
-        { type: "h2", content: "Where the money actually goes" },
+        { type: "h2", content: "Start with Eric" },
         {
           type: "p",
           content:
-            "Cabinets are almost always the single largest line item in a kitchen remodel — typically 25–35% of the total budget. After that, labor (installation, plumbing, electrical) and countertops are the next biggest chunks. Appliances vary the most: a homeowner keeping their existing appliance set can save thousands compared to a full premium package.",
-        },
-        {
-          type: "callout",
-          content: (
-            <>
-              <strong className="text-foreground">
-                Budget for the unexpected.
-              </strong>{" "}
-              A reasonable rule of thumb is to set aside 10–20% of your total
-              budget as contingency for issues that only show up once walls or
-              flooring come out — outdated wiring, hidden water damage, or
-              plumbing that doesn't match what the original permit records show.
-            </>
-          ),
-        },
-        { type: "h2", content: "Timeline" },
-        {
-          type: "p",
-          content:
-            "Most full kitchen remodels take 6–12 weeks from demo to final walkthrough, depending on design complexity, how customized the cabinetry is, and how quickly materials arrive. Cosmetic refreshes move much faster — often 1–3 weeks.",
-        },
-        { type: "h2", content: "The honest way to get a real number" },
-        {
-          type: "p",
-          content:
-            "National cost calculators are a reasonable starting point, but the only way to get an accurate number for your kitchen is a walkthrough of your actual space — your layout, your existing plumbing/electrical, and what tier you're aiming for. We offer free on-site estimates for exactly this reason, and if you want a ballpark before that conversation, our AI estimator below can give you a starting range in a couple minutes.",
+            "Bring photos, inspiration, and any existing plans to an on-site consultation. Eric reviews your actual space and prepares project-specific pricing himself.",
         },
       ]}
       faqs={[
         {
-          q: "What's the average kitchen remodel cost in Eugene, OR?",
-          a: "Most Eugene kitchen remodels land in the $25,000–$50,000 mid-range tier, though smaller cosmetic refreshes can run $10,000–$20,000 and full custom high-end remodels can exceed $90,000. The right number depends heavily on scope, not just square footage.",
-        },
-        {
-          q: "Do I need a permit for a kitchen remodel in Oregon?",
-          a: "It depends on the work. Cosmetic changes (paint, cabinet refacing, countertop swaps) typically don't require a permit. Moving plumbing, electrical, or structural elements usually does. Requirements vary by city/county — we confirm what your specific project needs during your consultation.",
-        },
-        {
-          q: "How long does a kitchen remodel take?",
-          a: "Most full kitchen remodels take 6–12 weeks. Cosmetic refreshes are faster, often 1–3 weeks, depending on material availability and scope.",
+          q: "Who prepares pricing for my project?",
+          a: "Eric prepares project-specific pricing after an on-site review of your scope, property, and selections. Contact him to arrange a consultation.",
         },
       ]}
       relatedLinks={[
-        { label: "Try the AI Estimator", href: "/estimator" },
-        { label: "Bath & Kitchen Portfolio", href: "/portfolio" },
-        { label: "Remodeling Services", href: "/services/remodels" },
+        { label: "Talk with Eric", href: "/contact" },
+        { label: "Remodeling services", href: "/services/remodels" },
+        { label: "Our work", href: "/portfolio" },
       ]}
     />
   );
@@ -210,7 +146,7 @@ export function CCBLicensingGuide() {
       ]}
       relatedLinks={[
         { label: "About Precision Core Builders", href: "/about" },
-        { label: "Get a Free Estimate", href: "/estimator" },
+        { label: "Request a Consultation", href: "/contact" },
         { label: "FAQ", href: "/faq" },
       ]}
     />
@@ -287,89 +223,44 @@ export function TadlockResidenceCaseStudy() {
 export function DeckCostEugene() {
   return (
     <ArticlePage
-      title="How Much Does a Deck Cost in Eugene, OR?"
-      category="Cost Guides"
+      title="Planning a Deck in Eugene, OR"
+      category="Project Planning"
       heroImage="/portfolio/signature-deck-01.jpg"
-      heroImageAlt="Composite deck build in Eugene, Oregon"
-      metaTitle="Deck Cost in Eugene, OR (2026) | Precision Core Builders"
-      metaDescription="What a new deck costs in Eugene and Lane County in 2026 — pressure-treated, cedar, and composite tiers, permits, and what drives the price."
+      heroImageAlt="Planning a Deck in Eugene, OR"
+      metaTitle="Planning a Deck in Eugene, OR | Precision Core Builders"
+      metaDescription="Explore deck materials, access, site conditions, and maintenance before meeting with Eric."
       publishedDate="2026-08-16"
-      dek="Deck pricing in the Willamette Valley depends on size, material, height, and whether you're tying into an existing structure. Here's a practical range for Eugene homeowners planning in 2026."
+      dek="Explore deck materials, access, site conditions, and maintenance before meeting with Eric."
       blocks={[
+        { type: "h2", content: "Choose the right materials" },
         {
           type: "p",
           content:
-            "Most Eugene residential decks we price fall between roughly $35 and $75 per square foot installed, depending on material and complexity. A straightforward ground-level pressure-treated deck is at the low end; an elevated composite build with railings, lighting, and custom stairs sits higher.",
+            "Pressure-treated wood, cedar, and composite decking have different appearance and maintenance needs. Eric can discuss which materials suit your property and how you plan to use the space.",
         },
-        { type: "h2", content: "Three common tiers" },
-        {
-          type: "list",
-          items: [
-            <>
-              <strong className="text-foreground">
-                Pressure-treated softwood — roughly $25–$45 / sq ft installed.
-              </strong>{" "}
-              Workhorse option for utility decks and budget-conscious builds.
-              Needs regular sealing in Oregon's wet winters.
-            </>,
-            <>
-              <strong className="text-foreground">
-                Cedar or redwood — roughly $40–$60 / sq ft installed.
-              </strong>{" "}
-              Better natural resistance and appearance; still requires
-              maintenance, but ages well when cared for.
-            </>,
-            <>
-              <strong className="text-foreground">
-                Composite / PVC — roughly $50–$85+ / sq ft installed.
-              </strong>{" "}
-              Higher upfront cost, lower long-term maintenance. Popular for
-              Eugene homeowners who want a clean look without annual staining.
-            </>,
-          ],
-        },
-        { type: "h2", content: "What changes the number" },
-        {
-          type: "list",
-          items: [
-            "Height and structural requirements (footings, beams, lateral bracing)",
-            "Railings, stairs, and gates",
-            "Tying into an existing home structure vs freestanding",
-            "Site access and demolition of an old deck",
-            "Permits — decks over 30 inches above grade typically need them in Eugene",
-          ],
-        },
-        {
-          type: "callout",
-          content: (
-            <>
-              <strong className="text-foreground">Local tip.</strong> Eugene and
-              Lane County treat elevated decks as permitted work. We handle the
-              permit package so your estimate includes the real timeline, not
-              just the build days.
-            </>
-          ),
-        },
+        { type: "h2", content: "Review the property" },
         {
           type: "p",
           content:
-            "For a directional range on your lot, use the free online estimator, then schedule an on-site walk with Eric for a written number.",
+            "Deck height, access, foundations, drainage, stairs, railings, and connections to the house all affect the scope. Permit requirements must be confirmed for your specific site.",
+        },
+        { type: "h2", content: "Walk the site with Eric" },
+        {
+          type: "p",
+          content:
+            "Share your goals and arrange an on-site consultation. Eric reviews the property and prepares the project pricing after confirming the scope.",
         },
       ]}
       faqs={[
         {
-          q: "Do I need a permit for a deck in Eugene?",
-          a: "Decks more than 30 inches above grade generally require a building permit in Eugene. We confirm requirements during the estimate and handle submittal when needed.",
-        },
-        {
-          q: "How long does a typical deck take?",
-          a: "A straightforward residential deck is often 1–3 weeks on site after materials arrive, depending on size, weather, and structural complexity.",
+          q: "Who prepares pricing for my project?",
+          a: "Eric prepares project-specific pricing after an on-site review of your scope, property, and selections. Contact him to arrange a consultation.",
         },
       ]}
       relatedLinks={[
-        { label: "Free Cost Estimator", href: "/estimator" },
-        { label: "Outdoor Spaces Service", href: "/services/outdoor" },
-        { label: "Portfolio — Decks", href: "/portfolio" },
+        { label: "Talk with Eric", href: "/contact" },
+        { label: "Remodeling services", href: "/services/remodels" },
+        { label: "Our work", href: "/portfolio" },
       ]}
     />
   );
@@ -379,86 +270,44 @@ export function DeckCostEugene() {
 export function BathroomRemodelCostEugene() {
   return (
     <ArticlePage
-      title="How Much Does a Bathroom Remodel Cost in Eugene, OR?"
-      category="Cost Guides"
+      title="Planning a Bathroom Remodel in Eugene, OR"
+      category="Project Planning"
       heroImage="/portfolio/signature-bath-01.jpg"
-      heroImageAlt="Bathroom remodel in Eugene, Oregon"
-      metaTitle="Bathroom Remodel Cost in Eugene, OR (2026) | Precision Core Builders"
-      metaDescription="Bathroom remodel costs in Eugene and Lane County — cosmetic refresh vs full gut, tile, waterproofing, and what actually drives the budget."
+      heroImageAlt="Planning a Bathroom Remodel in Eugene, OR"
+      metaTitle="Planning a Bathroom Remodel in Eugene, OR | Precision Core Builders"
+      metaDescription="Review bathroom layout, waterproofing, fixtures, and finish selections with Eric."
       publishedDate="2026-08-16"
-      dek="Bathroom work is where waterproofing, layout, and finish choices collide. Here's how Eugene projects typically price out in 2026 — without the national averages that ignore Oregon labor and permit reality."
+      dek="Review bathroom layout, waterproofing, fixtures, and finish selections with Eric."
       blocks={[
+        { type: "h2", content: "Decide what changes" },
         {
           type: "p",
           content:
-            "A cosmetic bathroom refresh in Eugene often lands in the $8,000–$18,000 range. A full gut remodel with new layout, tile shower, and quality fixtures more commonly runs $20,000–$45,000+, depending on size and finish level.",
+            "A refresh may keep the existing layout, while a larger remodel can include new plumbing locations, cabinetry, tile, or a custom shower. Identify what needs to work better for your household.",
         },
-        { type: "h2", content: "What you're actually paying for" },
+        { type: "h2", content: "Plan the concealed work" },
         {
-          type: "list",
-          items: [
-            <>
-              <strong className="text-foreground">
-                Waterproofing & substrate.
-              </strong>{" "}
-              Showers and wet walls done right cost more up front and prevent
-              the call-backs nobody wants.
-            </>,
-            <>
-              <strong className="text-foreground">Plumbing moves.</strong>{" "}
-              Keeping the toilet, vanity, and shower where they are saves money.
-              Relocating drains or supply lines is a major cost driver.
-            </>,
-            <>
-              <strong className="text-foreground">Tile labor.</strong> Labor
-              often exceeds material cost on detailed tile work — especially
-              niches, curbs, and large-format panels.
-            </>,
-            <>
-              <strong className="text-foreground">Fixtures & finishes.</strong>{" "}
-              Vanity, faucet, lighting, and flooring choices swing the total
-              more than most homeowners expect.
-            </>,
-          ],
+          type: "p",
+          content:
+            "Waterproofing, substrate preparation, ventilation, and plumbing deserve attention before choosing finishes. Eric reviews the existing room and identifies what needs further investigation.",
         },
-        { type: "h2", content: "Typical Eugene ranges" },
+        { type: "h2", content: "Discuss the project with Eric" },
         {
-          type: "list",
-          items: [
-            "Cosmetic update (paint, fixtures, refinish): about $8k–$18k",
-            "Standard full remodel, same layout: about $20k–$35k",
-            "Premium / layout change / custom shower: $35k–$55k+",
-          ],
-        },
-        {
-          type: "callout",
-          content: (
-            <>
-              <strong className="text-foreground">Estimator first.</strong> Use
-              the free online cost estimator for a directional range, then book
-              an on-site visit for a written scope that matches your house — not
-              a national average.
-            </>
-          ),
+          type: "p",
+          content:
+            "Bring photos and finish ideas to an on-site consultation. Eric prepares pricing after reviewing the room, selections, and scope.",
         },
       ]}
       faqs={[
         {
-          q: "How long is a bathroom remodel out of service?",
-          a: "Many standard full remodels are 2–4 weeks on site once materials are staged. Layout changes or custom tile can run longer.",
-        },
-        {
-          q: "Can I stay in the house during the work?",
-          a: "Usually yes for a single bathroom. We isolate dust and keep a clear path so the rest of the home stays usable.",
+          q: "Who prepares pricing for my project?",
+          a: "Eric prepares project-specific pricing after an on-site review of your scope, property, and selections. Contact him to arrange a consultation.",
         },
       ]}
       relatedLinks={[
-        { label: "Free Cost Estimator", href: "/estimator" },
-        { label: "Remodels Service", href: "/services/remodels" },
-        {
-          label: "Kitchen Cost Guide",
-          href: "/blog/kitchen-remodel-cost-eugene-oregon",
-        },
+        { label: "Talk with Eric", href: "/contact" },
+        { label: "Remodeling services", href: "/services/remodels" },
+        { label: "Our work", href: "/portfolio" },
       ]}
     />
   );

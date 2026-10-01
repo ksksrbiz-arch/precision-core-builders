@@ -34,7 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
             <img
               src={ASSETS.logo}
               alt="Precision Core Builders"
-              width={149}
+              width={145}
               height={56}
               className="h-14 w-auto mb-8"
             />

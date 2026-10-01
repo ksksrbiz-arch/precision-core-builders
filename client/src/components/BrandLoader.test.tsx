@@ -37,7 +37,10 @@ describe("static splash in index.html", () => {
     const root = html.slice(html.indexOf('<div id="root">'));
     expect(root).toContain('class="pcb-loader"');
     expect(root).toContain('class="pcb-loader__bar"');
-    expect(root).toContain('src="/logo.svg"');
+    expect(root).toContain("<svg");
+    // prerender-marketing.ts swaps exactly this region for the rendered page.
+    expect(root).toContain("<!-- pcb-splash:start -->");
+    expect(root).toContain("<!-- pcb-splash:end -->");
   });
 
   it("shares its markup classes with the React component", () => {
@@ -47,6 +50,15 @@ describe("static splash in index.html", () => {
         expect(html).toContain(`.${cls}`);
       }
     }
+  });
+
+  it("inlines the same logo artwork the React component loads", () => {
+    const logo = readFileSync(
+      resolve(import.meta.dirname, "../../brand/logo-clean.svg"),
+      "utf8"
+    ).trim();
+    const inner = logo.slice(logo.indexOf(">") + 1);
+    expect(html.replace(/\s+/g, "")).toContain(inner.replace(/\s+/g, ""));
   });
 
   it("inlines the critical CSS and a noscript fallback", () => {

@@ -26,23 +26,23 @@ const fadeUp = {
 
 const POSTS = [
   {
-    title: "How Much Does a Kitchen Remodel Cost in Eugene, OR?",
-    category: "Cost Guides",
-    dek: "What a kitchen remodel actually costs in Eugene in 2026 — by tier, and what drives the price up or down.",
+    title: "Planning a Kitchen Remodel in Eugene, OR",
+    category: "Project Planning",
+    dek: "Plan your kitchen layout, materials, and scope before meeting with Eric.",
     photo: "/portfolio/signature-kitchen-01.jpg",
     href: "/blog/kitchen-remodel-cost-eugene-oregon",
   },
   {
-    title: "How Much Does a Deck Cost in Eugene, OR?",
-    category: "Cost Guides",
-    dek: "Pressure-treated, cedar, and composite deck ranges for Eugene and Lane County — plus permits and timeline.",
+    title: "Planning a Deck in Eugene, OR",
+    category: "Project Planning",
+    dek: "Compare deck materials, maintenance, and site considerations with Eric.",
     photo: "/portfolio/signature-deck-01.jpg",
     href: "/blog/deck-cost-eugene-oregon",
   },
   {
-    title: "How Much Does a Bathroom Remodel Cost in Eugene, OR?",
-    category: "Cost Guides",
-    dek: "Cosmetic refresh vs full gut: waterproofing, tile labor, and real 2026 ranges for Eugene homes.",
+    title: "Planning a Bathroom Remodel in Eugene, OR",
+    category: "Project Planning",
+    dek: "Plan your bathroom layout, waterproofing, fixtures, and finishes.",
     photo: "/portfolio/signature-bath-01.jpg",
     href: "/blog/bathroom-remodel-cost-eugene-oregon",
   },
@@ -66,7 +66,7 @@ export default function Blog() {
   useSEO({
     title: "Blog | Precision Core Builders",
     description:
-      "Cost guides, homeowner resources, and real project stories from Precision Core Builders in Eugene, OR.",
+      "Project planning guides, homeowner resources, and real project stories from Precision Core Builders in Eugene, OR.",
     canonical: canonicalUrl("/blog"),
   });
 
@@ -77,7 +77,7 @@ export default function Blog() {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="pt-[68px]">
+      <main id="main-content" className="pt-[68px]">
         <section className="py-20 sm:py-28 border-b border-border/40">
           <div className="container">
             <motion.div
@@ -99,7 +99,7 @@ export default function Blog() {
                 className="text-4xl sm:text-5xl font-semibold leading-tight max-w-2xl"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Cost guides, honest answers, and real projects.
+                Project planning guides, honest answers, and real projects.
               </h1>
             </motion.div>
           </div>

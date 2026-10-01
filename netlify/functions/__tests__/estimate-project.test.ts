@@ -11,6 +11,11 @@ import { computeEstimate } from "../../../shared/estimating";
 
 const invokeLLM = vi.fn();
 const getSupabaseAdmin = vi.fn(() => null);
+const { verifyAdmin } = vi.hoisted(() => ({ verifyAdmin: vi.fn() }));
+vi.mock("../_utils/authGuard", () => ({
+  verifyAdmin,
+  verifyAuth: vi.fn(),
+}));
 
 vi.mock("../../../server/_core/llm", () => ({
   invokeLLM: (...args: unknown[]) => invokeLLM(...args),
@@ -63,9 +68,31 @@ let ipCounter = 0;
 const nextIp = () => `198.51.100.${++ipCounter}`;
 
 beforeEach(() => {
+  verifyAdmin.mockResolvedValue({
+    ok: true,
+    user: { id: "eric", email: "eric@example.com", role: "admin" },
+  });
   invokeLLM.mockReset();
   getSupabaseAdmin.mockReset();
   getSupabaseAdmin.mockReturnValue(null);
+});
+
+describe("estimate-project — Eric-only access", () => {
+  it.each([401, 403])(
+    "rejects a non-admin request with %s before pricing or calling AI",
+    async statusCode => {
+      verifyAdmin.mockResolvedValue({
+        ok: false,
+        statusCode,
+        message: "Admin access required",
+      });
+      const result = await post({ projectType: "kitchen" }, nextIp());
+      expect(result.statusCode).toBe(statusCode);
+      expect(result.body).not.toHaveProperty("estimatedMid");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(getSupabaseAdmin).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe("estimate-project — deterministic figures", () => {
@@ -264,7 +291,7 @@ describe("estimate-project — VERIFY path", () => {
     expect(insert).not.toHaveBeenCalled();
   });
 
-  describe("persistence is an admin-only action", () => {
+  describe("persistence (the endpoint itself is admin-only)", () => {
     const priced = { projectType: "kitchen", complexity: "medium" as const };
 
     function stubInsert() {
@@ -276,34 +303,11 @@ describe("estimate-project — VERIFY path", () => {
       return insert;
     }
 
-    it("does NOT persist for an anonymous caller who supplies ids", async () => {
-      const insert = stubInsert();
-      const { statusCode, body } = await post(
-        { ...priced, projectId: 12, clientId: 3 },
-        nextIp()
-      );
-      expect(statusCode).toBe(200);
-      expect(insert).not.toHaveBeenCalled();
-      // ...and the (computed) estimate is still returned, with no saved row.
-      expect(body.status).toBe("ok");
-      expect(body.savedEstimate).toBeNull();
-    });
-
-    it("does NOT persist for a signed-in non-admin either", async () => {
-      const insert = stubInsert();
-      // Not a real token: verification fails -> treated as anonymous.
-      await post({ ...priced, projectId: 12 }, nextIp(), {
-        authorization: "Bearer not-a-real-token",
-      });
-      expect(insert).not.toHaveBeenCalled();
-    });
-
     it("persists with integer ids for an admin", async () => {
       const insert = stubInsert();
       const { body } = await post(
         { ...priced, projectId: 12, clientId: 3 },
-        nextIp(),
-        ADMIN_HEADERS
+        nextIp()
       );
       expect(insert).toHaveBeenCalledTimes(1);
       expect(insert).toHaveBeenCalledWith(
@@ -316,8 +320,7 @@ describe("estimate-project — VERIFY path", () => {
       const insert = stubInsert();
       const { statusCode } = await post(
         { ...priced, clientId: "3f6d1c4e-0000-4000-8000-000000000001" },
-        nextIp(),
-        ADMIN_HEADERS
+        nextIp()
       );
       expect(statusCode).toBe(400);
       expect(insert).not.toHaveBeenCalled();

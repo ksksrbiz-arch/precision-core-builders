@@ -17,7 +17,16 @@
 
 export const CANONICAL_HOST = "precisioncorebuilders.com";
 
-export type ChangeFreq = "weekly" | "monthly";
+/**
+ * The pristine SPA shell (branded splash in #root), written by
+ * scripts/prerender-marketing.ts. Client-rendered routes are rewritten to it
+ * rather than to /index.html, because the build overwrites index.html with the
+ * prerendered homepage — serving that for /admin or /auth/login would flash
+ * marketing content before the app boots.
+ */
+export const SPA_SHELL = "/app-shell.html";
+
+export type ChangeFreq = "weekly" | "monthly" | "yearly";
 export type PublicRoute = {
   path: string;
   priority: number;
@@ -79,9 +88,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
     priority: 0.7,
     changefreq: "monthly",
   },
-  { path: "/estimator", priority: 0.9, changefreq: "monthly" },
   { path: "/faq", priority: 0.8, changefreq: "monthly" },
   { path: "/contact", priority: 0.9, changefreq: "monthly" },
+  { path: "/privacy", priority: 0.3, changefreq: "yearly" },
 ];
 
 /**
@@ -116,8 +125,10 @@ export const LEGACY_REDIRECTS: readonly LegacyRedirect[] = [
   { from: "/work", to: "/portfolio", status: 301 },
   { from: "/projects", to: "/portfolio", status: 301 },
   { from: "/team", to: "/about", status: 301 },
-  { from: "/quote", to: "/estimator", status: 301 },
-  { from: "/estimate", to: "/estimator", status: 301 },
+  // The public estimator was retired in favour of an on-site consultation.
+  { from: "/quote", to: "/contact", status: 301 },
+  { from: "/estimate", to: "/contact", status: 301 },
+  { from: "/estimator", to: "/contact", status: 301 },
   { from: "/login", to: "/auth/login", status: 301 },
   { from: "/signin", to: "/auth/login", status: 301 },
   { from: "/auth", to: "/auth/login", status: 302 },
@@ -174,14 +185,14 @@ export function buildRedirectRules(projectSlugs: readonly string[]) {
     ...LEGACY_REDIRECTS,
     // 4. Real SPA routes — an explicit allow-list, so anything else can 404.
     //    "/" is skipped: index.html is a real file, Netlify serves it as-is,
-    //    and a "/ → /index.html" rewrite would only invite a redirect loop.
+    //    and rewriting "/" would only invite a redirect loop.
     ...[
       ...PUBLIC_ROUTES.map(r => r.path),
       ...projectSlugs.map(s => `/portfolio/${s}`),
       ...APP_ROUTES,
     ]
       .filter(from => from !== "/")
-      .map(from => ({ from, to: "/index.html", status: 200 })),
+      .map(from => ({ from, to: SPA_SHELL, status: 200 })),
     // 5. Everything else is a genuine 404 (static branded page, real status).
     { from: "/*", to: "/404.html", status: 404 },
   ];

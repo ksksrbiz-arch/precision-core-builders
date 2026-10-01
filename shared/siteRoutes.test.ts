@@ -6,6 +6,7 @@ import {
   APP_ROUTES,
   LEGACY_REDIRECTS,
   PUBLIC_ROUTES,
+  SPA_SHELL,
   buildRedirectRules,
   renderRedirects,
 } from "./siteRoutes";
@@ -58,11 +59,22 @@ describe("generated _redirects", () => {
     expect(rules.some(r => r.from === "/*" && r.status === 200)).toBe(false);
   });
 
-  it("ships the static 404 page it points at", () => {
-    const html = readFileSync(resolve(root, "client/public/404.html"), "utf8");
-    expect(existsSync(resolve(root, "client/public/logo.svg"))).toBe(true);
-    expect(html).toContain("noindex");
-    expect(html).toContain("still framed out");
+  it("points the 404 rule at a page the build actually produces", () => {
+    // 404.html is the prerendered in-app NotFound view (noindex via useSEO).
+    const prerender = readFileSync(
+      resolve(root, "scripts/prerender-marketing.ts"),
+      "utf8"
+    );
+    expect(prerender).toMatch(/"\/404"/);
+    expect(prerender).toContain('"404.html"');
+    // ...and the pristine shell that client-rendered routes are rewritten to.
+    expect(prerender).toContain('"app-shell.html"');
+    expect(SPA_SHELL).toBe("/app-shell.html");
+    const notFound = readFileSync(
+      resolve(root, "client/src/pages/NotFound.tsx"),
+      "utf8"
+    );
+    expect(notFound).toContain("noindex");
   });
 
   it("rewrites every public page, project slug and app area to the SPA", () => {
@@ -70,7 +82,7 @@ describe("generated _redirects", () => {
       if (path === "/") continue; // index.html is served natively
       expect(resolveRequest(path), path).toEqual({
         status: 200,
-        to: "/index.html",
+        to: SPA_SHELL,
       });
     }
     for (const s of slugs) {
@@ -95,6 +107,8 @@ describe("generated _redirects", () => {
     for (const raw of paths) {
       if (raw === "/") continue;
       if (raw === "/404") continue; // the in-app 404 view; a hard hit is a real 404
+      // Routes kept for in-app links but deliberately redirected at the edge.
+      if (LEGACY_REDIRECTS.some(r => r.from === raw)) continue;
       const sample = raw.replace(/:[a-z]+/gi, slugs[0]);
       const res = resolveRequest(sample);
       expect(res?.status, `${raw} (${sample}) must not 404`).toBe(200);
