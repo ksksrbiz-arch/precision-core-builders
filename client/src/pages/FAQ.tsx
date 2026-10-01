@@ -47,7 +47,7 @@ const FAQS: FaqSection[] = [
     items: [
       {
         q: "How do I get started?",
-        a: "Start with our free online cost estimator for a high-level range, then call Eric at 541-852-5144 or use the contact form. We schedule a free on-site consultation — we come to your property, review the scope, and provide a detailed written estimate before you commit to anything.",
+        a: "Call Eric at 541-852-5144 or use the contact form to arrange an on-site consultation. Eric reviews your property and scope, then prepares project-specific pricing himself.",
       },
       {
         q: "Are you licensed and insured in Oregon?",
@@ -100,8 +100,8 @@ const FAQS: FaqSection[] = [
         a: "We structure milestone-based payment schedules that align with project phases — typically a deposit, mid-project payment(s), and final payment at completion. We don't offer in-house financing but work with your timeline.",
       },
       {
-        q: "How accurate are your estimates?",
-        a: "The online estimator gives a directional range from project parameters. After a site visit, you receive a detailed written estimate itemizing labor, materials, and timeline. For fixed-price work we stand behind those numbers; for projects with inherent unknowns (like restoration), we explain contingency ranges upfront so there are no surprises.",
+        q: "Who prepares pricing for my project?",
+        a: "Eric prepares pricing after reviewing your property, scope, and selections. The website does not calculate estimates or publish budget ranges. Contact Eric to arrange an on-site consultation.",
       },
       {
         q: "Why is the lowest bid not always the best choice?",
@@ -387,11 +387,11 @@ export default function FAQ() {
                   <Phone className="h-4 w-4" /> {SITE.phone}
                 </a>
                 <Link
-                  href="/estimator"
+                  href="/contact"
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-7 py-3.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-all hover:gap-3 min-h-[52px]"
                   style={{ fontFamily: "var(--font-condensed)" }}
                 >
-                  Free Estimate <ArrowRight className="h-4 w-4" />
+                  Consultation <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>

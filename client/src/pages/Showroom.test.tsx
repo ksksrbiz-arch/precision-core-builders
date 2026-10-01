@@ -112,7 +112,7 @@ describe("Showroom", () => {
     );
     expect(
       screen
-        .getByRole("link", { name: /Request an Estimate/ })
+        .getByRole("link", { name: /Request a Consultation/ })
         .getAttribute("href")
     ).toBe("/contact");
   });

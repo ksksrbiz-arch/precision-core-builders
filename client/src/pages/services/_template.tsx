@@ -263,7 +263,8 @@ export function ServicePage(p: ServicePageProps) {
                       className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-all hover:gap-3 min-h-[44px]"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
-                      Get Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+                      Request a Consultation{" "}
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </a>
                   </div>
                 </div>
@@ -427,7 +428,7 @@ export function ServicePage(p: ServicePageProps) {
                         className="text-xl font-semibold mb-6"
                         style={{ fontFamily: "var(--font-heading)" }}
                       >
-                        Get Your Free Estimate
+                        Discuss Your Project
                       </h3>
                       <form
                         name={formName}
@@ -538,7 +539,7 @@ export function ServicePage(p: ServicePageProps) {
                             "Sending…"
                           ) : (
                             <>
-                              {`Request ${p.title} Estimate`}{" "}
+                              {`Discuss ${p.title}`}{" "}
                               <ArrowRight className="h-3.5 w-3.5" />
                             </>
                           )}

@@ -129,8 +129,8 @@ export default function Showroom() {
               <span className="heading-bar" aria-hidden />
               <p className="mt-5 md:mt-6 text-base md:text-lg text-white/85 max-w-xl leading-relaxed">
                 Flooring, countertops, cabinets, and fixtures we install
-                regularly. See something you like? Bring it to your estimate —
-                we&apos;ll build it into your budget.
+                regularly. See something you like? Discuss your favorites with
+                Eric during your consultation.
               </p>
             </motion.div>
           </div>
@@ -262,8 +262,8 @@ export default function Showroom() {
               </h2>
               <span className="heading-bar heading-bar-center" aria-hidden />
               <p className="mt-4 text-white/75 text-base md:text-lg">
-                Bring your favorites to your on-site estimate and we&apos;ll
-                price them into your project.
+                Bring your favorites to an on-site consultation with Eric and
+                discuss how they fit your project.
               </p>
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
                 <Magnetic strength={0.3}>
@@ -278,7 +278,7 @@ export default function Showroom() {
                   >
                     {favorites.length
                       ? `Discuss ${favorites.length} Selected Finishes`
-                      : "Request an Estimate"}{" "}
+                      : "Request a Consultation"}{" "}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </a>
                 </Magnetic>

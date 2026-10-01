@@ -26,7 +26,6 @@ const NAV_LINKS = [
   { label: "Services", href: "/services" },
   { label: "Our Work", href: "/portfolio" },
   { label: "Showroom", href: "/showroom" },
-  { label: "Estimator", href: "/estimator" },
   { label: "Insights", href: "/blog" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
@@ -344,12 +343,12 @@ export function SiteNav() {
                     <Phone className="h-4 w-4" /> {SITE.phone}
                   </a>
                   <a
-                    href="/estimator"
+                    href="/contact"
                     onClick={() => setOpen(false)}
                     className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 text-sm font-bold tracking-wider uppercase min-h-[52px]"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Get Free Estimate <ArrowRight className="h-4 w-4" />
+                    Request a Consultation <ArrowRight className="h-4 w-4" />
                   </a>
                 </div>
               </nav>
@@ -391,12 +390,12 @@ export function MobileCTABar() {
           <Phone className="h-4 w-4" /> Call Now
         </a>
         <a
-          href="/estimator"
+          href="/contact"
           onClick={() => trackCtaClick("mobile_sticky_estimate")}
           className="flex-1 flex items-center justify-center gap-2 py-4 text-[12px] font-bold tracking-widest uppercase bg-primary text-primary-foreground min-h-[56px] active:bg-primary/80"
           style={{ fontFamily: "var(--font-condensed)" }}
         >
-          Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+          Consultation <ArrowRight className="h-3.5 w-3.5" />
         </a>
       </div>
     </div>
@@ -479,7 +478,7 @@ export function SiteFooter() {
                 { label: "About Us", href: "/about" },
                 { label: "Our Team", href: "/about#team" },
                 { label: "Our Work", href: "/portfolio" },
-                { label: "Cost Estimator", href: "/estimator" },
+                { label: "Consultation", href: "/contact" },
                 { label: "Insights", href: "/blog" },
                 { label: "FAQ", href: "/faq" },
                 { label: "Contact", href: "/contact" },
@@ -531,11 +530,11 @@ export function SiteFooter() {
               ))}
             </div>
             <a
-              href="/estimator"
+              href="/contact"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase hover:bg-primary/85 transition-all hover:gap-3"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              Free Estimate <ArrowRight className="h-3.5 w-3.5" />
+              Consultation <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
         </div>

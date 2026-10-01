@@ -231,8 +231,7 @@ export default function Portfolio() {
               </h2>
               <span className="heading-bar heading-bar-center" aria-hidden />
               <p className="mt-4 text-white/75 text-base md:text-lg">
-                Walk the site with Eric. Honest estimate, no pressure, every
-                time.
+                Walk the site with Eric and discuss what you have in mind.
               </p>
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
                 <Magnetic strength={0.3}>
@@ -241,7 +240,8 @@ export default function Portfolio() {
                     className="flex items-center justify-center gap-2 bg-[#C8A84B] text-neutral-900 px-8 py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#d4b866] transition-all hover:gap-3 min-h-[52px]"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Request an Estimate <ArrowRight className="h-3.5 w-3.5" />
+                    Request a Consultation{" "}
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </a>
                 </Magnetic>
                 <Magnetic strength={0.3}>

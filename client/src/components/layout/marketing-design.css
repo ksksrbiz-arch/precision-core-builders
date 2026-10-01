@@ -199,10 +199,6 @@
 .marketing-page .marketing-article h2 {
   margin-top: 2.5rem;
 }
-.marketing-page .marketing-estimator-intro {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 32px;
-}
 .marketing-page .marketing-inquiry-form {
   padding: clamp(20px, 3vw, 36px);
   border: 1px solid var(--border);

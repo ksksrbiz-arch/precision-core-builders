@@ -20,6 +20,28 @@ for (const url of urls) {
     path
   );
   assert.equal(doc.querySelectorAll("main h1").length, 1, `Single H1: ${path}`);
+  assert.doesNotMatch(
+    doc.documentElement.innerHTML,
+    /"priceRange"\s*:/,
+    `No published price metadata: ${path}`
+  );
+  assert.equal(
+    doc.querySelectorAll('a[href="/estimator"]').length,
+    0,
+    `No calculator links: ${path}`
+  );
+  assert.doesNotMatch(
+    doc.body.textContent ?? "",
+    /Typical budget:|AI estimator|online cost estimator|preliminary cost estimator|\$\d[\d,.]*(?:k)?\s*[–-]\s*\$?\d/i,
+    `No public pricing ranges: ${path}`
+  );
+  assert.equal(
+    doc.querySelectorAll(
+      '[name="budget"], [name="estimatedMid"], [name="estimatedLow"], [name="estimatedHigh"]'
+    ).length,
+    0,
+    `No published estimate fields: ${path}`
+  );
   assert.ok(
     (doc.querySelector("main")?.textContent?.trim().length ?? 0) > 100,
     `Public content: ${path}`

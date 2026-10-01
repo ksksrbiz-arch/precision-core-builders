@@ -47,10 +47,6 @@ type RouteRule = { id: SpecialistId; test: RegExp };
 /** Reachable from an unauthenticated public surface. */
 const PUBLIC_ROUTES: RouteRule[] = [
   {
-    id: "estimator",
-    test: /\b(estimate|quote|bid|proposal|cost|costs|price|pricing|budget|how much|afford|ballpark|per square foot|per sqft)\b/i,
-  },
-  {
     id: "general-advisor",
     test: /\b(compare|comparison|difference|versus|vs\.?|which|choose|options?|timeline|how long|process|permit|permits|material|finish|remodel|addition|build)\b/i,
   },
@@ -94,13 +90,16 @@ const INTERNAL_ROUTES: RouteRule[] = [
     id: "ops-copilot",
     test: /\b(command center|operations|operational|dashboard|today|this week|workload|backlog|over budget|profitability|margin|what needs attention|what should i do)\b/i,
   },
+  {
+    id: "estimator",
+    test: /\b(estimate|quote|bid|proposal|cost|costs|price|pricing|budget|how much|afford|ballpark|per square foot|per sqft)\b/i,
+  },
 ];
 
 const ROUTES_BY_SURFACE: Record<AiSurface, RouteRule[]> = {
   // Specific public intents first; the advisor is the catch-all.
   public: PUBLIC_ROUTES,
-  // A portal user may legitimately ask a cost question, so the public rules
-  // stay reachable — but never the internal ones.
+  // Clients get guidance and their own project records, never pricing tools.
   portal: [...PORTAL_ROUTES, ...PUBLIC_ROUTES],
   // Internal intents win on the admin surface, then everything else.
   internal: [...INTERNAL_ROUTES, ...PUBLIC_ROUTES],

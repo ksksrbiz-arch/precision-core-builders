@@ -134,12 +134,17 @@
 
 [[redirects]]
   from = "/quote"
-  to = "/estimator"
+  to = "/contact"
   status = 301
 
 [[redirects]]
   from = "/estimate"
-  to = "/estimator"
+  to = "/contact"
+  status = 301
+
+[[redirects]]
+  from = "/estimator"
+  to = "/contact"
   status = 301
 
 # Legacy "/expertise/*" section was renamed to "/services/*". No route

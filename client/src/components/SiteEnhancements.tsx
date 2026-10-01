@@ -129,7 +129,7 @@ export function BackToTop() {
 }
 
 /**
- * StickyEstimateCTA — desktop-only floating "Get a Free Estimate" pill that
+ * StickyEstimateCTA — desktop-only floating "Request a Consultation" pill that
  * slides in after the user scrolls past the hero. Keeps the primary conversion
  * action one click away on long marketing pages. Hidden on mobile (the bottom
  * Call/Estimate bar covers that), on app routes (admin/portal/auth), and on the
@@ -170,8 +170,8 @@ export function StickyEstimateCTA() {
 
   return (
     <Link
-      href="/estimator"
-      aria-label="Get a free estimate"
+      href="/contact"
+      aria-label="Request a consultation"
       className={`fixed bottom-8 right-20 z-40 hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[11px] font-bold tracking-[0.12em] uppercase shadow-lg shadow-primary/25 rounded-sm transition-all duration-300 hover:bg-primary/90 hover:gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none ${
         visible
           ? "opacity-100 translate-y-0 pointer-events-auto"
@@ -179,7 +179,7 @@ export function StickyEstimateCTA() {
       }`}
       style={{ fontFamily: "var(--font-condensed)" }}
     >
-      Get a Free Estimate
+      Request a Consultation
       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
     </Link>
   );
