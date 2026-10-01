@@ -3,11 +3,19 @@ import { assertProjectAccess } from "../_core/access";
 import {
   createScheduleItem,
   deleteScheduleItem,
+  getScheduleItem,
   getWeatherSensitiveItems,
   listScheduleItems,
   updateScheduleItem,
   updateScheduleItemOrder,
 } from "../_data/scheduleRepo";
+import {
+  findDependencyProblem,
+  isValidDependsOn,
+  parseDependsOn,
+  withoutDependency,
+} from "../../shared/scheduleDeps";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const TaskTypeEnum = z.enum([
@@ -52,7 +60,11 @@ const ScheduleItemFields = z.object({
   plannedStart: z.string().datetime().optional(),
   plannedEnd: z.string().datetime().optional(),
   durationDays: z.number().int().positive().optional(),
-  dependsOn: z.string().optional(),
+  // Comma-separated predecessor task ids ("12,15"); see shared/scheduleDeps.ts.
+  dependsOn: z
+    .string()
+    .refine(isValidDependsOn, "Use comma-separated task ids")
+    .optional(),
   sortOrder: z.number().int().optional(),
   assignedTo: z.string().optional(),
   notes: z.string().optional(),
@@ -72,10 +84,30 @@ const ScheduleItemUpdateInput = z
   .merge(ScheduleItemFields.partial().omit({ projectId: true }))
   .extend({
     description: z.string().nullable().optional(),
-    dependsOn: z.string().nullable().optional(),
+    dependsOn: z
+      .string()
+      .refine(isValidDependsOn, "Use comma-separated task ids")
+      .nullable()
+      .optional(),
     assignedTo: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
   });
+
+/** Reject self/unknown/circular predecessors before they reach the database. */
+async function assertValidDependencies(
+  projectId: number,
+  taskId: number | null,
+  dependsOn: string | null | undefined
+) {
+  const deps = parseDependsOn(dependsOn);
+  if (deps.length === 0) return;
+  const tasks = (await listScheduleItems(projectId)).map(row => ({
+    id: row.id as number,
+    dependsOn: row.depends_on as string | null,
+  }));
+  const problem = findDependencyProblem(taskId, deps, tasks);
+  if (problem) throw new TRPCError({ code: "BAD_REQUEST", message: problem });
+}
 
 export const scheduleRouter = router({
   list: protectedProcedure
@@ -89,6 +121,7 @@ export const scheduleRouter = router({
   create: adminProcedure
     .input(ScheduleItemInput)
     .mutation(async ({ input }) => {
+      await assertValidDependencies(input.projectId, null, input.dependsOn);
       return createScheduleItem({
         project_id: input.projectId,
         parent_id: input.parentId,
@@ -125,6 +158,16 @@ export const scheduleRouter = router({
         parentId,
         ...rest
       } = input;
+      if (dependsOn) {
+        const existing = await getScheduleItem(id);
+        if (!existing) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Task not found.",
+          });
+        }
+        await assertValidDependencies(existing.project_id, id, dependsOn);
+      }
       return updateScheduleItem(id, {
         ...rest,
         ...(parentId !== undefined && { parent_id: parentId }),
@@ -162,7 +205,20 @@ export const scheduleRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      return deleteScheduleItem(input.id);
+      // Other tasks may list this one as a predecessor; unlink them so no task
+      // is left depending on something that no longer exists.
+      const existing = await getScheduleItem(input.id);
+      const result = await deleteScheduleItem(input.id);
+      if (existing) {
+        const siblings = await listScheduleItems(existing.project_id);
+        for (const row of siblings) {
+          if (!parseDependsOn(row.depends_on).includes(input.id)) continue;
+          await updateScheduleItem(row.id, {
+            depends_on: withoutDependency(row.depends_on, input.id),
+          });
+        }
+      }
+      return result;
     }),
 
   // Weather-sensitive tasks for a date window

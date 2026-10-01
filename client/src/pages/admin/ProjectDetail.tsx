@@ -1,6 +1,7 @@
 import { relayAdminEvent } from "@/lib/relayEvent";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { QueryError } from "@/components/QueryError";
 import { SkeletonCard } from "@/components/Skeletons";
 import {
@@ -21,6 +22,8 @@ import { useEntityForm } from "@/hooks/useEntityForm";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
   ArrowLeft,
+  Archive,
+  ArchiveRestore,
   Plus,
   BookOpen,
   Calendar,
@@ -224,6 +227,35 @@ export default function ProjectDetail() {
     }
   );
 
+  // Projects are archived, never deleted: deleting cascades into the immutable
+  // ledger. Archiving hides the job from lists/pickers/dashboard; it's restorable.
+  const refreshAfterArchive = () => {
+    utils.projects.getById.invalidate({ id: projectId });
+    utils.projects.list.invalidate();
+    utils.projects.stats.invalidate();
+  };
+  const archiveProject = useMutationWithToast(
+    trpc.projects.archive.useMutation(),
+    {
+      success: "Project Archived",
+      successMessage:
+        "Hidden from lists and the dashboard. You can restore it any time.",
+      error: "Archive Failed",
+      errorMessage: "Couldn't archive the project. Please try again.",
+      invalidate: refreshAfterArchive,
+    }
+  );
+  const restoreProject = useMutationWithToast(
+    trpc.projects.unarchive.useMutation(),
+    {
+      success: "Project Restored",
+      successMessage: "The project is back in your active list.",
+      error: "Restore Failed",
+      errorMessage: "Couldn't restore the project. Please try again.",
+      invalidate: refreshAfterArchive,
+    }
+  );
+
   const startEditOverview = () => {
     if (!project) return;
     setEditForm({
@@ -395,6 +427,31 @@ export default function ProjectDetail() {
           actions={
             <>
               <StatusBadge status={project.status} />
+              {project.archived_at ? (
+                <button
+                  onClick={() => restoreProject.mutate({ id: projectId })}
+                  disabled={restoreProject.isPending}
+                  className="flex items-center gap-2 border border-primary/50 text-primary px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/10 transition-colors flex-shrink-0 disabled:opacity-50"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <ArchiveRestore className="h-3.5 w-3.5" /> Restore
+                </button>
+              ) : (
+                <ConfirmDelete
+                  trigger={
+                    <button
+                      className="flex items-center gap-2 border border-border text-muted-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:text-foreground hover:border-primary/40 transition-colors flex-shrink-0"
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Archive className="h-3.5 w-3.5" /> Archive
+                    </button>
+                  }
+                  title={`Archive ${project.name}?`}
+                  description="The project moves out of your lists, pickers and dashboard totals. Nothing is deleted — the ledger, reports and estimates stay intact, and you can restore it any time."
+                  confirmLabel="Archive"
+                  onConfirm={() => archiveProject.mutate({ id: projectId })}
+                />
+              )}
               <button
                 onClick={() => setLocation("/admin/field-reports/new")}
                 className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 transition-colors flex-shrink-0"
@@ -405,6 +462,17 @@ export default function ProjectDetail() {
             </>
           }
         />
+
+        {project.archived_at && (
+          <div
+            role="status"
+            className="flex items-center gap-2 border border-border/60 bg-muted/30 px-4 py-3 mb-5 text-xs text-muted-foreground"
+          >
+            <Archive className="h-3.5 w-3.5 text-primary" />
+            Archived {fmtDate(project.archived_at)} — hidden from lists and the
+            dashboard. Restore it to bring it back.
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-6">
           {project.city && (

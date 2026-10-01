@@ -30,7 +30,8 @@ export type SpecialistId =
   | "scheduler"
   | "lead-analyst"
   | "search-intent"
-  | "crew-dispatch";
+  | "crew-dispatch"
+  | "vision-analyst";
 
 export type Route = {
   id: SpecialistId;
@@ -111,10 +112,28 @@ const DEFAULT_BY_SURFACE: Record<AiSurface, SpecialistId> = {
   internal: "ops-copilot",
 };
 
+/**
+ * Specialists reachable on a surface ONLY by an explicit pin, never by matching
+ * message text. A photo-analysis job is identified by the endpoint that
+ * receives the photo, not by words in a prompt, so it has no pattern rule — a
+ * rule would only risk capturing unrelated admin questions that mention "photo".
+ */
+const PIN_ONLY_BY_SURFACE: Record<AiSurface, SpecialistId[]> = {
+  public: [],
+  portal: [],
+  internal: ["vision-analyst"],
+};
+
 /** Specialists a given surface is permitted to reach. */
 export function allowedSpecialists(surface: AiSurface): SpecialistId[] {
   const ids = ROUTES_BY_SURFACE[surface].map(r => r.id);
-  return [...new Set([...ids, DEFAULT_BY_SURFACE[surface]])];
+  return [
+    ...new Set([
+      ...ids,
+      ...PIN_ONLY_BY_SURFACE[surface],
+      DEFAULT_BY_SURFACE[surface],
+    ]),
+  ];
 }
 
 export type RouteInput = {

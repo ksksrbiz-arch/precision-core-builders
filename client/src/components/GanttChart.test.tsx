@@ -218,4 +218,107 @@ describe("GanttChart", () => {
       await waitFor(() => expect(onTaskDelete).toHaveBeenCalledWith(5));
     });
   });
+  describe("dependencies", () => {
+    const items = () => [
+      makeItem({ id: 1, title: "Excavation" }),
+      makeItem({
+        id: 2,
+        title: "Framing",
+        planned_start: "2026-03-10",
+        planned_end: "2026-03-20",
+        depends_on: "1",
+      }),
+      makeItem({
+        id: 3,
+        title: "Roofing",
+        planned_start: "2026-03-21",
+        planned_end: "2026-03-25",
+        depends_on: "2",
+      }),
+    ];
+
+    async function openEditor(title: string, props: Record<string, unknown>) {
+      useIsMobileMock.mockReturnValue(true);
+      const { GanttChart } = await loadGantt();
+      render(<GanttChart projectId={1} items={items()} {...props} />);
+      fireEvent.click(screen.getByText(title));
+      return await screen.findByRole("dialog");
+    }
+
+    it("lists what each task follows (mobile list)", async () => {
+      useIsMobileMock.mockReturnValue(true);
+      const { GanttChart } = await loadGantt();
+      render(<GanttChart projectId={1} items={items()} />);
+      expect(screen.getByText("After: Excavation")).toBeTruthy();
+      expect(screen.getByText("After: Framing")).toBeTruthy();
+    });
+
+    it("pre-checks the current predecessors in the editor", async () => {
+      const dialog = await openEditor("Framing", {});
+      const excavation = within(dialog).getByRole("checkbox", {
+        name: /excavation/i,
+      }) as HTMLInputElement;
+      expect(excavation.checked).toBe(true);
+      expect(
+        (
+          within(dialog).getByRole("checkbox", {
+            name: /roofing/i,
+          }) as HTMLInputElement
+        ).checked
+      ).toBe(false);
+    });
+
+    it("saves changed predecessors as a comma list", async () => {
+      const onTaskSave = vi.fn();
+      const dialog = await openEditor("Roofing", { onTaskSave });
+      fireEvent.click(
+        within(dialog).getByRole("checkbox", { name: /excavation/i })
+      );
+      fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+      expect(onTaskSave).toHaveBeenCalledWith(
+        3,
+        expect.objectContaining({ dependsOn: "1,2" })
+      );
+    });
+
+    it("clears predecessors with null and leaves them out when unchanged", async () => {
+      const onTaskSave = vi.fn();
+      let dialog = await openEditor("Framing", { onTaskSave });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+      expect(onTaskSave.mock.calls[0][1]).not.toHaveProperty("dependsOn");
+
+      cleanup();
+      onTaskSave.mockClear();
+      dialog = await openEditor("Framing", { onTaskSave });
+      fireEvent.click(
+        within(dialog).getByRole("checkbox", { name: /excavation/i })
+      );
+      fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+      expect(onTaskSave).toHaveBeenCalledWith(
+        2,
+        expect.objectContaining({ dependsOn: null })
+      );
+    });
+
+    it("blocks choices that would create a loop", async () => {
+      // Excavation can't follow Roofing: Roofing -> Framing -> Excavation.
+      const dialog = await openEditor("Excavation", {});
+      const roofing = within(dialog).getByRole("checkbox", {
+        name: /roofing/i,
+      }) as HTMLInputElement;
+      expect(roofing.disabled).toBe(true);
+      expect(within(dialog).getAllByText("would loop").length).toBe(2);
+    });
+
+    it("is view-only when the chart is read-only", async () => {
+      const dialog = await openEditor("Framing", { readOnly: true });
+      expect(
+        (
+          within(dialog).getByRole("checkbox", {
+            name: /excavation/i,
+          }) as HTMLInputElement
+        ).disabled
+      ).toBe(true);
+    });
+  });
 });

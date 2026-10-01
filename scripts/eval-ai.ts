@@ -182,6 +182,7 @@ const checks: Check[] = [
         "lead-analyst",
         "search-intent",
         "crew-dispatch",
+        "vision-analyst",
       ];
       const leaked = allowedSpecialists("public").filter(id =>
         internal.includes(id)
@@ -235,7 +236,12 @@ const checks: Check[] = [
       for (const file of readdirSync(dir)) {
         if (!file.endsWith(".ts") || EXEMPT.has(file)) continue;
         const src = readFileSync(join(dir, file), "utf8");
-        const callsModel = /\b(invokeLLM|runToolLoop|streamLLM)\s*\(/.test(src);
+        // Includes a raw call to the OpenRouter chat endpoint: vision-studio
+        // posts there directly (the shared LLM client is text-only), and a
+        // sweep that only looked for invokeLLM let it ship without a contract.
+        const callsModel =
+          /\b(invokeLLM|runToolLoop|streamLLM)\s*\(/.test(src) ||
+          /openrouter\.ai\/api\/v1\/chat\/completions/.test(src);
         if (!callsModel) continue;
         // Require a real call, not merely the substring: an identifier that
         // happens to contain the name must not satisfy this.

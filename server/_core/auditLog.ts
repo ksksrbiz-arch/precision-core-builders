@@ -20,6 +20,8 @@ export type AuditAction =
   | "project.create"
   | "project.update"
   | "project.delete"
+  | "project.archive"
+  | "project.unarchive"
   | "client.create"
   | "client.update"
   | "client.delete"

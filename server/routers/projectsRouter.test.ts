@@ -58,6 +58,8 @@ vi.mock("../_data/projectsRepo", () => ({
   getProjectRow: vi.fn(async () => ({ id: 5 })),
   updateProjectProgress: vi.fn(async () => ({ id: 5 })),
   deleteProject: vi.fn(async () => ({ success: true })),
+  setProjectArchived: vi.fn(async (id: number) => ({ id })),
+  countProjectLedgerEntries: vi.fn(async () => 0),
   getProjectsStats: vi.fn(async () => []),
   getProfitabilitySources: vi.fn(async () => [
     { data: { contracted_budget: 1000 }, error: null },
@@ -217,9 +219,39 @@ describe("Projects Router — repo delegation", () => {
     expect(repo.updateProjectProgress).not.toHaveBeenCalled();
   });
 
-  it("delete passes input.id to deleteProject", async () => {
+  it("delete passes input.id to deleteProject when there is no financial history", async () => {
     await admin().projects.delete({ id: 14 });
+    expect(repo.countProjectLedgerEntries).toHaveBeenCalledWith(14);
     expect(repo.deleteProject).toHaveBeenCalledWith(14);
+  });
+
+  it("delete refuses a project with ledger entries (it would cascade into the immutable ledger)", async () => {
+    vi.mocked(repo.countProjectLedgerEntries).mockResolvedValueOnce(3);
+    await expect(admin().projects.delete({ id: 14 })).rejects.toThrow(
+      /archive it instead/i
+    );
+    expect(repo.deleteProject).not.toHaveBeenCalled();
+  });
+
+  it("archive stamps archived_at; unarchive clears it", async () => {
+    await admin().projects.archive({ id: 9 });
+    const [id, stamp] = vi.mocked(repo.setProjectArchived).mock.calls[0];
+    expect(id).toBe(9);
+    expect(new Date(stamp as string).getTime()).toBeGreaterThan(0);
+
+    await admin().projects.unarchive({ id: 9 });
+    expect(repo.setProjectArchived).toHaveBeenLastCalledWith(9, null);
+  });
+
+  it("list forwards the archived filter (default left to the repo: exclude)", async () => {
+    await admin().projects.list({ archived: "only" });
+    expect(repo.listProjects).toHaveBeenCalledWith(
+      expect.objectContaining({ archived: "only" })
+    );
+    await admin().projects.list();
+    expect(
+      vi.mocked(repo.listProjects).mock.calls[1][0].archived
+    ).toBeUndefined();
   });
 
   it("stats aggregates the rows from getProjectsStats, actual cost from the ledger", async () => {
@@ -454,6 +486,9 @@ describe("Projects Router — authorization", () => {
       /forbidden/i
     );
     await expect(u.projects.delete({ id: 1 })).rejects.toThrow(/forbidden/i);
+    await expect(u.projects.archive({ id: 1 })).rejects.toThrow(/forbidden/i);
+    await expect(u.projects.unarchive({ id: 1 })).rejects.toThrow(/forbidden/i);
+    expect(repo.setProjectArchived).not.toHaveBeenCalled();
     await expect(u.projects.stats()).rejects.toThrow(/forbidden/i);
     await expect(u.projects.profitability({ id: 1 })).rejects.toThrow(
       /forbidden/i

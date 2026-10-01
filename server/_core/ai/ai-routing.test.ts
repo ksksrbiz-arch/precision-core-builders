@@ -30,6 +30,7 @@ const INTERNAL_ONLY: SpecialistId[] = [
   "lead-analyst",
   "search-intent",
   "crew-dispatch",
+  "vision-analyst",
 ];
 
 describe("surface isolation", () => {
@@ -182,6 +183,47 @@ describe("routing", () => {
     expect(routeSummary(route)).toBe(
       "AI route: general-advisor (default-advisor)"
     );
+  });
+});
+
+describe("vision-analyst (pin-only)", () => {
+  it("is reachable on the internal surface only", () => {
+    expect(allowedSpecialists("internal")).toContain("vision-analyst");
+    expect(allowedSpecialists("public")).not.toContain("vision-analyst");
+    expect(allowedSpecialists("portal")).not.toContain("vision-analyst");
+  });
+
+  it("is chosen by an explicit pin on the internal surface", () => {
+    expect(
+      routeAi({ surface: "internal", specialist: "vision-analyst" })
+    ).toEqual({ id: "vision-analyst", reason: "caller-pinned" });
+  });
+
+  it("a public or portal pin cannot reach it", () => {
+    for (const surface of ["public", "portal"] as AiSurface[]) {
+      expect(routeAi({ surface, specialist: "vision-analyst" }).id).not.toBe(
+        "vision-analyst"
+      );
+    }
+  });
+
+  it("is never selected by message text, so photo talk doesn't change routing", () => {
+    for (const message of [
+      "look at this photo",
+      "analyze the site image",
+      "vision studio",
+    ]) {
+      expect(routeAi({ surface: "internal", message }).id).not.toBe(
+        "vision-analyst"
+      );
+    }
+  });
+
+  it("carries the photo-specific limits in its prompt", () => {
+    const prompt = specialistPrompt("vision-analyst");
+    expect(prompt).toMatch(/not a measurement/i);
+    expect(prompt).toMatch(/dollar figure/i);
+    expect(prompt).toMatch(/VERIFY/);
   });
 });
 
