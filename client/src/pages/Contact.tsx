@@ -9,6 +9,7 @@ import {
 import { TrustBar } from "@/components/layout/TrustBar";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/const";
+import { appendLeadAttribution } from "@/lib/leadAttribution";
 import { useSEO } from "@/hooks/useSEO";
 import { trackContactSubmit, trackPhoneClick } from "@/lib/analytics";
 import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
@@ -43,6 +44,23 @@ const contactSchema = z.object({
   message: z.string().trim().min(1, "Tell us a bit about your project"),
 });
 type ContactFormValues = z.infer<typeof contactSchema>;
+
+function selectedFinishesMessage(): string {
+  try {
+    const raw = new URLSearchParams(window.location.search).get("finishes");
+    if (!raw || raw.length > 3000) return "";
+    const names: unknown = JSON.parse(raw);
+    if (
+      !Array.isArray(names) ||
+      names.length > 10 ||
+      !names.every(name => typeof name === "string" && name.length <= 200)
+    )
+      return "";
+    return `I'd like to discuss these finishes: ${names.join(", ")}.\n\nProject details: `;
+  } catch {
+    return "";
+  }
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -91,7 +109,7 @@ export default function Contact() {
       phone: "",
       projectType: "",
       budget: "",
-      message: "",
+      message: selectedFinishesMessage(),
     },
   });
   const budget = watch("budget");
@@ -100,6 +118,7 @@ export default function Contact() {
     setStatus("submitting");
     try {
       const data = new FormData(e?.target as HTMLFormElement);
+      appendLeadAttribution(data);
       const res = await fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -458,7 +477,11 @@ export default function Contact() {
                     </button>
 
                     <p className="text-[10px] text-center text-muted-foreground/50 font-light">
-                      Free · No obligation · {SITE.license}
+                      Free · No obligation · {SITE.license}. Your inquiry is
+                      used to respond to your project request.{" "}
+                      <a href="/privacy" className="underline">
+                        Privacy information
+                      </a>
                     </p>
                   </form>
                 )}

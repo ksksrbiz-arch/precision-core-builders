@@ -11,7 +11,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
-import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
+import { breadcrumbJsonLd, canonicalUrl, absoluteAssetUrl } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { useLocation } from "wouter";
@@ -45,6 +45,7 @@ export function ArticlePage(p: ArticlePageProps) {
     title: p.metaTitle,
     description: p.metaDescription,
     canonical: canonicalUrl(location),
+    image: absoluteAssetUrl(p.heroImage),
   });
 
   const articleJsonLd = {
@@ -85,7 +86,7 @@ export function ArticlePage(p: ArticlePageProps) {
       <SiteNav />
       <MobileCTABar />
 
-      <main className="pt-[68px]">
+      <main id="main-content" className="pt-[68px]">
         {/* ── Hero ──────────────────────────────────────────────── */}
         <section className="relative h-[42vh] min-h-[300px] flex items-end pb-10 overflow-hidden">
           <img
@@ -118,6 +119,17 @@ export function ArticlePage(p: ArticlePageProps) {
 
         {/* ── Article body ─────────────────────────────────────── */}
         <article className="py-16 sm:py-20">
+          {p.category === "Cost Guides" && (
+            <aside
+              className="container max-w-2xl mb-8 border border-primary/40 p-5 text-sm"
+              aria-label="Cost guide assumptions"
+            >
+              Planning guidance, not a quote or a published market index. Costs
+              depend on project scope, site conditions, permits, materials, and
+              current trade pricing. Confirm inclusions and allowances in a
+              written estimate after an on-site consultation.
+            </aside>
+          )}
           <div className="container">
             <div className="max-w-2xl mx-auto">
               <p className="text-lg sm:text-xl text-muted-foreground font-light leading-relaxed mb-10 border-l-2 border-primary pl-5">

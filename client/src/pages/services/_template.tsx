@@ -9,9 +9,11 @@ import {
 } from "@/components/layout/SiteShell";
 import { TrustBar } from "@/components/layout/TrustBar";
 import { SITE } from "@/const";
+import { appendLeadAttribution } from "@/lib/leadAttribution";
+import { trackContactSubmit } from "@/lib/analytics";
 import { PROJECTS, photoUrl, type ProjectCategory } from "@/data/projects";
 import { netlifySrcSet } from "@/lib/netlifyImage";
-import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
+import { breadcrumbJsonLd, canonicalUrl, absoluteAssetUrl } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { useLocation } from "wouter";
@@ -57,6 +59,7 @@ export function ServicePage(p: ServicePageProps) {
     title: p.metaTitle,
     description: p.metaDescription,
     canonical: canonicalUrl(location),
+    image: absoluteAssetUrl(p.heroImage),
   });
   const [status, setStatus] = useState<FormStatus>("idle");
   const [fields, setFields] = useState({
@@ -74,6 +77,7 @@ export function ServicePage(p: ServicePageProps) {
     setStatus("submitting");
     try {
       const data = new FormData(e.currentTarget);
+      appendLeadAttribution(data);
       const res = await fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -82,6 +86,7 @@ export function ServicePage(p: ServicePageProps) {
         ).toString(),
       });
       setStatus(res.ok ? "success" : "error");
+      if (res.ok) trackContactSubmit();
     } catch {
       setStatus("error");
     }
@@ -546,7 +551,10 @@ export function ServicePage(p: ServicePageProps) {
                           <Phone className="h-3.5 w-3.5" /> Or Call {SITE.phone}
                         </a>
                         <p className="text-[10px] text-center text-muted-foreground/50 font-light">
-                          Free · No obligation · {SITE.license}
+                          Free · No obligation · {SITE.license}.{" "}
+                          <a href="/privacy" className="underline">
+                            Privacy information
+                          </a>
                         </p>
                       </form>
                     </>

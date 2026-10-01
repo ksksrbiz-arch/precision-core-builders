@@ -65,6 +65,17 @@ const STATIC_ROUTES: Entry[] = [
   { path: "/estimator", priority: 0.9, changefreq: "monthly" },
   { path: "/faq", priority: 0.8, changefreq: "monthly" },
   { path: "/contact", priority: 0.9, changefreq: "monthly" },
+  { path: "/privacy", priority: 0.3, changefreq: "yearly" },
+  {
+    path: "/blog/deck-cost-eugene-oregon",
+    priority: 0.7,
+    changefreq: "monthly",
+  },
+  {
+    path: "/blog/bathroom-remodel-cost-eugene-oregon",
+    priority: 0.7,
+    changefreq: "monthly",
+  },
 ];
 
 const PROJECT_ROUTES: Entry[] = PROJECTS.map(p => ({

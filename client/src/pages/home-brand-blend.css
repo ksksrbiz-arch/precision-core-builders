@@ -1,0 +1,115 @@
+/* The existing charcoal/gold identity, refined within the new editorial layout.
+   Every selector is homepage-scoped; admin and portal tokens stay untouched. */
+.premium-home {
+  --primary: #94713b;
+  --ring: #c8a84b;
+  --brand-charcoal: #141210;
+  --brand-gold: #c8a84b;
+  --brand-cream: #ede6d9;
+}
+.premium-home .premium-header,
+.premium-home .premium-mobile-nav {
+  background: var(--brand-charcoal);
+  color: var(--brand-cream);
+  border-color: #c8a84b33;
+}
+.premium-home .premium-header .premium-brand {
+  padding-left: 54px;
+  position: relative;
+}
+.premium-home img.premium-brand-mark {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  object-fit: contain;
+}
+.premium-home .premium-brand small {
+  color: var(--brand-gold);
+}
+.premium-home .premium-nav-cta {
+  border-color: var(--brand-gold);
+}
+.premium-home .premium-hero-copy {
+  background: var(--brand-charcoal);
+  color: var(--brand-cream);
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+.premium-home .premium-hero-copy .premium-eyebrow,
+.premium-home .premium-hero-copy h1 em {
+  color: var(--brand-gold);
+}
+.premium-home .premium-hero-copy .premium-intro,
+.premium-home .premium-hero-copy .premium-hero-note {
+  color: #bdb5a8;
+}
+.premium-home .premium-button {
+  background: var(--brand-gold);
+  color: #141210;
+}
+.premium-home .premium-button:hover {
+  background: #dbc176;
+}
+.premium-home .premium-hero-copy .premium-text-link {
+  border-color: #c8a84b77;
+}
+.premium-home .premium-hero-photo figcaption {
+  background: #141210dd;
+}
+.premium-home .premium-story {
+  background: #211d18;
+  color: var(--brand-cream);
+}
+.premium-home .premium-story .premium-eyebrow,
+.premium-home .premium-story em {
+  color: var(--brand-gold);
+}
+.premium-home .premium-story > div > p:not(.premium-eyebrow) {
+  color: #bdb5a8;
+}
+.premium-home .premium-story .premium-text-link {
+  border-color: #c8a84b77;
+}
+.premium-home .premium-closing {
+  background: var(--brand-charcoal);
+  color: var(--brand-cream);
+  border-top: 1px solid #c8a84b44;
+}
+.premium-home .premium-closing .premium-eyebrow {
+  color: var(--brand-gold);
+}
+.premium-home .premium-footer {
+  background: #1c1915;
+  color: var(--brand-cream);
+}
+.premium-home .premium-footer p,
+.premium-home .premium-footer-brand > span,
+.premium-home .premium-footer > div > a:not(.premium-brand),
+.premium-home .premium-footer-bottom > div {
+  color: #bdb5a8;
+}
+.premium-home .premium-footer-bottom {
+  border-color: #c8a84b33;
+}
+.premium-home :is(a, button):focus-visible {
+  outline-color: #a88642;
+}
+@media (max-width: 760px) {
+  .premium-home .premium-header .premium-brand {
+    padding-left: 40px;
+  }
+  .premium-home img.premium-brand-mark {
+    width: 31px;
+    height: 31px;
+  }
+  .premium-home .premium-hero-copy {
+    padding-top: 48px;
+    padding-bottom: 38px;
+  }
+}

@@ -1,7 +1,7 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "pnpm install --prod=false && pnpm build"
+  command = "pnpm install --prod=false && pnpm exec playwright install --with-deps chromium && pnpm build"
 
 [build.environment]
   # Bumped from 20 to 22: whatever pnpm version Netlify actually resolves at
@@ -14,6 +14,8 @@
   # `Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite`
   # before it could even install dependencies.
   NODE_VERSION = "22"
+  # Chromium is used only to prerender public marketing pages during builds.
+  PLAYWRIGHT_BROWSERS_PATH = "0"
   # Kept as a hint/pin attempt, but see the note above — verify in the
   # Netlify dashboard (Site configuration → Environment variables) whether a
   # PNPM_VERSION set there is overriding this file, and align it with
@@ -197,11 +199,52 @@
   to = "/services"
   status = 301
 
-# Redirect all other traffic to index.html for client-side routing
+# Private application routes remain client-rendered. Public routes have static
+# index files and are served by Netlify's file shadowing before the final 404.
 [[redirects]]
-  from = "/*"
+  from = "/admin/*"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/portal/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/portal"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/auth/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/callback"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/dev-login"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/onboarding"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
 
 # Functions configuration
 [functions]

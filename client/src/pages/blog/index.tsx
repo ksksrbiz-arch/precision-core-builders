@@ -21,7 +21,7 @@ export function KitchenRemodelCost() {
       metaTitle="Kitchen Remodel Cost in Eugene, OR (2026 Guide) | Precision Core Builders"
       metaDescription="What a kitchen remodel actually costs in Eugene, Oregon in 2026 — by tier, what drives the price, and where homeowners get surprised. From a licensed local contractor."
       publishedDate="2026-08-04"
-      dek="It's the first question almost every homeowner asks us, and the honest answer is: it depends on tier. Here's what that actually means in dollars, based on 2026 Eugene-area data and what we see quoting real local kitchens."
+      dek="A kitchen refresh and a full renovation have very different scopes. These preliminary planning ranges explain the difference; your written estimate depends on an on-site review and current material and labor pricing."
       blocks={[
         {
           type: "p",
@@ -63,7 +63,7 @@ export function KitchenRemodelCost() {
         {
           type: "p",
           content:
-            "Oregon labor costs run noticeably above the national average — roughly 12% higher by most regional construction indices — which is one reason Eugene numbers tend to sit above generic “national average” kitchen remodel figures you'll find in broader searches.",
+            "Local labor availability, site conditions, material choices, and subcontractor scope all affect your price. Treat these ranges as preliminary planning guidance, not a market index or a quote. A written estimate after an on-site review is the basis for your project budget.",
         },
         { type: "h2", content: "Where the money actually goes" },
         {

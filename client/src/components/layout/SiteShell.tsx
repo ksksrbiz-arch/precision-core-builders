@@ -432,7 +432,7 @@ export function SiteFooter() {
             />
             <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">
               Precision Construction, Core Values. Serving Eugene, Oregon and
-              surrounding Lane County since 2014.
+              surrounding Lane County.
             </p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <Shield
@@ -573,6 +573,9 @@ export function SiteFooter() {
             rights reserved.
           </p>
           <div className="flex items-center gap-4">
+            <a href="/privacy" className="hover:text-primary transition-colors">
+              Privacy
+            </a>
             <a
               href={SITE.facebook}
               target="_blank"

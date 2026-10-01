@@ -59,6 +59,7 @@ export default function Showroom() {
   }, [items]);
 
   const [filter, setFilter] = useState<Filter>("All");
+  const [favorites, setFavorites] = useState<string[]>([]);
   const visibleItems = useMemo(
     () => (filter === "All" ? items : items.filter(i => i.category === filter)),
     [items, filter]
@@ -231,7 +232,21 @@ export default function Showroom() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
                 {visibleItems.map((item, i) => (
-                  <FinishCard key={item.slug} item={item} index={i} />
+                  <FinishCard
+                    key={item.slug}
+                    item={item}
+                    index={i}
+                    selected={favorites.includes(item.name)}
+                    onToggle={() =>
+                      setFavorites(previous =>
+                        previous.includes(item.name)
+                          ? previous.filter(name => name !== item.name)
+                          : previous.length < 10
+                            ? [...previous, item.name]
+                            : previous
+                      )
+                    }
+                  />
                 ))}
               </div>
             )}
@@ -253,11 +268,18 @@ export default function Showroom() {
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
                 <Magnetic strength={0.3}>
                   <a
-                    href="/contact"
+                    href={
+                      favorites.length
+                        ? `/contact?finishes=${encodeURIComponent(JSON.stringify(favorites))}`
+                        : "/contact"
+                    }
                     className="flex items-center justify-center gap-2 bg-[#C8A84B] text-neutral-900 px-8 py-4 text-[11px] font-bold tracking-[0.14em] uppercase hover:bg-[#d4b866] transition-all hover:gap-3 min-h-[52px]"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Request an Estimate <ArrowRight className="h-3.5 w-3.5" />
+                    {favorites.length
+                      ? `Discuss ${favorites.length} Selected Finishes`
+                      : "Request an Estimate"}{" "}
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </a>
                 </Magnetic>
                 <Magnetic strength={0.3}>
@@ -284,9 +306,13 @@ export default function Showroom() {
 function FinishCard({
   item,
   index,
+  selected,
+  onToggle,
 }: {
   item: FinishCatalogItem;
   index: number;
+  selected: boolean;
+  onToggle: () => void;
 }) {
   const [imgBroken, setImgBroken] = useState(false);
 
@@ -341,6 +367,14 @@ function FinishCard({
             {item.description}
           </p>
         )}
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={onToggle}
+          className="mt-4 min-h-[44px] border border-primary px-4 py-2 text-sm text-primary"
+        >
+          {selected ? "Remove from inquiry" : "Add to inquiry"}
+        </button>
       </div>
     </motion.div>
   );

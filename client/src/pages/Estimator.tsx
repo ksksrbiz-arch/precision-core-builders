@@ -8,6 +8,7 @@ import {
   MobileCTABar,
 } from "@/components/layout/SiteShell";
 import { SITE } from "@/const";
+import { appendLeadAttribution } from "@/lib/leadAttribution";
 import { JsonLd } from "@/components/JsonLd";
 import { breadcrumbJsonLd, canonicalUrl } from "@/lib/seo";
 import { TextReveal } from "@/components/ui/TextReveal";
@@ -240,6 +241,9 @@ export default function Estimator() {
     formData.append("complexity", complexity);
     formData.append("sqft", sqft);
     formData.append("estimatedMid", String(result?.estimatedMid ?? 0));
+    formData.append("estimatedLow", String(result?.estimatedLow ?? 0));
+    formData.append("estimatedHigh", String(result?.estimatedHigh ?? 0));
+    appendLeadAttribution(formData);
 
     try {
       // 1. Submit to Netlify Forms for CRM — verify it was accepted.
@@ -250,26 +254,8 @@ export default function Estimator() {
       });
       if (!res.ok) throw new Error(`Form submission failed (${res.status})`);
 
-      // 2. Fire lead_captured n8n event (non-blocking).
-      fetch("/api/n8n-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "lead_captured",
-          payload: {
-            name: values.name,
-            email: values.email,
-            phone: values.phone,
-            projectType,
-            complexity,
-            squareFootage: sqft,
-            estimatedMid: result?.estimatedMid,
-            estimatedLow: result?.estimatedLow,
-            estimatedHigh: result?.estimatedHigh,
-            source: "estimator",
-          },
-        }),
-      }).catch(() => {});
+      // Verified form submissions trigger server-side follow-up. No browser
+      // webhook or secret is required, and closing the tab cannot cancel it.
 
       setLeadSent(true);
       trackEstimatorLeadSubmit();
@@ -888,7 +874,10 @@ export default function Estimator() {
                       </p>
                     )}
                     <p className="text-[10px] text-center text-muted-foreground/50">
-                      No obligation · {SITE.license}
+                      No obligation · {SITE.license}.{" "}
+                      <a href="/privacy" className="underline">
+                        Privacy information
+                      </a>
                     </p>
                   </form>
                 </div>

@@ -11,11 +11,11 @@ const SIGNALS = [
   { icon: Shield, label: "Oregon Licensed", value: "CCB #246527" },
   { icon: Award, label: "Licensed & Insured", value: "Fully Covered" },
   { icon: Clock, label: "Experience", value: "20+ Years" },
-  { icon: MapPin, label: "Local to Eugene", value: "Since 2004" },
+  { icon: MapPin, label: "Local to Eugene", value: "Lane County" },
   {
     icon: ThumbsUp,
-    label: "Customer Satisfaction",
-    value: "50+ Happy Clients",
+    label: "Consultation",
+    value: "Free On-Site Estimate",
   },
 ] as const;
 

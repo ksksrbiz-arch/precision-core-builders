@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 
 const queryState: {
   data: unknown;
@@ -99,6 +99,22 @@ describe("Showroom", () => {
     render(<Showroom />);
     expect(screen.getByText("Sample: White Oak Flooring")).toBeTruthy();
     expect(screen.getAllByText("Flooring").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Add to inquiry" }));
+    const inquiry = screen.getByRole("link", {
+      name: /Discuss 1 Selected Finishes/,
+    });
+    const url = new URL(inquiry.getAttribute("href")!, "https://example.com");
+    expect(JSON.parse(url.searchParams.get("finishes")!)).toEqual([
+      "Sample: White Oak Flooring",
+    ]);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Remove from inquiry" })
+    );
+    expect(
+      screen
+        .getByRole("link", { name: /Request an Estimate/ })
+        .getAttribute("href")
+    ).toBe("/contact");
   });
 
   it("every interactive control has an accessible name", async () => {

@@ -90,6 +90,7 @@ const LazyBathroomRemodelCostEugene = lazy(() =>
   }))
 );
 const Contact = lazy(() => import("./pages/Contact"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Auth pages
@@ -245,6 +246,7 @@ function Router() {
           />
           <Route path="/faq" component={withBoundary(FAQ)} />
           <Route path="/contact" component={withBoundary(Contact)} />
+          <Route path="/privacy" component={withBoundary(Privacy)} />
           <Route path="/estimator" component={withBoundary(Estimator)} />
 
           {/* Auth */}

@@ -57,13 +57,13 @@ const VALUES = [
   {
     title: "Trust",
     icon: Handshake,
-    stat: "Zero call-backs",
+    stat: "Clear communication",
     body: "You know where your project stands at every stage. We document every decision, every cost, and every milestone — no surprises, no runaround.",
   },
   {
     title: "Respect",
     icon: Eye,
-    stat: "50+ happy customers",
+    stat: "Personal service",
     body: "Your home is your most important investment. We treat every project with the same care we'd give our own — because your standards deserve nothing less.",
   },
   {
@@ -76,8 +76,8 @@ const VALUES = [
 
 const MILESTONES = [
   {
-    year: "2004",
-    title: "Precision Core Builders founded",
+    year: "Local",
+    title: "Built around Eugene and Lane County",
     body: "The Tadlock brothers set out to raise the standard for construction in Eugene and Lane County.",
   },
   {
@@ -86,14 +86,14 @@ const MILESTONES = [
     body: "From framing to finish, Eric and Mitch have honed hands-on craftsmanship across hundreds of builds and remodels.",
   },
   {
-    year: "50+",
-    title: "Happy customers",
+    year: "Care",
+    title: "Homeowner-focused service",
     body: "Homeowners across Lane County trust us — earned one project, one referral at a time.",
   },
   {
-    year: "0",
-    title: "Call-backs",
-    body: "We get it right the first time. A perfect record we protect on every job.",
+    year: "Finish",
+    title: "A shared final walkthrough",
+    body: "We review the completed work with you and address the punch list before handover.",
   },
   {
     year: SITE.license,
@@ -298,7 +298,7 @@ export default function About() {
             className="text-outline pointer-events-none select-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[20vw] leading-none font-semibold"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Since 2004
+            Built local
           </span>
           <div className="container relative">
             <div className="text-center mb-14">
