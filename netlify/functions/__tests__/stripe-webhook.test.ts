@@ -363,6 +363,45 @@ describe("charge.refunded", () => {
     expect(ledgerInsert).not.toHaveBeenCalled();
   });
 
+  it("resolves the project from the original invoice payment when charge metadata is empty", async () => {
+    // Invoice/payment-link charges carry no project metadata; the project id
+    // lives on the billing_events row recorded when the payment landed.
+    limitMock
+      .mockResolvedValueOnce({ data: [{ project_id: 42 }], error: null }) // lookup
+      .mockResolvedValueOnce({ data: [], error: null }); // idempotency
+    const handler = await loadHandler();
+    const { body, sig } = refundEvent({ metadata: {}, invoice: "in_77" });
+    await handler(mockEvent({ body, signature: sig }) as any, {} as any);
+
+    expect(billingInsert.mock.calls[0]![0]).toMatchObject({ project_id: 42 });
+    expect(ledgerInsert).toHaveBeenCalledTimes(1);
+    expect(ledgerInsert.mock.calls[0]![0]).toMatchObject({
+      project_id: 42,
+      amount_delta: "-250.00",
+    });
+  });
+
+  it("falls back to the payment intent (payment-link checkout) when there is no invoice", async () => {
+    limitMock
+      .mockResolvedValueOnce({ data: [{ project_id: 9 }], error: null })
+      .mockResolvedValueOnce({ data: [], error: null });
+    const handler = await loadHandler();
+    const { body, sig } = refundEvent({ metadata: {} });
+    await handler(mockEvent({ body, signature: sig }) as any, {} as any);
+    expect(ledgerInsert.mock.calls[0]![0]).toMatchObject({ project_id: 9 });
+  });
+
+  it("ignores lookup rows with no project id", async () => {
+    limitMock.mockResolvedValueOnce({
+      data: [{ project_id: null }],
+      error: null,
+    });
+    const handler = await loadHandler();
+    const { body, sig } = refundEvent({ metadata: {} });
+    await handler(mockEvent({ body, signature: sig }) as any, {} as any);
+    expect(ledgerInsert).not.toHaveBeenCalled();
+  });
+
   it("skips the ledger reversal when no project id is resolvable", async () => {
     const handler = await loadHandler();
     const { body, sig } = refundEvent({ metadata: {} });

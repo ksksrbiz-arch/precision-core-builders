@@ -252,6 +252,18 @@ export const projectsRouter = router({
         (s, p) => s + (costTotals.get(p.id as number) ?? 0),
         0
       ),
+      // Budget basis (contracted, else estimated) of ONLY the projects that have
+      // logged costs. A margin of "all estimated value" vs "costs logged so far"
+      // counts every lead and un-started job as pure profit — a portfolio with
+      // $1M quoted and $50k spent read as a 95% margin. Comparing like with like
+      // keeps the dashboard's Gross Margin honest.
+      costedBasis: all.reduce((s, p) => {
+        if ((costTotals.get(p.id as number) ?? 0) <= 0) return s;
+        return (
+          s +
+          (Number(p.contracted_budget ?? 0) || Number(p.estimated_budget ?? 0))
+        );
+      }, 0),
     };
   }),
 
@@ -366,11 +378,18 @@ export const projectsRouter = router({
       { contracted: 0, estimated: 0, actualCost: 0, profit: 0, basis: 0 }
     );
 
-    // Blended portfolio margin over the same contracted-or-estimate basis
-    // each project's profit was measured against.
-    const marginPct =
-      totals.basis > 0 ? (totals.profit / totals.basis) * 100 : 0;
+    // Blended margin over the projects that HAVE logged costs, measured against
+    // the same contracted-or-estimate basis as their profit. Including every
+    // lead and un-started job counted its whole budget as profit, so a book of
+    // work with $50k spent against $1M quoted read as a ~95% margin.
+    const costed = projects.filter(r => r.actualCost > 0 && r.basis > 0);
+    const costedBasis = costed.reduce((s, r) => s + r.basis, 0);
+    const costedProfit = costed.reduce((s, r) => s + r.profit, 0);
+    const marginPct = costedBasis > 0 ? (costedProfit / costedBasis) * 100 : 0;
 
-    return { projects, totals: { ...totals, marginPct } };
+    return {
+      projects,
+      totals: { ...totals, costedBasis, marginPct },
+    };
   }),
 });

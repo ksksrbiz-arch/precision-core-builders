@@ -86,6 +86,27 @@ describe("create_payment_link validation", () => {
     expect(stripeCalls).toHaveLength(0);
   });
 
+  it("stamps projectId into payment-link metadata so the webhook can reconcile", async () => {
+    await call({
+      action: "create_payment_link",
+      amountCents: 5000,
+      description: "Deposit",
+      projectId: 42,
+    });
+    const link = stripeCalls.find(c => c.path === "/payment_links")!;
+    expect(link.body.get("metadata[project_id]")).toBe("42");
+  });
+
+  it("omits payment-link metadata when no project is given", async () => {
+    await call({
+      action: "create_payment_link",
+      amountCents: 5000,
+      description: "Deposit",
+    });
+    const link = stripeCalls.find(c => c.path === "/payment_links")!;
+    expect(link.body.has("metadata[project_id]")).toBe(false);
+  });
+
   it("rounds a fractional amount to whole cents", async () => {
     const { statusCode } = await call({
       action: "create_payment_link",

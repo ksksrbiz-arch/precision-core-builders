@@ -47,6 +47,50 @@ function resolveInvoiceProjectId(data: Record<string, any>): number | null {
 }
 
 /**
+ * Resolve the project a refunded charge belongs to.
+ *
+ * `charge.metadata` is empty for payments made through an invoice or a payment
+ * link — the project id was stamped on the INVOICE / payment-link session, not
+ * the charge — so reading it alone meant refunds never reached the ledger. Fall
+ * back to the billing_events row we wrote when the payment landed, matched by
+ * the charge's invoice id or payment intent.
+ */
+async function resolveRefundProjectId(
+  db: SupabaseClient,
+  charge: Record<string, any>
+): Promise<number | null> {
+  const direct =
+    parseProjectId(charge.metadata?.project_id) ??
+    parseProjectId(charge.metadata?.projectId);
+  if (direct !== null) return direct;
+
+  const lookups: Array<[string, string]> = [];
+  if (typeof charge.invoice === "string" && charge.invoice) {
+    lookups.push(["stripe_invoice_id", charge.invoice]);
+  }
+  if (typeof charge.payment_intent === "string" && charge.payment_intent) {
+    lookups.push(["metadata->>payment_intent", charge.payment_intent]);
+  }
+  for (const [column, value] of lookups) {
+    const { data, error } = await db
+      .from("billing_events")
+      .select("project_id")
+      .eq(column, value)
+      .limit(5);
+    if (error) {
+      console.error("[stripe-webhook] refund project lookup failed:", error);
+      continue;
+    }
+    const hit = (data ?? []).find(
+      (r: { project_id: number | null }) => r.project_id != null
+    );
+    const id = parseProjectId(hit?.project_id);
+    if (id !== null) return id;
+  }
+  return null;
+}
+
+/**
  * Idempotency guard: has this Stripe event id already been recorded in
  * billing_events? Called before inserting the current event, so a `true`
  * result means a prior delivery of the same event already landed and we must
@@ -311,9 +355,7 @@ export const handler: Handler = async event => {
       }
 
       case "charge.refunded": {
-        const projectId =
-          parseProjectId(data.metadata?.project_id) ??
-          parseProjectId(data.metadata?.projectId);
+        const projectId = await resolveRefundProjectId(db, data);
         const alreadyRecorded =
           projectId !== null ? await eventAlreadyRecorded(db, body.id) : false;
 

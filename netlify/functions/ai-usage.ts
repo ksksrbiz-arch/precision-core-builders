@@ -65,7 +65,7 @@ export const handler = withGuards(
       return json(200, {
         configured: false,
         error:
-          "Usage table not available yet. Run the 0005_ai_usage migration.",
+          "Usage table not available yet. Apply drizzle/migrations/0010_ai_usage.sql in Supabase.",
         totals: { calls: 0, totalTokens: 0 },
         byProvider: [],
         byFeature: [],

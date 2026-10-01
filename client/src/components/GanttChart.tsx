@@ -20,7 +20,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { CloudRain } from "lucide-react";
+import { CloudRain, Trash2 } from "lucide-react";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -74,6 +75,8 @@ export interface GanttChartProps {
   onTaskUpdate?: (taskId: number, startDate: Date, endDate: Date) => void;
   /** Called when the edit modal saves field changes. */
   onTaskSave?: (taskId: number, updates: ScheduleTaskPatch) => void;
+  /** Called after the user confirms deleting a task from the edit modal. */
+  onTaskDelete?: (taskId: number) => void;
   readOnly?: boolean;
 }
 
@@ -99,6 +102,7 @@ export function GanttChart({
   items = [],
   onTaskUpdate,
   onTaskSave,
+  onTaskDelete,
   readOnly = false,
 }: GanttChartProps) {
   const [tasks, setTasks] = useState<ScheduleItem[]>(items);
@@ -299,6 +303,15 @@ export function GanttChart({
   const closeEditor = () => {
     setEditingTask(null);
     setSaving(false);
+  };
+
+  const handleDelete = () => {
+    if (!editingTask || readOnly || !onTaskDelete) return;
+    const id = editingTask.id;
+    // Optimistic: drop the bar immediately; the parent refetches on success.
+    setTasks(prev => prev.filter(t => t.id !== id));
+    onTaskDelete(id);
+    closeEditor();
   };
 
   const handleSave = () => {
@@ -696,6 +709,24 @@ export function GanttChart({
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
+            {!readOnly && onTaskDelete && (
+              <ConfirmDelete
+                trigger={
+                  <button
+                    type="button"
+                    aria-label="Delete task"
+                    className="mr-auto inline-flex items-center gap-1.5 px-3 py-2 border border-destructive/40 text-[11px] font-bold tracking-widest uppercase text-destructive hover:bg-destructive/10 transition-colors"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </button>
+                }
+                title="Delete this task?"
+                description="This removes the task from the project schedule. This can't be undone."
+                confirmLabel="Delete task"
+                onConfirm={handleDelete}
+              />
+            )}
             <button
               type="button"
               onClick={closeEditor}

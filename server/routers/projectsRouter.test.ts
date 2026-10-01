@@ -241,6 +241,49 @@ describe("Projects Router — repo delegation", () => {
     expect(res.totalActual).toBe(200);
   });
 
+  it("stats.costedBasis sums the budget basis of only the projects that have logged costs", async () => {
+    // Project 1: contracted wins over estimated. Project 2: no contract -> estimate.
+    // Project 3 has no logged cost -> excluded. Project 4's cost is 0 -> excluded.
+    vi.mocked(repo.getProjectsStats).mockResolvedValueOnce([
+      {
+        id: 1,
+        status: "in_progress",
+        estimated_budget: 90,
+        contracted_budget: 100,
+      },
+      {
+        id: 2,
+        status: "in_progress",
+        estimated_budget: 200,
+        contracted_budget: null,
+      },
+      {
+        id: 3,
+        status: "lead",
+        estimated_budget: 1_000_000,
+        contracted_budget: null,
+      },
+      {
+        id: 4,
+        status: "contracted",
+        estimated_budget: 500,
+        contracted_budget: 500,
+      },
+    ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(
+      new Map([
+        [1, 40],
+        [2, 60],
+        [4, 0],
+      ])
+    );
+    const res = await admin().projects.stats();
+    expect(res.costedBasis).toBe(300);
+    expect(res.totalActual).toBe(100);
+    // total pipeline still includes everything
+    expect(res.totalEstimated).toBe(90 + 200 + 1_000_000 + 500);
+  });
+
   it("profitability computes margin/variance from the sources, actual cost from cost_adjustment ledger entries", async () => {
     vi.mocked(repo.getProfitabilitySources).mockResolvedValueOnce([
       { data: { contracted_budget: 1000 }, error: null },
@@ -281,6 +324,51 @@ describe("Projects Router — repo delegation", () => {
     expect(res.projects[0].profit).toBe(400);
     expect(res.totals.contracted).toBe(1000);
     expect(res.totals.marginPct).toBeCloseTo(40);
+  });
+
+  it("profitabilitySummary margin only counts projects with logged costs", async () => {
+    vi.mocked(repo.getPortfolioProfitability).mockResolvedValueOnce([
+      // Costed: contracted 1000, spent 600 -> 40% margin on its own.
+      {
+        id: 1,
+        name: "A",
+        status: "in_progress",
+        contracted_budget: 1000,
+        estimated_budget: 800,
+      },
+      // Not started: a big budget with no logged cost must not read as profit.
+      {
+        id: 2,
+        name: "B",
+        status: "lead",
+        contracted_budget: null,
+        estimated_budget: 9000,
+      },
+    ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(
+      new Map([[1, 600]])
+    );
+    const res = await admin().projects.profitabilitySummary();
+    expect(res.totals.costedBasis).toBe(1000);
+    expect(res.totals.marginPct).toBeCloseTo(40); // not (1000-600+9000)/10000 = 94%
+    // portfolio totals still include everything
+    expect(res.totals.basis).toBe(10000);
+    expect(res.projects).toHaveLength(2);
+  });
+
+  it("profitabilitySummary margin is 0 when nothing has logged costs", async () => {
+    vi.mocked(repo.getPortfolioProfitability).mockResolvedValueOnce([
+      {
+        id: 2,
+        name: "B",
+        status: "lead",
+        contracted_budget: null,
+        estimated_budget: 9000,
+      },
+    ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(new Map());
+    const res = await admin().projects.profitabilitySummary();
+    expect(res.totals.marginPct).toBe(0);
   });
 });
 

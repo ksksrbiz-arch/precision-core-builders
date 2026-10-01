@@ -241,6 +241,16 @@ export default function ScheduleView() {
     onSuccess: () => refetch(),
   });
 
+  const deleteTask = useMutationWithToast(trpc.schedule.delete.useMutation(), {
+    success: "Task Deleted",
+    successMessage: "Task removed from the schedule.",
+    error: "Delete Failed",
+    errorMessage: "Failed to delete task. Please try again.",
+    // Refetch either way: on failure the optimistically-removed bar returns.
+    onSuccess: () => refetch(),
+    onError: () => refetch(),
+  });
+
   const createTask = useMutationWithToast(trpc.schedule.create.useMutation(), {
     success: "Task Created",
     successMessage: "Schedule task added.",
@@ -558,6 +568,7 @@ export default function ScheduleView() {
                   plannedEnd: endDate.toISOString(),
                 });
               }}
+              onTaskDelete={taskId => deleteTask.mutate({ id: taskId })}
               onTaskSave={(taskId, updates) => {
                 updateTask.mutate({
                   id: taskId,

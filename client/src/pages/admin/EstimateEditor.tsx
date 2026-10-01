@@ -185,6 +185,8 @@ export default function EstimateEditor() {
     successMessage: "Estimate saved successfully.",
     error: "Update Failed",
     errorMessage: "Failed to update estimate. Please try again.",
+    // "approved by the client and is locked" — safe, actionable guidance.
+    showServerMessageFor: ["PRECONDITION_FAILED"],
     invalidate: () => utils.estimates.list.invalidate(),
     onSuccess: () => setLocation("/admin/estimates"),
   });

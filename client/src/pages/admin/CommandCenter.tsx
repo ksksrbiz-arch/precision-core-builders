@@ -898,48 +898,54 @@ export default function CommandCenter() {
                 Actual costs logged
               </p>
             </div>
-            <div
-              className={`p-5 border ${
-                stats.totalEstimated > stats.totalActual
-                  ? "bg-green-400/5 border-green-400/20"
-                  : stats.totalActual > 0
-                    ? "bg-red-400/5 border-red-400/20"
-                    : "bg-card border-border/60"
-              }`}
-            >
-              <p
-                className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2"
-                style={{ fontFamily: "var(--font-condensed)" }}
-              >
-                Gross Margin
-              </p>
-              <p
-                className={`text-2xl font-bold ${
-                  stats.totalEstimated > stats.totalActual
-                    ? "text-green-400"
-                    : stats.totalActual > 0
-                      ? "text-red-400"
-                      : "text-foreground"
-                }`}
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                {stats.totalEstimated > 0 && stats.totalActual > 0
-                  ? formatPercent(
-                      ((stats.totalEstimated - stats.totalActual) /
-                        stats.totalEstimated) *
-                        100,
-                      1
-                    )
-                  : "—"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {stats.totalEstimated > stats.totalActual
-                  ? "Portfolio on track"
-                  : stats.totalActual > 0
-                    ? "Review project costs"
-                    : "Log actual costs"}
-              </p>
-            </div>
+            {(() => {
+              // Like-for-like: costs logged so far vs the budget of the projects
+              // that HAVE logged costs (not every lead and un-started job).
+              const basis = stats.costedBasis ?? 0;
+              const hasCosts = stats.totalActual > 0 && basis > 0;
+              const marginPct = hasCosts
+                ? ((basis - stats.totalActual) / basis) * 100
+                : null;
+              const tone =
+                marginPct === null ? "card" : marginPct >= 0 ? "good" : "bad";
+              return (
+                <div
+                  className={`p-5 border ${
+                    tone === "good"
+                      ? "bg-green-400/5 border-green-400/20"
+                      : tone === "bad"
+                        ? "bg-red-400/5 border-red-400/20"
+                        : "bg-card border-border/60"
+                  }`}
+                >
+                  <p
+                    className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Gross Margin
+                  </p>
+                  <p
+                    className={`text-2xl font-bold ${
+                      tone === "good"
+                        ? "text-green-400"
+                        : tone === "bad"
+                          ? "text-red-400"
+                          : "text-foreground"
+                    }`}
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    {marginPct === null ? "—" : formatPercent(marginPct, 1)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {marginPct === null
+                      ? "Log actual costs"
+                      : marginPct >= 0
+                        ? "On projects with logged costs"
+                        : "Review project costs"}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         )}
 

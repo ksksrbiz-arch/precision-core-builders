@@ -8,6 +8,7 @@ import { fmtDate } from "@/lib/formatters";
 import { SITE } from "@/const";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import PortalAssistant from "@/components/PortalAssistant";
+import { PortalNotifications } from "@/components/PortalNotifications";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -48,8 +49,8 @@ export default function PortalDashboard() {
     .filter((s: any) => s.status !== "complete")
     .sort(
       (a: any, b: any) =>
-        new Date(a.planned_start_date ?? "").getTime() -
-        new Date(b.planned_start_date ?? "").getTime()
+        new Date(a.planned_start ?? "").getTime() -
+        new Date(b.planned_start ?? "").getTime()
     )
     .slice(0, 5);
 
@@ -142,6 +143,9 @@ export default function PortalDashboard() {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Notices Eric sent through the admin Notifications page */}
+            <PortalNotifications />
+
             {/* Project status card */}
             <div className="bg-card border border-border/60 p-6">
               <div className="flex items-start justify-between mb-4">
@@ -305,14 +309,14 @@ export default function PortalDashboard() {
                           <p className="text-sm font-medium truncate">
                             {item.title}
                           </p>
-                          {item.planned_start_date && (
+                          {item.planned_start && (
                             <p className="text-xs text-muted-foreground">
-                              {fmtDate(item.planned_start_date, {
+                              {fmtDate(item.planned_start, {
                                 month: "short",
                                 day: "numeric",
                               })}
-                              {item.planned_end_date &&
-                                ` – ${fmtDate(item.planned_end_date, { month: "short", day: "numeric" })}`}
+                              {item.planned_end &&
+                                ` – ${fmtDate(item.planned_end, { month: "short", day: "numeric" })}`}
                             </p>
                           )}
                         </div>

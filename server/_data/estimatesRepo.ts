@@ -29,7 +29,8 @@ export async function listEstimates(params: ListEstimatesParams) {
 export async function getEstimateById(id: number) {
   const { data: row, error } = await data
     .from("estimates")
-    .select("*, clients(id,name,email), projects(id,name)")
+    // user_id lets markSent notify the client's portal login.
+    .select("*, clients(id,name,email,user_id), projects(id,name)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);

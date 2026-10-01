@@ -2,13 +2,22 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 const queryState: { data: unknown; isLoading: boolean; isError: boolean } = {
   data: undefined,
   isLoading: true,
   isError: false,
 };
+
+const deleteMutateAsync = vi.fn(async (_input: unknown) => ({ success: true }));
 
 vi.mock("@/hooks/useRealtimeTable", () => ({
   useRealtimeTable: () => ({ isLive: true, lastEvent: null }),
@@ -45,7 +54,10 @@ vi.mock("@/lib/trpc", () => {
               }),
               useMutation: () => ({
                 mutate: vi.fn(),
-                mutateAsync: vi.fn(),
+                mutateAsync:
+                  routerName === "estimates" && procName === "delete"
+                    ? deleteMutateAsync
+                    : vi.fn(),
                 isPending: false,
               }),
             };
@@ -126,5 +138,55 @@ describe("EstimatesList", () => {
       const hasLabel = btn.hasAttribute("aria-label");
       expect(hasText || hasLabel).toBe(true);
     }
+  });
+});
+
+describe("EstimatesList delete / lock", () => {
+  const base = {
+    project_type: "kitchen",
+    estimated_low: 1000,
+    estimated_high: 2000,
+    created_at: "2026-09-01T00:00:00.000Z",
+    projects: { name: "Farmhouse" },
+    clients: { name: "Reynolds" },
+  };
+
+  async function renderRows() {
+    queryState.data = {
+      total: 2,
+      data: [
+        { ...base, id: 1, sent_to_client: false, approved_by_client: false },
+        { ...base, id: 2, sent_to_client: true, approved_by_client: true },
+      ],
+    };
+    queryState.isLoading = false;
+    queryState.isError = false;
+    const EstimatesList = await loadPage();
+    return render(<EstimatesList />);
+  }
+
+  it("deletes a draft estimate only after confirmation", async () => {
+    deleteMutateAsync.mockClear();
+    await renderRows();
+    // Exactly one delete control: the approved estimate is locked, not deletable.
+    fireEvent.click(screen.getByRole("button", { name: "Delete estimate" }));
+    expect(deleteMutateAsync).not.toHaveBeenCalled();
+    const confirm = await screen.findByRole("alertdialog");
+    fireEvent.click(
+      within(confirm).getByRole("button", { name: "Delete estimate" })
+    );
+    await waitFor(() =>
+      expect(deleteMutateAsync).toHaveBeenCalledWith({ id: 1 })
+    );
+  });
+
+  it("shows approved estimates as locked with no Edit or Delete", async () => {
+    await renderRows();
+    expect(screen.getByText("Locked")).toBeTruthy();
+    // Only the draft row keeps an Edit action.
+    expect(screen.getAllByTitle("Edit estimate")).toHaveLength(1);
+    expect(
+      screen.getAllByRole("button", { name: "Delete estimate" })
+    ).toHaveLength(1);
   });
 });

@@ -120,7 +120,7 @@ export const handler: Handler = async event => {
     switch (action) {
       // Create a one-time payment link for a milestone amount
       case "create_payment_link": {
-        const { description, projectName, clientEmail } = params;
+        const { description, projectName, clientEmail, projectId } = params;
         const amountCents = parseAmountCents(params.amountCents);
         if (amountCents === null || !description) {
           return {
@@ -150,6 +150,12 @@ export const handler: Handler = async event => {
           "line_items[0][price]": price.id,
           "line_items[0][quantity]": 1,
           ...(clientEmail && { customer_creation: "always" }),
+          // Copied onto the checkout session so stripe-webhook can post the
+          // payment to this project's ledger (checkout.session.completed reads
+          // metadata.project_id). Without it payment links never reconciled.
+          ...(projectId != null && projectId !== ""
+            ? { "metadata[project_id]": projectId }
+            : {}),
         });
 
         return {

@@ -62,6 +62,44 @@ describe("useMutationWithToast", () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
+  describe("showServerMessageFor", () => {
+    const trpcError = (code: string, message: string) =>
+      Object.assign(new Error(message), { data: { code } });
+
+    it("shows the server's message for an opted-in tRPC code", async () => {
+      const { hook } = setup<{ id: number }>(
+        trpcError("CONFLICT", "This client still has 2 projects."),
+        {
+          errorMessage: "Failed to delete client. Please try again.",
+          showServerMessageFor: ["CONFLICT"],
+        }
+      );
+      await hook.current.mutateAsync({});
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "error",
+          message: "This client still has 2 projects.",
+        })
+      );
+    });
+
+    it("keeps the generic message for any other code (no raw DB errors in toasts)", async () => {
+      const { hook } = setup<{ id: number }>(
+        trpcError("INTERNAL_SERVER_ERROR", "duplicate key value violates ..."),
+        {
+          errorMessage: "Failed to delete client. Please try again.",
+          showServerMessageFor: ["CONFLICT"],
+        }
+      );
+      await hook.current.mutateAsync({});
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Failed to delete client. Please try again.",
+        })
+      );
+    });
+  });
+
   describe("failed() — resolved-but-failed results", () => {
     const failed = (row: { status: string; why?: string }) =>
       row.status === "failed" ? `Not delivered: ${row.why}` : null;

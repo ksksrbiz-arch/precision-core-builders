@@ -10,6 +10,8 @@ import {
   markEstimateSent,
   updateEstimate,
 } from "../_data/estimatesRepo";
+import { TRPCError } from "@trpc/server";
+import { notifyClientEstimateSent } from "../_core/estimateNotifications";
 import { z } from "zod";
 
 /** Shared editable fields for authoring/editing an estimate (all optional). */
@@ -58,6 +60,22 @@ const EstimateUpdateFields = z.object({
   aiReasoning: EstimateFields.shape.aiReasoning.nullable(),
 });
 
+/**
+ * An estimate the client has approved is the agreed price — the UI says
+ * "approved and locked", so the server enforces it. Without this, the editor
+ * (or any admin call) could silently change the figures after approval.
+ */
+async function assertNotApproved(id: number) {
+  const est = await getEstimateById(id);
+  if (est?.approved_by_client) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message:
+        "This estimate was approved by the client and is locked. Create a revised estimate instead.",
+    });
+  }
+}
+
 export const estimatesRouter = router({
   list: adminProcedure
     .input(
@@ -88,12 +106,25 @@ export const estimatesRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...fields } = input;
+      await assertNotApproved(id);
       return updateEstimate(id, fields);
     }),
 
   markSent: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => markEstimateSent(input.id)),
+    .mutation(async ({ input }) => {
+      // Fetch first so a missing estimate fails before anything is marked.
+      const before = await getEstimateById(input.id);
+      const row = await markEstimateSent(input.id);
+      // Actually tell the client (portal notification + email when configured).
+      // Only on the first send — re-marking must not re-notify.
+      if (before && !before.sent_to_client) {
+        await notifyClientEstimateSent(before).catch(err =>
+          console.warn("[estimates.markSent] client notice failed:", err)
+        );
+      }
+      return row;
+    }),
 
   markApproved: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
@@ -124,5 +155,8 @@ export const estimatesRouter = router({
 
   delete: adminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => deleteEstimate(input.id)),
+    .mutation(async ({ input }) => {
+      await assertNotApproved(input.id);
+      return deleteEstimate(input.id);
+    }),
 });

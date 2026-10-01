@@ -1,6 +1,7 @@
 import { notificationsRepo } from "../_data/notificationsRepo";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { ENV } from "../_core/env";
+import { isUuid } from "../_core/identity";
 import { sendEmail, sendSms } from "../_core/delivery";
 import { z } from "zod";
 
@@ -37,12 +38,16 @@ export const notificationsRouter = router({
   list: protectedProcedure
     .input(z.object({ unreadOnly: z.boolean().optional() }))
     .query(async ({ input, ctx }) => {
+      // The shared admin session / dev bypass have non-UUID ids, which Postgres
+      // rejects against the uuid recipient_id column — they have no inbox.
+      if (!isUuid(ctx.user.id)) return [];
       return notificationsRepo.listForRecipient(ctx.user.id, input.unreadOnly);
     }),
 
   markRead: protectedProcedure
     .input(z.object({ ids: z.array(z.number().int().positive()).min(1) }))
     .mutation(async ({ input, ctx }) => {
+      if (!isUuid(ctx.user.id)) return [];
       return notificationsRepo.markRead(input.ids, ctx.user.id);
     }),
 

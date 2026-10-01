@@ -24,8 +24,16 @@ export const handler = withGuards(
       if (phase) q = q.eq("phase_needed", phase);
       const { data: materials } = await q;
 
+      // Numeric columns can arrive as strings ("9.00" < "12.00" is a LEXICOGRAPHIC
+      // comparison and says false), so compare as numbers.
+      const toNum = (v: unknown): number => {
+        const n = Number(v ?? 0);
+        return Number.isFinite(n) ? n : 0;
+      };
       const shortages = (materials ?? []).filter(
-        m => m.quantity_needed && (m.quantity_ordered ?? 0) < m.quantity_needed
+        m =>
+          toNum(m.quantity_needed) > 0 &&
+          toNum(m.quantity_ordered) < toNum(m.quantity_needed)
       );
 
       // Build purchase-order drafts by grouping shortages per vendor. Each PO
@@ -55,8 +63,8 @@ export const handler = withGuards(
 
         for (const [vendor, items] of vendorGroups) {
           const total = items.reduce((sum, m) => {
-            const needed = (m.quantity_needed ?? 0) - (m.quantity_ordered ?? 0);
-            return sum + needed * (m.unit_price_current ?? 0);
+            const needed = toNum(m.quantity_needed) - toNum(m.quantity_ordered);
+            return sum + needed * toNum(m.unit_price_current);
           }, 0);
           purchaseOrders.push({
             id: `PO-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
@@ -64,7 +72,7 @@ export const handler = withGuards(
             items: items.map(m => ({
               materialId: m.id ?? null,
               name: m.name,
-              quantity: (m.quantity_needed ?? 0) - (m.quantity_ordered ?? 0),
+              quantity: toNum(m.quantity_needed) - toNum(m.quantity_ordered),
               unit: m.unit,
               unitPrice: m.unit_price_current,
               sku: m.vendor_sku,

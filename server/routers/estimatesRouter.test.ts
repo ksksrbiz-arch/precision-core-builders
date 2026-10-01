@@ -8,6 +8,13 @@
  */
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
+vi.mock("../_core/estimateNotifications", () => ({
+  notifyClientEstimateSent: vi.fn(async () => ({
+    inApp: true,
+    email: "sent",
+  })),
+}));
+
 vi.mock("../_data/estimatesRepo", () => ({
   listEstimates: vi.fn(async () => ({ data: [], total: 0 })),
   getEstimateById: vi.fn(async () => ({ id: 1 })),
@@ -26,6 +33,7 @@ vi.mock("../_data/estimatesRepo", () => ({
 import { appRouter } from "../routers";
 import type { TrpcContext } from "../_core/context";
 import * as repo from "../_data/estimatesRepo";
+import { notifyClientEstimateSent } from "../_core/estimateNotifications";
 
 function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
   return {
@@ -133,6 +141,77 @@ describe("Estimates Router — repo delegation", () => {
   it("update with only an id sends an empty patch", async () => {
     await admin().estimates.update({ id: 4 });
     expect(repo.updateEstimate).toHaveBeenCalledWith(4, {});
+  });
+
+  describe("approved estimates are locked", () => {
+    const approved = { id: 5, approved_by_client: true };
+
+    it("update is refused with PRECONDITION_FAILED and writes nothing", async () => {
+      vi.mocked(repo.getEstimateById).mockResolvedValueOnce(approved as any);
+      await expect(
+        admin().estimates.update({ id: 5, estimatedMid: 99999 })
+      ).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+        message: expect.stringContaining("locked"),
+      });
+      expect(repo.updateEstimate).not.toHaveBeenCalled();
+    });
+
+    it("delete is refused too", async () => {
+      vi.mocked(repo.getEstimateById).mockResolvedValueOnce(approved as any);
+      await expect(admin().estimates.delete({ id: 5 })).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+      });
+      expect(repo.deleteEstimate).not.toHaveBeenCalled();
+    });
+
+    it("an unapproved estimate can still be edited and deleted", async () => {
+      vi.mocked(repo.getEstimateById).mockResolvedValue({
+        id: 6,
+        approved_by_client: false,
+      } as any);
+      await admin().estimates.update({ id: 6, estimatedMid: 5000 });
+      await admin().estimates.delete({ id: 6 });
+      expect(repo.updateEstimate).toHaveBeenCalledTimes(1);
+      expect(repo.deleteEstimate).toHaveBeenCalledWith(6);
+    });
+  });
+
+  describe("markSent notifies the client", () => {
+    it("notifies on the first send, passing the estimate with its client", async () => {
+      const est = {
+        id: 11,
+        sent_to_client: false,
+        clients: { email: "c@x.com" },
+      };
+      vi.mocked(repo.getEstimateById).mockResolvedValueOnce(est as any);
+      await admin().estimates.markSent({ id: 11 });
+      expect(repo.markEstimateSent).toHaveBeenCalledWith(11);
+      expect(notifyClientEstimateSent).toHaveBeenCalledWith(est);
+    });
+
+    it("does not re-notify when it was already sent", async () => {
+      vi.mocked(repo.getEstimateById).mockResolvedValueOnce({
+        id: 11,
+        sent_to_client: true,
+      } as any);
+      await admin().estimates.markSent({ id: 11 });
+      expect(repo.markEstimateSent).toHaveBeenCalledWith(11);
+      expect(notifyClientEstimateSent).not.toHaveBeenCalled();
+    });
+
+    it("a notification failure never fails (or undoes) the send", async () => {
+      vi.mocked(repo.getEstimateById).mockResolvedValueOnce({
+        id: 11,
+        sent_to_client: false,
+      } as any);
+      vi.mocked(notifyClientEstimateSent).mockRejectedValueOnce(
+        new Error("resend down")
+      );
+      await expect(
+        admin().estimates.markSent({ id: 11 })
+      ).resolves.toMatchObject({ sent_to_client: true });
+    });
   });
 
   it("markSent passes input.id to markEstimateSent", async () => {

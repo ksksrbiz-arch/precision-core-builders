@@ -7,6 +7,7 @@ import { SkeletonCard, SkeletonTable } from "@/components/Skeletons";
 import { QueryError } from "@/components/QueryError";
 import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
@@ -29,9 +30,62 @@ import {
   FileDown,
   Pencil,
   Send,
+  Lock,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+
+/** Delete control for one estimate; approved estimates are locked instead. */
+function EstimateDeleteControl({
+  approved,
+  onConfirm,
+  variant,
+}: {
+  approved: boolean;
+  onConfirm: () => void;
+  variant: "table" | "card";
+}) {
+  if (approved) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground/50"
+        style={{ fontFamily: "var(--font-condensed)" }}
+        title="Approved estimates are locked"
+      >
+        <Lock className="h-3 w-3" /> Locked
+      </span>
+    );
+  }
+  return (
+    <ConfirmDelete
+      trigger={
+        variant === "card" ? (
+          <button
+            type="button"
+            className="flex w-full items-center justify-center gap-1.5 rounded border border-destructive/40 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-destructive transition-colors hover:bg-destructive/10"
+            style={{ fontFamily: "var(--font-condensed)" }}
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Delete
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label="Delete estimate"
+            title="Delete estimate"
+            className="text-muted-foreground/40 hover:text-destructive transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )
+      }
+      title="Delete this estimate?"
+      description="This permanently removes the estimate. If it was sent, the client will no longer see it in their portal."
+      confirmLabel="Delete estimate"
+      onConfirm={onConfirm}
+    />
+  );
+}
 
 export default function EstimatesList() {
   const [, setLocation] = useLocation();
@@ -46,7 +100,8 @@ export default function EstimatesList() {
 
   const sendMut = useMutationWithToast(trpc.estimates.markSent.useMutation(), {
     success: "Estimate Sent",
-    successMessage: "Estimate sent to client.",
+    successMessage:
+      "Estimate marked sent — the client was notified in their portal (and by email when email delivery is configured).",
     error: "Send Failed",
     errorMessage: "Failed to send estimate. Please try again.",
     invalidate: () => utils.estimates.list.invalidate(),
@@ -56,12 +111,23 @@ export default function EstimatesList() {
     trpc.estimates.markApproved.useMutation(),
     {
       success: "Estimate Approved",
-      successMessage: "Estimate approved and locked.",
+      successMessage:
+        "Estimate approved and locked — it can no longer be edited.",
       error: "Approve Failed",
       errorMessage: "Failed to approve estimate. Please try again.",
       invalidate: () => utils.estimates.list.invalidate(),
     }
   );
+
+  const deleteMut = useMutationWithToast(trpc.estimates.delete.useMutation(), {
+    success: "Estimate Deleted",
+    successMessage: "The estimate was removed.",
+    error: "Delete Failed",
+    errorMessage: "Failed to delete estimate. Please try again.",
+    // e.g. "approved by the client and is locked" — safe, actionable guidance.
+    showServerMessageFor: ["PRECONDITION_FAILED"],
+    invalidate: () => utils.estimates.list.invalidate(),
+  });
 
   // Live updates: estimates sent/approved from another device refresh here.
   useRealtimeTable({
@@ -223,15 +289,17 @@ export default function EstimatesList() {
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <button
-                      onClick={() =>
-                        setLocation(`/admin/estimates/${est.id}/edit`)
-                      }
-                      className="flex w-full items-center justify-center gap-1.5 rounded border border-border/60 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-                      style={{ fontFamily: "var(--font-condensed)" }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" /> Edit
-                    </button>
+                    {!isApproved && (
+                      <button
+                        onClick={() =>
+                          setLocation(`/admin/estimates/${est.id}/edit`)
+                        }
+                        className="flex w-full items-center justify-center gap-1.5 rounded border border-border/60 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                        style={{ fontFamily: "var(--font-condensed)" }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </button>
+                    )}
                     <button
                       onClick={() => generateEstimatePdf(est)}
                       className="flex w-full items-center justify-center gap-1.5 rounded border border-border/60 px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
@@ -259,6 +327,11 @@ export default function EstimatesList() {
                         Approve Estimate
                       </button>
                     )}
+                    <EstimateDeleteControl
+                      approved={isApproved}
+                      variant="card"
+                      onConfirm={() => deleteMut.mutate({ id: est.id })}
+                    />
                   </div>
                 </div>
               );
@@ -363,16 +436,18 @@ export default function EstimatesList() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <button
-                              onClick={() =>
-                                setLocation(`/admin/estimates/${est.id}/edit`)
-                              }
-                              className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
-                              style={{ fontFamily: "var(--font-condensed)" }}
-                              title="Edit estimate"
-                            >
-                              <Pencil className="h-3 w-3" /> Edit
-                            </button>
+                            {!isApproved && (
+                              <button
+                                onClick={() =>
+                                  setLocation(`/admin/estimates/${est.id}/edit`)
+                                }
+                                className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
+                                style={{ fontFamily: "var(--font-condensed)" }}
+                                title="Edit estimate"
+                              >
+                                <Pencil className="h-3 w-3" /> Edit
+                              </button>
+                            )}
                             <button
                               onClick={() => generateEstimatePdf(est)}
                               className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
@@ -403,6 +478,11 @@ export default function EstimatesList() {
                                 Approve
                               </button>
                             )}
+                            <EstimateDeleteControl
+                              approved={isApproved}
+                              variant="table"
+                              onConfirm={() => deleteMut.mutate({ id: est.id })}
+                            />
                           </div>
                         </td>
                       </tr>
