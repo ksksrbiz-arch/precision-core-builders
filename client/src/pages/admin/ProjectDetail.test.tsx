@@ -2,7 +2,16 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+
+const updateMutateAsync = vi.fn(async (_input: unknown) => ({ id: 1 }));
+const addToastMock = vi.fn();
 
 const useRealtimeTableMock = vi.fn((_opts: unknown) => ({
   isLive: true,
@@ -64,7 +73,10 @@ vi.mock("@/lib/trpc", () => {
               }),
               useMutation: () => ({
                 mutate: vi.fn(),
-                mutateAsync: vi.fn(),
+                mutateAsync:
+                  routerName === "projects" && procName === "update"
+                    ? updateMutateAsync
+                    : vi.fn(),
                 isPending: false,
               }),
             };
@@ -77,7 +89,7 @@ vi.mock("@/lib/trpc", () => {
 });
 
 vi.mock("@/components/ToastProvider", () => ({
-  useToast: () => ({ addToast: vi.fn() }),
+  useToast: () => ({ addToast: addToastMock }),
 }));
 
 vi.mock("@/components/DashboardLayout", () => ({
@@ -112,5 +124,59 @@ describe("ProjectDetail", () => {
     expect(
       screen.getByRole("button", { name: /cancel editing project details/i })
     ).toBeTruthy();
+  });
+
+  describe("saving the overview edit form", () => {
+    it("clears blanked fields with null and keeps unchanged ones", async () => {
+      // `undefined` means "unchanged" server-side, so a blanked budget/city was
+      // silently kept while the toast said "Project Saved".
+      updateMutateAsync.mockClear();
+      const ProjectDetail = await loadPage();
+      render(<ProjectDetail />);
+      fireEvent.click(screen.getByRole("button", { name: /edit details/i }));
+
+      fireEvent.change(screen.getByDisplayValue("Eugene"), {
+        target: { value: "" },
+      });
+      fireEvent.change(screen.getByDisplayValue("55000"), {
+        target: { value: "" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+      await waitFor(() => expect(updateMutateAsync).toHaveBeenCalledTimes(1));
+      const sent = updateMutateAsync.mock.calls[0][0] as Record<
+        string,
+        unknown
+      >;
+      expect(sent).toMatchObject({
+        id: 1,
+        name: "The Hendricks Remodel",
+        city: null,
+        contractedBudget: null,
+        description: null,
+        estimatedBudget: 50000,
+        state: "OR",
+        estimatedStartDate: null,
+      });
+      // Status is never part of an overview save (the server must not reset it).
+      expect(sent).not.toHaveProperty("status");
+    });
+
+    it("rejects a non-positive budget instead of sending a doomed request", async () => {
+      updateMutateAsync.mockClear();
+      addToastMock.mockClear();
+      const ProjectDetail = await loadPage();
+      render(<ProjectDetail />);
+      fireEvent.click(screen.getByRole("button", { name: /edit details/i }));
+      fireEvent.change(screen.getByDisplayValue("50000"), {
+        target: { value: "-5" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+      expect(updateMutateAsync).not.toHaveBeenCalled();
+      expect(addToastMock).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Check the budget" })
+      );
+    });
   });
 });

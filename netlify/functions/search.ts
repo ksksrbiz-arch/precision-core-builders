@@ -314,9 +314,10 @@ async function ilikeSearch(
 
 export const handler = withGuards(
   // Operational search reads private business data (clients, budgets, field
-  // reports, vendor pricing) via the service-role DB — require an authenticated
-  // user. Without this guard the endpoint leaks the entire dataset.
-  { methods: ["POST"], auth: "user" },
+  // reports, vendor pricing) via the service-role DB with NO per-tenant scoping,
+  // so it must be admin-only. `auth: "user"` let any signed-in portal client
+  // search every other client's records.
+  { methods: ["POST"], auth: "admin" },
   async ({ event, user, json, error }) => {
     // Rate limit: 30 searches per minute per authenticated user.
     const rl = checkRateLimit(`search:${user!.id}`, {

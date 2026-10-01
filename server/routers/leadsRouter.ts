@@ -1,5 +1,6 @@
 import { leadsRepo } from "../_data/leadsRepo";
 import { adminProcedure, router } from "../_core/trpc";
+import { authorUuid } from "../_core/identity";
 import { z } from "zod";
 
 const PriorityEnum = z.enum(["low", "medium", "high", "urgent"]);
@@ -41,7 +42,7 @@ export const leadsRouter = router({
         reasoning: input.reasoning,
         suggested_action: input.suggestedAction,
         estimated_value: input.estimatedValue ?? null,
-        scored_by: ctx.user!.id,
+        scored_by: authorUuid(ctx.user),
       });
     }),
 

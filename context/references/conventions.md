@@ -42,7 +42,39 @@ Loaded when: writing any code in this repo. This is the rules surface.
 - **Constants:** Shared constants go in `shared/const.ts`
 - **State management:** React Query (via tRPC) for server state; React context for UI state
 
-### 8.4. Environment Variables
+### 8.4. Admin write paths & access control
+
+Rules learned from the October 2026 admin audit (`docs/ADMIN_AUDIT_2026-10.md`).
+Each one was a shipped bug; each is test-covered.
+
+- **Never derive an update schema from a default-bearing create schema.** Zod 4
+  applies `.default()` inside `.partial()`, so `Create.partial()` silently wrote
+  `status: "lead"`, `published: false`, … on every update. Define a `*Fields`
+  object with no defaults, `extend()` it with defaults for create, and
+  `.partial()` the defaults-free one for update.
+- **`undefined` = unchanged, `null` = clear.** An update schema must make every
+  user-clearable column `.nullable().optional()`, and edit forms send `null` for
+  blanks (create sends `undefined`). Otherwise a blanked field is a silent no-op
+  behind a "Saved" toast.
+- **Never trust `user_metadata`.** It is user-writable. Roles come from
+  `public.users.role` or `app_metadata.role` only, and admin additionally needs a
+  confirmed email (`server/_core/auth/verifyToken.ts`).
+- **Every `protectedProcedure` that takes a `projectId` must call
+  `assertProjectAccess(ctx, projectId)`.** A procedure that returns the whole
+  table (e.g. `projects.list`) is `adminProcedure`.
+- **A Netlify function that reads/writes through the service-role DB without
+  scoping to the caller must be `auth: "admin"`**, not `"user"` (`search`,
+  `voice-to-report`, `vision-studio` were wrong).
+- **Write actor/author columns with `authorUuid(ctx.user)`**
+  (`server/_core/identity.ts`). The shared-admin and dev sessions have non-UUID
+  ids; inserting them into a uuid FK fails the whole row.
+- **Browser → n8n goes through `relayAdminEvent()`** (`client/src/lib/relayEvent.ts`),
+  which sends the admin session. A bare `fetch("/api/n8n-webhook")` is rejected.
+- **A table that exists in `drizzle/schema.ts` ships with a migration _and_ RLS.**
+- **A server-enforced rule beats a toast.** If the UI says "approved and locked",
+  the router must refuse the edit (`estimates.update` does).
+
+### 8.5. Environment Variables
 
 All environment variables are managed via the **Netlify dashboard** and injected at build/runtime. Only `VITE_`-prefixed variables are accessible in client code via `import.meta.env`.
 

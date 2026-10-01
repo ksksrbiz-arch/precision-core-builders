@@ -74,8 +74,17 @@ assert.ok(
     ?.getAttribute("content")
     ?.includes("noindex")
 );
-const redirects = readFileSync("netlify.toml", "utf8");
-assert.match(redirects, /from = "\/\*"\s+to = "\/404.html"\s+status = 404/);
+// Netlify reads _redirects before netlify.toml, so the 404 rule must live in
+// the generated _redirects (and no SPA catch-all may precede it).
+const redirects = readFileSync(resolve(out, "_redirects"), "utf8");
+assert.match(redirects, /^\/\*\s+\/404\.html\s+404\s*$/m);
+assert.doesNotMatch(redirects, /^\/\*\s+\/index\.html\s+200/m);
+// Client-rendered routes get the pristine branded shell, never the prerendered
+// homepage (which would flash marketing content on /admin and /auth/login).
+const shell = readFileSync(resolve(out, "app-shell.html"), "utf8");
+assert.match(shell, /pcb-splash:start/);
+assert.doesNotMatch(shell, /<main/);
+assert.match(redirects, /^\/admin\/\*\s+\/app-shell\.html\s+200/m);
 console.log(
   `Verified ${urls.length} public pages: content, H1, canonical, metadata, form attribution, and 404 configuration.`
 );

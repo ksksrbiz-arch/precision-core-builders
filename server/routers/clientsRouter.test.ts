@@ -16,6 +16,7 @@ vi.mock("../_data/clientsRepo", () => ({
   createClient: vi.fn(async () => ({ id: 2, name: "Grace" })),
   updateClient: vi.fn(async () => ({ id: 3, name: "Updated" })),
   deleteClient: vi.fn(async () => ({ success: true })),
+  countClientProjects: vi.fn(async () => 0),
 }));
 
 import { appRouter } from "../routers";
@@ -26,6 +27,7 @@ import {
   createClient,
   updateClient,
   deleteClient,
+  countClientProjects,
 } from "../_data/clientsRepo";
 
 function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
@@ -152,6 +154,50 @@ describe("Clients Router — repo delegation", () => {
     const [, fields] = (updateClient as any).mock.calls[0];
     expect(fields).not.toHaveProperty("lead_source");
     expect(fields).not.toHaveProperty("user_id");
+  });
+
+  it("update can clear optional fields and unlink the portal user with null", async () => {
+    await admin().clients.update({
+      id: 6,
+      phone: null,
+      address: null,
+      notes: null,
+      leadSource: null,
+      userId: null,
+    });
+    expect(updateClient).toHaveBeenCalledWith(6, {
+      phone: null,
+      address: null,
+      notes: null,
+      lead_source: null,
+      user_id: null,
+    });
+  });
+
+  it("update still rejects a null name/email (they are required columns)", async () => {
+    await expect(
+      admin().clients.update({ id: 6, name: null } as any)
+    ).rejects.toThrow();
+    await expect(
+      admin().clients.update({ id: 6, email: null } as any)
+    ).rejects.toThrow();
+    expect(updateClient).not.toHaveBeenCalled();
+  });
+
+  it("delete refuses (CONFLICT) while the client still owns projects", async () => {
+    vi.mocked(countClientProjects).mockResolvedValueOnce(2);
+    await expect(admin().clients.delete({ id: 5 })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringContaining("2 projects"),
+    });
+    expect(deleteClient).not.toHaveBeenCalled();
+  });
+
+  it("delete uses the singular for exactly one project", async () => {
+    vi.mocked(countClientProjects).mockResolvedValueOnce(1);
+    await expect(admin().clients.delete({ id: 5 })).rejects.toThrow(
+      /1 project\. Delete or reassign it/
+    );
   });
 
   it("delete forwards the id to deleteClient", async () => {

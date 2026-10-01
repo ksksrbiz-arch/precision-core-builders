@@ -1,3 +1,4 @@
+import { relayAdminEvent } from "@/lib/relayEvent";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
 import { QueryError } from "@/components/QueryError";
@@ -15,6 +16,7 @@ import { getAuthHeader } from "@/lib/authHeader";
 import { formatCurrency } from "@/lib/formatters";
 import { fmtDate, fmtDateTime } from "@/lib/utils";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { useToast } from "@/components/ToastProvider";
 import { useEntityForm } from "@/hooks/useEntityForm";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import {
@@ -66,6 +68,7 @@ function getInitialTab(search: string): TabId {
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
+  const { addToast } = useToast();
   const [, setLocation] = useLocation();
   const search = useSearch();
   const [activeTab, setActiveTab] = useState<TabId>(() =>
@@ -257,29 +260,45 @@ export default function ProjectDetail() {
 
   const saveEditOverview = () => {
     if (!editForm || !editForm.name) return;
+    // Blank => null so the column is actually cleared; `undefined` means
+    // "leave unchanged" on the server and the old value would silently stay.
+    const text = (v: string) => v.trim() || null;
+    const money = (v: string): number | null | "invalid" => {
+      const t = v.trim();
+      if (!t) return null;
+      const n = Number(t.replace(/[$,]/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : "invalid";
+    };
+    const estimatedBudget = money(editForm.estimatedBudget);
+    const contractedBudget = money(editForm.contractedBudget);
+    if (estimatedBudget === "invalid" || contractedBudget === "invalid") {
+      addToast({
+        type: "error",
+        title: "Check the budget",
+        message: "Budgets must be positive amounts (or left blank).",
+        duration: 6000,
+      });
+      return;
+    }
     updateProject.mutate({
       id: projectId,
       name: editForm.name,
-      description: editForm.description || undefined,
-      projectType: editForm.projectType || undefined,
-      address: editForm.address || undefined,
-      city: editForm.city || undefined,
+      description: text(editForm.description),
+      projectType: text(editForm.projectType),
+      address: text(editForm.address),
+      city: text(editForm.city),
       state: editForm.state || "OR",
-      zip: editForm.zip || undefined,
-      estimatedBudget: editForm.estimatedBudget
-        ? parseFloat(editForm.estimatedBudget)
-        : undefined,
-      contractedBudget: editForm.contractedBudget
-        ? parseFloat(editForm.contractedBudget)
-        : undefined,
+      zip: text(editForm.zip),
+      estimatedBudget,
+      contractedBudget,
       estimatedStartDate: editForm.estimatedStartDate
         ? new Date(editForm.estimatedStartDate).toISOString()
-        : undefined,
+        : null,
       estimatedEndDate: editForm.estimatedEndDate
         ? new Date(editForm.estimatedEndDate).toISOString()
-        : undefined,
-      permitNumbers: editForm.permitNumbers || undefined,
-      siteCamUrl: editForm.siteCamUrl || undefined,
+        : null,
+      permitNumbers: text(editForm.permitNumbers),
+      siteCamUrl: text(editForm.siteCamUrl),
       clientPortalEnabled: editForm.clientPortalEnabled,
     });
   };
@@ -1301,14 +1320,10 @@ function ProjectStatusUpdate({
     onSuccess: () => {
       utils.projects.getById.invalidate({ id: projectId });
       // Fire project_status_changed n8n event
-      fetch("/api/n8n-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "project_status_changed",
-          payload: { projectId, newStatus: status },
-        }),
-      }).catch(() => {});
+      relayAdminEvent({
+        event: "project_status_changed",
+        payload: { projectId, newStatus: status },
+      });
     },
   });
 

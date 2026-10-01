@@ -29,7 +29,8 @@ export async function listEstimates(params: ListEstimatesParams) {
 export async function getEstimateById(id: number) {
   const { data: row, error } = await data
     .from("estimates")
-    .select("*, clients(id,name,email), projects(id,name)")
+    // user_id lets markSent notify the client's portal login.
+    .select("*, clients(id,name,email,user_id), projects(id,name)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);
@@ -89,7 +90,12 @@ export async function createEstimate(input: CreateEstimateInput) {
  * edit never clobbers untouched columns. Bumps `updated_at`. Does NOT touch
  * `sent_at`/`approved_at` send/approve semantics.
  */
-export async function updateEstimate(id: number, input: CreateEstimateInput) {
+/** Partial-update input: `undefined` = unchanged, `null` = clear the column. */
+export type UpdateEstimateInput = {
+  [K in keyof CreateEstimateInput]?: CreateEstimateInput[K] | null;
+};
+
+export async function updateEstimate(id: number, input: UpdateEstimateInput) {
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };

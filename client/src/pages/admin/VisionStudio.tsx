@@ -111,7 +111,7 @@ const MODES: {
   },
   {
     id: "estimate",
-    label: "Estimate",
+    label: "Scope",
     icon: <DollarSign className="h-3.5 w-3.5" />,
     color: "text-emerald-500",
   },
@@ -268,7 +268,7 @@ export default function VisionStudioAdmin() {
         <AdminPageHeader
           title="Vision Studio"
           guideId="vision-studio"
-          description="AI-powered construction photo analysis — progress, safety, materials, defects and rough estimates from a single site photo."
+          description="AI-powered construction photo analysis — progress, safety, materials, defects and scope-of-work takeoffs from a single site photo (pricing comes from the estimating engine, never the AI)."
           actions={
             <span
               className="px-3 py-2 border border-border/60 text-[11px] font-bold tracking-widest uppercase text-muted-foreground"
@@ -513,7 +513,7 @@ export default function VisionStudioAdmin() {
                   <EmptyDescription>
                     Upload a site photo, pick an analysis mode, and Vision
                     Studio will read the shot for progress, safety, materials,
-                    defects or a rough estimate.
+                    defects or a scope-of-work takeoff.
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>

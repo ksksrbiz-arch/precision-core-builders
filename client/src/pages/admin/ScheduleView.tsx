@@ -2,6 +2,7 @@
  * ScheduleView — Weather-responsive project schedule with 7-day forecast overlay.
  * Calls /api/weather-schedule for Eugene OR forecast and task recommendations.
  */
+import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
@@ -219,19 +220,15 @@ export default function ScheduleView() {
           status?: string;
         } | null;
         if (task?.status === "complete") {
-          fetch("/api/n8n-webhook", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              event: "milestone_complete",
-              payload: {
-                projectId: task.project_id,
-                taskId: task.id,
-                title: task.title,
-                status: "complete",
-              },
-            }),
-          }).catch(() => {});
+          relayAdminEvent({
+            event: "milestone_complete",
+            payload: {
+              projectId: task.project_id,
+              taskId: task.id,
+              title: task.title,
+              status: "complete",
+            },
+          });
         }
       },
     }
@@ -242,6 +239,16 @@ export default function ScheduleView() {
     error: "Update Failed",
     errorMessage: "Failed to update task. Please try again.",
     onSuccess: () => refetch(),
+  });
+
+  const deleteTask = useMutationWithToast(trpc.schedule.delete.useMutation(), {
+    success: "Task Deleted",
+    successMessage: "Task removed from the schedule.",
+    error: "Delete Failed",
+    errorMessage: "Failed to delete task. Please try again.",
+    // Refetch either way: on failure the optimistically-removed bar returns.
+    onSuccess: () => refetch(),
+    onError: () => refetch(),
   });
 
   const createTask = useMutationWithToast(trpc.schedule.create.useMutation(), {
@@ -459,18 +466,14 @@ export default function ScheduleView() {
                 });
                 // Fire inspection_scheduled n8n event
                 if (isInspection) {
-                  fetch("/api/n8n-webhook", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      event: "inspection_scheduled",
-                      payload: {
-                        projectId: selectedProject,
-                        title: newTask.title,
-                        scheduledDate: newTask.plannedStartDate,
-                      },
-                    }),
-                  }).catch(() => {});
+                  relayAdminEvent({
+                    event: "inspection_scheduled",
+                    payload: {
+                      projectId: selectedProject,
+                      title: newTask.title,
+                      scheduledDate: newTask.plannedStartDate,
+                    },
+                  });
                 }
               }}
               disabled={!newTask.title || createTask.isPending}
@@ -565,6 +568,7 @@ export default function ScheduleView() {
                   plannedEnd: endDate.toISOString(),
                 });
               }}
+              onTaskDelete={taskId => deleteTask.mutate({ id: taskId })}
               onTaskSave={(taskId, updates) => {
                 updateTask.mutate({
                   id: taskId,
@@ -572,8 +576,10 @@ export default function ScheduleView() {
                   status: updates.status,
                   plannedStart: updates.plannedStart,
                   plannedEnd: updates.plannedEnd,
-                  assignedTo: updates.assignedTo ?? undefined,
-                  notes: updates.notes ?? undefined,
+                  // null (blank in the modal) clears the column; undefined would
+                  // mean "unchanged" and the old assignee/notes would come back.
+                  assignedTo: updates.assignedTo,
+                  notes: updates.notes,
                   weatherSensitive: updates.weatherSensitive,
                 });
               }}

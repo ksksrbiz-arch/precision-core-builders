@@ -5,6 +5,7 @@
  * avoid leaking unnecessary PII.
  */
 import { db } from "../db";
+import { getCostAdjustmentTotals } from "../_data/projectsRepo";
 
 type Row = Record<string, unknown>;
 
@@ -82,71 +83,83 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
 
   const todayIso = new Date().toISOString().slice(0, 10);
 
-  const [projects, estimates, schedule, ledger, leads, shortages, reports] =
-    await Promise.all([
-      safeSelect(() =>
-        db
-          .from("projects")
-          .select(
-            "id,name,status,project_type,city,estimated_budget,contracted_budget,actual_cost,completion_percent,estimated_start_date,estimated_end_date"
-          )
-          .order("updated_at", { ascending: false })
-          .limit(40)
-      ),
-      safeSelect(() =>
-        db
-          .from("estimates")
-          .select(
-            "id,project_id,project_type,estimated_low,estimated_mid,estimated_high,sent_to_client,approved_by_client,created_at"
-          )
-          .order("created_at", { ascending: false })
-          .limit(15)
-      ),
-      safeSelect(() =>
-        db
-          .from("schedule_items")
-          .select(
-            "id,project_id,title,task_type,status,weather_sensitive,is_outdoor,planned_start,planned_end"
-          )
-          .neq("status", "complete")
-          .order("planned_start", { ascending: true })
-          .limit(50)
-      ),
-      safeSelect(() =>
-        db
-          .from("ledger_entries")
-          .select("id,project_id,entry_type,title,amount_delta,created_at")
-          .order("created_at", { ascending: false })
-          .limit(20)
-      ),
-      safeSelect(() =>
-        db
-          .from("leads")
-          .select(
-            "id,name,project_type,budget,location,timeline,score,priority,estimated_value,suggested_action,created_at"
-          )
-          .order("score", { ascending: false })
-          .limit(20)
-      ),
-      safeSelect(() =>
-        db
-          .from("materials")
-          .select(
-            "id,project_id,name,category,quantity_needed,quantity_received,vendor_name,expected_delivery"
-          )
-          .eq("is_shortage", true)
-          .limit(25)
-      ),
-      safeSelect(() =>
-        db
-          .from("field_reports")
-          .select(
-            "id,project_id,report_date,summary,issues_flagged,published_to_client"
-          )
-          .order("report_date", { ascending: false })
-          .limit(10)
-      ),
-    ]);
+  const [
+    projects,
+    estimates,
+    schedule,
+    ledger,
+    leads,
+    shortages,
+    reports,
+    actualCosts,
+  ] = await Promise.all([
+    safeSelect(() =>
+      db
+        .from("projects")
+        .select(
+          "id,name,status,project_type,city,estimated_budget,contracted_budget,completion_percent,estimated_start_date,estimated_end_date"
+        )
+        .order("updated_at", { ascending: false })
+        .limit(40)
+    ),
+    safeSelect(() =>
+      db
+        .from("estimates")
+        .select(
+          "id,project_id,project_type,estimated_low,estimated_mid,estimated_high,sent_to_client,approved_by_client,created_at"
+        )
+        .order("created_at", { ascending: false })
+        .limit(15)
+    ),
+    safeSelect(() =>
+      db
+        .from("schedule_items")
+        .select(
+          "id,project_id,title,task_type,status,weather_sensitive,is_outdoor,planned_start,planned_end"
+        )
+        .neq("status", "complete")
+        .order("planned_start", { ascending: true })
+        .limit(50)
+    ),
+    safeSelect(() =>
+      db
+        .from("ledger_entries")
+        .select("id,project_id,entry_type,title,amount_delta,created_at")
+        .order("created_at", { ascending: false })
+        .limit(20)
+    ),
+    safeSelect(() =>
+      db
+        .from("leads")
+        .select(
+          "id,name,project_type,budget,location,timeline,score,priority,estimated_value,suggested_action,created_at"
+        )
+        .order("score", { ascending: false })
+        .limit(20)
+    ),
+    safeSelect(() =>
+      db
+        .from("materials")
+        .select(
+          "id,project_id,name,category,quantity_needed,quantity_received,vendor_name,expected_delivery"
+        )
+        .eq("is_shortage", true)
+        .limit(25)
+    ),
+    safeSelect(() =>
+      db
+        .from("field_reports")
+        .select(
+          "id,project_id,report_date,summary,issues_flagged,published_to_client"
+        )
+        .order("report_date", { ascending: false })
+        .limit(10)
+    ),
+    // Actual cost is derived from cost_adjustment ledger entries; the
+    // `projects.actual_cost` column is no longer kept in sync, so reading it
+    // made every project look free and "over budget" never fired.
+    getCostAdjustmentTotals().catch(() => new Map<number, number>()),
+  ]);
 
   const projectName = new Map<number, string>(
     projects.map(p => [p.id as number, String(p.name ?? `#${p.id}`)])
@@ -158,7 +171,7 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
   const overBudget: string[] = [];
   for (const p of projects) {
     const contracted = num(p.contracted_budget);
-    const actual = num(p.actual_cost);
+    const actual = actualCosts.get(p.id as number) ?? 0;
     totalContracted += contracted;
     totalActual += actual;
     if (contracted > 0 && actual > contracted) {
@@ -205,7 +218,7 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
       city: p.city,
       estimatedBudget: num(p.estimated_budget) || null,
       contractedBudget: num(p.contracted_budget) || null,
-      actualCost: num(p.actual_cost) || null,
+      actualCost: (actualCosts.get(p.id as number) ?? 0) || null,
       percentComplete: p.completion_percent,
       start: shortDate(p.estimated_start_date),
       end: shortDate(p.estimated_end_date),

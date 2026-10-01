@@ -10,6 +10,7 @@
  * Generates a structured field report via the free-tier LLM router and saves to field_reports table.
  */
 import { requireSupabaseAdmin } from "../../server/_core/supabase";
+import { authorUuid } from "../../server/_core/identity";
 import { transcribeAudio } from "../../server/_core/voiceTranscription";
 import { invokeLLM, parseLlmJson } from "../../server/_core/llm";
 import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
@@ -19,8 +20,10 @@ import { specialistPrompt } from "../../server/_core/ai/specialists";
 import { PROMPTS, isLLMConfigError } from "./_lib/llm/prompts";
 
 export const handler = withGuards(
-  // Require authentication — voice reports are always admin-submitted.
-  { methods: ["POST"], auth: "user" },
+  // Voice reports are admin-submitted. This writes through the service-role DB
+  // to an arbitrary projectId, so a mere "signed-in user" (any portal client)
+  // must not be able to reach it.
+  { methods: ["POST"], auth: "admin" },
   async ({ event, user, json, error }) => {
     // Rate limit: 5 transcriptions per hour per authenticated user.
     const rl = checkRateLimit(`voice:${user!.id}`, {
@@ -148,7 +151,8 @@ export const handler = withGuards(
         .from("field_reports")
         .insert({
           project_id: projectId,
-          author_id: user!.id,
+          // Synthetic admin-session ids aren't UUIDs; store a null author then.
+          author_id: authorUuid(user),
           report_date: new Date().toISOString(),
           transcription: transcriptionText,
           summary: reportData.summary,

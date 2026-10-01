@@ -61,9 +61,8 @@ The platform collects only the minimum data necessary to operate each feature:
 
 ### 3.1 Authentication Method
 
-The platform uses **Supabase Auth with magic links (OTP)**. Password-based login is not supported by default to eliminate password breach risks.
+The platform uses **Supabase Auth with email + password** as its only sign-in method (no magic link or social login). Accounts are provisioned by the owner; admin access additionally requires a confirmed email and the `admin` role (see `docs/ADMIN_AUDIT_2026-10.md`).
 
-- Magic links expire in **60 minutes**.
 - Sessions use **JWT tokens** with a 1-hour expiry + automatic refresh.
 - Session inactivity timeout: **60 minutes** (configurable via `useSessionTimeout` hook).
 

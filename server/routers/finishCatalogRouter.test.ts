@@ -204,6 +204,29 @@ describe("Finish Catalog Router — admin happy paths", () => {
     expect("sortOrder" in patch).toBe(false);
   });
 
+  it("update can clear optional fields with null", async () => {
+    await admin().finishCatalog.update({
+      id: 3,
+      brand: null,
+      priceTier: null,
+      imageUrl: null,
+      description: null,
+    });
+    expect(updateMock.mock.calls[0][1]).toEqual({
+      brand: null,
+      price_tier: null,
+      image_url: null,
+      description: null,
+    });
+  });
+
+  it("a name-only update never resets published/featured/sort_order", async () => {
+    // Zod 4 applies `.default()` inside `.partial()`; this used to write
+    // `published: false` and pull the item off the public catalog.
+    await admin().finishCatalog.update({ id: 3, name: "Renamed" });
+    expect(updateMock.mock.calls[0][1]).toEqual({ name: "Renamed" });
+  });
+
   it("togglePublished forwards the published flag", async () => {
     await admin().finishCatalog.togglePublished({ id: 4, published: false });
     expect(updateMock).toHaveBeenCalledWith(4, { published: false });

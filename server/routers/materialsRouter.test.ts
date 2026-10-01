@@ -53,6 +53,7 @@ vi.mock("../_data/materialsRepo", () => ({
     { id: 2, quantity_needed: 10, quantity_ordered: 20, is_shortage: true },
   ]),
   setMaterialShortage: vi.fn(async () => ({ success: true })),
+  setMaterialVendors: vi.fn(async () => []),
   computeIsShortage: vi.fn(
     (needed?: number, ordered?: number) => (needed ?? 0) > (ordered ?? 0)
   ),
@@ -214,6 +215,66 @@ describe("Materials Router — update mapping", () => {
       quantity_ordered: 200,
       is_shortage: false,
     });
+  });
+});
+
+describe("Materials Router — update clearing (null)", () => {
+  it("clears optional columns with null", async () => {
+    await admin().materials.update({
+      id: 4,
+      category: null,
+      unit: null,
+      vendorName: null,
+      unitPriceCurrent: null,
+      phaseNeeded: null,
+      notes: null,
+      expectedDelivery: null,
+    });
+    expect(updateMock.mock.calls[0][1]).toEqual({
+      category: null,
+      unit: null,
+      vendor_name: null,
+      unit_price_current: null,
+      phase_needed: null,
+      notes: null,
+      expected_delivery: null,
+    });
+  });
+
+  it("clearing quantityNeeded is honoured when recomputing the shortage", async () => {
+    // `quantityNeeded ?? current.quantity_needed` used to resurrect the stored
+    // 100 and keep the item flagged short after the need was cleared.
+    await admin().materials.update({ id: 4, quantityNeeded: null });
+    const [, patch] = updateMock.mock.calls[0];
+    expect(patch).toMatchObject({ quantity_needed: null });
+    expect(computeIsShortageMock).toHaveBeenCalledWith(null, 40);
+    expect(patch).toMatchObject({ is_shortage: false });
+  });
+
+  it("accepts a zero ordered/received quantity", async () => {
+    await admin().materials.update({
+      id: 4,
+      quantityOrdered: 0,
+      quantityReceived: 0,
+    });
+    expect(updateMock.mock.calls[0][1]).toMatchObject({
+      quantity_ordered: 0,
+      quantity_received: 0,
+    });
+  });
+
+  it("an emptied vendor set also clears the primary vendor link", async () => {
+    await admin().materials.update({ id: 4, vendorIds: [] });
+    expect(updateMock.mock.calls[0][1]).toMatchObject({ vendor_id: null });
+  });
+
+  it("still rejects a null name and a zero quantityNeeded", async () => {
+    await expect(
+      admin().materials.update({ id: 4, name: null } as any)
+    ).rejects.toThrow();
+    await expect(
+      admin().materials.update({ id: 4, quantityNeeded: 0 })
+    ).rejects.toThrow();
   });
 });
 

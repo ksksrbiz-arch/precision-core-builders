@@ -8,7 +8,14 @@
  * rather than by refactoring the source.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import type { ScheduleItem } from "./GanttChart";
 
 // trpc's useQuery is the only heavy dependency GanttChart pulls in; stub it so
@@ -169,5 +176,46 @@ describe("GanttChart", () => {
     );
     expect(screen.getByText("DB task")).toBeTruthy();
     expect(screen.queryByText("Prop task")).toBeNull();
+  });
+
+  describe("deleting a task from the edit modal", () => {
+    async function openEditor(props: Record<string, unknown>) {
+      useIsMobileMock.mockReturnValue(true);
+      const { GanttChart } = await loadGantt();
+      render(
+        <GanttChart
+          projectId={1}
+          items={[makeItem({ id: 5, title: "Excavation" })]}
+          {...props}
+        />
+      );
+      fireEvent.click(screen.getByText("Excavation"));
+      await screen.findByRole("dialog");
+    }
+
+    it("offers Delete only when a delete handler is wired and the chart is editable", async () => {
+      await openEditor({ onTaskDelete: vi.fn() });
+      expect(screen.getByRole("button", { name: "Delete task" })).toBeTruthy();
+      cleanup();
+      await openEditor({});
+      expect(screen.queryByRole("button", { name: "Delete task" })).toBeNull();
+      cleanup();
+      await openEditor({ onTaskDelete: vi.fn(), readOnly: true });
+      expect(screen.queryByRole("button", { name: "Delete task" })).toBeNull();
+    });
+
+    it("deletes only after confirmation, drops the bar and closes the modal", async () => {
+      const onTaskDelete = vi.fn();
+      await openEditor({ onTaskDelete });
+
+      fireEvent.click(screen.getByRole("button", { name: "Delete task" }));
+      expect(onTaskDelete).not.toHaveBeenCalled();
+
+      const confirm = await screen.findByRole("alertdialog");
+      fireEvent.click(
+        within(confirm).getByRole("button", { name: "Delete task" })
+      );
+      await waitFor(() => expect(onTaskDelete).toHaveBeenCalledWith(5));
+    });
   });
 });

@@ -5,6 +5,7 @@
  *   2. Server-side Whisper router (free Groq Whisper first, legacy OpenAI
  *      Whisper only as a fallback) — used when Web Speech is unavailable
  */
+import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
@@ -389,19 +390,15 @@ export default function FieldReportNew() {
     await publishMutation.mutateAsync({ id: report.id });
 
     // Fire field_report_created n8n event to notify client
-    fetch("/api/n8n-webhook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event: "field_report_created",
-        payload: {
-          reportId: report.id,
-          projectId: report.project_id,
-          reportDate: report.report_date,
-          publishedToClient: true,
-        },
-      }),
-    }).catch(() => {});
+    relayAdminEvent({
+      event: "field_report_created",
+      payload: {
+        reportId: report.id,
+        projectId: report.project_id,
+        reportDate: report.report_date,
+        publishedToClient: true,
+      },
+    });
 
     setStep("done");
   };

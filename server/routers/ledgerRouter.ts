@@ -5,6 +5,8 @@ import {
   listLedgerEntries,
   listVisibleLedgerEntries,
 } from "../_data/ledgerRepo";
+import { assertProjectAccess } from "../_core/access";
+import { authorUuid } from "../_core/identity";
 import { z } from "zod";
 
 const EntryTypeEnum = z.enum([
@@ -32,10 +34,15 @@ export const ledgerRouter = router({
     )
     .query(async ({ input }) => listLedgerEntries(input)),
 
-  // Client: visible entries only
+  // Client: visible entries only, and only for a project the caller owns
+  // (admins pass). Without the ownership check any signed-in client could read
+  // another client's ledger by guessing a project id.
   listVisible: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
-    .query(async ({ input }) => listVisibleLedgerEntries(input.projectId)),
+    .query(async ({ input, ctx }) => {
+      await assertProjectAccess(ctx, input.projectId);
+      return listVisibleLedgerEntries(input.projectId);
+    }),
 
   // Admin-only audit feed: ledger entries whose title is tagged "[AUDIT]".
   // The Activity Log page previously read these straight from the browser
@@ -66,7 +73,7 @@ export const ledgerRouter = router({
     .mutation(async ({ input, ctx }) =>
       appendLedgerEntry({
         projectId: input.projectId,
-        authorId: ctx.user!.id,
+        authorId: authorUuid(ctx.user),
         entryType: input.entryType,
         title: input.title,
         description: input.description,

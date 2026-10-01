@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { SiteFooter, SiteNav } from "@/components/layout/SiteShell";
 import { useSEO } from "@/hooks/useSEO";
+import { PUBLIC_ROUTES } from "@shared/siteRoutes";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,23 +22,9 @@ type QuickLink = {
 };
 
 // All real public routes, used to suggest the closest match for a
-// mistyped URL. Keep in sync with the router in App.tsx.
-const KNOWN_ROUTES = [
-  "/",
-  "/about",
-  "/services",
-  "/portfolio",
-  "/faq",
-  "/contact",
-  "/services/residential",
-  "/services/remodels",
-  "/services/new-construction",
-  "/services/restoration",
-  "/services/outdoor",
-  "/services/painting",
-  "/services/roofing",
-  "/services/cabinets",
-] as const;
+// mistyped URL. Sourced from shared/siteRoutes.ts (also feeds the sitemap and
+// the Netlify redirect rules) so it cannot go stale.
+const KNOWN_ROUTES: readonly string[] = PUBLIC_ROUTES.map(r => r.path);
 
 // Standard Levenshtein edit distance between two strings.
 function editDistance(a: string, b: string): number {

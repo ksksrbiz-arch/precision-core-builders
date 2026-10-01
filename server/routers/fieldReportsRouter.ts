@@ -1,6 +1,8 @@
 import { db } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { logAdminAction } from "../_core/auditLog";
+import { assertProjectAccess } from "../_core/access";
+import { authorUuid } from "../_core/identity";
 import {
   createFieldReport,
   deleteFieldReport,
@@ -58,10 +60,15 @@ export const fieldReportsRouter = router({
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input, ctx }) => {
       const data = await getFieldReportById(input.id);
-      // Clients may only read reports for their own project.
+      // Clients may only read PUBLISHED reports for their own project —
+      // drafts hold internal notes and flagged issues Eric hasn't released.
       if (ctx.user.role !== "admin") {
         const clientUserId = (data?.projects as any)?.clients?.user_id;
-        if (!clientUserId || clientUserId !== ctx.user.id) {
+        if (
+          !clientUserId ||
+          clientUserId !== ctx.user.id ||
+          !data?.published_to_client
+        ) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You do not have permission to view this field report.",
@@ -89,7 +96,7 @@ export const fieldReportsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const data = await createFieldReport({
         project_id: input.projectId,
-        author_id: ctx.user!.id,
+        author_id: authorUuid(ctx.user),
         report_date: input.reportDate ?? new Date().toISOString(),
         transcription: input.transcription,
         summary: input.summary,
@@ -185,7 +192,7 @@ export const fieldReportsRouter = router({
         return { tags: [] as Awaited<ReturnType<typeof tagFieldReportPhotos>> };
       }
 
-      const tags = await tagFieldReportPhotos(urls, ctx.user!.id);
+      const tags = await tagFieldReportPhotos(urls, authorUuid(ctx.user));
       await saveFieldReportPhotoTags(input.id, JSON.stringify(tags));
       return { tags };
     }),
@@ -230,7 +237,9 @@ export const fieldReportsRouter = router({
   // Client-facing: published reports for their project
   listPublished: protectedProcedure
     .input(z.object({ projectId: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // A portal client may only read their own project's published reports.
+      await assertProjectAccess(ctx, input.projectId);
       return listPublishedFieldReports(input.projectId);
     }),
 

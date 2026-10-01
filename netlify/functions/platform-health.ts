@@ -44,10 +44,7 @@ async function checkSupabase(): Promise<ServiceStatus> {
   const start = Date.now();
   try {
     const supabase = createClient(url, key);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id")
-      .limit(1);
+    const { data, error } = await supabase.from("users").select("id").limit(1);
 
     if (error && error.code !== "PGRST116") {
       // PGRST116 = no rows, which is fine
@@ -58,7 +55,7 @@ async function checkSupabase(): Promise<ServiceStatus> {
       id: "supabase",
       name: "Supabase Database",
       status: "healthy",
-      message: "Connected, profiles table accessible",
+      message: "Connected, users table accessible",
       latencyMs: Date.now() - start,
       details: { rowsReturned: data?.length ?? 0 },
     };
@@ -369,7 +366,7 @@ async function checkDatabaseTables(): Promise<ServiceStatus> {
   try {
     // Check for critical tables
     const tables = [
-      "profiles",
+      "users",
       "projects",
       "clients",
       "field_reports",
@@ -444,7 +441,16 @@ export const handler: Handler = async event => {
   const bearerToken = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7)
     : undefined;
-  const adminToken = bearerToken ?? event.queryStringParameters?.adminToken;
+  // The query-string form is deprecated: credentials in a URL end up in access
+  // logs and browser history. Kept only so existing external uptime monitors
+  // don't break; the Setup Wizard now sends the Authorization header.
+  const queryToken = event.queryStringParameters?.adminToken;
+  if (!bearerToken && queryToken) {
+    console.warn(
+      "[platform-health] adminToken in the query string is deprecated; send an Authorization: Bearer header instead."
+    );
+  }
+  const adminToken = bearerToken ?? queryToken;
 
   const verified = await verifyAdminToken(adminToken ?? null);
   if (!verified.ok) {

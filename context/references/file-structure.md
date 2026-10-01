@@ -22,7 +22,7 @@ precision-core-builders/
 │   │   │   └── utils.ts         # cn() utility (clsx + tailwind-merge)
 │   │   ├── pages/
 │   │   │   ├── Home.tsx         # Landing page
-│   │   │   ├── NotFound.tsx     # 404 page
+│   │   │   ├── NotFound.tsx     # in-app 404 page (prerendered to 404.html at build)
 │   │   │   └── ComponentShowcase.tsx
 │   │   ├── App.tsx              # Router (Wouter)
 │   │   ├── main.tsx             # React + tRPC + React Query setup

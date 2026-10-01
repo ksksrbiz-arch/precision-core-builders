@@ -155,3 +155,21 @@ export async function getCostAdjustmentTotals(): Promise<Map<number, number>> {
   }
   return totals;
 }
+
+/**
+ * Actual cost for ONE project — the same ledger-derived figure as
+ * `getCostAdjustmentTotals`, scoped to a single id so callers that only need
+ * one project don't scan every cost entry.
+ */
+export async function getProjectActualCost(projectId: number): Promise<number> {
+  const { data: rows } = await data
+    .from("ledger_entries")
+    .select("amount_delta")
+    .eq("project_id", projectId)
+    .eq("entry_type", "cost_adjustment");
+  return (rows ?? []).reduce(
+    (sum: number, row: { amount_delta: unknown }) =>
+      sum + Number(row.amount_delta ?? 0),
+    0
+  );
+}

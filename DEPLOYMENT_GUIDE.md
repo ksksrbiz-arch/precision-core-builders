@@ -278,8 +278,10 @@ This script will:
 ### Step 5.1: Test Platform Health
 
 ```bash
-# Replace with your Netlify site URL and admin token
-curl "https://your-site.netlify.app/api/platform-health?adminToken=your-admin-token"
+# Replace with your Netlify site URL and admin token. Send the token in the
+# Authorization header — a token in the query string ends up in access logs.
+curl -H "Authorization: Bearer your-admin-token" \
+  "https://your-site.netlify.app/api/platform-health"
 ```
 
 Expected response:

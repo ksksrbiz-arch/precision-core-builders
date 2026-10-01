@@ -194,7 +194,17 @@ export default function NotificationsView() {
     successMessage: "Notification dispatched successfully.",
     error: "Send Failed",
     errorMessage: "Failed to send notification. Please check the inputs.",
-    invalidate: () => utils.notifications.list.invalidate(),
+    // The server records an undeliverable email/SMS as status "failed" (no
+    // provider configured, no address on file, provider error) rather than
+    // throwing — don't tell Eric it was "dispatched successfully".
+    failed: row =>
+      row?.status === "failed"
+        ? `Not delivered: ${row.failure_reason ?? "delivery failed."}`
+        : null,
+    invalidate: () => {
+      utils.notifications.adminList.invalidate();
+      return utils.notifications.list.invalidate();
+    },
     onSuccess: () => {
       utils.notifications.adminList.invalidate();
       setShowCompose(false);

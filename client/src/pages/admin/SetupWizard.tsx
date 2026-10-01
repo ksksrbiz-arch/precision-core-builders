@@ -36,6 +36,17 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 const TOKEN_KEY = "pcb-setup-token";
 
+/**
+ * Health check call. The token travels in the Authorization header — never the
+ * query string, where it would land in Netlify function logs, browser history
+ * and Referer headers.
+ */
+function fetchHealth(token: string): Promise<Response> {
+  return fetch("/api/platform-health", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 // Safari private mode + locked-down corporate browsers throw on storage access.
 // Wrap so the wizard still loads even when persistence isn't available.
 function safeRead(): string {
@@ -360,9 +371,7 @@ function HealthCheckPanel({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/platform-health?adminToken=${encodeURIComponent(adminToken)}`
-      );
+      const res = await fetchHealth(adminToken);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setHealth(data);
@@ -816,9 +825,7 @@ function QuickActionsPanel({
     setTestingDb(true);
     try {
       // Use the health check endpoint
-      const res = await fetch(
-        `/api/platform-health?adminToken=${encodeURIComponent(adminToken)}`
-      );
+      const res = await fetchHealth(adminToken);
       const data = await res.json();
       const dbService = data.services?.find(
         (s: ServiceStatus) => s.id === "supabase"
@@ -1198,7 +1205,7 @@ export default function SetupWizard() {
   // Fetch health on mount to populate service statuses
   useEffect(() => {
     if (!isSet) return;
-    fetch(`/api/platform-health?adminToken=${encodeURIComponent(token)}`)
+    fetchHealth(token)
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
         if (data && Array.isArray(data.services)) setHealth(data);

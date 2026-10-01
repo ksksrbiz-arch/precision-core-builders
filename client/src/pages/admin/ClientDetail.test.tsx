@@ -2,7 +2,13 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 const queryState: { data: unknown; isLoading: boolean; isError: boolean } = {
   data: undefined,
@@ -16,6 +22,7 @@ const useRealtimeTableMock = vi.fn((_opts: unknown) => ({
 }));
 
 const getByIdInvalidate = vi.fn();
+const updateMutateAsync = vi.fn(async (_input: unknown) => ({ id: 42 }));
 
 vi.mock("@/hooks/useRealtimeTable", () => ({
   useRealtimeTable: (opts: unknown) => useRealtimeTableMock(opts),
@@ -63,7 +70,10 @@ vi.mock("@/lib/trpc", () => {
               }),
               useMutation: () => ({
                 mutate: vi.fn(),
-                mutateAsync: vi.fn(),
+                mutateAsync:
+                  routerName === "clients" && procName === "update"
+                    ? updateMutateAsync
+                    : vi.fn(),
                 isPending: false,
               }),
             };
@@ -168,6 +178,46 @@ describe("ClientDetail", () => {
     expect(getByIdInvalidate).not.toHaveBeenCalled();
     opts.onUpdate({ new: { id: 42 }, old: null });
     expect(getByIdInvalidate).toHaveBeenCalledWith({ id: 42 });
+  });
+
+  it("sends null for blanked fields so the value is actually cleared", async () => {
+    // `undefined` means "leave unchanged" server-side: blanking a field used to
+    // be a silent no-op while the toast said the client was saved.
+    setState({
+      data: {
+        ...client,
+        phone: "541-555-0100",
+        city: "Eugene",
+        notes: "Prefers text",
+      },
+      isLoading: false,
+    });
+    updateMutateAsync.mockClear();
+    const ClientDetail = await loadPage();
+    render(<ClientDetail />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit client" }));
+    fireEvent.change(screen.getByDisplayValue("541-555-0100"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByDisplayValue("Prefers text"), {
+      target: { value: "   " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() => expect(updateMutateAsync).toHaveBeenCalledTimes(1));
+    const sent = updateMutateAsync.mock.calls[0][0] as Record<string, unknown>;
+    expect(sent).toMatchObject({
+      id: 42,
+      name: "Hendricks Household",
+      email: "hendricks@example.com",
+      phone: null,
+      notes: null,
+      address: null,
+      leadSource: null,
+      // untouched field keeps its value
+      city: "Eugene",
+    });
   });
 
   it("gives the icon-only edit button an accessible name", async () => {

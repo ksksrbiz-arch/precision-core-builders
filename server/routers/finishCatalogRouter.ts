@@ -4,7 +4,9 @@ import { z } from "zod";
 
 const PRICE_TIERS = ["$", "$$", "$$$"] as const;
 
-const FinishCatalogInput = z.object({
+// No defaults in the shared shape — see portfolioRouter (Zod 4 applies defaults
+// inside `.partial()`, so an unrelated edit used to unpublish the item).
+const FinishCatalogFields = z.object({
   name: z.string().min(1).max(300),
   slug: z.string().min(1).max(300),
   category: z.string().max(100).optional(),
@@ -12,6 +14,12 @@ const FinishCatalogInput = z.object({
   description: z.string().optional(),
   priceTier: z.enum(PRICE_TIERS).optional(),
   imageUrl: z.string().url().optional(),
+  featured: z.boolean().optional(),
+  published: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+const FinishCatalogInput = FinishCatalogFields.extend({
   featured: z.boolean().optional().default(false),
   published: z.boolean().optional().default(false),
   sortOrder: z.number().int().optional().default(0),
@@ -53,7 +61,15 @@ export const finishCatalogRouter = router({
     .input(
       z
         .object({ id: z.number().int().positive() })
-        .merge(FinishCatalogInput.partial())
+        .merge(FinishCatalogFields.partial())
+        .extend({
+          // `null` clears the column (blank inputs in the edit form).
+          category: z.string().max(100).nullable().optional(),
+          brand: z.string().max(200).nullable().optional(),
+          description: z.string().nullable().optional(),
+          priceTier: z.enum(PRICE_TIERS).nullable().optional(),
+          imageUrl: z.string().url().nullable().optional(),
+        })
     )
     .mutation(async ({ input }) => {
       const { id, priceTier, imageUrl, sortOrder, ...rest } = input;

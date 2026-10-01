@@ -141,12 +141,6 @@ export default function Analytics() {
     refetch: refetchStats,
   } = trpc.projects.stats.useQuery();
   const {
-    data: allProjects,
-    isLoading: projectsLoading,
-    isError: projectsError,
-    refetch: refetchProjects,
-  } = trpc.projects.list.useQuery({ pageSize: 100 });
-  const {
     data: profitability,
     isLoading: profitabilityLoading,
     isError: profitabilityError,
@@ -168,23 +162,14 @@ export default function Analytics() {
     pageSize: 100,
   });
 
-  // The page is one composite dashboard: hold every chart back until all five
+  // The page is one composite dashboard: hold every chart back until all four
   // feeds have resolved, otherwise Recharts renders empty axes that then jump.
   const isLoading =
-    statsLoading ||
-    projectsLoading ||
-    profitabilityLoading ||
-    reportsLoading ||
-    shortagesLoading;
+    statsLoading || profitabilityLoading || reportsLoading || shortagesLoading;
   const isError =
-    statsError ||
-    projectsError ||
-    reportsError ||
-    shortagesError ||
-    profitabilityError;
+    statsError || reportsError || shortagesError || profitabilityError;
   const retryAll = () => {
     void refetchStats();
-    void refetchProjects();
     void refetchProfitability();
     void refetchReports();
     void refetchShortages();

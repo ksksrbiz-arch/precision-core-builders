@@ -7,10 +7,17 @@ import { chromium } from "playwright";
 
 const out = resolve("dist/public");
 const shell = readFileSync(resolve(out, "index.html"), "utf8");
-if (!shell.includes('<div id="root"></div>'))
+// The shell's #root holds the branded static splash (client/index.html),
+// delimited by markers. A shell without them is already-prerendered HTML.
+const ROOT =
+  /<div id="root">\s*<!-- pcb-splash:start -->[\s\S]*?<!-- pcb-splash:end -->\s*<\/div>/;
+if (!ROOT.test(shell))
   throw new Error(
     "Prerender requires a fresh Vite build, not previously prerendered HTML. Run pnpm build."
   );
+// Keep the untouched shell for client-rendered routes (/admin, /portal, login…):
+// index.html itself becomes the prerendered homepage below.
+writeFileSync(resolve(out, "app-shell.html"), shell);
 const paths = [
   ...readFileSync(resolve(out, "sitemap.xml"), "utf8").matchAll(
     /<loc>(.*?)<\/loc>/g
@@ -95,10 +102,7 @@ try {
       .replace(/<link\s+[^>]*rel="canonical"[^>]*>/g, "")
       .replace(/<link\s+[^>]*rel="stylesheet"[^>]*>/g, "")
       .replace("</head>", `${snapshot.tags}\n${snapshot.styles}\n</head>`)
-      .replace(
-        '<div id="root"></div>',
-        `<div id="root">${snapshot.root}</div>`
-      );
+      .replace(ROOT, () => `<div id="root">${snapshot.root}</div>`);
     // Do not preload the homepage hero on every service/article route.
     if (path !== "/")
       html = html.replace(

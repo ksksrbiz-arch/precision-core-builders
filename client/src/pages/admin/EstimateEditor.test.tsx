@@ -2,13 +2,21 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 const queryState: { data: unknown; isLoading: boolean; isError: boolean } = {
   data: undefined,
   isLoading: false,
   isError: false,
 };
+
+const updateMutateAsync = vi.fn(async (_input: unknown) => ({ id: 7 }));
 
 const useRealtimeTableMock = vi.fn((_opts: unknown) => ({
   isLive: true,
@@ -55,7 +63,10 @@ vi.mock("@/lib/trpc", () => {
               }),
               useMutation: () => ({
                 mutate: vi.fn(),
-                mutateAsync: vi.fn(),
+                mutateAsync:
+                  routerName === "estimates" && procName === "update"
+                    ? updateMutateAsync
+                    : vi.fn(),
                 isPending: false,
               }),
             };
@@ -129,6 +140,55 @@ describe("EstimateEditor", () => {
     expect(
       (screen.getByDisplayValue("Springfield, OR") as HTMLInputElement).value
     ).toBe("Springfield, OR");
+  });
+
+  it("sends null for emptied fields and keeps a $0 cost line on save", async () => {
+    // Blank used to be sent as `undefined` ("leave unchanged"), so clearing a
+    // field was a silent no-op; and a $0 cost line was rejected by .positive().
+    queryState.data = {
+      id: 7,
+      project_id: 1,
+      client_id: 1,
+      project_type: "kitchen",
+      complexity: "medium",
+      square_footage: 1200,
+      location: "Eugene, OR",
+      additional_notes: "Note to clear",
+      estimated_low: 10000,
+      estimated_mid: 15000,
+      estimated_high: 20000,
+      labor_cost: 5000,
+      materials_cost: 5000,
+      permits_cost: 500,
+      contingency: 1000,
+      ai_reasoning: "",
+    };
+    queryState.isLoading = false;
+    queryState.isError = false;
+    updateMutateAsync.mockClear();
+    const EstimateEditor = await loadPage();
+    render(<EstimateEditor />);
+
+    fireEvent.change(screen.getByDisplayValue("Note to clear"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByDisplayValue("500"), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByDisplayValue("1000"), {
+      target: { value: "" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() => expect(updateMutateAsync).toHaveBeenCalledTimes(1));
+    expect(updateMutateAsync.mock.calls[0][0]).toMatchObject({
+      id: 7,
+      additionalNotes: null,
+      contingency: null,
+      permitsCost: 0,
+      laborCost: 5000,
+      estimatedMid: 15000,
+    });
   });
 
   it("subscribes to realtime updates on the estimates table, scoped to this estimate", async () => {

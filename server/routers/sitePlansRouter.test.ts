@@ -70,7 +70,10 @@ function ctx(userId?: string, role: "admin" | "user" = "admin"): TrpcContext {
   };
 }
 
-const admin = () => appRouter.createCaller(ctx("admin-1", "admin"));
+const ADMIN_UUID = "3f2b8c1e-5d4a-4b7e-9a10-0c2d3e4f5a6b";
+const admin = () => appRouter.createCaller(ctx(ADMIN_UUID, "admin"));
+// Shared admin session token => synthetic, non-UUID id.
+const sharedAdmin = () => appRouter.createCaller(ctx("admin", "admin"));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -155,7 +158,7 @@ describe("SitePlans Router — create", () => {
     expect(createMock).toHaveBeenCalledWith({
       name: "Lot 12 Layout",
       project_id: 3,
-      author_id: "admin-1",
+      author_id: ADMIN_UUID,
       elements: "[1]",
       app_state: "{}",
       thumbnail_data_url: "data:image/png;base64,AAA",
@@ -168,7 +171,7 @@ describe("SitePlans Router — create", () => {
     expect(arg).toMatchObject({
       name: "Bare Plan",
       project_id: null,
-      author_id: "admin-1",
+      author_id: ADMIN_UUID,
       elements: "[]",
       app_state: "{}",
       thumbnail_data_url: null,
