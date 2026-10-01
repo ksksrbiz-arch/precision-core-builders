@@ -19,13 +19,13 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  Facebook,
   Loader2,
   Mail,
   MapPin,
   Phone,
   Shield,
 } from "lucide-react";
+import { Facebook } from "@/components/ui/brand-icons";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

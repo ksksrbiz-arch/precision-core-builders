@@ -9,7 +9,6 @@ import { trackCtaClick, trackPhoneClick } from "@/lib/analytics";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
-  Facebook,
   Lock,
   Mail,
   MapPin,
@@ -18,6 +17,7 @@ import {
   Shield,
   X,
 } from "lucide-react";
+import { Facebook } from "@/components/ui/brand-icons";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 

@@ -11,13 +11,13 @@ import {
   ArrowRight,
   Building2,
   Check,
-  Facebook,
   Loader2,
   Lock,
   Mail,
   RefreshCw,
   Shield,
 } from "lucide-react";
+import { Facebook } from "@/components/ui/brand-icons";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
