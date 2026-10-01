@@ -177,27 +177,31 @@ export default function FinishCatalogAdmin() {
       }
     }
 
-    const payload = {
-      name: form.name,
-      slug:
-        form.slug ||
-        form.name
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9-]/g, ""),
-      category: form.category || undefined,
-      brand: form.brand || undefined,
-      description: form.description || undefined,
-      priceTier: form.priceTier || undefined,
-      imageUrl: form.imageUrl || undefined,
-      featured: form.featured,
-      published: form.published,
-      sortOrder: form.sortOrder,
+    // Create omits blanks (undefined); edit sends null so the column is cleared.
+    const buildPayload = <E extends undefined | null>(emptyValue: E) => {
+      const text = (v: string): string | E => v.trim() || emptyValue;
+      return {
+        name: form.name,
+        slug:
+          form.slug ||
+          form.name
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, ""),
+        category: text(form.category),
+        brand: text(form.brand),
+        description: text(form.description),
+        priceTier: (form.priceTier || emptyValue) as "$" | "$$" | "$$$" | E,
+        imageUrl: text(form.imageUrl),
+        featured: form.featured,
+        published: form.published,
+        sortOrder: form.sortOrder,
+      };
     };
     if (editId && update) {
-      update.mutate({ id: editId, ...payload });
+      update.mutate({ id: editId, ...buildPayload(null) });
     } else {
-      create.mutate(payload);
+      create.mutate(buildPayload(undefined));
     }
   };
 

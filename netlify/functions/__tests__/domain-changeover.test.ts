@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { corsHeaders, isOriginAllowed } from "../_utils/corsGuard";
+import { buildRedirectRules } from "../../../shared/siteRoutes";
 
 const canonical = "https://precisioncorebuilders.com";
 
@@ -13,16 +14,23 @@ describe("domain changeover", () => {
   });
 
   it("forces the exact legacy host to canonical before application routing", () => {
-    const config = readFileSync("netlify.toml", "utf8");
-    const rules = config.split("[[redirects]]").slice(1);
-    expect(rules[0]).toContain(
-      'from   = "https://precision-core.netlify.app/*"'
-    );
-    expect(rules[0]).toContain(`to     = "${canonical}/:splat"`);
-    expect(rules[0]).toMatch(/status\s*=\s*301/);
-    expect(rules[0]).toMatch(/force\s*=\s*true/);
+    const rules = buildRedirectRules([]);
+    expect(rules[0]).toEqual({
+      from: "https://precision-core.netlify.app/*",
+      to: `${canonical}/:splat`,
+      status: 301,
+      force: true,
+    });
+    expect(rules[1]).toEqual({
+      from: "http://precision-core.netlify.app/*",
+      to: `${canonical}/:splat`,
+      status: 301,
+      force: true,
+    });
     // No wildcard hostname rule that could redirect preview deploys.
-    expect(config).not.toMatch(/from\s*=\s*"https?:\/\/\*[^"\n]*netlify\.app/);
+    expect(
+      rules.some(rule => /^https?:\/\/\*.*netlify\.app/.test(rule.from))
+    ).toBe(false);
   });
 
   it("uses canonical CORS defaults while preserving legacy-origin compatibility", () => {

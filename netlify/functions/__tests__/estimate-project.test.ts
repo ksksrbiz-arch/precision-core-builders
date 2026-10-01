@@ -24,10 +24,18 @@ vi.mock("../../../server/_core/supabase", () => ({
   getSupabaseAdmin: () => getSupabaseAdmin(),
 }));
 
-function mockEvent(body: unknown, ip = "203.0.113.1") {
+function mockEvent(
+  body: unknown,
+  ip = "203.0.113.1",
+  headers: Record<string, string> = {}
+) {
   return {
     httpMethod: "POST",
-    headers: { origin: "http://localhost:5173", "x-forwarded-for": ip },
+    headers: {
+      origin: "http://localhost:5173",
+      "x-forwarded-for": ip,
+      ...headers,
+    },
     body: JSON.stringify(body),
     isBase64Encoded: false,
     path: "/api/estimate-project",
@@ -35,14 +43,25 @@ function mockEvent(body: unknown, ip = "203.0.113.1") {
   };
 }
 
-async function post(body: unknown, ip?: string) {
+async function post(
+  body: unknown,
+  ip?: string,
+  headers?: Record<string, string>
+) {
   const { handler } = await import("../estimate-project");
-  const response = await handler(mockEvent(body, ip) as never, {} as never);
+  const response = await handler(
+    mockEvent(body, ip, headers) as never,
+    {} as never
+  );
   return {
     statusCode: response!.statusCode,
     body: JSON.parse(response!.body as string),
   };
 }
+
+// The dev bypass token resolves to an admin in the test environment
+// (ALLOW_DEV_ADMIN_BYPASS is set by vitest.config.ts).
+const ADMIN_HEADERS = { authorization: "Bearer dev-admin-token" };
 
 /** Unique IP per test so the shared rate limiter doesn't bleed across cases. */
 let ipCounter = 0;
@@ -264,14 +283,48 @@ describe("estimate-project — VERIFY path", () => {
     } as never);
 
     await post(
-      {
-        projectType: "cabinets",
-        clientId: "3f6d1c4e-0000-4000-8000-000000000001",
-      },
-      nextIp()
+      { projectType: "cabinets", clientId: 3 },
+      nextIp(),
+      ADMIN_HEADERS
     );
 
     expect(insert).not.toHaveBeenCalled();
+  });
+
+  describe("persistence (the endpoint itself is admin-only)", () => {
+    const priced = { projectType: "kitchen", complexity: "medium" as const };
+
+    function stubInsert() {
+      const single = vi.fn(async () => ({ data: { id: 77 }, error: null }));
+      const select = vi.fn(() => ({ single }));
+      const insert = vi.fn(() => ({ select }));
+      getSupabaseAdmin.mockReturnValue({ from: () => ({ insert }) } as never);
+      invokeLLM.mockRejectedValue(new Error("offline"));
+      return insert;
+    }
+
+    it("persists with integer ids for an admin", async () => {
+      const insert = stubInsert();
+      const { body } = await post(
+        { ...priced, projectId: 12, clientId: 3 },
+        nextIp()
+      );
+      expect(insert).toHaveBeenCalledTimes(1);
+      expect(insert).toHaveBeenCalledWith(
+        expect.objectContaining({ project_id: 12, client_id: 3 })
+      );
+      expect(body.savedEstimate).toEqual({ id: 77 });
+    });
+
+    it("rejects UUID-shaped ids (the columns are integers)", async () => {
+      const insert = stubInsert();
+      const { statusCode } = await post(
+        { ...priced, clientId: "3f6d1c4e-0000-4000-8000-000000000001" },
+        nextIp()
+      );
+      expect(statusCode).toBe(400);
+      expect(insert).not.toHaveBeenCalled();
+    });
   });
 });
 

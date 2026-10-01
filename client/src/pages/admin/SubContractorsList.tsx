@@ -39,6 +39,7 @@ import {
 import {
   HardHat,
   Mail,
+  Pencil,
   Phone,
   Plus,
   Send,
@@ -49,21 +50,14 @@ import {
   Wrench,
 } from "lucide-react";
 import { useState } from "react";
-
-const TRADES = [
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Roofing",
-  "Painting",
-  "Drywall",
-  "Framing",
-  "Concrete",
-  "Landscaping",
-  "Flooring",
-  "Cabinetry",
-  "General",
-];
+import {
+  EMPTY_SUB_FORM,
+  SUB_TRADES as TRADES,
+  buildSubPayload,
+  insuranceStatus,
+  subToForm,
+  type SubForm,
+} from "@/lib/subContractors";
 
 export default function SubContractorsList() {
   const [showNew, setShowNew] = useState(false);
@@ -116,15 +110,20 @@ export default function SubContractorsList() {
       setBriefingDrafting(false);
     }
   };
-  const [form, setForm] = useState({
-    name: "",
-    company: "",
-    email: "",
-    phone: "",
-    trade: "",
-    licenseNumber: "",
-    notes: "",
-  });
+  // The same form serves "new" (editingId === null) and "edit".
+  const [form, setForm] = useState<SubForm>(EMPTY_SUB_FORM);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const formOpen = showNew || editingId !== null;
+  const closeForm = () => {
+    setShowNew(false);
+    setEditingId(null);
+    setForm(EMPTY_SUB_FORM);
+  };
+  const startEdit = (sub: any) => {
+    setShowNew(false);
+    setEditingId(sub.id);
+    setForm(subToForm(sub));
+  };
   const utils = trpc.useUtils();
   const isMobile = useIsMobile();
   const {
@@ -152,20 +151,39 @@ export default function SubContractorsList() {
       error: "Create Failed",
       errorMessage: "Failed to add sub-contractor. Please try again.",
       invalidate: () => utils.subContractors.list.invalidate(),
-      onSuccess: () => {
-        setShowNew(false);
-        setForm({
-          name: "",
-          company: "",
-          email: "",
-          phone: "",
-          trade: "",
-          licenseNumber: "",
-          notes: "",
-        });
-      },
+      onSuccess: closeForm,
     }
   );
+
+  const updateMut = useMutationWithToast(
+    trpc.subContractors.update.useMutation(),
+    {
+      success: "Sub Updated",
+      successMessage: "Sub-contractor details saved.",
+      error: "Update Failed",
+      errorMessage: "Failed to update sub-contractor. Please try again.",
+      invalidate: () => utils.subContractors.list.invalidate(),
+      onSuccess: closeForm,
+    }
+  );
+
+  const saveForm = () => {
+    if (!form.name.trim()) return;
+    if (editingId !== null) {
+      updateMut.mutate({
+        id: editingId,
+        ...buildSubPayload(form, null),
+        isActive: form.isActive,
+      });
+    } else {
+      createMut.mutate(
+        buildSubPayload(form, undefined) as Parameters<
+          typeof createMut.mutate
+        >[0]
+      );
+    }
+  };
+  const isSaving = createMut.isPending || updateMut.isPending;
 
   const deleteMut = useMutationWithToast(
     trpc.subContractors.delete.useMutation(),
@@ -230,13 +248,15 @@ export default function SubContractorsList() {
         />
 
         {/* New sub form */}
-        {showNew && (
+        {formOpen && (
           <div className="bg-card border border-primary/30 p-6 mb-5 space-y-4">
             <p
               className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary"
               style={{ fontFamily: "var(--font-condensed)" }}
             >
-              New Sub-Contractor
+              {editingId !== null
+                ? "Edit Sub-Contractor"
+                : "New Sub-Contractor"}
             </p>
             <div className="grid sm:grid-cols-2 gap-3">
               {[
@@ -283,33 +303,104 @@ export default function SubContractorsList() {
                       {t}
                     </option>
                   ))}
+                  {/* A legacy free-text trade must stay selectable on edit. */}
+                  {form.trade &&
+                    !(TRADES as readonly string[]).includes(form.trade) && (
+                      <option value={form.trade}>{form.trade}</option>
+                    )}
                 </select>
               </div>
+              <div>
+                <label
+                  htmlFor="sub-insurance-expiry"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Insurance Expires
+                </label>
+                <input
+                  id="sub-insurance-expiry"
+                  type="date"
+                  value={form.insuranceExpiry}
+                  onChange={e =>
+                    setForm(prev => ({
+                      ...prev,
+                      insuranceExpiry: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="sub-rating"
+                  className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  Rating
+                </label>
+                <select
+                  id="sub-rating"
+                  value={form.rating}
+                  onChange={e =>
+                    setForm(prev => ({ ...prev, rating: e.target.value }))
+                  }
+                  className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60"
+                >
+                  <option value="">Not rated</option>
+                  {[5, 4, 3, 2, 1].map(r => (
+                    <option key={r} value={String(r)}>
+                      {"★".repeat(r)} ({r})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {editingId !== null && (
+                <label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={e =>
+                      setForm(prev => ({ ...prev, isActive: e.target.checked }))
+                    }
+                  />
+                  Active — available for new briefings and scheduling
+                </label>
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="sub-notes"
+                className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1 block"
+                style={{ fontFamily: "var(--font-condensed)" }}
+              >
+                Notes
+              </label>
+              <textarea
+                id="sub-notes"
+                rows={2}
+                value={form.notes}
+                onChange={e =>
+                  setForm(prev => ({ ...prev, notes: e.target.value }))
+                }
+                className="w-full bg-input border border-border text-sm text-foreground p-2.5 focus:outline-none focus:border-primary/60 resize-none"
+              />
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setShowNew(false)}
+                onClick={closeForm}
                 className="px-4 py-2 border border-border/60 text-muted-foreground text-[11px] font-bold tracking-widest uppercase hover:border-primary/40 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
                 Cancel
               </button>
               <button
-                onClick={() =>
-                  createMut.mutate({
-                    ...form,
-                    trade: form.trade
-                      ? (form.trade.toLowerCase() as Parameters<
-                          typeof createMut.mutate
-                        >[0]["trade"])
-                      : undefined,
-                  })
-                }
-                disabled={!form.name || createMut.isPending}
+                onClick={saveForm}
+                disabled={!form.name.trim() || isSaving}
                 className="px-4 py-2 bg-primary text-primary-foreground text-[11px] font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
                 style={{ fontFamily: "var(--font-condensed)" }}
               >
-                {createMut.isPending ? "Saving…" : "Save"}
+                {isSaving ? "Saving…" : "Save"}
               </button>
             </div>
           </div>
@@ -350,7 +441,9 @@ export default function SubContractorsList() {
             {subs.map((sub: any) => (
               <div
                 key={sub.id}
-                className="bg-card border border-border/60 p-4 hover:border-primary/20 transition-colors"
+                className={`bg-card border border-border/60 p-4 hover:border-primary/20 transition-colors ${
+                  sub.is_active === false ? "opacity-60" : ""
+                }`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -422,6 +515,39 @@ export default function SubContractorsList() {
                   </div>
                 )}
 
+                {(() => {
+                  const ins = insuranceStatus(sub.insurance_expiry);
+                  if (!ins) return null;
+                  const tone =
+                    ins.status === "expired"
+                      ? "text-red-400 bg-red-400/10 border-red-400/30"
+                      : ins.status === "expiring"
+                        ? "text-amber-400 bg-amber-400/10 border-amber-400/30"
+                        : "text-green-400 bg-green-400/10 border-green-400/30";
+                  const label =
+                    ins.status === "expired"
+                      ? `Insurance expired ${Math.abs(ins.daysLeft)}d ago`
+                      : ins.status === "expiring"
+                        ? `Insurance expires in ${ins.daysLeft}d`
+                        : "Insured";
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1 text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 border mb-3 ${tone}`}
+                      style={{ fontFamily: "var(--font-condensed)" }}
+                    >
+                      <Shield className="h-3 w-3" /> {label}
+                    </span>
+                  );
+                })()}
+                {sub.is_active === false && (
+                  <span
+                    className="inline-flex ml-2 text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 border border-border/60 text-muted-foreground mb-3"
+                    style={{ fontFamily: "var(--font-condensed)" }}
+                  >
+                    Inactive
+                  </span>
+                )}
+
                 {sub.rating && (
                   <div className="flex items-center gap-0.5 mb-3">
                     {Array.from({ length: 5 }).map((_, i) => (
@@ -449,6 +575,13 @@ export default function SubContractorsList() {
                     <Send className="h-3 w-3" /> Send Briefing
                   </button>
                   <div className="flex-1" />
+                  <button
+                    onClick={() => startEdit(sub)}
+                    aria-label={`Edit ${sub.name}`}
+                    className="text-muted-foreground/60 hover:text-primary transition-colors"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button

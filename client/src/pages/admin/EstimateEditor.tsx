@@ -185,6 +185,8 @@ export default function EstimateEditor() {
     successMessage: "Estimate saved successfully.",
     error: "Update Failed",
     errorMessage: "Failed to update estimate. Please try again.",
+    // "approved by the client and is locked" — safe, actionable guidance.
+    showServerMessageFor: ["PRECONDITION_FAILED"],
     invalidate: () => utils.estimates.list.invalidate(),
     onSuccess: () => setLocation("/admin/estimates"),
   });
@@ -196,26 +198,39 @@ export default function EstimateEditor() {
     return Number.isFinite(n) ? n : undefined;
   };
 
-  const buildPayload = () => ({
-    projectId: form.projectId ? parseInt(form.projectId, 10) : undefined,
-    clientId: form.clientId ? parseInt(form.clientId, 10) : undefined,
-    projectType: form.projectType || undefined,
-    complexity: form.complexity || undefined,
-    squareFootage: num(form.squareFootage),
-    location: form.location.trim() || undefined,
-    additionalNotes: form.additionalNotes.trim() || undefined,
-    estimatedLow: num(form.estimatedLow),
-    estimatedMid: num(form.estimatedMid),
-    estimatedHigh: num(form.estimatedHigh),
-    laborCost: num(form.laborCost),
-    materialsCost: num(form.materialsCost),
-    permitsCost: num(form.permitsCost),
-    contingency: num(form.contingency),
-    aiReasoning: form.aiReasoning.trim() || undefined,
-  });
+  // On create, blank fields are omitted (undefined) so DB defaults apply. On
+  // edit they are sent as null so the column is actually cleared — `undefined`
+  // means "leave unchanged" on the server, so emptying a field used to be a
+  // silent no-op.
+  const buildPayload = <E extends undefined | null>(emptyValue: E) => {
+    const text = (v: string): string | E => v.trim() || emptyValue;
+    const int = (v: string): number | E => (v ? parseInt(v, 10) : emptyValue);
+    const amount = (s: string): number | E => {
+      const n = num(s);
+      return n === undefined ? emptyValue : n;
+    };
+    return {
+      projectId: int(form.projectId),
+      clientId: int(form.clientId),
+      projectType: (form.projectType || emptyValue) as string | E,
+      complexity: (form.complexity || emptyValue) as
+        "low" | "medium" | "high" | E,
+      squareFootage: amount(form.squareFootage),
+      location: text(form.location),
+      additionalNotes: text(form.additionalNotes),
+      estimatedLow: amount(form.estimatedLow),
+      estimatedMid: amount(form.estimatedMid),
+      estimatedHigh: amount(form.estimatedHigh),
+      laborCost: amount(form.laborCost),
+      materialsCost: amount(form.materialsCost),
+      permitsCost: amount(form.permitsCost),
+      contingency: amount(form.contingency),
+      aiReasoning: text(form.aiReasoning),
+    };
+  };
 
   const handleSubmit = () => {
-    const payload = buildPayload();
+    const payload = buildPayload(undefined);
 
     // Guard against persisting an empty estimate row: require at least a
     // project type or one cost figure.
@@ -239,7 +254,7 @@ export default function EstimateEditor() {
 
     setFormError("");
     if (isEdit) {
-      updateMut.mutate({ id: estimateId!, ...payload });
+      updateMut.mutate({ id: estimateId!, ...buildPayload(null) });
     } else {
       createMut.mutate(payload);
     }

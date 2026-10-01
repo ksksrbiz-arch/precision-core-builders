@@ -210,20 +210,52 @@ describe("Portfolio Router — admin happy paths", () => {
       Record<string, unknown>,
     ];
     expect(id).toBe(3);
-    // NOTE: `PortfolioInput.partial()` does not strip the `.default()` on
-    // `featured`/`published`/`sortOrder`, so those defaults are always injected
-    // into the update patch even when the caller omits them. This asserts the
-    // router's actual behaviour (a latent footgun: a title-only update silently
-    // resets featured/published to false).
+    // Only what the caller sent: Zod 4 applies `.default()` inside
+    // `.partial()`, which used to inject `featured: false, published: false`
+    // here and silently unpublish a live project on any edit.
     expect(patch).toEqual({
       title: "Renamed",
-      featured: false,
-      published: false,
       short_description: "Updated blurb",
       sort_order: 9,
     });
     expect("cover_image_url" in patch).toBe(false);
     expect("completion_year" in patch).toBe(false);
+  });
+
+  it("update can clear optional fields (and the gallery) with null", async () => {
+    await admin().portfolio.update({
+      id: 3,
+      clientTestimonial: null,
+      coverImageUrl: null,
+      galleryImageUrls: null,
+      squareFootage: null,
+      completionYear: null,
+    });
+    expect(updateMock.mock.calls[0][1]).toEqual({
+      client_testimonial: null,
+      cover_image_url: null,
+      gallery_image_urls: null,
+      square_footage: null,
+      completion_year: null,
+    });
+  });
+
+  it("an empty gallery array is stored as null, not the string '[]'", async () => {
+    await admin().portfolio.update({ id: 3, galleryImageUrls: [] });
+    expect(updateMock.mock.calls[0][1]).toEqual({ gallery_image_urls: null });
+  });
+
+  it("a title-only update never touches published/featured/sort_order", async () => {
+    await admin().portfolio.update({ id: 3, title: "Renamed" });
+    expect(updateMock.mock.calls[0][1]).toEqual({ title: "Renamed" });
+  });
+
+  it("update still lets the caller change published/featured explicitly", async () => {
+    await admin().portfolio.update({ id: 3, published: true, featured: true });
+    expect(updateMock.mock.calls[0][1]).toEqual({
+      published: true,
+      featured: true,
+    });
   });
 
   it("togglePublished forwards the published flag", async () => {

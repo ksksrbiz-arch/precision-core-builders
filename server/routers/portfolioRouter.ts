@@ -2,7 +2,11 @@ import { portfolioRepo } from "../_data/portfolioRepo";
 import { adminProcedure, publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
-const PortfolioInput = z.object({
+// No defaults in the shared shape: Zod 4 applies `.default()` inside
+// `.partial()`, so an update that didn't mention `published`/`featured` used to
+// write `published: false` — silently pulling a live project off the public
+// site on any edit. Defaults are applied to create only.
+const PortfolioFields = z.object({
   title: z.string().min(1).max(300),
   slug: z.string().min(1).max(300),
   category: z.string().max(100).optional(),
@@ -15,6 +19,12 @@ const PortfolioInput = z.object({
   galleryImageUrls: z.array(z.string().url()).optional(),
   clientTestimonial: z.string().optional(),
   clientName: z.string().max(200).optional(),
+  featured: z.boolean().optional(),
+  published: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+const PortfolioInput = PortfolioFields.extend({
   featured: z.boolean().optional().default(false),
   published: z.boolean().optional().default(false),
   sortOrder: z.number().int().optional().default(0),
@@ -59,9 +69,23 @@ export const portfolioRouter = router({
 
   update: adminProcedure
     .input(
+      // `undefined` = leave unchanged; `null` = clear (blanking a testimonial,
+      // cover image or gallery in the edit form must actually remove it).
       z
         .object({ id: z.number().int().positive() })
-        .merge(PortfolioInput.partial())
+        .merge(PortfolioFields.partial())
+        .extend({
+          category: z.string().max(100).nullable().optional(),
+          description: z.string().nullable().optional(),
+          shortDescription: z.string().max(500).nullable().optional(),
+          location: z.string().max(200).nullable().optional(),
+          completionYear: z.number().int().nullable().optional(),
+          squareFootage: z.number().int().positive().nullable().optional(),
+          coverImageUrl: z.string().url().nullable().optional(),
+          galleryImageUrls: z.array(z.string().url()).nullable().optional(),
+          clientTestimonial: z.string().nullable().optional(),
+          clientName: z.string().max(200).nullable().optional(),
+        })
     )
     .mutation(async ({ input }) => {
       const {
@@ -89,7 +113,10 @@ export const portfolioRouter = router({
           cover_image_url: coverImageUrl,
         }),
         ...(galleryImageUrls !== undefined && {
-          gallery_image_urls: JSON.stringify(galleryImageUrls),
+          gallery_image_urls:
+            galleryImageUrls && galleryImageUrls.length > 0
+              ? JSON.stringify(galleryImageUrls)
+              : null,
         }),
         ...(clientTestimonial !== undefined && {
           client_testimonial: clientTestimonial,

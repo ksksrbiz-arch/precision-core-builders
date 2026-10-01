@@ -16,7 +16,12 @@
 import type { LLMTool } from "../llm";
 import type { AiSurface } from "./router";
 import { computeEstimate } from "../../../shared/estimating";
-import { listProjects, getProjectById } from "../../_data/projectsRepo";
+import {
+  getCostAdjustmentTotals,
+  getProjectActualCost,
+  getProjectById,
+  listProjects,
+} from "../../_data/projectsRepo";
 import { listMaterials } from "../../_data/materialsRepo";
 import { listScheduleItems } from "../../_data/scheduleRepo";
 
@@ -114,11 +119,17 @@ const DEFS: Record<string, ToolDef> = {
       },
     },
     run: async args => {
-      const rows = await listProjects({
-        search: str(args.search, 100) || undefined,
-        status: str(args.status, 30) || undefined,
-        pageSize: MAX_ROWS,
-      } as Parameters<typeof listProjects>[0]);
+      const [rows, actualCosts] = await Promise.all([
+        listProjects({
+          search: str(args.search, 100) || undefined,
+          status: str(args.status, 30) || undefined,
+          pageSize: MAX_ROWS,
+        } as Parameters<typeof listProjects>[0]),
+        // Actual cost lives in the ledger (cost_adjustment entries). The
+        // `projects.actual_cost` column is no longer kept in sync, so reading
+        // it would report stale/zero spend to the model.
+        getCostAdjustmentTotals(),
+      ]);
       return {
         projects: rows.data
           .slice(0, MAX_ROWS)
@@ -127,8 +138,8 @@ const DEFS: Record<string, ToolDef> = {
             name: p.name,
             status: p.status,
             contracted_budget: p.contracted_budget,
-            actual_cost: p.actual_cost,
-            progress: p.progress,
+            actual_cost: actualCosts.get(p.id as number) ?? 0,
+            completion_percent: p.completion_percent,
           })),
       };
     },
@@ -149,17 +160,24 @@ const DEFS: Record<string, ToolDef> = {
     run: async args => {
       const id = num(args.projectId);
       if (!id) return { error: "projectId is required." };
-      const row = (await getProjectById(id)) as Record<string, unknown> | null;
+      // `getProjectById` uses `.single()`, which rejects when no row matches —
+      // report that as a normal "not found" instead of surfacing a DB error.
+      const row = (await getProjectById(id).catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
       if (!row) return { error: `No project with id ${id}.` };
       return {
         id: row.id,
         name: row.name,
         status: row.status,
+        estimated_budget: row.estimated_budget,
         contracted_budget: row.contracted_budget,
-        actual_cost: row.actual_cost,
-        progress: row.progress,
-        start_date: row.start_date,
-        target_end_date: row.target_end_date,
+        // Ledger-derived (see find_projects); the column on the row is stale.
+        actual_cost: await getProjectActualCost(id),
+        completion_percent: row.completion_percent,
+        estimated_start_date: row.estimated_start_date,
+        estimated_end_date: row.estimated_end_date,
       };
     },
   },

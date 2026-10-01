@@ -6,6 +6,19 @@
 
 ---
 
+## 🔎 ADMIN AUDIT FOLLOW-UPS (Oct 2026 — see `docs/ADMIN_AUDIT_2026-10.md` §4)
+
+Fixed in the audit PR; these remain **decisions or larger builds**, not bugs:
+
+- [ ] Retire the orphaned `admin-auth` shared-password endpoint (static non-expiring master token, no UI) — **needs Keith's call**
+- [ ] Price portal finish options server-side (finish catalog) — the client hard-codes dollar deltas and the server writes client-supplied `budgetImpact` into the immutable ledger
+- [ ] PO receipt UI with a received-quantity input ("partial" currently applies the full line); decide when PO cost counts toward actual cost
+- [ ] Paginate / search-as-you-type the project & client pickers (capped at 50–100 today)
+- [ ] Project archive (instead of delete) policy; schedule dependency lines + reorder UI
+- [ ] Route `vision-studio` through `routeAi()` / `specialistPrompt()`
+
+---
+
 ## 🤖 AUTONOMOUS AGENT QUEUE (dispatch-ready)
 
 **How to work this queue (for the Cline agent):** Take ONE item at a time, top-down. Create branch `bot/BOT-<n>-<short-slug>` from `main`, implement following existing codebase patterns, verify with `pnpm check` and `pnpm test` (both must pass: 0 TypeScript errors, no new `any` types), commit with conventional messages (`feat:`, `fix:`, `test:`), open a PR to `main` titled `BOT-<n>: <title>`, and check the box below inside that PR. If an item requires credentials or external services (n8n, Stripe live keys, vendor APIs, Netlify, Blueprint OAuth), STOP and report instead of stubbing secrets. Mobile-first, match the "Quiet Luxury" design system, keep WCAG AA.

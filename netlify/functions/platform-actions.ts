@@ -396,43 +396,50 @@ const clearDemoData: ActionHandler = async () => {
     ...new Set(projects.map(p => p.client_id).filter(Boolean)),
   ];
 
-  // Delete in order (respecting foreign keys)
-  const { error: fieldReportsDeleteErr } = await supabase
-    .from("field_reports")
-    .delete()
-    .in("project_id", projectIds);
-  throwIfActionError(
-    "clear-demo-data",
-    "field report cleanup",
-    fieldReportsDeleteErr
-  );
-  const { error: materialsDeleteErr } = await supabase
-    .from("materials")
-    .delete()
-    .in("project_id", projectIds);
-  throwIfActionError(
-    "clear-demo-data",
-    "materials cleanup",
-    materialsDeleteErr
-  );
-  const { error: billingDeleteErr } = await supabase
-    .from("billing_events")
-    .delete()
-    .in("project_id", projectIds);
-  throwIfActionError("clear-demo-data", "billing cleanup", billingDeleteErr);
+  // Delete children first. `estimates.project_id` and `site_plans.project_id`
+  // are ON DELETE SET NULL, so deleting only the project would leave orphaned
+  // demo estimates/plans behind (and a re-seed would then pile up duplicates).
+  // Cascading tables (schedule_items, ledger_entries, purchase_orders, …) are
+  // cleaned by their foreign keys when the project row goes.
+  const childDeletes: Array<[string, string]> = [
+    ["field_reports", "field report cleanup"],
+    ["materials", "materials cleanup"],
+    ["estimates", "estimates cleanup"],
+    ["site_plans", "site plans cleanup"],
+    ["billing_events", "billing cleanup"],
+  ];
+  for (const [table, label] of childDeletes) {
+    const { error: childErr } = await supabase
+      .from(table)
+      .delete()
+      .in("project_id", projectIds);
+    throwIfActionError("clear-demo-data", label, childErr);
+  }
   const { error: projectsDeleteErr } = await supabase
     .from("projects")
     .delete()
     .in("id", projectIds);
   throwIfActionError("clear-demo-data", "project cleanup", projectsDeleteErr);
 
-  // Delete demo clients
-  if (clientIds.length > 0) {
+  // Delete the demo clients — but ONLY those left with no projects. A client
+  // can own a real project too (projects.client_id is ON DELETE RESTRICT), and
+  // a blanket delete would either fail midway after the projects were already
+  // gone, or remove a real client record.
+  let clientsDeleted = 0;
+  for (const clientId of clientIds) {
+    const { count, error: remainingErr } = await supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", clientId);
+    throwIfActionError("clear-demo-data", "client project check", remainingErr);
+    if ((count ?? 0) > 0) continue;
+
     const { error: clientsDeleteErr } = await supabase
       .from("clients")
       .delete()
-      .in("id", clientIds);
+      .eq("id", clientId);
     throwIfActionError("clear-demo-data", "client cleanup", clientsDeleteErr);
+    clientsDeleted += 1;
   }
 
   return {
@@ -440,7 +447,7 @@ const clearDemoData: ActionHandler = async () => {
     message: `Cleared ${projects.length} demo project(s) and related data`,
     data: {
       projectsDeleted: projects.length,
-      clientsDeleted: clientIds.length,
+      clientsDeleted,
     },
   };
 };
@@ -452,10 +459,13 @@ const checkDatabaseIntegrity: ActionHandler = async () => {
 
   const checks: Record<string, TableCheckResult> = {};
   const tables = [
-    "profiles",
+    "users",
     "projects",
     "clients",
     "field_reports",
+    "schedule_items",
+    "ledger_entries",
+    "estimates",
     "materials",
     "billing_events",
     "sub_contractors",
@@ -608,49 +618,87 @@ const getPlatformStats: ActionHandler = async () => {
   };
 };
 
-// ─── Action: Create Admin Profile ────────────────────────────────────────────
+// ─── Action: Create Admin ────────────────────────────────────────────────────
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Grant admin to an email address.
+ *
+ * Admin identity in this app is `public.users.role` (resolved by verifyToken),
+ * seeded from the `admin_emails` allowlist by the `handle_new_admin_user`
+ * trigger and by `auth-sync-role`. The previous implementation inserted
+ * `{ email, full_name, role }` into `profiles`, a table that only has
+ * (id, display_name, created_at) — so it always failed, and even a successful
+ * write there would never have made anyone an admin.
+ */
 const createAdminProfile: ActionHandler = async params => {
   const supabase = getSupabase();
 
-  const email = params?.email as string;
-  const fullName = params?.fullName as string;
-
+  const email = String(params?.email ?? "")
+    .trim()
+    .toLowerCase();
   if (!email) throw new Error("Email is required");
+  if (!EMAIL_RE.test(email)) throw new Error("Email is not valid");
 
-  // Check if profile exists
+  // 1. Allowlist the address so the trigger / auth-sync-role grant admin on
+  //    (confirmed) sign-in. Idempotent: an existing entry is left as-is.
+  const { error: allowErr } = await supabase
+    .from("admin_emails")
+    .upsert(
+      { email, added_by: "setup-wizard" },
+      { onConflict: "email", ignoreDuplicates: true }
+    );
+  throwIfActionError("create-admin", "allowlist insert", allowErr);
+
+  // 2. If the person has already signed up, promote their existing row too —
+  //    the allowlist alone only applies at their next sign-in.
   const { data: existing, error: existingErr } = await supabase
-    .from("profiles")
-    .select("id")
+    .from("users")
+    .select("id, role")
     .eq("email", email)
     .limit(1);
-  throwIfActionError("create-admin", "profile lookup", existingErr);
+  throwIfActionError("create-admin", "user lookup", existingErr);
 
-  if (existing && existing.length > 0) {
+  const user = existing?.[0];
+  if (!user) {
     return {
       success: true,
-      message: `Profile already exists for ${email}`,
-      data: { profileId: existing[0].id, alreadyExists: true },
+      message: `${email} is allowlisted as admin; access is granted when they first sign in.`,
+      data: { email, allowlisted: true, promoted: false },
     };
   }
 
-  // Create profile
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .insert({
-      email,
-      full_name: fullName || "Admin User",
-      role: "admin",
-    })
-    .select()
-    .single();
+  if (user.role !== "admin") {
+    const { error: promoteErr } = await supabase
+      .from("users")
+      .update({ role: "admin", updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+    throwIfActionError("create-admin", "role promotion", promoteErr);
+  }
 
-  if (error) throw new Error(`Failed to create profile: ${error.message}`);
+  // Mirror to app_metadata (service-role-only) so the JWT carries the role even
+  // when the profile read fails. Best-effort: the users row is authoritative.
+  try {
+    await supabase.auth.admin.updateUserById(user.id, {
+      app_metadata: { role: "admin" },
+    });
+  } catch (metaErr) {
+    console.warn(
+      "[platform-actions] create-admin metadata sync failed",
+      metaErr
+    );
+  }
 
   return {
     success: true,
-    message: `Admin profile created for ${email}`,
-    data: { profileId: profile.id },
+    message: `${email} is now an admin.`,
+    data: {
+      email,
+      userId: user.id,
+      allowlisted: true,
+      promoted: user.role !== "admin",
+    },
   };
 };
 

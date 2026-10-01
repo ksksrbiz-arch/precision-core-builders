@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { useToast } from "@/components/ToastProvider";
 import { trpc } from "@/lib/trpc";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -31,6 +32,7 @@ import {
   ShieldAlert,
   Sparkles,
   Wrench,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation, useParams } from "wouter";
@@ -123,6 +125,18 @@ export default function FieldReportDetail() {
         utils.fieldReports.getById.invalidate({ id: reportId });
         utils.fieldReports.list.invalidate();
       },
+    }
+  );
+
+  const deleteMut = useMutationWithToast(
+    trpc.fieldReports.delete.useMutation(),
+    {
+      success: "Report Deleted",
+      successMessage: "Field report removed.",
+      error: "Delete Failed",
+      errorMessage: "Failed to delete report. Please try again.",
+      invalidate: () => utils.fieldReports.list.invalidate(),
+      onSuccess: () => setLocation("/admin/field-reports"),
     }
   );
 
@@ -306,32 +320,56 @@ export default function FieldReportDetail() {
             )}
           </p>
 
-          <button
-            onClick={() => {
-              if (isPublished) {
-                unpublishMut.mutate({ id: reportId });
-              } else {
-                publishMut.mutate({ id: reportId });
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ConfirmDelete
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Delete field report"
+                  title="Delete field report"
+                  disabled={deleteMut.isPending}
+                  className="flex items-center gap-2 px-3 py-2 border border-destructive/40 text-destructive text-[11px] font-bold tracking-widest uppercase hover:bg-destructive/10 disabled:opacity-50 transition-colors"
+                  style={{ fontFamily: "var(--font-condensed)" }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </button>
               }
-            }}
-            disabled={publishMut.isPending || unpublishMut.isPending}
-            className={`flex items-center gap-2 px-4 py-2 text-[11px] font-bold tracking-widest uppercase transition-colors flex-shrink-0 ${
-              isPublished
-                ? "border border-border/60 text-muted-foreground hover:border-primary/40"
-                : "bg-primary text-primary-foreground hover:bg-primary/85"
-            } disabled:opacity-50`}
-            style={{ fontFamily: "var(--font-condensed)" }}
-          >
-            {isPublished ? (
-              <>
-                <EyeOff className="h-3.5 w-3.5" /> Unpublish
-              </>
-            ) : (
-              <>
-                <Eye className="h-3.5 w-3.5" /> Publish to Client
-              </>
-            )}
-          </button>
+              title="Delete this field report?"
+              description={
+                isPublished
+                  ? "This permanently removes the report AND takes it off the client's portal. This can't be undone."
+                  : "This permanently removes the draft report. This can't be undone."
+              }
+              confirmLabel="Delete report"
+              onConfirm={() => deleteMut.mutate({ id: reportId })}
+            />
+            <button
+              onClick={() => {
+                if (isPublished) {
+                  unpublishMut.mutate({ id: reportId });
+                } else {
+                  publishMut.mutate({ id: reportId });
+                }
+              }}
+              disabled={publishMut.isPending || unpublishMut.isPending}
+              className={`flex items-center gap-2 px-4 py-2 text-[11px] font-bold tracking-widest uppercase transition-colors flex-shrink-0 ${
+                isPublished
+                  ? "border border-border/60 text-muted-foreground hover:border-primary/40"
+                  : "bg-primary text-primary-foreground hover:bg-primary/85"
+              } disabled:opacity-50`}
+              style={{ fontFamily: "var(--font-condensed)" }}
+            >
+              {isPublished ? (
+                <>
+                  <EyeOff className="h-3.5 w-3.5" /> Unpublish
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3.5 w-3.5" /> Publish to Client
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Summary */}

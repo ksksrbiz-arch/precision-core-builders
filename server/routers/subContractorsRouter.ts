@@ -56,18 +56,19 @@ export const subContractorsRouter = router({
 
   update: adminProcedure
     .input(
+      // `undefined` = leave unchanged; `null` = clear the column.
       z.object({
         id: z.number().int().positive(),
         name: z.string().min(1).max(200).optional(),
-        company: z.string().max(200).optional(),
-        email: z.string().email().optional(),
-        phone: z.string().max(20).optional(),
-        trade: z.string().max(100).optional(),
-        licenseNumber: z.string().max(100).optional(),
-        insuranceExpiry: z.string().datetime().optional(),
-        rating: z.number().int().min(1).max(5).optional(),
+        company: z.string().max(200).nullable().optional(),
+        email: z.string().email().max(320).nullable().optional(),
+        phone: z.string().max(20).nullable().optional(),
+        trade: z.string().max(100).nullable().optional(),
+        licenseNumber: z.string().max(100).nullable().optional(),
+        insuranceExpiry: z.string().datetime().nullable().optional(),
+        rating: z.number().int().min(1).max(5).nullable().optional(),
         isActive: z.boolean().optional(),
-        notes: z.string().optional(),
+        notes: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ input }) => {

@@ -34,23 +34,48 @@ const TaskStatusEnum = z.enum([
   "deferred",
 ]);
 
-const ScheduleItemInput = z.object({
+/**
+ * Fields shared by create and update — no defaults (see projectsRouter for why:
+ * Zod 4 applies `.default()` inside `.partial()`, which made every Gantt drag
+ * or modal save reset the task to status "pending", type "other", not
+ * weather-sensitive and sort order 0).
+ */
+const ScheduleItemFields = z.object({
   projectId: z.number().int().positive(),
   parentId: z.number().int().positive().optional(),
   title: z.string().min(1).max(300),
   description: z.string().optional(),
-  taskType: TaskTypeEnum.optional().default("other"),
-  status: TaskStatusEnum.optional().default("pending"),
-  isOutdoor: z.boolean().optional().default(false),
-  weatherSensitive: z.boolean().optional().default(false),
+  taskType: TaskTypeEnum.optional(),
+  status: TaskStatusEnum.optional(),
+  isOutdoor: z.boolean().optional(),
+  weatherSensitive: z.boolean().optional(),
   plannedStart: z.string().datetime().optional(),
   plannedEnd: z.string().datetime().optional(),
   durationDays: z.number().int().positive().optional(),
   dependsOn: z.string().optional(),
-  sortOrder: z.number().int().optional().default(0),
+  sortOrder: z.number().int().optional(),
   assignedTo: z.string().optional(),
   notes: z.string().optional(),
 });
+
+const ScheduleItemInput = ScheduleItemFields.extend({
+  taskType: TaskTypeEnum.optional().default("other"),
+  status: TaskStatusEnum.optional().default("pending"),
+  isOutdoor: z.boolean().optional().default(false),
+  weatherSensitive: z.boolean().optional().default(false),
+  sortOrder: z.number().int().optional().default(0),
+});
+
+/** Update: `undefined` = unchanged; `null` clears a free-text/optional field. */
+const ScheduleItemUpdateInput = z
+  .object({ id: z.number().int().positive() })
+  .merge(ScheduleItemFields.partial().omit({ projectId: true }))
+  .extend({
+    description: z.string().nullable().optional(),
+    dependsOn: z.string().nullable().optional(),
+    assignedTo: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+  });
 
 export const scheduleRouter = router({
   list: protectedProcedure
@@ -84,11 +109,7 @@ export const scheduleRouter = router({
     }),
 
   update: adminProcedure
-    .input(
-      z
-        .object({ id: z.number().int().positive() })
-        .merge(ScheduleItemInput.partial().omit({ projectId: true }))
-    )
+    .input(ScheduleItemUpdateInput)
     .mutation(async ({ input }) => {
       const {
         id,

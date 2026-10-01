@@ -118,6 +118,9 @@ Authentication is handled by **Supabase Auth** (JWT-based). Auth verification is
 - Eric is `role = 'admin'`; clients are `role = 'user'`
 - Supabase Auth handles signup, login, password reset, and sessions
 - Admin role is resolved via the `users.role` column and the `admin_emails` allowlist
+- `verifyToken` trusts only `users.role` / `app_metadata.role` (service-role-written). **`user_metadata` is user-writable and is never consulted for a role.** An `admin` role also requires a confirmed email (`email_confirmed_at`), so an unconfirmed sign-up on an allowlisted address can never act as admin
+- Portal access control: any `protectedProcedure` taking a `projectId` calls `assertProjectAccess` (`server/_core/access.ts`); admin-only data uses `adminProcedure`
+- Sessions without a `users` row (the shared admin token → id `admin`, the local dev bypass) have non-UUID ids; write author/actor columns through `authorUuid()` (`server/_core/identity.ts`)
 - Access control enforced via tRPC middleware (`protectedProcedure` / `adminProcedure`) against the Supabase JWT
 
 ### 3.3. Database

@@ -12,6 +12,15 @@ export function PageTransition({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const reduce = useReducedMotion();
 
+  // A transformed page creates a containing block for fixed navigation.
+  // Public pages should remain readable without a page-wide lift.
+  const privateRoute = /^\/(admin|portal|auth|onboarding|dev-login)(\/|$)/.test(
+    location
+  );
+  if (!privateRoute) {
+    return <div className="marketing-site">{children}</div>;
+  }
+
   if (reduce) {
     return <>{children}</>;
   }

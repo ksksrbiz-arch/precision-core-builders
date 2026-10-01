@@ -5,6 +5,7 @@
  */
 import { sitePlansRepo } from "../_data/sitePlansRepo";
 import { adminProcedure, router } from "../_core/trpc";
+import { authorUuid } from "../_core/identity";
 import { z } from "zod";
 
 export const sitePlansRouter = router({
@@ -41,7 +42,7 @@ export const sitePlansRouter = router({
       return sitePlansRepo.create({
         name: input.name,
         project_id: input.projectId ?? null,
-        author_id: ctx.user!.id,
+        author_id: authorUuid(ctx.user),
         elements: input.elements,
         app_state: input.appState,
         thumbnail_data_url: input.thumbnailDataUrl ?? null,

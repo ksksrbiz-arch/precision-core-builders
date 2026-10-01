@@ -144,6 +144,43 @@ describe("Blueprint Router — authorization", () => {
     expect(res.url).toContain("pcb_project=42");
     expect(res.url).toContain("utm_source=precision-core-builders");
   });
+
+  it("buildDeepLink keeps relative paths on the Blueprint host", async () => {
+    const caller = appRouter.createCaller(ctx("u1", "user"));
+    const res = await caller.blueprint.buildDeepLink({ path: "/plans/7" });
+    expect(new URL(res.url).origin).toBe("https://blueprint.am");
+    expect(new URL(res.url).pathname).toBe("/plans/7");
+  });
+
+  it.each([
+    "//evil.example/phish",
+    "https://evil.example/",
+    "\\\\evil.example",
+  ])(
+    "buildDeepLink refuses a path that escapes the Blueprint origin (%s)",
+    async path => {
+      const caller = appRouter.createCaller(ctx("u1", "user"));
+      await expect(caller.blueprint.buildDeepLink({ path })).rejects.toThrow(
+        /Blueprint host/i
+      );
+    }
+  );
+
+  it("listArtifacts refuses a client reading a project they do not own", async () => {
+    // The shared db mock returns no project row, so ownership cannot be
+    // established -> FORBIDDEN rather than leaking another project's artifacts.
+    const caller = appRouter.createCaller(ctx("u1", "user"));
+    await expect(
+      caller.blueprint.listArtifacts({ projectId: 5 })
+    ).rejects.toThrow(/do not have access/i);
+  });
+
+  it("listArtifacts lets an admin read any project", async () => {
+    const caller = appRouter.createCaller(ctx("admin-1", "admin"));
+    await expect(
+      caller.blueprint.listArtifacts({ projectId: 5 })
+    ).resolves.toEqual([]);
+  });
 });
 
 describe("Blueprint Router — input validation", () => {

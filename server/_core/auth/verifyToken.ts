@@ -15,6 +15,7 @@
  * context treats any failure as an anonymous (public) request, while Netlify
  * function guards return the supplied status code.
  */
+import { createHash, timingSafeEqual } from "node:crypto";
 import { getSupabaseAdmin } from "../supabase";
 
 export type VerifiedRole = "admin" | "user";
@@ -49,14 +50,29 @@ export function extractBearer(
   return token || null;
 }
 
+/**
+ * Constant-time token comparison. Both sides are hashed first so the check
+ * neither leaks the secret's length nor short-circuits on the first differing
+ * byte.
+ */
+function safeTokenEqual(a: string, b: string): boolean {
+  const ha = createHash("sha256").update(a, "utf8").digest();
+  const hb = createHash("sha256").update(b, "utf8").digest();
+  return timingSafeEqual(ha, hb);
+}
+
+/**
+ * Fallback role resolution used only when the `public.users` row is missing or
+ * unreadable. ONLY `app_metadata` is trusted: it can be written solely by the
+ * service role (see `auth-sync-role`). `user_metadata` is writable by the end
+ * user themselves (`supabase.auth.updateUser({ data: { role: "admin" } })` or
+ * `signInWithOtp({ options: { data } })` with the public anon key), so honouring
+ * it here would let anyone self-promote to admin.
+ */
 function resolveMetadataRole(u: {
   app_metadata?: Record<string, unknown> | null;
-  user_metadata?: Record<string, unknown> | null;
 }): VerifiedRole {
-  const role =
-    (u.app_metadata?.role as VerifiedRole | undefined) ??
-    (u.user_metadata?.role as VerifiedRole | undefined);
-  return role === "admin" ? "admin" : "user";
+  return u.app_metadata?.role === "admin" ? "admin" : "user";
 }
 
 /**
@@ -74,7 +90,7 @@ export async function verifyToken(token: string | null): Promise<VerifyResult> {
 
   // 1. Opaque admin session token — no Supabase round-trip required.
   const adminSessionToken = process.env.ADMIN_SESSION_TOKEN ?? null;
-  if (adminSessionToken && token === adminSessionToken) {
+  if (adminSessionToken && safeTokenEqual(token, adminSessionToken)) {
     return {
       ok: true,
       user: {
@@ -139,6 +155,10 @@ export async function verifyToken(token: string | null): Promise<VerifyResult> {
     }
 
     const u = data.user;
+    // An admin grant (public.users row or app_metadata) is keyed on the account
+    // email. An address that was never confirmed could have been claimed by
+    // anyone at sign-up, so it must never carry admin privileges.
+    const emailConfirmed = Boolean(u.email_confirmed_at ?? u.confirmed_at);
     let role: VerifiedRole = "user";
     try {
       const { data: profile, error: profileErr } = await admin
@@ -157,6 +177,8 @@ export async function verifyToken(token: string | null): Promise<VerifyResult> {
     } catch {
       role = resolveMetadataRole(u);
     }
+
+    if (role === "admin" && !emailConfirmed) role = "user";
 
     return {
       ok: true,

@@ -137,6 +137,7 @@ describe("auth-sync-role function", () => {
         user: {
           id: "user-eric",
           email: "ErictAdlock@PrecisionCoreBuilders.com",
+          email_confirmed_at: "2026-01-01T00:00:00Z",
           user_metadata: { name: "Eric Tadlock" },
         },
       },
@@ -171,6 +172,7 @@ describe("auth-sync-role function", () => {
         user: {
           id: "user-skdev",
           email: "skdev@1commerce.online",
+          email_confirmed_at: "2026-01-01T00:00:00Z",
           user_metadata: {},
         },
       },
@@ -192,6 +194,7 @@ describe("auth-sync-role function", () => {
         user: {
           id: "user-eric-alt",
           email: "eric@precisioncorebuilders.com",
+          email_confirmed_at: "2026-01-01T00:00:00Z",
           user_metadata: {},
         },
       },
@@ -213,6 +216,7 @@ describe("auth-sync-role function", () => {
         user: {
           id: "user-client",
           email: "client@example.com",
+          email_confirmed_at: "2026-01-01T00:00:00Z",
           user_metadata: {},
         },
       },
@@ -236,6 +240,7 @@ describe("auth-sync-role function", () => {
         user: {
           id: "user-legacy-admin",
           email: "legacy@example.com",
+          email_confirmed_at: "2026-01-01T00:00:00Z",
           user_metadata: {},
         },
       },
@@ -264,6 +269,7 @@ describe("auth-sync-role function", () => {
         user: {
           id: "user-extra",
           email: "other@example.com",
+          email_confirmed_at: "2026-01-01T00:00:00Z",
           user_metadata: {},
         },
       },
@@ -278,6 +284,30 @@ describe("auth-sync-role function", () => {
 
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body as string).role).toBe("admin");
+  });
+
+  it("does not promote an allowlisted email that was never confirmed", async () => {
+    getUserMock.mockResolvedValue({
+      data: {
+        user: {
+          id: "user-squatter",
+          email: "eric@precisioncorebuilders.com",
+          email_confirmed_at: null,
+          user_metadata: { role: "admin" },
+        },
+      },
+      error: null,
+    });
+
+    const handler = await loadHandler();
+    const res = await handler(
+      mockEvent("POST", { authorization: "Bearer good" }) as any,
+      {} as any
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body as string).role).toBe("user");
+    expect(upsertMock.mock.calls[0][0].role).toBe("user");
   });
 
   it("returns 400 when the authenticated user has no email", async () => {
@@ -300,6 +330,7 @@ describe("auth-sync-role function", () => {
         user: {
           id: "user-eric",
           email: "skdev@1commerce.online",
+          email_confirmed_at: "2026-01-01T00:00:00Z",
           user_metadata: {},
         },
       },

@@ -1,5 +1,6 @@
 import { ENV } from "../../server/_core/env";
 import { withGuards } from "./_lib/http";
+import { redactDollarFigures } from "./_lib/moneyGuard";
 
 /**
  * Vision Studio — AI photo analysis endpoint.
@@ -26,7 +27,8 @@ You analyze construction site images with expert-level precision. Your capabilit
 - **Quality Grading**: Rate workmanship quality on a 1-10 scale with justification
 
 Always respond with structured, actionable insights. Be specific about locations within the image.
-When possible, reference Oregon building codes and best practices.
+Hard limits: never state a price, cost, rate or dollar figure (pricing is calculated elsewhere); never invent measurements or quantities you cannot see; never assert an Oregon/Lane County code or permit requirement as fact — mark it VERIFY with the inspector or on site.
+Label each material conclusion KNOWN (clearly visible), INFERRED (reasonable reading, say so) or VERIFY (cannot be determined from the photo).
 Format your response as clear sections with headers.`;
 
 type AnalysisMode =
@@ -54,14 +56,18 @@ const MODE_PROMPTS: Record<AnalysisMode, string> = {
   general:
     "Provide a comprehensive analysis of this construction photo. Cover progress, materials, quality, and any notable observations.",
   estimate:
-    "Based on this construction photo, provide rough cost estimates for the visible work. Include material costs and labor estimates where possible. Note this is for ballpark planning only.",
+    "Based on this construction photo, produce a scope-of-work takeoff: list each visible work item and trade, the scope questions that change cost, and what must be measured or confirmed on site. Do NOT state any prices, costs, rates or dollar amounts — the estimating engine prices the work from the reviewed cost basis.",
 };
+
+/** ~7 MB decoded: base64 is 4/3 the size of the bytes it encodes. */
+const MAX_IMAGE_BASE64_CHARS = 9_500_000;
 
 export const handler = withGuards(
   {
     methods: ["POST"],
-    // Vision analysis requires authentication — it processes private site photos.
-    auth: "user",
+    // Vision analysis is an internal admin tool (it processes private site
+    // photos and spends paid-model credits) — admin only.
+    auth: "admin",
     // Rate limit: 15 analyses per hour per authenticated user.
     rateLimit: {
       key: ({ user }) => `vision:${user?.id}`,
@@ -89,6 +95,14 @@ export const handler = withGuards(
           400,
           "No image provided. Send base64-encoded image data in the 'image' field."
         );
+      }
+
+      // Bound the payload before it is forwarded to a paid vision model.
+      if (image.length > MAX_IMAGE_BASE64_CHARS) {
+        return error(413, "Image is too large (max ~7 MB).");
+      }
+      if (customPrompt !== undefined && customPrompt.length > 2000) {
+        return error(400, "customPrompt is too long (max 2,000 characters).");
       }
 
       if (!SUPPORTED_MEDIA_TYPES.includes(mediaType as SupportedMediaType)) {
@@ -168,10 +182,16 @@ export const handler = withGuards(
         );
       }
 
-      const analysisText = openrouterData.choices?.[0]?.message?.content ?? "";
+      // Deterministic output guard: a model must never originate a dollar
+      // figure, whatever the prompt (or a custom prompt) asked for.
+      const guarded = redactDollarFigures(
+        openrouterData.choices?.[0]?.message?.content ?? ""
+      );
+      const analysisText = guarded.text;
 
       return json(200, {
         analysis: analysisText,
+        ...(guarded.redacted > 0 && { redactedAmounts: guarded.redacted }),
         mode,
         model: openrouterData.model ?? openrouterModel,
         usage: openrouterData.usage

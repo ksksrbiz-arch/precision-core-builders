@@ -196,6 +196,35 @@ describe("SubContractors Router — create + update", () => {
     expect(createMock).toHaveBeenCalledWith(input);
   });
 
+  it("update can clear optional fields with null (email, insurance, rating…)", async () => {
+    await admin().subContractors.update({
+      id: 3,
+      email: null,
+      company: null,
+      licenseNumber: null,
+      insuranceExpiry: null,
+      rating: null,
+      notes: null,
+    });
+    expect(updateMock.mock.calls[0][1]).toEqual({
+      email: null,
+      company: null,
+      license_number: null,
+      insurance_expiry: null,
+      rating: null,
+      notes: null,
+    });
+  });
+
+  it("update still rejects a null name and an out-of-range rating", async () => {
+    await expect(
+      admin().subContractors.update({ id: 3, name: null } as any)
+    ).rejects.toThrow();
+    await expect(
+      admin().subContractors.update({ id: 3, rating: 6 })
+    ).rejects.toThrow();
+  });
+
   it("maps multi-word camelCase fields to snake_case on update", async () => {
     await admin().subContractors.update({
       id: 3,

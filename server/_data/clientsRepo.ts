@@ -89,6 +89,16 @@ export async function updateClient(
   );
 }
 
+/** Number of projects still owned by a client (projects.client_id is RESTRICT). */
+export async function countClientProjects(id: number): Promise<number> {
+  const { count, error } = await data
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", id);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 export async function deleteClient(id: number) {
   return unwrapVoid(await data.from("clients").delete().eq("id", id));
 }

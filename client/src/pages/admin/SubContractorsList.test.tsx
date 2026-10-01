@@ -2,13 +2,22 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 const queryState: { data: unknown; isLoading: boolean; isError: boolean } = {
   data: undefined,
   isLoading: true,
   isError: false,
 };
+
+const createMutateAsync = vi.fn(async (_input: unknown) => ({ id: 9 }));
+const updateMutateAsync = vi.fn(async (_input: unknown) => ({ id: 1 }));
 
 window.matchMedia =
   window.matchMedia ||
@@ -69,7 +78,12 @@ vi.mock("@/lib/trpc", () => {
               }),
               useMutation: () => ({
                 mutate: vi.fn(),
-                mutateAsync: vi.fn(),
+                mutateAsync:
+                  routerName === "subContractors" && procName === "create"
+                    ? createMutateAsync
+                    : routerName === "subContractors" && procName === "update"
+                      ? updateMutateAsync
+                      : vi.fn(),
                 isPending: false,
               }),
             };
@@ -164,5 +178,83 @@ describe("SubContractorsList briefing dialog", () => {
     );
     expect(submit).toBeDefined();
     expect(submit?.disabled).toBe(true);
+  });
+});
+
+describe("SubContractorsList create/edit", () => {
+  const row = {
+    id: 1,
+    name: "Apex Framing",
+    company: "Apex LLC",
+    trade: "framing",
+    phone: "541-555-0111",
+    email: "apex@example.com",
+    license_number: "CCB 123456",
+    insurance_expiry: "2020-01-01T00:00:00",
+    rating: 3,
+    is_active: true,
+    notes: "Reliable",
+  };
+
+  function renderList() {
+    queryState.data = [row];
+    queryState.isLoading = false;
+    queryState.isError = false;
+    return loadPage().then(Page => render(<Page />));
+  }
+
+  it("creates a sub without an email — a blank email is omitted, not sent as ''", async () => {
+    // `z.string().email()` rejects "", so every sub without an email used to fail
+    // to save even though only the name is marked required.
+    createMutateAsync.mockClear();
+    await renderList();
+    fireEvent.click(screen.getByRole("button", { name: /add sub/i }));
+    const nameInput = document.querySelector(
+      'input[type="text"]'
+    ) as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "New Sub" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
+    const sent = createMutateAsync.mock.calls[0][0] as Record<string, unknown>;
+    expect(sent.name).toBe("New Sub");
+    expect(sent.email).toBeUndefined();
+    expect(sent.company).toBeUndefined();
+  });
+
+  it("edits an existing sub and sends null for cleared fields", async () => {
+    updateMutateAsync.mockClear();
+    await renderList();
+    fireEvent.click(screen.getByRole("button", { name: "Edit Apex Framing" }));
+    expect(screen.getByText("Edit Sub-Contractor")).toBeTruthy();
+
+    fireEvent.change(screen.getByDisplayValue("apex@example.com"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByDisplayValue("Reliable"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("Rating"), {
+      target: { value: "5" },
+    });
+    fireEvent.click(screen.getByLabelText(/active — available/i));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(updateMutateAsync).toHaveBeenCalledTimes(1));
+    expect(updateMutateAsync.mock.calls[0][0]).toMatchObject({
+      id: 1,
+      name: "Apex Framing",
+      email: null,
+      notes: null,
+      company: "Apex LLC",
+      trade: "framing",
+      rating: 5,
+      isActive: false,
+    });
+  });
+
+  it("flags an expired insurance certificate on the card", async () => {
+    await renderList();
+    expect(screen.getByText(/insurance expired/i)).toBeTruthy();
   });
 });

@@ -22,12 +22,7 @@ import {
   validateBasis,
   ESTIMATING_BASIS,
 } from "../../shared/estimating";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitHeaders,
-} from "./_utils/rateLimiter";
-import { verifyAuth } from "./_utils/authGuard";
+import { checkRateLimit, rateLimitHeaders } from "./_utils/rateLimiter";
 import { withGuards } from "./_lib/http";
 import { PROMPTS } from "./_lib/llm/prompts";
 import { routeAi } from "../../server/_core/ai/router";
@@ -44,8 +39,11 @@ const estimateRequestSchema = z.object({
   materials: z.array(z.string().trim().max(100)).max(30).optional(),
   location: z.string().trim().max(200).optional(),
   additionalNotes: z.string().trim().max(2_000).optional(),
-  projectId: z.string().uuid().optional(),
-  clientId: z.string().uuid().optional(),
+  // estimates.project_id / client_id are integer FKs (serial ids). These used to
+  // be validated as UUIDs, so any persist attempt failed at the database and the
+  // error was swallowed. Only an authenticated admin may persist (see below).
+  projectId: z.coerce.number().int().positive().optional(),
+  clientId: z.coerce.number().int().positive().optional(),
 });
 
 /**
@@ -119,20 +117,11 @@ function reasoningViolations(
 
 export const handler = withGuards(
   { methods: ["POST"], auth: "admin" },
-  async ({ event, json, error }) => {
-    // Rate limit: 10 req/min anonymous, 30 req/min authenticated.
-    const ip = getClientIp(event.headers);
-    let limitKey = `estimate-anon:${ip}`;
-    let maxRequests = 10;
-
-    const authHeader = event.headers["authorization"];
-    if (authHeader?.startsWith("Bearer ")) {
-      const authResult = await verifyAuth(event.headers);
-      if (authResult.ok) {
-        limitKey = `estimate-user:${authResult.user.id}`;
-        maxRequests = 30;
-      }
-    }
+  async ({ event, json, error, user }) => {
+    // The guard above only lets a verified admin through, so `user` is set.
+    // Rate limit: 30 req/min per signed-in user.
+    const limitKey = `estimate-user:${user!.id}`;
+    const maxRequests = 30;
 
     const rl = checkRateLimit(limitKey, { maxRequests, windowMs: 60_000 });
     if (!rl.allowed) {
@@ -284,10 +273,12 @@ export const handler = withGuards(
       }
 
       // ── 4. Persist ──────────────────────────────────────────────────────
+      // Writing a row through the service-role client is an admin action; the
+      // handler is admin-only (see withGuards above), so reaching here is enough.
       let savedEstimate = null;
       const db = getSupabaseAdmin();
       if (db && (projectId || clientId)) {
-        const { data } = await db
+        const { data, error: insertError } = await db
           .from("estimates")
           .insert({
             project_id: projectId,
@@ -312,6 +303,9 @@ export const handler = withGuards(
           })
           .select()
           .single();
+        if (insertError) {
+          console.error("[estimate-project] persist failed:", insertError);
+        }
         savedEstimate = data;
       }
 

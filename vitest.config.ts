@@ -34,6 +34,9 @@ export default defineConfig({
       // All Netlify function tests — one glob so new suites (e.g.
       // rate-limiter, admin-auth) run without having to be registered here.
       "netlify/functions/__tests__/**/*.test.ts",
+      // Core client modules (validation, auth/mutation hooks). This glob was
+      // missing, so client/src/_core/validation.test.ts never ran in CI.
+      "client/src/_core/**/*.test.{ts,tsx}",
       "client/src/components/**/*.test.{ts,tsx}",
       "client/src/pages/**/*.test.{ts,tsx}",
       "client/src/lib/**/*.test.ts",

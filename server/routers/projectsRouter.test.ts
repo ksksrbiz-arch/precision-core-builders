@@ -137,6 +137,70 @@ describe("Projects Router — repo delegation", () => {
     expect(patch).toMatchObject({ name: "Renamed", client_id: 3 });
   });
 
+  it("update never injects create-time defaults (status/state/portal flag)", async () => {
+    // Zod 4 applies `.default()` inside `.partial()`: a rename used to write
+    // status "lead", state "OR" and client_portal_enabled true.
+    await admin().projects.update({ id: 8, name: "Renamed" });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({ name: "Renamed" });
+  });
+
+  it("update still changes status/portal flag when asked", async () => {
+    await admin().projects.update({
+      id: 8,
+      status: "in_progress",
+      clientPortalEnabled: false,
+    });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({
+      status: "in_progress",
+      client_portal_enabled: false,
+    });
+  });
+
+  it("update can clear optional fields with null", async () => {
+    await admin().projects.update({
+      id: 8,
+      description: null,
+      address: null,
+      estimatedBudget: null,
+      contractedBudget: null,
+      estimatedStartDate: null,
+      siteCamUrl: null,
+      permitNumbers: null,
+    });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({
+      description: null,
+      address: null,
+      estimated_budget: null,
+      contracted_budget: null,
+      estimated_start_date: null,
+      site_cam_url: null,
+      permit_numbers: null,
+    });
+  });
+
+  it("update does not forward legacy startDate/budget (no such columns)", async () => {
+    await admin().projects.update({
+      id: 8,
+      startDate: "2026-01-01T00:00:00.000Z",
+      budget: 5000,
+    });
+    const [, patch] = vi.mocked(repo.updateProject).mock.calls[0];
+    expect(patch).toEqual({});
+  });
+
+  it("create still applies the defaults", async () => {
+    await admin().projects.create({ clientId: 1, name: "New" });
+    const [values] = vi.mocked(repo.createProject).mock.calls[0];
+    expect(values).toMatchObject({
+      status: "lead",
+      state: "OR",
+      client_portal_enabled: true,
+    });
+  });
+
   it("updateProgress maps completion percent to snake_case", async () => {
     await admin().projects.updateProgress({
       id: 8,
@@ -175,6 +239,49 @@ describe("Projects Router — repo delegation", () => {
     expect(res.byStatus.active).toBe(1);
     expect(res.totalEstimated).toBe(300);
     expect(res.totalActual).toBe(200);
+  });
+
+  it("stats.costedBasis sums the budget basis of only the projects that have logged costs", async () => {
+    // Project 1: contracted wins over estimated. Project 2: no contract -> estimate.
+    // Project 3 has no logged cost -> excluded. Project 4's cost is 0 -> excluded.
+    vi.mocked(repo.getProjectsStats).mockResolvedValueOnce([
+      {
+        id: 1,
+        status: "in_progress",
+        estimated_budget: 90,
+        contracted_budget: 100,
+      },
+      {
+        id: 2,
+        status: "in_progress",
+        estimated_budget: 200,
+        contracted_budget: null,
+      },
+      {
+        id: 3,
+        status: "lead",
+        estimated_budget: 1_000_000,
+        contracted_budget: null,
+      },
+      {
+        id: 4,
+        status: "contracted",
+        estimated_budget: 500,
+        contracted_budget: 500,
+      },
+    ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(
+      new Map([
+        [1, 40],
+        [2, 60],
+        [4, 0],
+      ])
+    );
+    const res = await admin().projects.stats();
+    expect(res.costedBasis).toBe(300);
+    expect(res.totalActual).toBe(100);
+    // total pipeline still includes everything
+    expect(res.totalEstimated).toBe(90 + 200 + 1_000_000 + 500);
   });
 
   it("profitability computes margin/variance from the sources, actual cost from cost_adjustment ledger entries", async () => {
@@ -218,6 +325,51 @@ describe("Projects Router — repo delegation", () => {
     expect(res.totals.contracted).toBe(1000);
     expect(res.totals.marginPct).toBeCloseTo(40);
   });
+
+  it("profitabilitySummary margin only counts projects with logged costs", async () => {
+    vi.mocked(repo.getPortfolioProfitability).mockResolvedValueOnce([
+      // Costed: contracted 1000, spent 600 -> 40% margin on its own.
+      {
+        id: 1,
+        name: "A",
+        status: "in_progress",
+        contracted_budget: 1000,
+        estimated_budget: 800,
+      },
+      // Not started: a big budget with no logged cost must not read as profit.
+      {
+        id: 2,
+        name: "B",
+        status: "lead",
+        contracted_budget: null,
+        estimated_budget: 9000,
+      },
+    ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(
+      new Map([[1, 600]])
+    );
+    const res = await admin().projects.profitabilitySummary();
+    expect(res.totals.costedBasis).toBe(1000);
+    expect(res.totals.marginPct).toBeCloseTo(40); // not (1000-600+9000)/10000 = 94%
+    // portfolio totals still include everything
+    expect(res.totals.basis).toBe(10000);
+    expect(res.projects).toHaveLength(2);
+  });
+
+  it("profitabilitySummary margin is 0 when nothing has logged costs", async () => {
+    vi.mocked(repo.getPortfolioProfitability).mockResolvedValueOnce([
+      {
+        id: 2,
+        name: "B",
+        status: "lead",
+        contracted_budget: null,
+        estimated_budget: 9000,
+      },
+    ] as any);
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(new Map());
+    const res = await admin().projects.profitabilitySummary();
+    expect(res.totals.marginPct).toBe(0);
+  });
 });
 
 describe("Projects Router — myProject", () => {
@@ -255,7 +407,7 @@ describe("Projects Router — getById ownership guard", () => {
       client_portal_enabled: true,
     } as any);
     await expect(user().projects.getById({ id: 1 })).rejects.toThrow(
-      /unauthorized/i
+      /do not have access/i
     );
   });
 
@@ -266,8 +418,17 @@ describe("Projects Router — getById ownership guard", () => {
       client_portal_enabled: false,
     } as any);
     await expect(user().projects.getById({ id: 1 })).rejects.toThrow(
-      /unauthorized/i
+      /do not have access/i
     );
+  });
+
+  it("rejects with FORBIDDEN (not a bare Error) and does not leak existence", async () => {
+    vi.mocked(repo.getProjectById).mockRejectedValueOnce(
+      new Error("JSON object requested, multiple (or no) rows returned")
+    );
+    await expect(user().projects.getById({ id: 999 })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
@@ -282,6 +443,9 @@ describe("Projects Router — authorization", () => {
 
   it("admin procedures reject non-admin users (forbidden)", async () => {
     const u = user();
+    // list returns the whole book of business + client contact details.
+    await expect(u.projects.list()).rejects.toThrow(/forbidden/i);
+    expect(repo.listProjects).not.toHaveBeenCalled();
     await expect(u.projects.create({ clientId: 1, name: "x" })).rejects.toThrow(
       /forbidden/i
     );

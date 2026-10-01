@@ -59,7 +59,8 @@ export async function listAuditLedgerEntries(limit: number) {
 
 export type AppendLedgerEntryInput = {
   projectId: number;
-  authorId: string;
+  /** `users.id` of the author, or null for synthetic admin sessions. */
+  authorId: string | null;
   entryType: EntryType;
   title: string;
   description: string;

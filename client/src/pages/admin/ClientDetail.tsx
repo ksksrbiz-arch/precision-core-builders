@@ -108,13 +108,15 @@ export default function ClientDetail() {
       id: Number(id),
       name: ef.name,
       email: ef.email,
-      phone: ef.phone || undefined,
-      address: ef.address || undefined,
-      city: ef.city || undefined,
-      state: ef.state || undefined,
-      zip: ef.zip || undefined,
-      notes: ef.notes || undefined,
-      leadSource: ef.leadSource || undefined,
+      // Blank => null so the column is actually cleared (undefined would mean
+      // "leave unchanged" while the toast still said the client was saved).
+      phone: ef.phone.trim() || null,
+      address: ef.address.trim() || null,
+      city: ef.city.trim() || null,
+      state: ef.state.trim() || null,
+      zip: ef.zip.trim() || null,
+      notes: ef.notes.trim() || null,
+      leadSource: ef.leadSource.trim() || null,
     });
   };
 
