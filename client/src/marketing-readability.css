@@ -16,6 +16,15 @@
   font-weight: 600;
   line-height: 1.15;
 }
+
+/* Keep the same legibility inside the shared light/dark editorial shell. */
+.marketing-site .marketing-page {
+  -webkit-font-smoothing: auto;
+}
+.marketing-site .marketing-page main :is(h1, .display-section, h2.text-3xl) {
+  font-weight: 600;
+  line-height: 1.15;
+}
 .marketing-site .text-gradient-gold {
   background: none;
   color: var(--primary);
