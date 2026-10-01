@@ -76,7 +76,14 @@ try {
       for (const el of root.querySelectorAll('[aria-busy="true"]')) el.remove();
       return {
         styles: [...document.head.querySelectorAll('link[rel="stylesheet"]')]
-          .map(el => el.outerHTML)
+          .map(el => {
+            const link = el.cloneNode(true) as HTMLLinkElement;
+            const url = new URL(link.href);
+            // Lazy CSS links must use the real site, not the preview origin.
+            if (url.origin === window.location.origin)
+              link.setAttribute("href", url.pathname + url.search);
+            return link.outerHTML;
+          })
           .join("\n"),
         root: root.innerHTML,
         title: document.title,

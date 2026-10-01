@@ -12,6 +12,7 @@
     "check:marketing:design": "tsx scripts/verify-marketing-design.ts",
     "test:marketing:smoke": "tsx scripts/smoke-marketing.ts",
     "test:marketing:readability": "node scripts/smoke-marketing-readability.mjs",
+    "test:marketing:loading": "node scripts/smoke-loading.mjs",
     "start": "echo \"Production runs on Netlify Functions — use netlify dev locally\"",
     "check": "tsc --noEmit",
     "format": "prettier --write .",

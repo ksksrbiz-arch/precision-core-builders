@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
+import { BrandedLoader, FirstRenderReady } from "./components/BrandedLoader";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
-import { BrandLoader } from "./components/BrandLoader";
+
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./components/ToastProvider";
 import { MobileBottomNav } from "./components/MobileBottomNav";
@@ -209,7 +210,9 @@ const LazyFlorence = lazy(() =>
 function Router() {
   const blueprintEnabled = import.meta.env.VITE_FEATURE_BLUEPRINT === "true";
   return (
-    <Suspense fallback={<BrandLoader />}>
+    <Suspense fallback={<BrandedLoader />}>
+      <FirstRenderReady />
+
       <PageTransition>
         <Switch>
           {/* Public */}

@@ -20,6 +20,16 @@ for (const url of urls) {
     path
   );
   assert.equal(doc.querySelectorAll("main h1").length, 1, `Single H1: ${path}`);
+  assert.ok(
+    doc.querySelector("#pcb-boot-screen svg"),
+    `Branded first paint: ${path}`
+  );
+  for (const link of doc.querySelectorAll('link[rel="stylesheet"]'))
+    assert.doesNotMatch(
+      link.getAttribute("href") ?? "",
+      /https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/,
+      `No build-server stylesheet URLs: ${path}`
+    );
   assert.doesNotMatch(
     doc.documentElement.innerHTML,
     /"priceRange"\s*:/,
