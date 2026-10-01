@@ -675,7 +675,7 @@ export default function DevLogin() {
         <div className="w-full max-w-[380px]">
           <div className="flex justify-center mb-8">
             <img
-              src={ASSETS.logo}
+              src={ASSETS.logoDepth}
               alt="Precision Core Builders"
               className="h-10 w-auto"
             />
@@ -769,7 +769,7 @@ export default function DevLogin() {
         >
           <div className="flex items-center gap-3">
             <img
-              src={ASSETS.logo}
+              src={ASSETS.logoDepth}
               alt="Precision Core Builders"
               className="h-7 w-auto"
             />

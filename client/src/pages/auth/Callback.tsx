@@ -278,7 +278,7 @@ export default function AuthCallback() {
         className="flex flex-col items-center gap-5"
       >
         <img
-          src={ASSETS.logo}
+          src={ASSETS.logoDepth}
           alt="Precision Core Builders"
           className="h-8 w-auto opacity-60"
         />

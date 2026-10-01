@@ -14,17 +14,19 @@
   border-color: #c8a84b33;
 }
 .premium-home .premium-header .premium-brand {
-  padding-left: 54px;
-  position: relative;
+  padding-left: 0;
 }
 .premium-home img.premium-brand-mark {
-  position: absolute;
-  width: 42px;
-  height: 42px;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  display: block;
+  width: 190px;
+  height: auto;
   object-fit: contain;
+}
+.premium-home .premium-footer-logo {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+  height: auto;
 }
 .premium-home .premium-brand small {
   color: var(--brand-gold);
@@ -102,11 +104,11 @@
 }
 @media (max-width: 760px) {
   .premium-home .premium-header .premium-brand {
-    padding-left: 40px;
+    padding-left: 0;
   }
   .premium-home img.premium-brand-mark {
-    width: 31px;
-    height: 31px;
+    width: 150px;
+    height: auto;
   }
   .premium-home .premium-hero-copy {
     padding-top: 48px;

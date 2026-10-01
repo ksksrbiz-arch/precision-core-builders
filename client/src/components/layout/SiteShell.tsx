@@ -221,8 +221,8 @@ export function SiteNav() {
               src={ASSETS.logo}
               alt="Precision Core Builders"
               className="h-9 w-auto"
-              width="180"
-              height="36"
+              width="748"
+              height="290"
               fetchPriority="high"
             />
           </a>
@@ -422,11 +422,11 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <img
-              src={ASSETS.logo}
+              src={ASSETS.logoDepth}
               alt="Precision Core Builders"
-              className="h-9 w-auto mb-4"
-              width="180"
-              height="36"
+              className="w-48 max-w-full h-auto mb-4"
+              width="748"
+              height="290"
               loading="lazy"
               decoding="async"
             />
