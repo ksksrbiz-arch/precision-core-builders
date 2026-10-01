@@ -132,7 +132,14 @@ These are deliberate omissions, not oversights.
 5. **No project-delete UI** (cascades into the immutable ledger — should be a
    policy decision, probably "archive"), schedule dependency lines and reorder UI
    (already in `TODO.md`).
-6. `vision-studio` still calls the provider directly rather than through
+6. **The `handle_new_admin_user` DB trigger** (`0003_admin_allowlist.sql`) still
+   writes `role = 'admin'` into `public.users` at _sign-up_ for an allowlisted
+   address, before confirmation. The API layer now refuses to honor an
+   unconfirmed admin, but RLS policies that read `users.role` directly do not
+   check confirmation. Safe while Supabase "Confirm email" stays on (no session
+   exists until confirmed); consider tightening the trigger to require
+   `NEW.email_confirmed_at IS NOT NULL` and re-running it on confirmation.
+7. `vision-studio` still calls the provider directly rather than through
    `routeAi()` / `specialistPrompt()`; it now carries the contract's hard limits
    inline and an output guard, but could be brought fully under the router.
 
