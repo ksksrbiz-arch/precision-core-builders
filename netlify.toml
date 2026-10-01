@@ -1,7 +1,8 @@
 [build]
   base = "/"
   publish = "dist/public"
-  command = "pnpm install --prod=false && pnpm exec playwright install --with-deps chromium && pnpm build"
+  # pnpm build downloads Chromium for SEO prerendering without root-only OS installs.
+  command = "pnpm install --prod=false && pnpm build"
 
 [build.environment]
   # Bumped from 20 to 22: whatever pnpm version Netlify actually resolves at
