@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Menu, X, Phone } from "lucide-react";
 import { PROJECTS, photoUrl } from "@/data/projects";
-import { SITE } from "@/const";
+import { ASSETS, SITE } from "@/const";
 import { useSEO } from "@/hooks/useSEO";
 import { canonicalUrl } from "@/lib/seo";
 import { trackCtaClick, trackPhoneClick } from "@/lib/analytics";
@@ -56,13 +56,12 @@ export default function HomeRedesign() {
         >
           <img
             className="premium-brand-mark"
-            src="/logo.svg"
-            alt=""
-            width="42"
-            height="42"
+            src={ASSETS.logo}
+            alt="Precision Core Builders"
+            width="748"
+            height="290"
+            fetchPriority="high"
           />
-          <span>PRECISION CORE</span>
-          <small>BUILDERS · EUGENE, OREGON</small>
         </a>
         <nav className="premium-desktop-nav" aria-label="Main navigation">
           {links.map(link => (
@@ -353,8 +352,15 @@ export default function HomeRedesign() {
       <footer className="premium-footer">
         <div className="premium-footer-brand">
           <a href="/" className="premium-brand">
-            <span>PRECISION CORE</span>
-            <small>BUILDERS · EUGENE, OREGON</small>
+            <img
+              className="premium-footer-logo"
+              src={ASSETS.logoDepth}
+              alt="Precision Core Builders"
+              width="748"
+              height="290"
+              loading="lazy"
+              decoding="async"
+            />
           </a>
           <p>
             Thoughtful construction.

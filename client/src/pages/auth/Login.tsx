@@ -299,7 +299,7 @@ export default function AuthLogin() {
           className="flex justify-center mb-8"
         >
           <img
-            src={ASSETS.logo}
+            src={ASSETS.logoDepth}
             alt="Precision Core Builders"
             className="h-10 w-auto"
             fetchPriority="high"

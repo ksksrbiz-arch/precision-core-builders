@@ -84,7 +84,7 @@ export default function ResendLoginLink() {
         {/* Logo */}
         <div className="text-center mb-12">
           <img
-            src={ASSETS.logo}
+            src={ASSETS.logoDepth}
             alt="Precision Core"
             className="h-8 mx-auto mb-6 opacity-90"
           />
