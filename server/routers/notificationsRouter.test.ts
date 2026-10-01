@@ -86,21 +86,31 @@ beforeEach(() => {
 describe("notificationsRouter — list", () => {
   it("delegates to listForRecipient with the caller's id + unreadOnly", async () => {
     repo.listForRecipient.mockResolvedValue([{ id: 1 }] as any);
-    const caller = appRouter.createCaller(ctx("9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01", "user"));
+    const caller = appRouter.createCaller(
+      ctx("9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01", "user")
+    );
 
     const res = await caller.notifications.list({ unreadOnly: true });
 
-    expect(repo.listForRecipient).toHaveBeenCalledWith("9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01", true);
+    expect(repo.listForRecipient).toHaveBeenCalledWith(
+      "9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01",
+      true
+    );
     expect(res).toEqual([{ id: 1 }]);
   });
 
   it("passes undefined unreadOnly when omitted", async () => {
     repo.listForRecipient.mockResolvedValue([] as any);
-    const caller = appRouter.createCaller(ctx("9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01", "user"));
+    const caller = appRouter.createCaller(
+      ctx("9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01", "user")
+    );
 
     await caller.notifications.list({});
 
-    expect(repo.listForRecipient).toHaveBeenCalledWith("9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01", undefined);
+    expect(repo.listForRecipient).toHaveBeenCalledWith(
+      "9a1f0c52-3b7e-4d1a-8c20-5e6f7a8b9c01",
+      undefined
+    );
   });
 
   it("requires authentication", async () => {
@@ -133,11 +143,16 @@ describe("notificationsRouter — non-UUID sessions have no inbox", () => {
 describe("notificationsRouter — markRead", () => {
   it("delegates ids + caller id to markRead", async () => {
     repo.markRead.mockResolvedValue([{ id: 3 }] as any);
-    const caller = appRouter.createCaller(ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user"));
+    const caller = appRouter.createCaller(
+      ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user")
+    );
 
     const res = await caller.notifications.markRead({ ids: [3, 4] });
 
-    expect(repo.markRead).toHaveBeenCalledWith([3, 4], "2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8");
+    expect(repo.markRead).toHaveBeenCalledWith(
+      [3, 4],
+      "2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8"
+    );
     expect(res).toEqual([{ id: 3 }]);
   });
 
@@ -149,13 +164,17 @@ describe("notificationsRouter — markRead", () => {
   });
 
   it("rejects an empty id list", async () => {
-    const caller = appRouter.createCaller(ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user"));
+    const caller = appRouter.createCaller(
+      ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user")
+    );
     await expect(caller.notifications.markRead({ ids: [] })).rejects.toThrow();
     expect(repo.markRead).not.toHaveBeenCalled();
   });
 
   it("rejects non-positive ids", async () => {
-    const caller = appRouter.createCaller(ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user"));
+    const caller = appRouter.createCaller(
+      ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user")
+    );
     await expect(caller.notifications.markRead({ ids: [0] })).rejects.toThrow();
   });
 });
@@ -176,7 +195,9 @@ describe("notificationsRouter — send (authorization)", () => {
   });
 
   it("rejects non-admin callers", async () => {
-    const caller = appRouter.createCaller(ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user"));
+    const caller = appRouter.createCaller(
+      ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user")
+    );
     await expect(caller.notifications.send(validInput)).rejects.toThrow(
       /forbidden/i
     );
@@ -387,7 +408,9 @@ describe("notificationsRouter — adminList", () => {
   const admin = () => appRouter.createCaller(ctx("admin-1", "admin"));
 
   it("requires admin role", async () => {
-    const userCaller = appRouter.createCaller(ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user"));
+    const userCaller = appRouter.createCaller(
+      ctx("2b3c4d5e-6f70-4a81-9b92-a3b4c5d6e7f8", "user")
+    );
     await expect(userCaller.notifications.adminList({})).rejects.toThrow(
       /forbidden/i
     );

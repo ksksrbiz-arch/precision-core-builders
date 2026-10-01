@@ -222,6 +222,29 @@ describe("Portfolio Router — admin happy paths", () => {
     expect("completion_year" in patch).toBe(false);
   });
 
+  it("update can clear optional fields (and the gallery) with null", async () => {
+    await admin().portfolio.update({
+      id: 3,
+      clientTestimonial: null,
+      coverImageUrl: null,
+      galleryImageUrls: null,
+      squareFootage: null,
+      completionYear: null,
+    });
+    expect(updateMock.mock.calls[0][1]).toEqual({
+      client_testimonial: null,
+      cover_image_url: null,
+      gallery_image_urls: null,
+      square_footage: null,
+      completion_year: null,
+    });
+  });
+
+  it("an empty gallery array is stored as null, not the string '[]'", async () => {
+    await admin().portfolio.update({ id: 3, galleryImageUrls: [] });
+    expect(updateMock.mock.calls[0][1]).toEqual({ gallery_image_urls: null });
+  });
+
   it("a title-only update never touches published/featured/sort_order", async () => {
     await admin().portfolio.update({ id: 3, title: "Renamed" });
     expect(updateMock.mock.calls[0][1]).toEqual({ title: "Renamed" });

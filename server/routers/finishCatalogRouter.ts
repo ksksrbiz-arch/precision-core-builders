@@ -62,6 +62,14 @@ export const finishCatalogRouter = router({
       z
         .object({ id: z.number().int().positive() })
         .merge(FinishCatalogFields.partial())
+        .extend({
+          // `null` clears the column (blank inputs in the edit form).
+          category: z.string().max(100).nullable().optional(),
+          brand: z.string().max(200).nullable().optional(),
+          description: z.string().nullable().optional(),
+          priceTier: z.enum(PRICE_TIERS).nullable().optional(),
+          imageUrl: z.string().url().nullable().optional(),
+        })
     )
     .mutation(async ({ input }) => {
       const { id, priceTier, imageUrl, sortOrder, ...rest } = input;

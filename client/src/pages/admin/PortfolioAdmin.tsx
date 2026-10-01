@@ -209,39 +209,42 @@ export default function PortfolioAdmin() {
       return;
     }
 
-    const payload = {
-      title: form.title,
-      slug:
-        form.slug ||
-        form.title
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9-]/g, ""),
-      category: form.category || undefined,
-      shortDescription: form.shortDescription || undefined,
-      description: form.description || undefined,
-      location: form.location || undefined,
-      completionYear: form.completionYear || undefined,
-      squareFootage: form.squareFootage
-        ? parseInt(form.squareFootage)
-        : undefined,
-      coverImageUrl: form.coverImageUrl || undefined,
-      galleryImageUrls: form.galleryImageUrls
-        ? form.galleryImageUrls
-            .split(",")
-            .map((u: string) => u.trim())
-            .filter(Boolean)
-        : undefined,
-      clientTestimonial: form.clientTestimonial || undefined,
-      clientName: form.clientName || undefined,
-      featured: form.featured,
-      published: form.published,
-      sortOrder: form.sortOrder,
+    // On create, blank fields are omitted (undefined). On edit they are sent as
+    // null so the column is actually cleared — `undefined` means "unchanged"
+    // server-side, so blanking a testimonial or cover image was a silent no-op.
+    const buildPayload = <E extends undefined | null>(emptyValue: E) => {
+      const text = (v: string): string | E => v.trim() || emptyValue;
+      return {
+        title: form.title,
+        slug:
+          form.slug ||
+          form.title
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, ""),
+        category: text(form.category),
+        shortDescription: text(form.shortDescription),
+        description: text(form.description),
+        location: text(form.location),
+        completionYear: (form.completionYear || emptyValue) as number | E,
+        squareFootage: (form.squareFootage
+          ? parseInt(form.squareFootage)
+          : emptyValue) as number | E,
+        coverImageUrl: text(form.coverImageUrl),
+        galleryImageUrls: (galleryUrls.length > 0
+          ? galleryUrls
+          : emptyValue) as string[] | E,
+        clientTestimonial: text(form.clientTestimonial),
+        clientName: text(form.clientName),
+        featured: form.featured,
+        published: form.published,
+        sortOrder: form.sortOrder,
+      };
     };
     if (editId && update) {
-      update.mutate({ id: editId, ...payload });
+      update.mutate({ id: editId, ...buildPayload(null) });
     } else {
-      create.mutate(payload);
+      create.mutate(buildPayload(undefined));
     }
   };
 

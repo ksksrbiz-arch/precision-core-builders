@@ -69,9 +69,23 @@ export const portfolioRouter = router({
 
   update: adminProcedure
     .input(
+      // `undefined` = leave unchanged; `null` = clear (blanking a testimonial,
+      // cover image or gallery in the edit form must actually remove it).
       z
         .object({ id: z.number().int().positive() })
         .merge(PortfolioFields.partial())
+        .extend({
+          category: z.string().max(100).nullable().optional(),
+          description: z.string().nullable().optional(),
+          shortDescription: z.string().max(500).nullable().optional(),
+          location: z.string().max(200).nullable().optional(),
+          completionYear: z.number().int().nullable().optional(),
+          squareFootage: z.number().int().positive().nullable().optional(),
+          coverImageUrl: z.string().url().nullable().optional(),
+          galleryImageUrls: z.array(z.string().url()).nullable().optional(),
+          clientTestimonial: z.string().nullable().optional(),
+          clientName: z.string().max(200).nullable().optional(),
+        })
     )
     .mutation(async ({ input }) => {
       const {
@@ -99,7 +113,10 @@ export const portfolioRouter = router({
           cover_image_url: coverImageUrl,
         }),
         ...(galleryImageUrls !== undefined && {
-          gallery_image_urls: JSON.stringify(galleryImageUrls),
+          gallery_image_urls:
+            galleryImageUrls && galleryImageUrls.length > 0
+              ? JSON.stringify(galleryImageUrls)
+              : null,
         }),
         ...(clientTestimonial !== undefined && {
           client_testimonial: clientTestimonial,
