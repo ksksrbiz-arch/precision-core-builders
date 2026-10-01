@@ -81,20 +81,21 @@ request → routeAi(surface, message) → specialistPrompt(id) → data context 
 
 - `server/_core/ai/router.ts` — deterministic routing. **Never put an LLM
   classification call in front of it.**
-- `server/_core/ai/specialists.ts` — the eight contracts, the evidence protocol
+- `server/_core/ai/specialists.ts` — the contracts, the evidence protocol
   (KNOWN / INFERRED / VERIFY), and `SHARED_NEVER` (the prohibitions that outrank
   any user input).
 
 **Surface is an authorization boundary**, not just a routing hint:
 
-| Surface    | Who                  | May reach                                                                                    |
-| :--------- | :------------------- | :------------------------------------------------------------------------------------------- |
-| `public`   | anyone               | `estimator`, `general-advisor`                                                               |
-| `portal`   | authenticated client | `client-liaison` + the public set                                                            |
-| `internal` | Eric (admin)         | `ops-copilot`, `field-reporter`, `procurement`, `scheduler`, `lead-analyst` + the public set |
+| Surface    | Who                  | May reach                                                                                                                  |
+| :--------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| `public`   | anyone               | `estimator`, `general-advisor`                                                                                             |
+| `portal`   | authenticated client | `client-liaison` + the public set                                                                                          |
+| `internal` | Eric (admin)         | `ops-copilot`, `field-reporter`, `procurement`, `scheduler`, `lead-analyst` + the public set; `vision-analyst` by pin only |
 
 A caller may pin a specialist when the job is known (`voice-to-report`,
-`daily-briefing`); a pin the surface may not reach falls through to that
+`daily-briefing`, `vision-studio` → `vision-analyst`, which has no text rule and
+is reachable only by pin); a pin the surface may not reach falls through to that
 surface's default rather than escalating. This is test-covered — do not weaken
 it.
 

@@ -129,9 +129,8 @@ These are deliberate omissions, not oversights.
    `pageSize`) in Schedule, Materials, Ledger, Billing, ProjectNew,
    Notifications…; the 101st client/project is silently unselectable. Fine at
    today's volume; will bite.
-5. **No project-delete UI** (cascades into the immutable ledger — should be a
-   policy decision, probably "archive"), schedule dependency lines and reorder UI
-   (already in `TODO.md`).
+5. ~~No project-delete UI, schedule dependency lines and reorder UI~~ —
+   **done**, see §7.
 6. **The `handle_new_admin_user` DB trigger** (`0003_admin_allowlist.sql`) still
    writes `role = 'admin'` into `public.users` at _sign-up_ for an allowlisted
    address, before confirmation. The API layer now refuses to honor an
@@ -139,9 +138,7 @@ These are deliberate omissions, not oversights.
    check confirmation. Safe while Supabase "Confirm email" stays on (no session
    exists until confirmed); consider tightening the trigger to require
    `NEW.email_confirmed_at IS NOT NULL` and re-running it on confirmation.
-7. `vision-studio` still calls the provider directly rather than through
-   `routeAi()` / `specialistPrompt()`; it now carries the contract's hard limits
-   inline and an output guard, but could be brought fully under the router.
+7. ~~`vision-studio` calls the provider directly~~ — **done**, see §7.
 
 ## 5. Before you deploy
 
@@ -193,3 +190,30 @@ These are deliberate omissions, not oversights.
 - **Verify after deploy:** `curl -sI https://precisioncorebuilders.com/nope`
   → 404; `/expertise/roofing` → 301 `/services/roofing`;
   `https://www.…/about` → 301 to the apex.
+
+## 7. Follow-up: archive, schedule dependencies, Vision Studio
+
+- **Projects are archived, not deleted.** New `projects.archived_at`
+  (`drizzle/migrations/0011_project_archive.sql` — **apply it**). Archive /
+  Restore on the project page, an Active / Archived toggle on the list; archived
+  jobs drop out of lists, pickers and the dashboard but nothing is deleted. Policy:
+  `projects.delete` now refuses any project with ledger entries ("archive it
+  instead"); it remains available only for ledger-free mistakes (e.g. an empty
+  lead) and has no UI. Archiving does not touch client-portal access — that is
+  the separate `clientPortalEnabled` switch.
+- **Schedule dependencies + reorder.** Task editor has a "Starts after"
+  checklist (loops are disabled client-side and rejected server-side); the Gantt
+  draws finish-to-start connectors, red where a task starts before its
+  predecessor ends; the task list has Up/Down reorder (`schedule.updateOrder`,
+  which had no caller). Deleting a task unlinks it from its dependents.
+  Format: `depends_on` = "12,15" (see `shared/scheduleDeps.ts`).
+- **Vision Studio under the AI router.** Pinned to a new pin-only
+  `vision-analyst` specialist (photo ≠ measurement, no dollar figures, safety /
+  code concerns are VERIFY, no engineering conclusions); contract injected
+  before the photo; mode prompts moved into the prompt registry; usage now
+  logged to `ai_usage`; 45 s timeout; provider failures return a plain
+  502/504 instead of raw provider text. `pnpm eval:ai`'s "every LLM caller
+  injects a contract" sweep now also catches raw OpenRouter calls, which is how
+  this one escaped it. Not changed: field-report photo tagging
+  (`server/_core/visionTagging.ts`) is a separate JSON-output job with its own
+  prompt (tracked in `TODO.md`).

@@ -36,8 +36,9 @@ audit/
 # Test coverage
 coverage/
 
-# Drizzle migrations (generated — commit only when ready)
-drizzle/migrations/*.sql
+# Drizzle migrations are hand-written, reviewed SQL (with RLS) and ARE committed
+# (see context/workflows/add-feature/CONTEXT.md). They used to be ignored here,
+# which is why 0010_ai_usage.sql never reached the repo until it was force-added.
 
 # Supabase local dev
 .supabase/

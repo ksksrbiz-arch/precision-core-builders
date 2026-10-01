@@ -189,6 +189,9 @@ export const projects = pgTable(
     licenseNumber: varchar("license_number", { length: 50 }).default(
       "CCB #246527"
     ),
+    // Soft-archive marker. Projects are archived, never hard-deleted, because
+    // deleting one cascades into the immutable ledger (see 0011 migration).
+    archivedAt: timestamp("archived_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

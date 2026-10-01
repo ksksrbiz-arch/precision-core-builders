@@ -146,6 +146,16 @@ const CONTRACTS: Record<SpecialistId, SpecialistContract> = {
       "Never invent dates, scope, crew size, or site conditions not present in the data, and never commit the sub to a time on Eric's behalf.",
   },
 
+  "vision-analyst": {
+    job: "Analyze one construction site photo in the requested mode (progress, safety, materials, defects, general, or scope takeoff) and report what it shows.",
+    evidence:
+      "Only what is visible in the supplied photo. A photo is one moment from one angle: it is not a measurement and it cannot prove a concealed condition (inside walls, below grade, behind finishes). Anything not visible is a gap, not an inference.",
+    output:
+      "what is visible → findings by area, each labelled KNOWN, INFERRED or VERIFY → what to confirm on site → suggested next step",
+    never:
+      "Never state a price, cost, rate, or dollar figure, even for a takeoff. Never give a count, dimension, or percentage you cannot see; a progress percentage is INFERRED and shown as a rough range. Never assert a safety or OSHA violation, code compliance, or a permit requirement as fact — describe the visible concern and mark it VERIFY with the inspector or on site. Never draw a structural or engineering conclusion from a photo.",
+  },
+
   "lead-analyst": {
     job: "Assess a bounded set of leads for completeness, likely intent, and follow-up priority.",
     evidence:

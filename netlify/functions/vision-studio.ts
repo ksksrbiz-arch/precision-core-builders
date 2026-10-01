@@ -1,5 +1,9 @@
 import { ENV } from "../../server/_core/env";
+import { logAiUsage } from "../../server/_core/aiUsage";
+import { routeAi } from "../../server/_core/ai/router";
+import { specialistPrompt } from "../../server/_core/ai/specialists";
 import { withGuards } from "./_lib/http";
+import { PROMPTS, VISION_MODE_PROMPTS, isVisionMode } from "./_lib/llm/prompts";
 import { redactDollarFigures } from "./_lib/moneyGuard";
 
 /**
@@ -7,6 +11,13 @@ import { redactDollarFigures } from "./_lib/moneyGuard";
  * Free-tier only: served by a free OpenRouter vision model. Accepts
  * base64-encoded images and returns AI analysis for construction site photos,
  * material inspection, progress tracking, etc.
+ *
+ * AI contract (docs/AI_OPERATING_CONTRACT.md): this is an internal, admin-only
+ * surface pinned to the `vision-analyst` specialist. The route is chosen by
+ * code (never by the model), the specialist contract is injected before the
+ * photo is seen, the output is validated for dollar figures before it reaches
+ * the user, usage is logged, and any provider failure degrades to a plain
+ * "unavailable" message rather than leaking provider internals.
  */
 
 /**
@@ -15,24 +26,6 @@ import { redactDollarFigures } from "./_lib/moneyGuard";
  * the OpenRouter free catalog.
  */
 const DEFAULT_OPENROUTER_VISION_MODEL = "nvidia/nemotron-nano-12b-v2-vl:free";
-
-const SYSTEM_PROMPT = `You are the Vision AI for Precision Core Builders, owned by Eric Tadlock (CCB #246527), a master builder in Eugene, OR with 20+ years of experience.
-
-You analyze construction site images with expert-level precision. Your capabilities include:
-- **Progress Assessment**: Evaluate construction phase completion percentages
-- **Material Identification**: Identify building materials, brands, and quality grades
-- **Safety Inspection**: Flag potential OSHA violations or safety concerns
-- **Defect Detection**: Spot structural issues, water damage, improper installations
-- **Code Compliance**: Note visible code compliance or violation indicators (Oregon residential code)
-- **Quality Grading**: Rate workmanship quality on a 1-10 scale with justification
-
-Always respond with structured, actionable insights. Be specific about locations within the image.
-Hard limits: never state a price, cost, rate or dollar figure (pricing is calculated elsewhere); never invent measurements or quantities you cannot see; never assert an Oregon/Lane County code or permit requirement as fact — mark it VERIFY with the inspector or on site.
-Label each material conclusion KNOWN (clearly visible), INFERRED (reasonable reading, say so) or VERIFY (cannot be determined from the photo).
-Format your response as clear sections with headers.`;
-
-type AnalysisMode =
-  "progress" | "safety" | "material" | "defect" | "general" | "estimate";
 
 type SupportedMediaType =
   "image/jpeg" | "image/png" | "image/gif" | "image/webp";
@@ -44,20 +37,9 @@ const SUPPORTED_MEDIA_TYPES: SupportedMediaType[] = [
   "image/webp",
 ];
 
-const MODE_PROMPTS: Record<AnalysisMode, string> = {
-  progress:
-    "Analyze this construction site photo for project progress. Estimate completion percentage for each visible trade/phase. Note what work appears recently completed vs. in-progress vs. not yet started.",
-  safety:
-    "Perform a safety inspection of this construction site photo. Identify any OSHA violations, fall hazards, PPE issues, housekeeping concerns, or unsafe conditions. Rate overall site safety 1-10.",
-  material:
-    "Identify all visible building materials in this photo. Note brands if visible, estimate quantities where possible, and assess material quality/condition. Flag any materials that appear damaged or unsuitable.",
-  defect:
-    "Inspect this construction photo for defects, damage, or quality issues. Look for water damage, structural concerns, improper installations, settling, cracking, or any workmanship problems.",
-  general:
-    "Provide a comprehensive analysis of this construction photo. Cover progress, materials, quality, and any notable observations.",
-  estimate:
-    "Based on this construction photo, produce a scope-of-work takeoff: list each visible work item and trade, the scope questions that change cost, and what must be measured or confirmed on site. Do NOT state any prices, costs, rates or dollar amounts — the estimating engine prices the work from the reviewed cost basis.",
-};
+/** Budget: one provider call, bounded output, bounded wait. */
+const MAX_OUTPUT_TOKENS = 4096;
+const VISION_TIMEOUT_MS = 45_000;
 
 /** ~7 MB decoded: base64 is 4/3 the size of the bytes it encodes. */
 const MAX_IMAGE_BASE64_CHARS = 9_500_000;
@@ -75,7 +57,7 @@ export const handler = withGuards(
       windowMs: 60 * 60_000,
     },
   },
-  async ({ event, json, error }) => {
+  async ({ event, json, error, user }) => {
     try {
       const body = JSON.parse(event.body || "{}");
       const {
@@ -86,7 +68,7 @@ export const handler = withGuards(
       } = body as {
         image?: string;
         mediaType?: string;
-        mode?: AnalysisMode;
+        mode?: string;
         customPrompt?: string;
       };
 
@@ -119,8 +101,13 @@ export const handler = withGuards(
         );
       }
 
-      const userPrompt =
-        customPrompt || MODE_PROMPTS[mode] || MODE_PROMPTS.general;
+      // Routing is deterministic: this endpoint is the photo-analysis job.
+      const route = routeAi({
+        surface: "internal",
+        specialist: "vision-analyst",
+      });
+      const analysisMode = isVisionMode(mode) ? mode : "general";
+      const userPrompt = customPrompt || VISION_MODE_PROMPTS[analysisMode];
 
       // ── OpenRouter Vision (free tier) ────────────────────────────────────────
       // OpenRouter is OpenAI-compatible; the image is passed as a base64 `data:`
@@ -140,12 +127,19 @@ export const handler = withGuards(
         {
           method: "POST",
           headers,
+          signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
           body: JSON.stringify({
             model: openrouterModel,
-            max_tokens: 4096,
+            max_tokens: MAX_OUTPUT_TOKENS,
             temperature: 0.2,
             messages: [
-              { role: "system", content: SYSTEM_PROMPT },
+              {
+                role: "system",
+                // Domain brief, then the contract — both before the photo.
+                content: [PROMPTS.vision, specialistPrompt(route.id)].join(
+                  "\n\n"
+                ),
+              },
               {
                 role: "user",
                 content: [
@@ -189,10 +183,23 @@ export const handler = withGuards(
       );
       const analysisText = guarded.text;
 
+      // Best-effort (never throws): feeds the AI Usage governance panel.
+      await logAiUsage({
+        feature: "vision-studio",
+        provider: "openrouter",
+        model: openrouterData.model ?? openrouterModel,
+        promptTokens: openrouterData.usage?.prompt_tokens,
+        completionTokens: openrouterData.usage?.completion_tokens,
+        totalTokens: openrouterData.usage?.total_tokens,
+        userId: user?.id,
+      });
+
       return json(200, {
         analysis: analysisText,
         ...(guarded.redacted > 0 && { redactedAmounts: guarded.redacted }),
-        mode,
+        mode: analysisMode,
+        route: route.id,
+        routeReason: route.reason,
         model: openrouterData.model ?? openrouterModel,
         usage: openrouterData.usage
           ? {
@@ -205,15 +212,16 @@ export const handler = withGuards(
       });
     } catch (err: unknown) {
       console.error("[vision-studio] Error:", err);
-      const isConfigError =
+      // Fail down: a plain, safe message — never raw provider text.
+      const timedOut =
         err instanceof Error &&
-        err.message.includes("No LLM API key configured");
-      const message = isConfigError
-        ? "Vision AI is not configured. Please contact the site administrator."
-        : err instanceof Error
-          ? err.message
-          : "Vision analysis failed. Please try again.";
-      return error(500, message);
+        (err.name === "TimeoutError" || err.name === "AbortError");
+      return error(
+        timedOut ? 504 : 502,
+        timedOut
+          ? "Vision analysis timed out. Please try again with a smaller photo."
+          : "Vision analysis is unavailable right now. Please try again."
+      );
     }
   }
 );

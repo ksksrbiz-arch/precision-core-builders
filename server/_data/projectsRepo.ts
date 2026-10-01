@@ -14,11 +14,15 @@ import {
   unwrapVoid,
 } from "./repository";
 
+/** Archived projects are hidden unless a caller opts in. */
+export type ArchivedFilter = "exclude" | "only" | "include";
+
 export type ListProjectsInput = {
   page?: number;
   pageSize?: number;
   status?: string;
   search?: string;
+  archived?: ArchivedFilter;
 };
 
 export async function listProjects(input: ListProjectsInput) {
@@ -30,6 +34,9 @@ export async function listProjects(input: ListProjectsInput) {
     .range(from, to);
   if (input.status) q = q.eq("status", input.status);
   if (input.search) q = q.ilike("name", `%${input.search}%`);
+  const archived = input.archived ?? "exclude";
+  if (archived === "exclude") q = q.is("archived_at", null);
+  else if (archived === "only") q = q.not("archived_at", "is", null);
   return unwrapList(await q);
 }
 
@@ -89,14 +96,41 @@ export async function updateProjectProgress(
   );
 }
 
+/** Archive (ISO timestamp) or restore (null) a project. */
+export async function setProjectArchived(
+  id: number,
+  archivedAt: string | null
+) {
+  return unwrapOne(
+    await data
+      .from("projects")
+      .update({ archived_at: archivedAt })
+      .eq("id", id)
+      .select()
+      .single()
+  );
+}
+
+/** How many ledger entries the project has (a hard delete would cascade them). */
+export async function countProjectLedgerEntries(id: number): Promise<number> {
+  const { count, error } = await data
+    .from("ledger_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", id);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 export async function deleteProject(id: number) {
   return unwrapVoid(await data.from("projects").delete().eq("id", id));
 }
 
 export async function getProjectsStats() {
+  // The dashboard counts the live book of business; archived jobs are out.
   const { data: rows } = await data
     .from("projects")
-    .select("id, status, estimated_budget, contracted_budget");
+    .select("id, status, estimated_budget, contracted_budget")
+    .is("archived_at", null);
   return rows ?? [];
 }
 

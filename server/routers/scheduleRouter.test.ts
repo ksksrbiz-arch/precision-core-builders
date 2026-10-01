@@ -43,6 +43,7 @@ vi.mock("../db", () => {
 vi.mock("../_data/scheduleRepo", () => ({
   createScheduleItem: vi.fn(),
   deleteScheduleItem: vi.fn(),
+  getScheduleItem: vi.fn(),
   getWeatherSensitiveItems: vi.fn(),
   listScheduleItems: vi.fn(),
   updateScheduleItem: vi.fn(),
@@ -61,6 +62,7 @@ import { assertProjectAccess } from "../_core/access";
 import {
   createScheduleItem,
   deleteScheduleItem,
+  getScheduleItem,
   getWeatherSensitiveItems,
   listScheduleItems,
   updateScheduleItem,
@@ -83,6 +85,8 @@ const anon = () => appRouter.createCaller(ctx());
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(getScheduleItem).mockResolvedValue(null);
+  vi.mocked(listScheduleItems).mockResolvedValue([]);
 });
 
 describe("Schedule Router — authorization", () => {
@@ -162,6 +166,10 @@ describe("Schedule Router — authorization", () => {
 
 describe("Schedule Router — repo delegation", () => {
   it("create maps camelCase input to snake_case repo columns", async () => {
+    vi.mocked(listScheduleItems).mockResolvedValue([
+      { id: 1, project_id: 7, depends_on: null },
+      { id: 2, project_id: 7, depends_on: null },
+    ]);
     await admin().schedule.create({
       projectId: 7,
       parentId: 3,
@@ -372,5 +380,79 @@ describe("Schedule Router — input validation", () => {
       })
     ).rejects.toThrow();
     expect(getWeatherSensitiveItems).not.toHaveBeenCalled();
+  });
+});
+
+describe("Schedule Router — dependencies", () => {
+  const project = [
+    { id: 1, project_id: 4, depends_on: null },
+    { id: 2, project_id: 4, depends_on: "1" },
+    { id: 3, project_id: 4, depends_on: "2" },
+  ];
+
+  beforeEach(() => {
+    vi.mocked(listScheduleItems).mockResolvedValue(project);
+    vi.mocked(getScheduleItem).mockImplementation(
+      async (id: number) => project.find(p => p.id === id) ?? null
+    );
+  });
+
+  it("stores valid predecessors on update", async () => {
+    await admin().schedule.update({ id: 3, dependsOn: "1,2" });
+    expect(updateScheduleItem).toHaveBeenCalledWith(
+      3,
+      expect.objectContaining({ depends_on: "1,2" })
+    );
+  });
+
+  it("null clears predecessors without a lookup", async () => {
+    await admin().schedule.update({ id: 3, dependsOn: null });
+    expect(updateScheduleItem).toHaveBeenCalledWith(3, {
+      depends_on: null,
+    });
+    expect(listScheduleItems).not.toHaveBeenCalled();
+  });
+
+  it("rejects a circular dependency", async () => {
+    await expect(
+      admin().schedule.update({ id: 1, dependsOn: "3" })
+    ).rejects.toThrow(/circular/i);
+    expect(updateScheduleItem).not.toHaveBeenCalled();
+  });
+
+  it("rejects self, unknown-task and malformed values", async () => {
+    await expect(
+      admin().schedule.update({ id: 2, dependsOn: "2" })
+    ).rejects.toThrow(/itself/i);
+    await expect(
+      admin().schedule.update({ id: 2, dependsOn: "99" })
+    ).rejects.toThrow(/isn't in this project/i);
+    await expect(
+      admin().schedule.update({ id: 2, dependsOn: "1;2" })
+    ).rejects.toThrow(/comma-separated/i);
+    expect(updateScheduleItem).not.toHaveBeenCalled();
+  });
+
+  it("create validates predecessors against the project's tasks", async () => {
+    await expect(
+      admin().schedule.create({ projectId: 4, title: "x", dependsOn: "42" })
+    ).rejects.toThrow(/isn't in this project/i);
+    expect(createScheduleItem).not.toHaveBeenCalled();
+    await admin().schedule.create({
+      projectId: 4,
+      title: "x",
+      dependsOn: "1,2",
+    });
+    expect(createScheduleItem).toHaveBeenCalledWith(
+      expect.objectContaining({ depends_on: "1,2" })
+    );
+  });
+
+  it("deleting a task unlinks it from tasks that depended on it", async () => {
+    await admin().schedule.delete({ id: 2 });
+    expect(deleteScheduleItem).toHaveBeenCalledWith(2);
+    // Only task 3 listed 2; it becomes dependency-free.
+    expect(updateScheduleItem).toHaveBeenCalledTimes(1);
+    expect(updateScheduleItem).toHaveBeenCalledWith(3, { depends_on: null });
   });
 });

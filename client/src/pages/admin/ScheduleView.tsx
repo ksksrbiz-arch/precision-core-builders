@@ -25,9 +25,13 @@ import { TASK_TYPES, type TaskType } from "@/config/schedule";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { fmtDate } from "@/lib/utils";
+import { computeReorder } from "@/lib/scheduleOrder";
+import { parseDependsOn } from "@shared/scheduleDeps";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   Calendar,
   CheckCircle2,
   Circle,
@@ -238,8 +242,23 @@ export default function ScheduleView() {
     successMessage: "Schedule task saved.",
     error: "Update Failed",
     errorMessage: "Failed to update task. Please try again.",
+    // e.g. "That would create a circular dependency." — written for the user.
+    showServerMessageFor: ["BAD_REQUEST"],
     onSuccess: () => refetch(),
   });
+
+  // Row order (also the Gantt row order): sort_order is renumbered and the two
+  // neighbours swapped. Refetch either way so the list shows the stored order.
+  const reorderTasks = useMutationWithToast(
+    trpc.schedule.updateOrder.useMutation(),
+    {
+      success: "Order Updated",
+      error: "Reorder Failed",
+      errorMessage: "Couldn't change the task order. Please try again.",
+      onSuccess: () => refetch(),
+      onError: () => refetch(),
+    }
+  );
 
   const deleteTask = useMutationWithToast(trpc.schedule.delete.useMutation(), {
     success: "Task Deleted",
@@ -323,6 +342,17 @@ export default function ScheduleView() {
   const filtered = (scheduleItems ?? []).filter(item =>
     filterStatus === "all" ? true : item.status === filterStatus
   );
+
+  const titleById = new Map((scheduleItems ?? []).map(t => [t.id, t.title]));
+  // Reordering acts on the whole project list, so it's only offered unfiltered.
+  const canReorder = filterStatus === "all" && !!selectedProject;
+  const moveTask = (id: number, direction: "up" | "down") => {
+    if (!selectedProject) return;
+    const updates = computeReorder(scheduleItems ?? [], id, direction);
+    if (updates) {
+      reorderTasks.mutate({ projectId: selectedProject, updates });
+    }
+  };
 
   const cycleStatus = (current: string) => {
     const order = ["pending", "in_progress", "complete", "deferred"];
@@ -581,6 +611,8 @@ export default function ScheduleView() {
                   assignedTo: updates.assignedTo,
                   notes: updates.notes,
                   weatherSensitive: updates.weatherSensitive,
+                  // Only present when the predecessors changed; null clears.
+                  dependsOn: updates.dependsOn,
                 });
               }}
             />
@@ -682,7 +714,10 @@ export default function ScheduleView() {
           )}
 
         <div className="space-y-2">
-          {filtered.map(item => {
+          {filtered.map((item, rowIndex) => {
+            const after = parseDependsOn(item.depends_on)
+              .map(id => titleById.get(id))
+              .filter((t): t is string => !!t);
             const isDeferred = deferredTaskIds.has(item.id);
             const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.pending;
             const StatusIcon = cfg.icon;
@@ -770,8 +805,45 @@ export default function ScheduleView() {
                         </span>
                       )}
                       {item.assigned_to && <span>{item.assigned_to}</span>}
+                      {after.length > 0 && (
+                        <span className="flex items-center gap-1">
+                          <ArrowDown className="h-2.5 w-2.5 -rotate-90" />
+                          After: {after.join(", ")}
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {/* Reorder — the same order the Gantt rows follow */}
+                  {canReorder && (
+                    <div
+                      className="flex shrink-0 flex-col"
+                      role="group"
+                      aria-label={`Reorder ${item.title}`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => moveTask(item.id, "up")}
+                        disabled={rowIndex === 0 || reorderTasks.isPending}
+                        aria-label={`Move ${item.title} up`}
+                        className="flex h-6 w-8 items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-25 disabled:hover:text-muted-foreground"
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveTask(item.id, "down")}
+                        disabled={
+                          rowIndex === filtered.length - 1 ||
+                          reorderTasks.isPending
+                        }
+                        aria-label={`Move ${item.title} down`}
+                        className="flex h-6 w-8 items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-25 disabled:hover:text-muted-foreground"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* Badges — stacked on mobile */}
                   <div

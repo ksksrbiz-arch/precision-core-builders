@@ -18,6 +18,16 @@ export async function listScheduleItems(projectId: number) {
   return rows ?? [];
 }
 
+export async function getScheduleItem(id: number) {
+  const { data: row, error } = await data
+    .from("schedule_items")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return row ?? null;
+}
+
 export async function createScheduleItem(values: Record<string, unknown>) {
   return unwrapOne(
     await data.from("schedule_items").insert(values).select().single()

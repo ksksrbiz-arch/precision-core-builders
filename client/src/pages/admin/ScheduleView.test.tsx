@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 window.matchMedia =
   window.matchMedia ||
@@ -24,6 +24,10 @@ const queryState: {
   projects: [{ id: 1, name: "The Hendricks Remodel" }],
   scheduleItems: [],
 };
+
+const reorderMutateAsync = vi.fn(async (_input: unknown) => ({
+  success: true,
+}));
 
 vi.mock("@/hooks/useRealtimeTable", () => ({
   useRealtimeTable: () => ({ isLive: true, lastEvent: null }),
@@ -69,7 +73,10 @@ vi.mock("@/lib/trpc", () => {
               }),
               useMutation: () => ({
                 mutate: vi.fn(),
-                mutateAsync: vi.fn(),
+                mutateAsync:
+                  routerName === "schedule" && procName === "updateOrder"
+                    ? reorderMutateAsync
+                    : vi.fn(),
                 isPending: false,
               }),
             };
@@ -153,5 +160,65 @@ describe("ScheduleView", () => {
     const ScheduleView = await loadPage();
     render(<ScheduleView />);
     expect(screen.queryByText(/no projects yet/i)).toBeNull();
+  });
+
+  describe("task order and dependencies", () => {
+    it("shows what each task follows", async () => {
+      queryState.scheduleItems = [
+        { ...DEFAULT_ITEMS[0], sort_order: 0 },
+        { ...DEFAULT_ITEMS[1], sort_order: 1, depends_on: "1" },
+      ];
+      const ScheduleView = await loadPage();
+      render(<ScheduleView />);
+      expect(screen.getByText(/After: Framing/)).toBeTruthy();
+    });
+
+    it("disables Up on the first row and Down on the last", async () => {
+      const ScheduleView = await loadPage();
+      render(<ScheduleView />);
+      expect(
+        (
+          screen.getByRole("button", {
+            name: "Move Framing up",
+          }) as HTMLButtonElement
+        ).disabled
+      ).toBe(true);
+      expect(
+        (
+          screen.getByRole("button", {
+            name: "Move Roofing down",
+          }) as HTMLButtonElement
+        ).disabled
+      ).toBe(true);
+    });
+
+    it("renumbers and swaps when a task is moved", async () => {
+      reorderMutateAsync.mockClear();
+      queryState.scheduleItems = [
+        { ...DEFAULT_ITEMS[0], sort_order: 0 },
+        { ...DEFAULT_ITEMS[1], sort_order: 1 },
+      ];
+      const ScheduleView = await loadPage();
+      render(<ScheduleView />);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Move Framing down" })
+      );
+      expect(reorderMutateAsync).toHaveBeenCalledWith({
+        projectId: 1,
+        updates: [
+          { id: 2, order: 0 },
+          { id: 1, order: 1 },
+        ],
+      });
+    });
+
+    it("hides reorder controls while a status filter is applied", async () => {
+      const ScheduleView = await loadPage();
+      render(<ScheduleView />);
+      fireEvent.click(screen.getByRole("button", { name: /^complete/i }));
+      expect(
+        screen.queryByRole("button", { name: /^Move .* (up|down)$/ })
+      ).toBeNull();
+    });
   });
 });

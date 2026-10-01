@@ -71,6 +71,15 @@ Each one was a shipped bug; each is test-covered.
 - **Browser → n8n goes through `relayAdminEvent()`** (`client/src/lib/relayEvent.ts`),
   which sends the admin session. A bare `fetch("/api/n8n-webhook")` is rejected.
 - **A table that exists in `drizzle/schema.ts` ships with a migration _and_ RLS.**
+- **Projects are archived, not deleted.** `projects.archive` / `unarchive` set
+  `archived_at`; lists, pickers and dashboard stats exclude archived rows
+  (`projects.list({ archived: "only" | "include" })` opts in). `projects.delete`
+  refuses a project with ledger entries — deleting cascades into the immutable
+  ledger. No UI calls delete.
+- **Schedule dependencies** are `schedule_items.depends_on` = comma-separated
+  predecessor ids, finish-to-start (`shared/scheduleDeps.ts`). The router
+  rejects self/unknown/circular links and unlinks a deleted task from its
+  dependents. `schedule.updateOrder` renumbers `sort_order` (list + Gantt order).
 - **A server-enforced rule beats a toast.** If the UI says "approved and locked",
   the router must refuse the edit (`estimates.update` does).
 
