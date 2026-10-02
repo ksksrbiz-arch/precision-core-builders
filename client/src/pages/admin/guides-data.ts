@@ -439,7 +439,7 @@ export const GUIDES: Guide[] = [
       },
       {
         heading: "Construction Stamp Library",
-        body: 'Click the "Stamps" button in the toolbar to open the library. Pre-built elements you can drop onto the canvas with one click:',
+        body: "Open the Library tab in the Operations panel. Pre-built elements you can drop onto the canvas with one click. Walls, doors, windows and fixtures are marked automatically, so they count in the Takeoff:",
         steps: [
           {
             action: "Structural",
@@ -461,21 +461,50 @@ export const GUIDES: Guide[] = [
           },
           {
             action: "Dimensions",
-            detail: "Dimension lines with measurements, note callout diamonds.",
+            detail:
+              "A 10-foot dimension line and note callout diamonds. For the real length of anything you've drawn, select it and use Add dimension label in the Measure tab.",
           },
         ],
         tips: [
           "Click a stamp to place it at the center of your view. Then drag it where it goes.",
+          "Stamps are sized to the plan's scale, so a 10 ft wall stays 10 ft after you calibrate.",
           "The stamps use industry-standard colors: blue for plumbing, red for electrical.",
           "Combine stamps with freehand drawing for quick on-site sketches.",
         ],
       },
       {
-        heading: "Grid & Snapping",
-        body: "Click the grid icon in the toolbar to toggle a 20px snap grid. Elements will snap to grid intersections when you drag them. This keeps your drawings clean without trying.",
+        heading: "Scale & Measuring",
+        body: "Until you calibrate, one grid square equals one foot. To draw to a real scale, open the Measure tab, draw a line over something you know the length of (a wall on a photo or scaled drawing), select it, type its real length (12' 6\", 12.5, 150\") and press Set scale. Everything on the plan — readouts, labels and the takeoff — is measured from that scale, and it's saved with the plan.",
+        steps: [
+          {
+            action: "Select any shape",
+            detail:
+              "The Measure tab shows its real size: width × height and area for a rectangle, length for a line, area and perimeter for a closed shape.",
+          },
+          {
+            action: "Snap to 1 ft, 6 in, 1 in or off",
+            detail:
+              "Sets the snap grid from the scale, so lines land on real measurements.",
+          },
+          {
+            action: "Add dimension label",
+            detail:
+              "Drops the measured size onto the drawing as text. It's a snapshot — re-add it if you resize the shape.",
+          },
+        ],
         tips: [
-          "Grid ON for floor plans and precise layouts.",
-          "Grid OFF for quick freehand sketches and detail callouts.",
+          "Calibrate first, then draw. Changing the scale later changes what every shape measures.",
+          "A room drawn as a closed line (click back on the first point) measures its true area, even with angled walls.",
+        ],
+        warning:
+          "Until a plan is calibrated, quantities use the default scale and say so. Don't quote from them.",
+      },
+      {
+        heading: "Takeoff",
+        body: "Select a shape and mark it as a Room, Exterior / Interior / Load-bearing wall, Door or Window. The Takeoff in the Measure tab adds up floor area by room, wall length by type, openings and fixtures. Only marked shapes count, so loose sketches never inflate the numbers.",
+        tips: [
+          "Name a room before marking it (Kitchen, Primary Bath) and it shows by name in the takeoff.",
+          "The server recomputes these quantities from the saved plan, so what feeds an estimate is derived from the drawing, never typed in.",
         ],
       },
       {
@@ -494,14 +523,9 @@ export const GUIDES: Guide[] = [
             action: "Export as .excalidraw",
             detail: "Native format. Reopen and edit later.",
           },
-          {
-            action: "Share button",
-            detail:
-              "Generates a link for the client portal so they can view (not edit) the plan.",
-          },
         ],
         warning:
-          "PNG exports what's on screen. Zoom out to capture the full plan before exporting.",
+          "Exports include everything on the canvas, not just what's on screen. Plans aren't shared with clients from here yet — export a PNG and send it.",
       },
       {
         heading: "Pro Moves",

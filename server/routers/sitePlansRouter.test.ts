@@ -176,6 +176,21 @@ describe("SitePlans Router — create", () => {
       app_state: "{}",
       thumbnail_data_url: null,
     });
+    // An uncalibrated create doesn't write the scale column at all.
+    expect(arg).not.toHaveProperty("scale_px_per_ft");
+  });
+
+  it("stores a calibrated scale and rejects an absurd one", async () => {
+    await admin().sitePlans.create({ name: "Scaled", scalePxPerFt: 32.5 });
+    expect(createMock.mock.calls[0][0]).toMatchObject({
+      scale_px_per_ft: 32.5,
+    });
+    await expect(
+      admin().sitePlans.create({ name: "Bad", scalePxPerFt: 0 })
+    ).rejects.toThrow();
+    await expect(
+      admin().sitePlans.create({ name: "Bad", scalePxPerFt: 99999 })
+    ).rejects.toThrow();
   });
 });
 
@@ -204,5 +219,84 @@ describe("SitePlans Router — update mapping", () => {
     await admin().sitePlans.update({ id: 4, projectId: null });
     const [, patch] = updateMock.mock.calls[0];
     expect(patch.project_id).toBeNull();
+  });
+});
+
+describe("SitePlans Router — scale on update", () => {
+  it("sends the scale only when the caller changed it; null clears it", async () => {
+    await admin().sitePlans.update({ id: 3, name: "Just a rename" });
+    expect(updateMock.mock.calls[0][1]).not.toHaveProperty("scale_px_per_ft");
+
+    await admin().sitePlans.update({ id: 3, scalePxPerFt: 24 });
+    expect(updateMock.mock.calls[1][1]).toMatchObject({ scale_px_per_ft: 24 });
+
+    await admin().sitePlans.update({ id: 3, scalePxPerFt: null });
+    expect(updateMock.mock.calls[2][1]).toMatchObject({
+      scale_px_per_ft: null,
+    });
+  });
+});
+
+describe("SitePlans Router — takeoff", () => {
+  const room = (extra: object) => ({
+    type: "rectangle",
+    isDeleted: false,
+    ...extra,
+  });
+
+  it("rejects non-admin and unauthenticated callers", async () => {
+    await expect(
+      appRouter.createCaller(ctx("u1", "user")).sitePlans.takeoff({ id: 1 })
+    ).rejects.toThrow(/forbidden/i);
+    await expect(
+      appRouter.createCaller(ctx()).sitePlans.takeoff({ id: 1 })
+    ).rejects.toThrow(/unauthorized/i);
+    expect(getByIdMock).not.toHaveBeenCalled();
+  });
+
+  it("computes quantities from the STORED drawing and scale", async () => {
+    getByIdMock.mockResolvedValueOnce({
+      id: 4,
+      name: "Kitchen reno",
+      scale_px_per_ft: "40.0000", // numeric columns can arrive as strings
+      elements: JSON.stringify([
+        room({
+          id: "r",
+          width: 400,
+          height: 400,
+          customData: { pcb: { kind: "room", name: "Kitchen" } },
+        }),
+      ]),
+    } as never);
+    const res = await admin().sitePlans.takeoff({ id: 4 });
+    expect(res.calibrated).toBe(true);
+    expect(res.takeoff.scalePxPerFt).toBe(40);
+    expect(res.takeoff.rooms).toEqual([
+      { id: "r", name: "Kitchen", areaSqFt: 100, perimeterFt: 40 },
+    ]);
+  });
+
+  it("an uncalibrated plan uses the default scale and says so", async () => {
+    getByIdMock.mockResolvedValueOnce({
+      id: 5,
+      name: "Sketch",
+      scale_px_per_ft: null,
+      elements: "[]",
+    } as never);
+    const res = await admin().sitePlans.takeoff({ id: 5 });
+    expect(res.calibrated).toBe(false);
+    expect(res.takeoff.scalePxPerFt).toBe(20);
+  });
+
+  it("refuses unreadable drawing data instead of guessing", async () => {
+    getByIdMock.mockResolvedValueOnce({
+      id: 6,
+      name: "Corrupt",
+      scale_px_per_ft: null,
+      elements: "{not json",
+    } as never);
+    await expect(admin().sitePlans.takeoff({ id: 6 })).rejects.toThrow(
+      /unreadable/i
+    );
   });
 });

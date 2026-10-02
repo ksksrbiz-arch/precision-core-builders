@@ -703,6 +703,12 @@ export const sitePlans = pgTable("site_plans", {
   appState: text("app_state").notNull().default("{}"),
   /** Base-64 PNG thumbnail (small, generated on save) */
   thumbnailDataUrl: text("thumbnail_data_url"),
+  /**
+   * Canvas pixels per real-world foot. NULL = never calibrated; readers fall
+   * back to the default (1 grid square = 1 ft). Takeoff quantities are derived
+   * from this on the server (`shared/planMeasure.ts`).
+   */
+  scalePxPerFt: decimal("scale_px_per_ft", { precision: 10, scale: 4 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

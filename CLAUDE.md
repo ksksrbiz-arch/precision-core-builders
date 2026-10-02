@@ -20,6 +20,7 @@ context, then read the actual code — never infer current state from docs alone
 | Add or change a feature end-to-end           | `context/workflows/add-feature/CONTEXT.md`                                    |
 | Add or change anything AI-facing             | `context/workflows/ai-surface/CONTEXT.md` + `docs/AI_OPERATING_CONTRACT.md`   |
 | Review the estimating rates (Eric's task)    | `context/workflows/estimating-review/CONTEXT.md` + `docs/ESTIMATING_BASIS.md` |
+| Site plans: scale, measuring, takeoff        | `docs/SITE_PLAN_TAKEOFF.md`                                                   |
 | Server architecture, routers, auth, database | `context/references/stack.md`                                                 |
 | Find where something lives                   | `context/references/file-structure.md`                                        |
 | Build, test, migrate, add a component        | `context/references/workflows-commands.md`                                    |

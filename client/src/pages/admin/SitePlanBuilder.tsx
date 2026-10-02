@@ -30,6 +30,26 @@ import {
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { QueryError } from "@/components/QueryError";
+import {
+  MeasurePanel,
+  SNAP_FEET,
+  type SnapChoice,
+} from "@/components/plan/MeasurePanel";
+import {
+  dimensionText,
+  labelAnchor,
+  sceneSignature,
+  tagElements,
+  type SceneElement,
+} from "@/lib/planScene";
+import {
+  DEFAULT_PX_PER_FT,
+  classifyStamp,
+  gridSizeFor,
+  scaleStampElement,
+  type PlanKind,
+  type WallType,
+} from "@shared/planMeasure";
 import { SkeletonList } from "@/components/Skeletons";
 import { trpc } from "@/lib/trpc";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
@@ -48,7 +68,6 @@ import {
   Plus,
   Ruler,
   Save,
-  Share2,
   Stamp,
   Trash2,
   X,
@@ -471,7 +490,7 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
             y: 0,
             points: [
               [0, 0],
-              [120, 0],
+              [200, 0],
             ],
             strokeColor: "#495057",
             strokeWidth: 1,
@@ -491,7 +510,7 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "line",
-            x: 120,
+            x: 200,
             y: -6,
             points: [
               [0, 0],
@@ -503,9 +522,9 @@ const CONSTRUCTION_STAMPS: StampCategory[] = [
           },
           {
             type: "text",
-            x: 40,
+            x: 76,
             y: -20,
-            text: "10'-0\"",
+            text: "10' 0\"",
             fontSize: 14,
             fontFamily: 1,
             strokeColor: "#495057",
@@ -554,8 +573,25 @@ export default function SitePlanBuilder() {
   const [activeStampCategory, setActiveStampCategory] = useState<string | null>(
     CONSTRUCTION_STAMPS[0]?.name ?? null
   );
-  const [operationsTab, setOperationsTab] = useState<"library" | "plans">(
-    "library"
+  const [operationsTab, setOperationsTab] = useState<
+    "library" | "measure" | "plans"
+  >("library");
+  // null = never calibrated → the default scale (1 grid square = 1 ft) applies.
+  const [scalePxPerFt, setScalePxPerFt] = useState<number | null>(null);
+  const [snap, setSnap] = useState<SnapChoice>("1ft");
+  const [scene, setScene] = useState<{
+    elements: readonly SceneElement[];
+    selectedIds: readonly string[];
+    signature: string;
+  }>({ elements: [], selectedIds: [], signature: "0:0" });
+  // What "saved" looks like, so we can tell when there's work to lose.
+  const [baseline, setBaseline] = useState<{
+    signature: string;
+    name: string;
+    scale: number | null;
+  } | null>(null);
+  const [pendingDiscard, setPendingDiscard] = useState<(() => void) | null>(
+    null
   );
   const [showStampPanel, setShowStampPanel] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -617,6 +653,140 @@ export default function SitePlanBuilder() {
     }
   }, [isDesktop, isMobile, isTablet]);
 
+  const effectiveScale = scalePxPerFt ?? DEFAULT_PX_PER_FT;
+
+  const handleSceneChange = useCallback(
+    (elements: readonly SceneElement[], appState: any) => {
+      const selectedIds = Object.keys(appState?.selectedElementIds ?? {});
+      const signature = sceneSignature(elements);
+      setScene(prev =>
+        prev.signature === signature &&
+        prev.selectedIds.length === selectedIds.length &&
+        prev.selectedIds.every((id, i) => id === selectedIds[i])
+          ? prev
+          : { elements, selectedIds, signature }
+      );
+      // The first scene we see is the clean starting point.
+      setBaseline(
+        prev => prev ?? { signature, name: planName, scale: scalePxPerFt }
+      );
+    },
+    [planName, scalePxPerFt]
+  );
+
+  /** Snapshot "what's on the canvas right now" as the saved state. */
+  const markSaved = useCallback(
+    (name: string, scale: number | null) => {
+      const els = (excalidrawAPI?.getSceneElements?.() ??
+        []) as readonly SceneElement[];
+      setBaseline({ signature: sceneSignature(els), name, scale });
+    },
+    [excalidrawAPI]
+  );
+
+  const isDirty =
+    baseline !== null &&
+    (baseline.signature !== scene.signature ||
+      baseline.name !== planName ||
+      baseline.scale !== scalePxPerFt);
+
+  // Closing the tab or navigating away with unsaved work asks first.
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [isDirty]);
+
+  /** Run `action` now, or after the builder confirms discarding unsaved work. */
+  const guardUnsaved = useCallback(
+    (action: () => void) => {
+      if (isDirty) setPendingDiscard(() => action);
+      else action();
+    },
+    [isDirty]
+  );
+
+  const applyGrid = useCallback(
+    (nextSnap: SnapChoice, scale: number) => {
+      if (!excalidrawAPI) return;
+      const inc = SNAP_FEET[nextSnap];
+      excalidrawAPI.updateScene({
+        appState: { gridSize: inc > 0 ? gridSizeFor(scale, inc) : null },
+      });
+    },
+    [excalidrawAPI]
+  );
+
+  const handleScaleChange = useCallback(
+    (next: number | null) => {
+      setScalePxPerFt(next);
+      applyGrid(snap, next ?? DEFAULT_PX_PER_FT);
+    },
+    [applyGrid, snap]
+  );
+
+  const handleSnapChange = useCallback(
+    (next: SnapChoice) => {
+      setSnap(next);
+      applyGrid(next, effectiveScale);
+    },
+    [applyGrid, effectiveScale]
+  );
+
+  const handleTag = useCallback(
+    (
+      ids: readonly string[],
+      tag: { kind: PlanKind; name?: string; wallType?: WallType } | null
+    ) => {
+      if (!excalidrawAPI) return;
+      excalidrawAPI.updateScene({
+        elements: tagElements(excalidrawAPI.getSceneElements(), ids, tag),
+      });
+    },
+    [excalidrawAPI]
+  );
+
+  const handleAddLabel = useCallback(
+    async (id: string) => {
+      if (!excalidrawAPI) return;
+      const el = (excalidrawAPI.getSceneElements() as SceneElement[]).find(
+        e => e.id === id
+      );
+      const text = el && dimensionText(el, effectiveScale);
+      if (!el || !text) return;
+      try {
+        const { convertToExcalidrawElements } =
+          await import("@excalidraw/excalidraw");
+        const at = labelAnchor(el);
+        const label = convertToExcalidrawElements([
+          {
+            type: "text",
+            x: at.x - text.length * 4,
+            y: at.y,
+            text,
+            fontSize: 14,
+            strokeColor: "#e9ecef",
+          },
+        ]);
+        excalidrawAPI.updateScene({
+          elements: [...excalidrawAPI.getSceneElements(), ...label],
+        });
+      } catch (err) {
+        console.error("[SitePlanBuilder] Dimension label failed:", err);
+        addToast({
+          type: "error",
+          title: "Couldn't add label",
+          message: "The dimension label could not be added.",
+        });
+      }
+    },
+    [excalidrawAPI, effectiveScale, addToast]
+  );
+
   const handleSave = useCallback(async () => {
     if (!excalidrawAPI) return;
     setSaving(true);
@@ -658,6 +828,8 @@ export default function SitePlanBuilder() {
           name: planName,
           elements,
           appState,
+          // Only when it changed (null = back to the default scale).
+          ...(baseline?.scale !== scalePxPerFt && { scalePxPerFt }),
           ...(thumbnailDataUrl && { thumbnailDataUrl }),
         });
       } else {
@@ -665,10 +837,12 @@ export default function SitePlanBuilder() {
           name: planName,
           elements,
           appState,
+          ...(scalePxPerFt !== null && { scalePxPerFt }),
           ...(thumbnailDataUrl && { thumbnailDataUrl }),
         });
         setActivePlanId(created.id);
       }
+      markSaved(planName, scalePxPerFt);
 
       await utils.sitePlans.list.invalidate();
       addToast({
@@ -690,6 +864,9 @@ export default function SitePlanBuilder() {
     exportToBlob,
     planName,
     activePlanId,
+    scalePxPerFt,
+    baseline,
+    markSaved,
     createPlan,
     updatePlan,
     utils,
@@ -704,12 +881,24 @@ export default function SitePlanBuilder() {
         const fullPlan = await utils.sitePlans.getById.fetch({ id: planId });
         const parsedElements = JSON.parse(fullPlan.elements ?? "[]");
         const parsedAppState = JSON.parse(fullPlan.app_state ?? "{}");
+        const savedScale =
+          fullPlan.scale_px_per_ft == null
+            ? null
+            : Number(fullPlan.scale_px_per_ft);
         excalidrawAPI.updateScene({
           elements: parsedElements,
-          appState: parsedAppState,
+          appState: {
+            ...parsedAppState,
+            gridSize:
+              SNAP_FEET[snap] > 0
+                ? gridSizeFor(savedScale ?? DEFAULT_PX_PER_FT, SNAP_FEET[snap])
+                : null,
+          },
         });
         setPlanName(name);
         setActivePlanId(planId);
+        setScalePxPerFt(savedScale);
+        markSaved(name, savedScale);
         addToast({
           type: "success",
           title: "Loaded",
@@ -724,7 +913,7 @@ export default function SitePlanBuilder() {
         });
       }
     },
-    [excalidrawAPI, utils, addToast]
+    [excalidrawAPI, utils, addToast, snap, markSaved]
   );
 
   const handleDeletePlan = useCallback(
@@ -754,13 +943,25 @@ export default function SitePlanBuilder() {
   );
 
   const handleCreatePlan = useCallback(() => {
-    setActivePlanId(null);
-    setPlanName("Untitled Site Plan");
-    if (excalidrawAPI) {
-      excalidrawAPI.updateScene({ elements: [] });
-    }
-    if (isMobile) setShowStampPanel(false);
-  }, [excalidrawAPI, isMobile]);
+    guardUnsaved(() => {
+      setActivePlanId(null);
+      setPlanName("Untitled Site Plan");
+      setScalePxPerFt(null);
+      if (excalidrawAPI) {
+        excalidrawAPI.updateScene({
+          elements: [],
+          appState: {
+            gridSize:
+              SNAP_FEET[snap] > 0
+                ? gridSizeFor(DEFAULT_PX_PER_FT, SNAP_FEET[snap])
+                : null,
+          },
+        });
+      }
+      markSaved("Untitled Site Plan", null);
+      if (isMobile) setShowStampPanel(false);
+    });
+  }, [excalidrawAPI, isMobile, guardUnsaved, snap, markSaved]);
 
   const handleToggleGrid = useCallback(() => {
     if (!excalidrawAPI) return;
@@ -833,25 +1034,48 @@ export default function SitePlanBuilder() {
   }, [excalidrawAPI, planName]);
 
   const addStampToCanvas = useCallback(
-    (stamp: StampItem) => {
+    async (stamp: StampItem, categoryName: string) => {
       if (!excalidrawAPI) return;
       const appState = excalidrawAPI.getAppState();
-      const centerX = appState.scrollX * -1 + appState.width / 2;
-      const centerY = appState.scrollY * -1 + appState.height / 2;
+      // Visible-canvas centre in scene coordinates (accounts for zoom).
+      const zoom = appState.zoom?.value ?? 1;
+      const centerX = -appState.scrollX + appState.width / 2 / zoom;
+      const centerY = -appState.scrollY + appState.height / 2 / zoom;
+      const stampTag = classifyStamp(categoryName, stamp.label);
+      const stamped = Date.now();
 
-      const newElements = stamp.elements.map((el: any, i: number) => ({
-        ...el,
-        x: centerX + (el.x || 0),
-        y: centerY + (el.y || 0),
-        id: `stamp-${Date.now()}-${i}`,
-        seed: Math.floor(Math.random() * 100000),
-      }));
+      const skeletons = stamp.elements.map((el: any, i: number) => {
+        // Library shapes are drawn at the default scale; resize them so a
+        // "10 ft wall" is still 10 ft on a calibrated plan.
+        const scaled = scaleStampElement(el, effectiveScale);
+        return {
+          ...scaled,
+          x: centerX + (scaled.x || 0),
+          y: centerY + (scaled.y || 0),
+          id: `stamp-${stamped}-${i}`,
+          seed: Math.floor(Math.random() * 100000),
+          // Only the first shape carries the tag, so a multi-part stamp
+          // (e.g. a door and its swing) is counted once in the takeoff.
+          ...(i === 0 && stampTag && { customData: { pcb: stampTag } }),
+        };
+      });
+
+      let newElements: any[] = skeletons;
+      try {
+        // Let Excalidraw build complete elements (text metrics, defaults)
+        // rather than hand-feeding it partial objects.
+        const { convertToExcalidrawElements } =
+          await import("@excalidraw/excalidraw");
+        newElements = convertToExcalidrawElements(skeletons as any);
+      } catch {
+        // Fall back to the raw skeletons — the previous behaviour.
+      }
 
       excalidrawAPI.updateScene({
         elements: [...excalidrawAPI.getSceneElements(), ...newElements],
       });
     },
-    [excalidrawAPI]
+    [excalidrawAPI, effectiveScale]
   );
 
   const activeCategory =
@@ -953,6 +1177,7 @@ export default function SitePlanBuilder() {
             {Excalidraw ? (
               <Excalidraw
                 excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
+                onChange={handleSceneChange as any}
                 theme="dark"
                 initialData={{
                   appState: {
@@ -978,6 +1203,9 @@ export default function SitePlanBuilder() {
                       roughness: 1,
                       id: "starter-room",
                       seed: 12345,
+                      customData: {
+                        pcb: { kind: "room", name: "Living Room" },
+                      },
                     },
                     {
                       type: "text",
@@ -1063,6 +1291,16 @@ export default function SitePlanBuilder() {
                   Library
                 </Button>
                 <Button
+                  variant={operationsTab === "measure" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 h-9"
+                  onClick={() => setOperationsTab("measure")}
+                  aria-pressed={operationsTab === "measure"}
+                >
+                  <Ruler className="h-4 w-4 mr-1.5" />
+                  Measure
+                </Button>
+                <Button
                   variant={operationsTab === "plans" ? "default" : "outline"}
                   size="sm"
                   className="flex-1 h-9"
@@ -1074,7 +1312,18 @@ export default function SitePlanBuilder() {
                 </Button>
               </div>
 
-              {operationsTab === "library" ? (
+              {operationsTab === "measure" ? (
+                <MeasurePanel
+                  elements={scene.elements}
+                  selectedIds={scene.selectedIds}
+                  scalePxPerFt={scalePxPerFt}
+                  onScaleChange={handleScaleChange}
+                  snap={snap}
+                  onSnapChange={handleSnapChange}
+                  onTag={handleTag}
+                  onAddLabel={handleAddLabel}
+                />
+              ) : operationsTab === "library" ? (
                 isMobile ? (
                   <div className="flex-1 overflow-y-auto p-2 space-y-1">
                     {CONSTRUCTION_STAMPS.map(cat => (
@@ -1097,7 +1346,7 @@ export default function SitePlanBuilder() {
                               <button
                                 key={stamp.label}
                                 onClick={() => {
-                                  addStampToCanvas(stamp);
+                                  addStampToCanvas(stamp, cat.name);
                                   setShowStampPanel(false);
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-sm hover:bg-muted/80 transition-colors text-foreground/80 hover:text-foreground active:bg-muted border border-transparent hover:border-border/40"
@@ -1140,7 +1389,9 @@ export default function SitePlanBuilder() {
                       {activeCategory?.items.map(stamp => (
                         <button
                           key={stamp.label}
-                          onClick={() => addStampToCanvas(stamp)}
+                          onClick={() =>
+                            addStampToCanvas(stamp, activeCategory.name)
+                          }
                           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-sm hover:bg-muted/80 transition-colors text-foreground/80 hover:text-foreground active:bg-muted border border-transparent hover:border-border/40"
                           aria-label={`Add ${stamp.label}`}
                         >
@@ -1178,8 +1429,11 @@ export default function SitePlanBuilder() {
                       <button
                         className="flex-1 text-left px-3 py-2 min-w-0"
                         onClick={() => {
-                          handleLoadPlan(plan.id, plan.name);
-                          if (isMobile) setShowStampPanel(false);
+                          if (plan.id === activePlanId) return;
+                          guardUnsaved(() => {
+                            handleLoadPlan(plan.id, plan.name);
+                            if (isMobile) setShowStampPanel(false);
+                          });
                         }}
                       >
                         <p
@@ -1243,20 +1497,63 @@ export default function SitePlanBuilder() {
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="flex items-center gap-1">
               <Ruler className="h-3 w-3" />
-              <span>Grid: 20px</span>
+              <span data-testid="footer-scale">
+                {scalePxPerFt == null
+                  ? "Scale: default (1 grid = 1 ft)"
+                  : `Scale: 1 ft = ${Math.round(scalePxPerFt * 100) / 100}px`}
+              </span>
             </span>
             <span className="hidden md:flex items-center gap-1">
               <Zap className="h-3 w-3 text-amber-500" />
               Hand-drawn mode
             </span>
           </div>
-          <span>
-            {excalidrawAPI
-              ? `${excalidrawAPI.getSceneElements?.()?.length || 0} elements`
-              : "—"}
+          <span className="flex items-center gap-3">
+            {isDirty && (
+              <span
+                role="status"
+                className="text-amber-500"
+                data-testid="unsaved-indicator"
+              >
+                Unsaved changes
+              </span>
+            )}
+            <span>
+              {scene.elements.filter(e => !e.isDeleted).length} elements
+            </span>
           </span>
         </div>
       </div>
+
+      <AlertDialog
+        open={pendingDiscard !== null}
+        onOpenChange={open => {
+          if (!open) setPendingDiscard(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This plan has changes that haven't been saved. If you continue,
+              they'll be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const run = pendingDiscard;
+                setPendingDiscard(null);
+                run?.();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
