@@ -1,6 +1,7 @@
 /**
  * NotificationsView — admin notification center: send and track client notifications.
  */
+import { useAllClients, useAllProjects } from "@/hooks/useAllPages";
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -171,8 +172,8 @@ export default function NotificationsView() {
     },
   });
 
-  const { data: clients } = trpc.clients.list.useQuery({ pageSize: 100 });
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
+  const { data: clients } = useAllClients();
+  const { data: projects } = useAllProjects();
   const {
     data: feed,
     isLoading: feedLoading,

@@ -1,6 +1,7 @@
 /**
  * Sub-Contractors — crew roster with trade, license, and briefing dispatch.
  */
+import { useAllProjects } from "@/hooks/useAllPages";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   Dialog,
@@ -132,7 +133,7 @@ export default function SubContractorsList() {
     isError,
     refetch,
   } = trpc.subContractors.list.useQuery();
-  const { data: projectsData } = trpc.projects.list.useQuery({ pageSize: 100 });
+  const { data: projectsData } = useAllProjects();
 
   // Live updates: roster changes from another device refresh the list.
   useRealtimeTable({

@@ -896,6 +896,10 @@ export const purchaseOrderItems = pgTable(
     }),
     description: varchar("description", { length: 300 }).notNull(),
     quantity: decimal("quantity", { precision: 10, scale: 2 }),
+    // Cumulative quantity received so far (0007+ receipts; see 0012 migration).
+    quantityReceived: decimal("quantity_received", { precision: 10, scale: 2 })
+      .default("0")
+      .notNull(),
     unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
     lineTotal: decimal("line_total", { precision: 12, scale: 2 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),

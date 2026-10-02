@@ -12,8 +12,8 @@ Fixed in the audit PR; these remain **decisions or larger builds**, not bugs:
 
 - [ ] Retire the orphaned `admin-auth` shared-password endpoint (static non-expiring master token, no UI) — **needs Keith's call**
 - [ ] Price portal finish options server-side (finish catalog) — the client hard-codes dollar deltas and the server writes client-supplied `budgetImpact` into the immutable ledger
-- [ ] PO receipt UI with a received-quantity input ("partial" currently applies the full line); decide when PO cost counts toward actual cost
-- [ ] Paginate / search-as-you-type the project & client pickers (capped at 50–100 today)
+- [x] PO receipt UI with a received-quantity input — Receive dialog, cumulative per-line receipts, inventory bumped by what arrived (migration 0012). **Still open (policy):** decide when received PO cost counts toward actual cost
+- [x] Project & client pickers no longer capped at 50–100 (`useAllPages` walks every page); search-as-you-type is a later nicety
 - [x] Project archive (instead of delete) — `archived_at`, Archive/Restore UI, hard delete refused when ledger history exists (migration 0011)
 - [x] Schedule dependency lines + reorder UI — "Starts after" editor, finish-to-start connectors (red when violated), Up/Down reorder
 - [x] Route `vision-studio` through `routeAi()` / `specialistPrompt()` — pinned `vision-analyst` specialist

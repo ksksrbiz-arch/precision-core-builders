@@ -2,6 +2,7 @@
  * ScheduleView — Weather-responsive project schedule with 7-day forecast overlay.
  * Calls /api/weather-schedule for Eugene OR forecast and task recommendations.
  */
+import { useAllProjects } from "@/hooks/useAllPages";
 import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
@@ -195,7 +196,7 @@ export default function ScheduleView() {
     notes: "",
   });
 
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
+  const { data: projects } = useAllProjects();
   const {
     data: scheduleItems,
     isLoading: scheduleLoading,

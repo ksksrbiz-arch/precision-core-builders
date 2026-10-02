@@ -12,6 +12,7 @@
  * projectId/clientId so the function does NOT persist a separate row — the save
  * happens only when the admin submits this form.
  */
+import { useAllClients, useAllProjects } from "@/hooks/useAllPages";
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { SkeletonCard } from "@/components/Skeletons";
@@ -115,8 +116,8 @@ export default function EstimateEditor() {
   const [dirty, setDirty] = useState(false);
 
   const utils = trpc.useUtils();
-  const { data: projectsData } = trpc.projects.list.useQuery({ pageSize: 100 });
-  const { data: clientsData } = trpc.clients.list.useQuery({ pageSize: 100 });
+  const { data: projectsData } = useAllProjects();
+  const { data: clientsData } = useAllClients();
 
   const {
     data: existing,

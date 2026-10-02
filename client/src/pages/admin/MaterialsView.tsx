@@ -3,6 +3,7 @@
  * Calls /api/material-procurement to generate vendor-grouped Purchase Orders
  * for shortages.
  */
+import { useAllProjects } from "@/hooks/useAllPages";
 import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
@@ -42,6 +43,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import { PoReceiveDialog } from "@/components/PoReceiveDialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -267,7 +269,7 @@ export default function MaterialsView() {
   const [editVendorIdsLoaded, setEditVendorIdsLoaded] = useState(false);
   const { addToast } = useToast();
 
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 50 });
+  const { data: projects } = useAllProjects();
   const { data: vendorsData } = trpc.vendors.list.useQuery();
   const {
     data: materials,
@@ -292,14 +294,21 @@ export default function MaterialsView() {
   } = trpc.purchaseOrders.list.useQuery({
     projectId: selectedProject ?? undefined,
   });
+  // PO whose delivery is being recorded (opens the Receive dialog).
+  const [receivingPo, setReceivingPo] = useState<{
+    id: number;
+    number: string;
+  } | null>(null);
   const updatePOStatus = useMutationWithToast(
     trpc.purchaseOrders.updateStatus.useMutation(),
     {
       success: "Status Updated",
       successMessage:
-        "Purchase order status updated. Received/partial also updates material inventory.",
+        "Purchase order status updated. Marking an order received adds whatever is still outstanding to inventory.",
       error: "Update Failed",
       errorMessage: "Failed to update purchase order status.",
+      // e.g. "Use Receive to record a partial delivery…"
+      showServerMessageFor: ["BAD_REQUEST", "CONFLICT"],
       onSuccess: () => {
         utils.purchaseOrders.list.invalidate();
         // Receipt path bumps quantity_received / is_shortage on linked materials.
@@ -1371,6 +1380,22 @@ export default function MaterialsView() {
                           <span className="text-[11px] text-muted-foreground">
                             {fmtShortDate(po.created_at)}
                           </span>
+                          {(po.status === "issued" ||
+                            po.status === "partial") && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setReceivingPo({
+                                  id: po.id,
+                                  number: po.po_number,
+                                })
+                              }
+                              className="mr-2 border border-primary/40 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10"
+                              style={{ fontFamily: "var(--font-condensed)" }}
+                            >
+                              Receive
+                            </button>
+                          )}
                           <select
                             value={po.status}
                             disabled={updatePOStatus.isPending}
@@ -1387,7 +1412,14 @@ export default function MaterialsView() {
                             style={{ fontFamily: "var(--font-condensed)" }}
                           >
                             {PO_STATUSES.map(s => (
-                              <option key={s} value={s}>
+                              <option
+                                key={s}
+                                value={s}
+                                // Partial is set by recording a receipt, not by hand.
+                                disabled={
+                                  s === "partial" && po.status !== "partial"
+                                }
+                              >
                                 {s}
                               </option>
                             ))}
@@ -1441,6 +1473,22 @@ export default function MaterialsView() {
                             {fmtShortDate(po.created_at)}
                           </td>
                           <td className="px-4 py-3">
+                            {(po.status === "issued" ||
+                              po.status === "partial") && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setReceivingPo({
+                                    id: po.id,
+                                    number: po.po_number,
+                                  })
+                                }
+                                className="mr-2 border border-primary/40 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10"
+                                style={{ fontFamily: "var(--font-condensed)" }}
+                              >
+                                Receive
+                              </button>
+                            )}
                             <select
                               value={po.status}
                               disabled={updatePOStatus.isPending}
@@ -1457,7 +1505,14 @@ export default function MaterialsView() {
                               style={{ fontFamily: "var(--font-condensed)" }}
                             >
                               {PO_STATUSES.map(s => (
-                                <option key={s} value={s}>
+                                <option
+                                  key={s}
+                                  value={s}
+                                  // Partial is set by recording a receipt, not by hand.
+                                  disabled={
+                                    s === "partial" && po.status !== "partial"
+                                  }
+                                >
                                   {s}
                                 </option>
                               ))}
@@ -1783,6 +1838,14 @@ export default function MaterialsView() {
           </>
         )}
       </div>
+      <PoReceiveDialog
+        poId={receivingPo?.id ?? null}
+        poNumber={receivingPo?.number}
+        open={receivingPo !== null}
+        onOpenChange={open => {
+          if (!open) setReceivingPo(null);
+        }}
+      />
     </DashboardLayout>
   );
 }

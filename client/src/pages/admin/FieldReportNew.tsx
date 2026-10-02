@@ -5,6 +5,7 @@
  *   2. Server-side Whisper router (free Groq Whisper first, legacy OpenAI
  *      Whisper only as a fallback) — used when Web Speech is unavailable
  */
+import { useAllProjects } from "@/hooks/useAllPages";
 import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
@@ -125,7 +126,7 @@ export default function FieldReportNew() {
     isLoading: projectsLoading,
     isError: projectsError,
     refetch: refetchProjects,
-  } = trpc.projects.list.useQuery({ pageSize: 50 });
+  } = useAllProjects();
   const reportableProjects = (projects?.data ?? []).filter(
     p =>
       !(NON_REPORTABLE_PROJECT_STATUSES as readonly string[]).includes(p.status)
