@@ -141,7 +141,7 @@ The database is **Supabase (PostgreSQL)**, accessed via **Drizzle ORM**. The sch
 - `purchase_orders` / `purchase_order_items` — Persisted, vendor-bucketed POs
 - `leads` — AI-scored lead prioritization board
 - `sub_contractors`, `finish_selections`, `notifications`, `portfolio_projects`
-- `site_plans` — Excalidraw canvas data
+- `site_plans` — Excalidraw canvas data + `scale_px_per_ft` (real-world scale; takeoff is computed from it server-side — `docs/SITE_PLAN_TAKEOFF.md`)
 - `vision_studio_requests`, `ai_usage` — AI analysis + usage tracking
 - `billing_events` — Stripe webhook records
 - `blueprint_connections` / `blueprint_artifacts` — Blueprint.am integration (tokens encrypted at rest)
