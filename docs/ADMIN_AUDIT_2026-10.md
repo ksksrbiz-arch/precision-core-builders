@@ -131,7 +131,7 @@ These are deliberate omissions, not oversights.
    today's volume; will bite.
 5. ~~No project-delete UI, schedule dependency lines and reorder UI~~ —
    **done**, see §7.
-6. **The `handle_new_admin_user` DB trigger** (`0003_admin_allowlist.sql`) still
+6. ~~The `handle_new_admin_user` DB trigger~~ — see §10: production doesn't have it; it runs `handle_new_user`, now fixed in 0013. Was: (`0003_admin_allowlist.sql`) still
    writes `role = 'admin'` into `public.users` at _sign-up_ for an allowlisted
    address, before confirmation. The API layer now refuses to honor an
    unconfirmed admin, but RLS policies that read `users.role` directly do not
@@ -259,3 +259,38 @@ on slower devices.
   with receipts can't go back to draft/issued (cancel it instead). **Not
   decided:** when received PO cost should count toward project actual cost —
   today it still doesn't (actual cost = ledger `cost_adjustment` entries).
+
+## 10. SECURITY: any signed-in user could make themselves admin (production DB)
+
+**Found** by auditing the production database through the Supabase connector,
+**reproduced** in a rolled-back transaction (`self-update role -> admin`), and
+**fixed in `drizzle/migrations/0013_users_role_guard.sql`**.
+
+- **Cause:** RLS policies `users_self_update` / `users_update_own` let any
+  signed-in user UPDATE their own `public.users` row, and the `authenticated`
+  role holds UPDATE on every column — including `role`. With the public anon key
+  and their own JWT: `PATCH /rest/v1/users?id=eq.<me>` `{"role":"admin"}`. The API
+  (`verifyToken`) and every admin RLS policy trust `users.role`, so that was full
+  admin access (every client's data, the ledger, estimates, Stripe actions…).
+  Exposure depended only on whether anyone could obtain a session (open sign-up,
+  or any invited client); at the time of the audit all 3 existing accounts were
+  admins.
+- **Fix (0013):** (1) a `BEFORE UPDATE OF role` trigger refuses a role change from
+  `authenticated`/`anon` unless the caller is already an admin (server/service-role
+  writes and SECURITY DEFINER triggers are unaffected); (2) `handle_new_user` —
+  production's actual sign-up function; `0003`'s `handle_new_admin_user` was never
+  applied there — grants admin only to an already-**confirmed** pre-approved email,
+  and a new `on_auth_user_confirmed` trigger promotes the account when it confirms
+  (this closes the old "admin before confirmation" gap); (3) trigger functions
+  (`handle_new_user`, `rls_auto_enable`, …) are no longer executable through
+  `/rest/v1/rpc/*`.
+- **Verification:** `scripts/sql/verify-users-role-guard.sql` runs the checks in a
+  transaction that always rolls back. Result on production with 0013 applied in
+  that rolled-back transaction: self-promote BLOCKED; own non-role update still
+  works; unconfirmed pre-approved email → `user`, → `admin` once confirmed;
+  confirmed pre-approved → `admin`; an admin can still change roles.
+- **Other advisor findings, not changed:** `is_admin()` / `client_id_for_user()`
+  are SECURITY DEFINER and callable by anon/authenticated (needed by RLS policy
+  evaluation — leave); two functions with a mutable `search_path`; `pg_trgm` in
+  `public`; **leaked-password protection is off** (Supabase dashboard → Auth →
+  Password security — worth switching on now that login is password-only).
