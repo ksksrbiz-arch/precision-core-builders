@@ -312,7 +312,15 @@ any signed-in client write straight to the database with the public anon key:
 `drizzle/migrations/0014_drop_unused_client_write_policies.sql` drops them. Admin
 (`*_admin_all`) and all SELECT policies are untouched. Checked with a rolled-back
 transaction: a client's own-row update now affects 0 rows and their own-row
-select still returns 1. (Tables `profiles`, `threads`, `messages`,
+select still returns 1.
+
+**Production state (2026-10-02):** applied via the Supabase connector, which
+stalls on `DROP POLICY`, so the five policies were neutralised in place with
+`ALTER POLICY … USING (false) WITH CHECK (false)` instead of dropped. Effect is
+identical (deny-all); the literal drop in the migration file is idempotent and
+can be run later from the SQL editor to remove the empty shells.
+
+(Tables `profiles`, `threads`, `messages`,
 `thread_members` also have self-write policies but no code in this repo uses
 them — probably another app sharing the project; left alone.)
 
