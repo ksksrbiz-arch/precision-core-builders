@@ -294,3 +294,27 @@ on slower devices.
   evaluation — leave); two functions with a mutable `search_path`; `pg_trgm` in
   `public`; **leaked-password protection is off** (Supabase dashboard → Auth →
   Password security — worth switching on now that login is password-only).
+
+## 11. Browser-writable database policies the app never uses
+
+Same production audit as §10. Every write in this app goes through the server
+with the service-role key (which bypasses RLS); the browser only SELECTs
+(Realtime and the signed-in user's own `users` row). But these RLS policies let
+any signed-in client write straight to the database with the public anon key:
+
+| Policy                                  | What a client could do                                                                                                     |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `finish_selections_client_update`       | UPDATE their selections with no column limit — set `unit_price` / `total_cost` / `budget_delta`, or `eric_approved = true` |
+| `finish_selections_client_insert`       | create a selection on **any** `project_id` (only `client_id` was checked) with arbitrary prices                            |
+| `users_self_update`, `users_update_own` | edit their own `users` row (role is guarded by 0013; this removes email/name/etc.)                                         |
+| `clients_self_update`                   | rewrite their own client record                                                                                            |
+
+`drizzle/migrations/0014_drop_unused_client_write_policies.sql` drops them. Admin
+(`*_admin_all`) and all SELECT policies are untouched. Checked with a rolled-back
+transaction: a client's own-row update now affects 0 rows and their own-row
+select still returns 1. (Tables `profiles`, `threads`, `messages`,
+`thread_members` also have self-write policies but no code in this repo uses
+them — probably another app sharing the project; left alone.)
+
+Still open and separate: the portal's finish selection **server** path writes a
+client-supplied `budgetImpact` into the immutable ledger (audit §4 item 2).
