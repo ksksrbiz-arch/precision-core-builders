@@ -116,7 +116,7 @@ export default function HomeRedesign() {
               Precision construction. Core values.
             </p>
             <h1>
-              Good homes.
+              Quality work.
               <br />
               Built <em>with care.</em>
             </h1>
