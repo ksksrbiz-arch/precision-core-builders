@@ -107,17 +107,16 @@ CREATE POLICY "users_self_select"
   TO authenticated
   USING (id = auth.uid());
 
+-- No browser-side UPDATE on users: every write goes through the server (service
+-- role). A self-update policy let a client edit their own row, including `role`
+-- (see migrations 0013/0014). Dropped here so re-running this file converges.
 DROP POLICY IF EXISTS "users_self_update" ON public.users;
-CREATE POLICY "users_self_update"
-  ON public.users FOR UPDATE
-  TO authenticated
-  USING (id = auth.uid())
-  WITH CHECK (id = auth.uid());
+DROP POLICY IF EXISTS "users_update_own" ON public.users;
 
 -- ============================================================
 -- 2. clients
 --    • Admins: full access.
---    • Clients: can select/update their own row.
+--    • Clients: can select their own row (writes go through the server).
 -- ============================================================
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 
@@ -133,12 +132,8 @@ CREATE POLICY "clients_self_select"
   TO authenticated
   USING (user_id = auth.uid());
 
+-- No browser-side UPDATE on clients (writes go through the server); see 0014.
 DROP POLICY IF EXISTS "clients_self_update" ON public.clients;
-CREATE POLICY "clients_self_update"
-  ON public.clients FOR UPDATE
-  TO authenticated
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
 
 -- ============================================================
 -- 3. projects
@@ -327,11 +322,11 @@ CREATE POLICY "finish_selections_client_select"
   TO authenticated
   USING (client_id = public.client_id_for_user());
 
+-- No browser-side INSERT/UPDATE on finish_selections: clients could set prices
+-- or eric_approved and insert onto any project_id. Writes go through the server
+-- (finishSelections router, service role); see migration 0014.
 DROP POLICY IF EXISTS "finish_selections_client_insert" ON public.finish_selections;
-CREATE POLICY "finish_selections_client_insert"
-  ON public.finish_selections FOR INSERT
-  TO authenticated
-  WITH CHECK (client_id = public.client_id_for_user());
+DROP POLICY IF EXISTS "finish_selections_client_update" ON public.finish_selections;
 
 -- ============================================================
 -- 11a. finish_catalog_items
