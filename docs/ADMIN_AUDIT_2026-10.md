@@ -217,3 +217,25 @@ These are deliberate omissions, not oversights.
   this one escaped it. Not changed: field-report photo tagging
   (`server/_core/visionTagging.ts`) is a separate JSON-output job with its own
   prompt (tracked in `TODO.md`).
+
+## 8. Follow-up: photos flashing on first load
+
+**Cause (measured, Pixel 5 profile, 4× CPU, slow-4G, `/portfolio`):** public
+pages ship prerendered HTML, but the app used `createRoot`, which discards it.
+When React booted, ~20 photos disappeared (the new `ResponsiveImage` elements
+start at opacity 0), the root briefly emptied to the route loader, and then the
+photos were re-created and faded back in — roughly 3 s of blank/flashing photos
+on slower devices.
+
+**Fix:**
+
+- `client/src/lib/mountBehindPrerender.ts` — when `#root` is marked
+  `data-prerendered` (set by `scripts/prerender-marketing.ts`), the app mounts
+  into an offscreen container behind the prerendered page and swaps in only
+  when the live page has content and the photos in view have loaded and
+  finished fading in (8 s hard cap so a failed boot can't strand the user).
+  Re-measured: the visible photo count never drops and the loader never shows.
+  Client-rendered routes (`/admin`, `/portal`, `/auth/login`) are unchanged.
+- `ResponsiveImage` — an image that loaded before React attached `onLoad`
+  (cache, replaced markup) now shows immediately instead of staying at opacity
+  0, and a failed image no longer leaves an invisible hole.

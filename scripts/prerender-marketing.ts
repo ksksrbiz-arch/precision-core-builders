@@ -42,6 +42,17 @@ try {
         url.pathname.startsWith("/api/")
       )
         return route.abort();
+      // Every page must boot from the PRISTINE shell. The preview server's SPA
+      // fallback serves dist/index.html, which this script overwrites with the
+      // prerendered homepage after the first iteration — and a prerendered
+      // shell makes the app mount behind it (mountBehindPrerender), so the
+      // snapshot would capture the previous page's markup.
+      if (route.request().resourceType() === "document")
+        return route.fulfill({
+          status: 200,
+          contentType: "text/html; charset=utf-8",
+          body: shell,
+        });
       return route.continue();
     });
     await page.goto(`http://127.0.0.1:4173${path}`, {
@@ -109,7 +120,10 @@ try {
       .replace(/<link\s+[^>]*rel="canonical"[^>]*>/g, "")
       .replace(/<link\s+[^>]*rel="stylesheet"[^>]*>/g, "")
       .replace("</head>", `${snapshot.tags}\n${snapshot.styles}\n</head>`)
-      .replace(ROOT, () => `<div id="root">${snapshot.root}</div>`);
+      .replace(
+        ROOT,
+        () => `<div id="root" data-prerendered="true">${snapshot.root}</div>`
+      );
     // Do not preload the homepage hero on every service/article route.
     if (path !== "/")
       html = html.replace(
