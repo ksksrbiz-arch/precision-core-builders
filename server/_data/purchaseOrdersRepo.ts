@@ -8,6 +8,7 @@
  * here.
  */
 import { requireSupabaseAdmin } from "../_core/supabase";
+import type { LineReceipt, PoLine } from "../../shared/poReceipt";
 import { unwrapList, unwrapOne, unwrapVoid } from "./repository";
 
 export type PurchaseOrderStatus =
@@ -114,16 +115,16 @@ export async function getPurchaseOrderStatus(
 }
 
 /**
- * Update PO status. When moving to `received` or `partial`, apply line-item
- * quantities to linked materials' quantity_received and recompute is_shortage
- * so inventory + the shortages dashboard stay in sync.
+ * Update PO status only. Receiving goods is NOT a status change: it goes
+ * through `applyPurchaseOrderReceipt`, which records per-line quantities and
+ * bumps inventory by what actually arrived.
  */
 export async function updatePurchaseOrderStatus(
   id: number,
   status: PurchaseOrderStatus
 ) {
   const db = requireSupabaseAdmin();
-  const updated = unwrapOne(
+  return unwrapOne(
     await db
       .from("purchase_orders")
       .update({ status, updated_at: new Date().toISOString() })
@@ -131,66 +132,87 @@ export async function updatePurchaseOrderStatus(
       .select()
       .single()
   );
+}
 
-  if (status === "received" || status === "partial") {
-    await applyReceiptToMaterials(id, status === "received");
-  }
-
-  return updated;
+/** The lines of a PO in the shape the receipt planner works on. */
+export async function getPurchaseOrderLines(poId: number): Promise<PoLine[]> {
+  const db = requireSupabaseAdmin();
+  const { data: rows, error } = await db
+    .from("purchase_order_items")
+    .select("id, material_id, quantity, quantity_received")
+    .eq("purchase_order_id", poId)
+    .order("id");
+  if (error) throw new Error(error.message);
+  return (rows ?? []).map(r => ({
+    id: r.id as number,
+    materialId: (r.material_id as number | null) ?? null,
+    quantity: r.quantity == null ? null : Number(r.quantity),
+    quantityReceived: Number(r.quantity_received ?? 0),
+  }));
 }
 
 /**
- * For each PO line with a material_id, bump quantity_received.
- * - full=true (received): received becomes max(current, line qty)
- * - full=false (partial): received += line qty
+ * Apply a planned receipt: bump each line's cumulative received quantity, add
+ * the quantity that arrived to the linked material's inventory (recomputing
+ * its shortage flag), and set the PO status (`partial` / `received`).
  */
-async function applyReceiptToMaterials(poId: number, full: boolean) {
+export async function applyPurchaseOrderReceipt(
+  poId: number,
+  receipts: readonly LineReceipt[],
+  status: "partial" | "received"
+) {
   const db = requireSupabaseAdmin();
-  const { data: items, error } = await db
-    .from("purchase_order_items")
-    .select("material_id, quantity")
-    .eq("purchase_order_id", poId);
-  if (error) throw new Error(error.message);
-  if (!items?.length) return;
 
-  for (const item of items) {
-    const materialId = item.material_id as number | null;
-    if (!materialId) continue;
-    const lineQty = Number(item.quantity ?? 0);
-    if (!Number.isFinite(lineQty) || lineQty <= 0) continue;
-
-    const { data: mat, error: matErr } = await db
-      .from("materials")
-      .select(
-        "id, quantity_needed, quantity_ordered, quantity_received, received_at"
-      )
-      .eq("id", materialId)
-      .single();
-    if (matErr || !mat) continue;
-
-    const currentReceived = Number(mat.quantity_received ?? 0);
-    const nextReceived = full
-      ? Math.max(currentReceived, lineQty)
-      : currentReceived + lineQty;
-    const needed =
-      mat.quantity_needed == null ? null : Number(mat.quantity_needed);
-    const ordered = Number(mat.quantity_ordered ?? 0);
-    const covered = Math.max(ordered, nextReceived);
-    const isShortage =
-      needed == null || Number.isNaN(needed) ? false : covered < needed;
-
-    await db
-      .from("materials")
-      .update({
-        quantity_received: nextReceived,
-        is_shortage: isShortage,
-        received_at: full
-          ? new Date().toISOString()
-          : ((mat as { received_at?: string | null }).received_at ?? null),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", materialId);
+  for (const r of receipts) {
+    await unwrapVoid(
+      await db
+        .from("purchase_order_items")
+        .update({ quantity_received: r.newReceived })
+        .eq("id", r.itemId)
+        .eq("purchase_order_id", poId)
+    );
+    if (r.materialId)
+      await bumpMaterialReceived(r.materialId, r.delta, r.complete);
   }
+
+  return updatePurchaseOrderStatus(poId, status);
+}
+
+/** Add `delta` to a material's received quantity and recompute is_shortage. */
+async function bumpMaterialReceived(
+  materialId: number,
+  delta: number,
+  lineComplete: boolean
+) {
+  const db = requireSupabaseAdmin();
+  const { data: mat, error } = await db
+    .from("materials")
+    .select(
+      "id, quantity_needed, quantity_ordered, quantity_received, received_at"
+    )
+    .eq("id", materialId)
+    .single();
+  if (error || !mat) return;
+
+  const nextReceived = Number(mat.quantity_received ?? 0) + delta;
+  const needed =
+    mat.quantity_needed == null ? null : Number(mat.quantity_needed);
+  const ordered = Number(mat.quantity_ordered ?? 0);
+  const covered = Math.max(ordered, nextReceived);
+  const isShortage =
+    needed == null || Number.isNaN(needed) ? false : covered < needed;
+
+  await db
+    .from("materials")
+    .update({
+      quantity_received: nextReceived,
+      is_shortage: isShortage,
+      received_at: lineComplete
+        ? new Date().toISOString()
+        : ((mat as { received_at?: string | null }).received_at ?? null),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", materialId);
 }
 
 export async function deletePurchaseOrder(id: number) {

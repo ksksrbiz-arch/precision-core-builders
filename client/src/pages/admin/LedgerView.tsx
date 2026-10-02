@@ -2,6 +2,7 @@
  * Core Values Ledger — immutable record of every decision, inspection, permit, and change.
  * "Trust through transparency" — the core principle.
  */
+import { useAllProjects } from "@/hooks/useAllPages";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
 import { QueryError } from "@/components/QueryError";
@@ -101,8 +102,7 @@ export default function LedgerView() {
     visibleToClient: true,
   });
   const utils = trpc.useUtils();
-  const { data: projects, isLoading: projectsLoading } =
-    trpc.projects.list.useQuery({ pageSize: 100 });
+  const { data: projects, isLoading: projectsLoading } = useAllProjects();
   // Zero projects is a distinct state: the selector would be empty, so
   // telling the user to "select a project above" is an impossible ask.
   const hasProjects = (projects?.data.length ?? 0) > 0;

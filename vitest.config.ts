@@ -40,7 +40,7 @@ export default defineConfig({
       "client/src/components/**/*.test.{ts,tsx}",
       "client/src/pages/**/*.test.{ts,tsx}",
       "client/src/lib/**/*.test.ts",
-      "client/src/hooks/**/*.test.ts",
+      "client/src/hooks/**/*.test.{ts,tsx}",
     ],
     // Vitest 4: environmentMatchGlobs → projects[].test.environment.
     // Keeping a single "node" env with jsdom override on the one

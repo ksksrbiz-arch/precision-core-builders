@@ -2,6 +2,7 @@
  * Field Reports — list all reports with project filter, date, and publish status.
  * Eric's daily field memos in one view.
  */
+import { useAllProjects } from "@/hooks/useAllPages";
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
@@ -35,7 +36,7 @@ export default function FieldReportsList() {
   const [projectId, setProjectId] = useState<number | undefined>(undefined);
   const utils = trpc.useUtils();
 
-  const { data: projects } = trpc.projects.list.useQuery({ pageSize: 100 });
+  const { data: projects } = useAllProjects();
   const { data, isLoading, isError, refetch } = trpc.fieldReports.list.useQuery(
     {
       page,

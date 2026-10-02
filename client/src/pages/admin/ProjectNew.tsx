@@ -1,6 +1,7 @@
 /**
  * ProjectNew — create a new project with full details.
  */
+import { useAllClients } from "@/hooks/useAllPages";
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { QueryError } from "@/components/QueryError";
@@ -133,7 +134,7 @@ export default function ProjectNew() {
     isLoading: clientsLoading,
     isError: clientsError,
     refetch: refetchClients,
-  } = trpc.clients.list.useQuery({ pageSize: 100 });
+  } = useAllClients();
 
   const clients = clientsData?.data ?? [];
   const hasClients = clients.length > 0;

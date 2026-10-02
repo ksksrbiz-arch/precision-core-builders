@@ -5,6 +5,7 @@
  * page reloads even when Stripe is not yet configured. On mount the view also
  * attempts to list recent invoices from Stripe and merges them with the cache.
  */
+import { useAllClients, useAllProjects } from "@/hooks/useAllPages";
 import { relayAdminEvent } from "@/lib/relayEvent";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getAuthHeader } from "@/lib/authHeader";
@@ -177,13 +178,13 @@ export default function BillingView() {
     isLoading: projectsLoading,
     isError: projectsError,
     refetch: refetchProjects,
-  } = trpc.projects.list.useQuery({ pageSize: 50 });
+  } = useAllProjects();
   const {
     data: clients,
     isLoading: clientsLoading,
     isError: clientsError,
     refetch: refetchClients,
-  } = trpc.clients.list.useQuery({ pageSize: 50 });
+  } = useAllClients();
 
   // Reference data the invoice form depends on. While it loads the form shows
   // a skeleton; if it fails we surface a retry instead of silently rendering

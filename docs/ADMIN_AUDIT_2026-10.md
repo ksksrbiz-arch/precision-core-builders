@@ -122,10 +122,10 @@ These are deliberate omissions, not oversights.
    living outside `shared/estimating/basis.ts` and a client-tamperable ledger
    figure. Fix = price options server-side from the finish catalog. Out of the
    admin scope, so only flagged.
-3. **Purchase-order receipts.** "Partial" applies the _full_ line quantity (there
+3. ~~Purchase-order receipts~~ — quantity input **done** (§9); cost policy still open. Was: "Partial" applies the _full_ line quantity (there
    is no received-quantity input), and receipt value is not posted to actual
    cost. Needs a receive-quantity UI and a policy on when PO cost counts.
-4. **Pickers are capped** at 50–100 rows (`projects.list`/`clients.list`
+4. ~~Pickers are capped~~ — **done** (§9). Was: capped at 50–100 rows (`projects.list`/`clients.list`
    `pageSize`) in Schedule, Materials, Ledger, Billing, ProjectNew,
    Notifications…; the 101st client/project is silently unselectable. Fine at
    today's volume; will bite.
@@ -239,3 +239,23 @@ on slower devices.
 - `ResponsiveImage` — an image that loaded before React attached `onLoad`
   (cache, replaced markup) now shows immediately instead of staying at opacity
   0, and a failed image no longer leaves an invisible hole.
+
+## 9. Follow-up: uncapped pickers and PO receiving
+
+- **Pickers.** `useAllPages` (`client/src/hooks/useAllPages.ts`) walks every page
+  of `projects.list` / `clients.list` (100 per request, 20-page safety cap) and
+  returns the same `{ data: { data, total } }` shape, so the 13 pickers that
+  asked for one page of 50–100 are drop-in replacements — the 101st project or
+  client is no longer unselectable. Archived projects stay out of pickers.
+- **PO receiving.** New `purchase_order_items.quantity_received`
+  (`drizzle/migrations/0012_po_item_received_qty.sql` — **apply it**; it also
+  back-fills lines of orders already marked received/partial, which the old code
+  had fully applied to inventory). A **Receive** dialog on each issued/partial PO
+  takes the quantity that arrived per line; `purchaseOrders.receive` (rules in
+  `shared/poReceipt.ts`) bumps inventory by exactly that, refuses to over-receive
+  a line, and marks the PO `received` only when every line is complete.
+  "Received" from the status menu now means "everything still outstanding
+  arrived" (never double-counted); "partial" can't be picked by hand; an order
+  with receipts can't go back to draft/issued (cancel it instead). **Not
+  decided:** when received PO cost should count toward project actual cost —
+  today it still doesn't (actual cost = ledger `cost_adjustment` entries).

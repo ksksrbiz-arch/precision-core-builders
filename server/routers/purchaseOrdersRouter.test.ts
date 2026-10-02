@@ -18,14 +18,18 @@ vi.mock("../_data/purchaseOrdersRepo", () => ({
   // Sentinel "no previous status" so every target status is a real transition.
   getPurchaseOrderStatus: vi.fn(async () => "none" as any),
   updatePurchaseOrderStatus: vi.fn(async () => ({ id: 1, status: "issued" })),
+  getPurchaseOrderLines: vi.fn(async () => [] as any[]),
+  applyPurchaseOrderReceipt: vi.fn(async () => ({ id: 1, status: "received" })),
   deletePurchaseOrder: vi.fn(async () => undefined),
 }));
 
 import { appRouter } from "../routers";
 import type { TrpcContext } from "../_core/context";
 import {
+  applyPurchaseOrderReceipt,
   deletePurchaseOrder,
   getPurchaseOrderById,
+  getPurchaseOrderLines,
   getPurchaseOrderStatus,
   listPurchaseOrders,
   updatePurchaseOrderStatus,
@@ -137,47 +141,64 @@ describe("Purchase Orders Router — getById delegation", () => {
 });
 
 describe("Purchase Orders Router — updateStatus delegation", () => {
-  it("forwards (id, status) to updatePurchaseOrderStatus", async () => {
-    await admin().purchaseOrders.updateStatus({ id: 3, status: "received" });
-    expect(updateStatusMock).toHaveBeenCalledTimes(1);
-    expect(updateStatusMock).toHaveBeenCalledWith(3, "received");
-  });
-
-  it.each(["draft", "issued", "partial", "received", "cancelled"] as const)(
-    "accepts the valid status %s",
+  it.each(["draft", "issued", "cancelled"] as const)(
+    "forwards %s to updatePurchaseOrderStatus",
     async status => {
       await admin().purchaseOrders.updateStatus({ id: 1, status });
       expect(updateStatusMock).toHaveBeenCalledWith(1, status);
     }
   );
 
+  it('refuses "partial" — a partial delivery needs quantities (use receive)', async () => {
+    await expect(
+      admin().purchaseOrders.updateStatus({ id: 1, status: "partial" })
+    ).rejects.toThrow(/use receive/i);
+    expect(updateStatusMock).not.toHaveBeenCalled();
+    expect(vi.mocked(applyPurchaseOrderReceipt)).not.toHaveBeenCalled();
+  });
+
   describe("idempotency + ledger", () => {
     const ledgerMock = vi.mocked(appendLedgerEntry);
     const statusMock = vi.mocked(getPurchaseOrderStatus);
+    const linesMock = vi.mocked(getPurchaseOrderLines);
+    const applyMock = vi.mocked(applyPurchaseOrderReceipt);
 
     it("does nothing (no receipt, no ledger entry) when the status is unchanged", async () => {
-      // A "partial" receipt ADDS the line quantity each time it is applied, so
-      // re-selecting "partial" used to double-count received inventory.
-      statusMock.mockResolvedValueOnce("partial");
-      await admin().purchaseOrders.updateStatus({ id: 3, status: "partial" });
+      statusMock.mockResolvedValueOnce("received");
+      await admin().purchaseOrders.updateStatus({ id: 3, status: "received" });
       expect(updateStatusMock).not.toHaveBeenCalled();
+      expect(applyMock).not.toHaveBeenCalled();
       expect(ledgerMock).not.toHaveBeenCalled();
       expect(getByIdMock).toHaveBeenCalledWith(3);
     });
 
-    it("applies the receipt and logs a milestone on a real transition", async () => {
-      statusMock.mockResolvedValueOnce("issued");
-      updateStatusMock.mockResolvedValueOnce({
+    it("'received' receives only what is still outstanding (never double-counts)", async () => {
+      statusMock.mockResolvedValueOnce("partial");
+      linesMock.mockResolvedValueOnce([
+        { id: 1, materialId: 10, quantity: 100, quantityReceived: 40 },
+        { id: 2, materialId: 11, quantity: 20, quantityReceived: 20 },
+      ]);
+      applyMock.mockResolvedValueOnce({
         id: 3,
         status: "received",
         project_id: 12,
         po_number: "PO-7",
       } as any);
       await admin().purchaseOrders.updateStatus({ id: 3, status: "received" });
-      expect(updateStatusMock).toHaveBeenCalledWith(3, "received");
-      expect(ledgerMock).toHaveBeenCalledTimes(1);
-      // Typed "milestone": no amount is recorded, so it must not masquerade as
-      // a cost_adjustment (which feeds actual-cost totals).
+      expect(applyMock).toHaveBeenCalledWith(
+        3,
+        [
+          {
+            itemId: 1,
+            materialId: 10,
+            delta: 60,
+            newReceived: 100,
+            complete: true,
+          },
+        ],
+        "received"
+      );
+      expect(updateStatusMock).not.toHaveBeenCalled();
       expect(ledgerMock).toHaveBeenCalledWith(
         expect.objectContaining({
           projectId: 12,
@@ -187,7 +208,31 @@ describe("Purchase Orders Router — updateStatus delegation", () => {
       );
     });
 
-    it("still logs for the shared admin session (null author)", async () => {
+    it("'received' with nothing outstanding only flips the status", async () => {
+      statusMock.mockResolvedValueOnce("issued");
+      linesMock.mockResolvedValueOnce([]);
+      await admin().purchaseOrders.updateStatus({ id: 3, status: "received" });
+      expect(applyMock).not.toHaveBeenCalled();
+      expect(updateStatusMock).toHaveBeenCalledWith(3, "received");
+    });
+
+    it("won't send an order with receipts back to draft/issued", async () => {
+      for (const previous of ["partial", "received"] as const) {
+        statusMock.mockResolvedValueOnce(previous);
+        await expect(
+          admin().purchaseOrders.updateStatus({ id: 3, status: "issued" })
+        ).rejects.toThrow(/already been received/i);
+      }
+      expect(updateStatusMock).not.toHaveBeenCalled();
+    });
+
+    it("can cancel an order that was partially received", async () => {
+      statusMock.mockResolvedValueOnce("partial");
+      await admin().purchaseOrders.updateStatus({ id: 3, status: "cancelled" });
+      expect(updateStatusMock).toHaveBeenCalledWith(3, "cancelled");
+    });
+
+    it("logs an issue milestone, still for the shared admin session (null author)", async () => {
       statusMock.mockResolvedValueOnce("draft");
       updateStatusMock.mockResolvedValueOnce({
         id: 4,
@@ -237,5 +282,112 @@ describe("Purchase Orders Router — delete delegation", () => {
   it("rejects a non-positive id", async () => {
     await expect(admin().purchaseOrders.delete({ id: 0 })).rejects.toThrow();
     expect(deleteMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("Purchase Orders Router — receive", () => {
+  const statusMock = vi.mocked(getPurchaseOrderStatus);
+  const linesMock = vi.mocked(getPurchaseOrderLines);
+  const applyMock = vi.mocked(applyPurchaseOrderReceipt);
+  const ledgerMock = vi.mocked(appendLedgerEntry);
+
+  const poLines = () => [
+    { id: 1, materialId: 10, quantity: 100, quantityReceived: 0 },
+    { id: 2, materialId: 11, quantity: 20, quantityReceived: 0 },
+  ];
+
+  beforeEach(() => {
+    statusMock.mockResolvedValue("issued");
+    linesMock.mockResolvedValue(poLines());
+  });
+
+  it("requires admin", async () => {
+    await expect(
+      appRouter.createCaller(ctx("u1", "user")).purchaseOrders.receive({
+        id: 1,
+        lines: [{ itemId: 1, quantity: 5 }],
+      })
+    ).rejects.toThrow(/forbidden/i);
+    expect(applyMock).not.toHaveBeenCalled();
+  });
+
+  it("applies exactly the quantities entered and leaves the PO partial", async () => {
+    applyMock.mockResolvedValueOnce({
+      id: 1,
+      status: "partial",
+      project_id: 9,
+      po_number: "PO-1",
+    } as any);
+    await admin().purchaseOrders.receive({
+      id: 1,
+      lines: [{ itemId: 1, quantity: 40 }],
+    });
+    expect(applyMock).toHaveBeenCalledWith(
+      1,
+      [
+        {
+          itemId: 1,
+          materialId: 10,
+          delta: 40,
+          newReceived: 40,
+          complete: false,
+        },
+      ],
+      "partial"
+    );
+    expect(ledgerMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryType: "milestone",
+        title: "PO PO-1 → partial",
+        projectId: 9,
+      })
+    );
+  });
+
+  it("completes the PO when the last outstanding quantity arrives", async () => {
+    linesMock.mockResolvedValue([
+      { id: 1, materialId: 10, quantity: 100, quantityReceived: 100 },
+      { id: 2, materialId: 11, quantity: 20, quantityReceived: 15 },
+    ]);
+    await admin().purchaseOrders.receive({
+      id: 1,
+      lines: [{ itemId: 2, quantity: 5 }],
+    });
+    expect(applyMock).toHaveBeenCalledWith(1, expect.any(Array), "received");
+  });
+
+  it("rejects over-receipt, unknown lines and zero quantities without touching inventory", async () => {
+    await expect(
+      admin().purchaseOrders.receive({
+        id: 1,
+        lines: [{ itemId: 2, quantity: 21 }],
+      })
+    ).rejects.toThrow(/only 20 still outstanding/);
+    await expect(
+      admin().purchaseOrders.receive({
+        id: 1,
+        lines: [{ itemId: 99, quantity: 1 }],
+      })
+    ).rejects.toThrow(/isn't part of this purchase order/);
+    await expect(
+      admin().purchaseOrders.receive({
+        id: 1,
+        lines: [{ itemId: 1, quantity: 0 }],
+      })
+    ).rejects.toThrow();
+    expect(applyMock).not.toHaveBeenCalled();
+  });
+
+  it("won't receive against a draft or cancelled order", async () => {
+    for (const status of ["draft", "cancelled"] as const) {
+      statusMock.mockResolvedValueOnce(status);
+      await expect(
+        admin().purchaseOrders.receive({
+          id: 1,
+          lines: [{ itemId: 1, quantity: 1 }],
+        })
+      ).rejects.toThrow();
+    }
+    expect(applyMock).not.toHaveBeenCalled();
   });
 });

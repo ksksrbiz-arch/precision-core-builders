@@ -2,6 +2,7 @@
  * FinishSelectionsAdmin — Manage material & finish selections per project.
  * Add items, approve, track budget impact, and manage client-facing selections.
  */
+import { useAllProjects } from "@/hooks/useAllPages";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import DashboardLayout from "@/components/DashboardLayout";
 import { SkeletonCard } from "@/components/Skeletons";
@@ -107,8 +108,7 @@ export default function FinishSelectionsAdmin() {
   const [form, setForm] = useState(BLANK);
   const utils = trpc.useUtils();
 
-  const { data: projects, isLoading: projectsLoading } =
-    trpc.projects.list.useQuery({ pageSize: 50 });
+  const { data: projects, isLoading: projectsLoading } = useAllProjects();
   const projectOptions = projects?.data ?? [];
   // Distinguish "no projects exist" from "projects exist, none picked" —
   // otherwise the selector is an empty strip and the instruction to pick a
