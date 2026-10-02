@@ -8,6 +8,7 @@ const urls = [
     /<loc>(.*?)<\/loc>/g
   ),
 ].map(m => m[1]);
+let homeH1: string | undefined;
 for (const url of urls) {
   const path = new URL(url).pathname;
   const file = path === "/" ? "index.html" : `${path.slice(1)}/index.html`;
@@ -20,6 +21,15 @@ for (const url of urls) {
     path
   );
   assert.equal(doc.querySelectorAll("main h1").length, 1, `Single H1: ${path}`);
+  // A page prerendered from a stale shell carries another page's content under
+  // its own canonical/title. Every page's H1 must differ from the homepage's.
+  assert.ok(
+    doc.querySelector("#root[data-prerendered]"),
+    `Root marked for the prerender hand-off: ${path}`
+  );
+  const h1 = doc.querySelector("main h1")?.textContent?.trim();
+  if (path === "/") homeH1 = h1;
+  else assert.notEqual(h1, homeH1, `Prerender captured the homepage: ${path}`);
   assert.ok(
     doc.querySelector("#pcb-boot-screen svg"),
     `Branded first paint: ${path}`

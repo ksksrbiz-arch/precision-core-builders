@@ -8,6 +8,10 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { createRoot } from "react-dom/client";
+import {
+  isPrerendered,
+  mountBehindPrerender,
+} from "@/lib/mountBehindPrerender";
 import superjson from "superjson";
 import App from "./App";
 import "./index.css";
@@ -122,7 +126,7 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
+const appTree = (
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -131,6 +135,17 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+const rootEl = document.getElementById("root")!;
+if (isPrerendered(rootEl)) {
+  // Keep the prerendered page (and its photos) on screen until the live app
+  // is ready, instead of tearing it down and re-fading every image in.
+  void mountBehindPrerender(rootEl, container =>
+    createRoot(container).render(appTree)
+  );
+} else {
+  createRoot(rootEl).render(appTree);
+}
 
 // ── Service Worker Registration ─────────────────────────────────────────
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
