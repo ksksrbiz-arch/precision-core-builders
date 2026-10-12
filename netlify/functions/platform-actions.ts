@@ -377,11 +377,13 @@ const seedDemoData: ActionHandler = async () => {
 const clearDemoData: ActionHandler = async () => {
   const supabase = getSupabase();
 
-  // Find demo project
+  // Find demo projects. Two naming conventions exist: the seeder's "Demo: …"
+  // prefix and the hand-entered "… [DEMO]" suffix tag. Matching only the first
+  // made this a silent no-op against "[DEMO]" data.
   const { data: projects, error: projectsErr } = await supabase
     .from("projects")
     .select("id, client_id")
-    .like("name", "Demo:%");
+    .or("name.like.Demo:%,name.ilike.%[DEMO]%");
   throwIfActionError("clear-demo-data", "project lookup", projectsErr);
 
   if (!projects || projects.length === 0) {

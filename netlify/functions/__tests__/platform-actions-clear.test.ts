@@ -22,6 +22,7 @@ type Op = { table: string; op: string; filter?: string; value?: unknown };
 const ops: Op[] = [];
 let demoProjects: Array<{ id: number; client_id: number | null }> = [];
 let remainingProjectsByClient: Record<number, number> = {};
+const orFilters: string[] = [];
 
 function builder(table: string) {
   let current: Op = { table, op: "select" };
@@ -36,6 +37,10 @@ function builder(table: string) {
       return b;
     },
     like() {
+      return b;
+    },
+    or(expr: string) {
+      orFilters.push(expr);
       return b;
     },
     in(col: string, vals: unknown) {
@@ -87,6 +92,7 @@ const deletes = (table: string) =>
 
 beforeEach(() => {
   ops.length = 0;
+  orFilters.length = 0;
   demoProjects = [{ id: 11, client_id: 5 }];
   remainingProjectsByClient = {};
   vi.stubEnv("SETUP_ADMIN_TOKEN", "t");
@@ -131,6 +137,11 @@ describe("clear-demo-data", () => {
     expect(statusCode).toBe(200);
     expect(deletes("clients")).toHaveLength(0);
     expect(body.data).toMatchObject({ projectsDeleted: 1, clientsDeleted: 0 });
+  });
+
+  it("matches both the 'Demo:' prefix and the '[DEMO]' suffix naming", async () => {
+    await clear();
+    expect(orFilters).toEqual(["name.like.Demo:%,name.ilike.%[DEMO]%"]);
   });
 
   it("is a no-op when there is no demo data", async () => {
