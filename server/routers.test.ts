@@ -492,7 +492,6 @@ describe("Finish Selections Router", () => {
         projectId: 1,
         category: "flooring",
         selection: "Hardwood Oak",
-        budgetImpact: 5000,
       })
     ).resolves.toBeDefined();
   });

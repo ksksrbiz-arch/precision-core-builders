@@ -11,6 +11,7 @@ import {
   listFinishSelections,
 } from "../_data/finishSelectionsRepo";
 import { appendLedgerEntry } from "../_data/ledgerRepo";
+import { findFinishOption } from "../../shared/finishOptions";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -96,7 +97,6 @@ export const finishSelectionsRouter = router({
         projectId: z.number().int().positive(),
         category: z.string().max(100).optional(),
         selection: z.string().min(1).max(300),
-        budgetImpact: z.number().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -104,11 +104,19 @@ export const finishSelectionsRouter = router({
       // client row (previously any client could inject into any project with a
       // null client_id).
       const project = await assertProjectAccess(ctx, input.projectId);
+      // Price comes from the server's curated table, never from the caller: this
+      // figure is written to the immutable ledger, so a client-supplied delta
+      // (e.g. -50000) would be a permanent, client-visible forgery. A selection
+      // that isn't a curated option carries no dollar impact.
+      const budgetImpact = findFinishOption(
+        input.category,
+        input.selection
+      )?.delta;
       const row = await insertClientSelection({
         projectId: input.projectId,
         selection: input.selection,
         category: input.category,
-        budgetImpact: input.budgetImpact,
+        budgetImpact,
         clientId: project?.clients?.id ?? null,
       });
 
@@ -116,7 +124,7 @@ export const finishSelectionsRouter = router({
       try {
         const authorId = ctx.user?.id;
         if (authorId) {
-          const delta = input.budgetImpact ?? 0;
+          const delta = budgetImpact ?? 0;
           await appendLedgerEntry({
             projectId: input.projectId,
             authorId,

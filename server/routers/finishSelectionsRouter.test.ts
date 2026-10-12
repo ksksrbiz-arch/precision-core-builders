@@ -25,6 +25,13 @@ vi.mock("../_data/finishSelectionsRepo", () => ({
   getFinishSelectionProjectId: vi.fn(async () => 1),
 }));
 
+// Only the ledger append is stubbed so we can assert the dollar figure that
+// would be written to the immutable ledger.
+vi.mock("../_data/ledgerRepo", async importOriginal => ({
+  ...(await importOriginal<typeof import("../_data/ledgerRepo")>()),
+  appendLedgerEntry: vi.fn(async () => ({ id: 9 })),
+}));
+
 // Ownership is covered by its own tests; default it to "allowed" here so the
 // delegation/aggregation assertions exercise the router's own logic.
 vi.mock("../_core/access", () => ({
@@ -35,9 +42,11 @@ import { appRouter } from "../routers";
 import type { TrpcContext } from "../_core/context";
 import * as repo from "../_data/finishSelectionsRepo";
 import { assertProjectAccess } from "../_core/access";
+import { appendLedgerEntry } from "../_data/ledgerRepo";
 
 const mockRepo = vi.mocked(repo);
 const mockAssertAccess = vi.mocked(assertProjectAccess);
+const mockLedger = vi.mocked(appendLedgerEntry);
 
 function ctx(userId?: string, role: "admin" | "user" = "user"): TrpcContext {
   return {
@@ -148,22 +157,65 @@ describe("finishSelections router — repo delegation", () => {
     expect(mockRepo.deleteFinishSelection).toHaveBeenCalledWith(17);
   });
 
-  it("select maps the client-portal input onto insertClientSelection", async () => {
+  it("select maps the client-portal input onto insertClientSelection, pricing it server-side", async () => {
     const res = await user().finishSelections.select({
       projectId: 3,
-      category: "Flooring",
-      selection: "White Oak Hardwood",
-      budgetImpact: 1200,
+      category: "Countertops",
+      selection: "Granite",
     });
     expect(res).toEqual({ id: 2 });
     expect(mockRepo.insertClientSelection).toHaveBeenCalledTimes(1);
     expect(mockRepo.insertClientSelection).toHaveBeenCalledWith({
       projectId: 3,
-      selection: "White Oak Hardwood",
-      category: "Flooring",
-      budgetImpact: 1200,
+      selection: "Granite",
+      category: "Countertops",
+      budgetImpact: 1200, // from shared/finishOptions, not the caller
       clientId: 1,
     });
+    expect(mockLedger).toHaveBeenCalledWith(
+      expect.objectContaining({ amountDelta: 1200, entryType: "decision" })
+    );
+  });
+
+  it("select ignores a client-supplied dollar figure (ledger forgery)", async () => {
+    // A hostile caller bypasses the UI and posts a made-up budget impact.
+    await user().finishSelections.select({
+      projectId: 3,
+      category: "Countertops",
+      selection: "Granite",
+      budgetImpact: -50_000,
+    } as any);
+    expect(mockRepo.insertClientSelection).toHaveBeenCalledWith(
+      expect.objectContaining({ budgetImpact: 1200 })
+    );
+    expect(mockLedger).toHaveBeenCalledWith(
+      expect.objectContaining({ amountDelta: 1200 })
+    );
+  });
+
+  it("select records no dollar impact for a non-curated selection, whatever the caller claims", async () => {
+    await user().finishSelections.select({
+      projectId: 3,
+      selection: "Custom unicorn tile",
+      budgetImpact: 999_999,
+    } as any);
+    expect(mockRepo.insertClientSelection).toHaveBeenCalledWith(
+      expect.objectContaining({ budgetImpact: undefined })
+    );
+    expect(mockLedger).toHaveBeenCalledWith(
+      expect.objectContaining({ amountDelta: undefined })
+    );
+  });
+
+  it("select keeps a legitimate negative option (Luxury Vinyl Plank) negative", async () => {
+    await user().finishSelections.select({
+      projectId: 3,
+      category: "flooring",
+      selection: "luxury vinyl plank",
+    });
+    expect(mockLedger).toHaveBeenCalledWith(
+      expect.objectContaining({ amountDelta: -800 })
+    );
   });
 });
 

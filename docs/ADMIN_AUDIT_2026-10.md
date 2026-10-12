@@ -116,12 +116,16 @@ These are deliberate omissions, not oversights.
    _retire it_ (delete `admin-auth.ts`, the `ADMIN_*` env vars, and the `pcb_admin_session`
    path in `useAuth`/`authHeader`) rather than wire a weaker second login. Not done
    because removing an auth path is your call.
-2. **Portal finish selections carry hard-coded upgrade prices in the client**
-   (`PortalFinishes.tsx`, e.g. `+$1,200`) and `finishSelections.select` writes the
-   client-supplied `budgetImpact` into the **immutable ledger**. That is money
-   living outside `shared/estimating/basis.ts` and a client-tamperable ledger
-   figure. Fix = price options server-side from the finish catalog. Out of the
-   admin scope, so only flagged.
+2. ~~**Portal finish selections carry hard-coded upgrade prices in the client**~~ —
+   **tamper hole closed.** `finishSelections.select` no longer accepts a
+   client-supplied `budgetImpact`: the price is looked up server-side from
+   `shared/finishOptions.ts` (the table moved there verbatim from
+   `PortalFinishes.tsx`, prices unchanged) and a selection that isn't a curated
+   option records no dollar impact. A caller can no longer write an arbitrary
+   figure (e.g. `-50000`) into the immutable ledger. **Still open for Keith/Eric:**
+   those upgrade prices are still hard-coded values, not rates under
+   `shared/estimating/basis.ts` (dated + integrity-checked) — moving them there
+   is a pricing decision, since the finish catalog only has `$/$$/$$$` tiers.
 3. ~~Purchase-order receipts~~ — quantity input **done** (§9); cost policy still open. Was: "Partial" applies the _full_ line quantity (there
    is no received-quantity input), and receipt value is not posted to actual
    cost. Needs a receive-quantity UI and a policy on when PO cost counts.

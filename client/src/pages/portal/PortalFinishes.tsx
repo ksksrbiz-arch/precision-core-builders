@@ -11,103 +11,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Check, DollarSign, Plus, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/components/ToastProvider";
-
-/**
- * Curated finish options the client can choose from, grouped by category.
- * `delta` is the budget impact (in dollars) relative to the base allowance.
- * `image` is a static asset under /finishes for the gallery card.
- */
-const FINISH_OPTIONS: {
-  category: string;
-  options: { label: string; delta: number; image: string; blurb: string }[];
-}[] = [
-  {
-    category: "Countertops",
-    options: [
-      {
-        label: "Quartz (Standard)",
-        delta: 0,
-        image: "/finishes/quartz-standard.jpg",
-        blurb: "Durable engineered stone — low maintenance standard allowance",
-      },
-      {
-        label: "Granite",
-        delta: 1200,
-        image: "/finishes/granite.jpg",
-        blurb: "Natural stone with unique patterning and heat resistance",
-      },
-      {
-        label: "Natural Marble",
-        delta: 3500,
-        image: "/finishes/marble-natural.jpg",
-        blurb: "Classic veining for a luxury statement surface",
-      },
-    ],
-  },
-  {
-    category: "Flooring",
-    options: [
-      {
-        label: "Engineered Hardwood (Standard)",
-        delta: 0,
-        image: "/finishes/hardwood-engineered.jpg",
-        blurb: "Real wood wear layer over stable core — standard allowance",
-      },
-      {
-        label: "Luxury Vinyl Plank",
-        delta: -800,
-        image: "/finishes/lvp-flooring.jpg",
-        blurb: "Waterproof wood-look planks — budget-friendly upgrade path",
-      },
-      {
-        label: "Natural Stone Tile",
-        delta: 2400,
-        image: "/finishes/stone-tile.jpg",
-        blurb: "Stone tile floors for lasting character and durability",
-      },
-    ],
-  },
-  {
-    category: "Cabinetry",
-    options: [
-      {
-        label: "Shaker (Standard)",
-        delta: 0,
-        image: "/finishes/cabinet-shaker.jpg",
-        blurb: "Clean recessed panel doors — timeless standard allowance",
-      },
-      {
-        label: "Custom Inset",
-        delta: 4000,
-        image: "/finishes/cabinet-inset.jpg",
-        blurb: "Furniture-grade inset doors with precision joinery",
-      },
-    ],
-  },
-  {
-    category: "Fixtures",
-    options: [
-      {
-        label: "Brushed Nickel (Standard)",
-        delta: 0,
-        image: "/finishes/fixture-brushed-nickel.jpg",
-        blurb: "Soft metal finish that hides fingerprints — standard",
-      },
-      {
-        label: "Matte Black",
-        delta: 350,
-        image: "/finishes/fixture-matte-black.jpg",
-        blurb: "Modern contrast faucet finish for contemporary baths",
-      },
-      {
-        label: "Polished Brass",
-        delta: 600,
-        image: "/finishes/fixture-polished-brass.jpg",
-        blurb: "Warm polished metal for a refined luxury accent",
-      },
-    ],
-  },
-];
+import { FINISH_OPTIONS, type FinishOption } from "@shared/finishOptions";
 
 export default function PortalFinishes() {
   const { addToast } = useToast();
@@ -184,16 +88,14 @@ export default function PortalFinishes() {
     },
   });
 
-  const chooseFinish = (
-    category: string,
-    option: { label: string; delta: number; image: string; blurb: string }
-  ) => {
+  const chooseFinish = (category: string, option: FinishOption) => {
     if (!project?.id) return;
     selectMut.mutate({
       projectId: project.id,
       category,
+      // The price is looked up server-side from the same table; the server
+      // never accepts a client-supplied dollar figure.
       selection: option.label,
-      budgetImpact: option.delta,
     });
   };
 
