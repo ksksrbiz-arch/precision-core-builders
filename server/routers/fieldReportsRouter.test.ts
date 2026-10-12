@@ -5,7 +5,7 @@
  * The data-access layer (`../_data/fieldReportsRepo`) is fully mocked so no
  * real Supabase is hit; `../db` is mocked so `logAdminAction` is inert.
  */
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { afterEach, describe, expect, it, beforeEach, vi } from "vitest";
 
 vi.mock("../db", () => {
   function makeSingle() {
@@ -358,31 +358,85 @@ describe("Field Reports Router — repo delegation & field mapping", () => {
     );
   });
 
-  it("weeklyStats aggregates repo rows into per-week buckets", async () => {
-    vi.mocked(repo.getWeeklyStatsRows).mockResolvedValueOnce([
-      {
-        report_date: "2026-06-01T00:00:00.000Z",
-        published_to_client: true,
-        issues_flagged: JSON.stringify(["leak"]),
-      },
-      {
-        report_date: "2026-06-02T00:00:00.000Z",
-        published_to_client: false,
-        issues_flagged: "[]",
-      },
-    ] as any);
-    const res = await admin().fieldReports.weeklyStats();
-    expect(repo.getWeeklyStatsRows).toHaveBeenCalledTimes(1);
-    // Sum across buckets (week boundaries depend on the runtime timezone).
-    const totals = res.reduce(
-      (acc, w) => ({
-        reports: acc.reports + w.reports,
-        issues: acc.issues + w.issues,
-        published: acc.published + w.published,
-      }),
-      { reports: 0, issues: 0, published: 0 }
-    );
-    expect(totals).toEqual({ reports: 2, issues: 1, published: 1 });
+  describe("weeklyStats", () => {
+    // Wednesday 2026-10-14 → current week starts Mon Oct 12; the 8-week window
+    // starts Mon Aug 24.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-14T15:00:00.000Z"));
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("always returns 8 zero-filled Monday-start weeks", async () => {
+      vi.mocked(repo.getWeeklyStatsRows).mockResolvedValueOnce([] as any);
+      const res = await admin().fieldReports.weeklyStats();
+      expect(res).toHaveLength(8);
+      expect(res.map(w => w.week)).toEqual([
+        "Aug 24",
+        "Aug 31",
+        "Sep 7",
+        "Sep 14",
+        "Sep 21",
+        "Sep 28",
+        "Oct 5",
+        "Oct 12",
+      ]);
+      expect(res.every(w => w.reports === 0)).toBe(true);
+    });
+
+    it("queries from the first bucket's Monday so the oldest week isn't cut off", async () => {
+      vi.mocked(repo.getWeeklyStatsRows).mockResolvedValueOnce([] as any);
+      await admin().fieldReports.weeklyStats();
+      expect(repo.getWeeklyStatsRows).toHaveBeenCalledWith(
+        "2026-08-24T00:00:00.000Z"
+      );
+    });
+
+    it("buckets reports by week, leaves quiet weeks at zero, ignores out-of-window rows", async () => {
+      vi.mocked(repo.getWeeklyStatsRows).mockResolvedValueOnce([
+        // Sunday Aug 30 belongs to the week of Aug 24 (Monday start).
+        {
+          report_date: "2026-08-30T23:00:00.000Z",
+          published_to_client: true,
+          issues_flagged: JSON.stringify(["leak"]),
+        },
+        // Monday Oct 12 00:00 is the first instant of the current week.
+        {
+          report_date: "2026-10-12T00:00:00.000Z",
+          published_to_client: false,
+          issues_flagged: "[]",
+        },
+        {
+          report_date: "2026-10-13T09:00:00.000Z",
+          published_to_client: true,
+          issues_flagged: null,
+        },
+        // Before the window: must not be counted anywhere.
+        {
+          report_date: "2026-06-01T00:00:00.000Z",
+          published_to_client: true,
+          issues_flagged: JSON.stringify(["x"]),
+        },
+      ] as any);
+      const res = await admin().fieldReports.weeklyStats();
+      expect(res[0]).toMatchObject({
+        week: "Aug 24",
+        reports: 1,
+        issues: 1,
+        published: 1,
+      });
+      expect(res[7]).toMatchObject({
+        week: "Oct 12",
+        reports: 2,
+        issues: 0,
+        published: 1,
+      });
+      // The five weeks in between had no reports and are still present.
+      expect(res.slice(1, 7).every(w => w.reports === 0)).toBe(true);
+      expect(res.reduce((n, w) => n + w.reports, 0)).toBe(3);
+    });
   });
 });
 
