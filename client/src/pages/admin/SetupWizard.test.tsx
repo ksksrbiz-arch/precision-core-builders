@@ -16,6 +16,10 @@ vi.mock("@/components/DashboardLayout", () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+vi.mock("@/lib/trpc", () => ({
+  trpc: { useUtils: () => ({ invalidate: vi.fn() }) },
+}));
+
 vi.mock("wouter", () => ({
   useLocation: () => ["/admin/setup", vi.fn()],
 }));
