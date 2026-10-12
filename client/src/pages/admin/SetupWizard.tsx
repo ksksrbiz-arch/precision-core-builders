@@ -31,6 +31,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 // ─── Admin Token Hook ────────────────────────────────────────────────────────
 
@@ -1003,6 +1004,7 @@ function MCPToolsPanel({
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ActionResult | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const utils = trpc.useUtils();
 
   const executeAction = async (actionId: string) => {
     setRunningAction(actionId);
@@ -1029,6 +1031,9 @@ function MCPToolsPanel({
           duration: 4000,
         });
         onActionComplete?.();
+        // Seed/clear/migrate change data the dashboards cache (30s staleTime);
+        // drop it so Command Center etc. refetch instead of showing old rows.
+        void utils.invalidate();
       } else {
         addToast({
           type: "error",
