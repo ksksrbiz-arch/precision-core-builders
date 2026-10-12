@@ -273,6 +273,34 @@ describe("Projects Router — repo delegation", () => {
     expect(res.totalActual).toBe(200);
   });
 
+  it("stats counts every project status so the buckets add up to total", async () => {
+    vi.mocked(repo.getProjectsStats).mockResolvedValueOnce(
+      [
+        "lead",
+        "estimate_sent",
+        "contracted",
+        "in_progress",
+        "punch_list",
+        "complete",
+        "on_hold",
+      ].map((status, i) => ({ id: i + 1, status, estimated_budget: 0 })) as any
+    );
+    vi.mocked(repo.getCostAdjustmentTotals).mockResolvedValueOnce(new Map());
+    const res = await admin().projects.stats();
+    expect(res.byStatus).toEqual({
+      lead: 1,
+      estimateSent: 1,
+      contracted: 1,
+      active: 1,
+      punchList: 1,
+      complete: 1,
+      onHold: 1,
+    });
+    expect(Object.values(res.byStatus).reduce((a, b) => a + b, 0)).toBe(
+      res.total
+    );
+  });
+
   it("stats.costedBasis sums the budget basis of only the projects that have logged costs", async () => {
     // Project 1: contracted wins over estimated. Project 2: no contract -> estimate.
     // Project 3 has no logged cost -> excluded. Project 4's cost is 0 -> excluded.

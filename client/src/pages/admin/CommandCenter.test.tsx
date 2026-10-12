@@ -5,13 +5,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
 let statsData: unknown = undefined;
+let notLiveTables: string[] = [];
 
 vi.mock("@/_core/hooks/useAuth", () => ({
   useAuth: () => ({ loading: false, isAuthenticated: true, isAdmin: true }),
 }));
 
 vi.mock("@/hooks/useRealtimeTable", () => ({
-  useRealtimeTable: () => ({ isLive: true, lastEvent: null }),
+  useRealtimeTable: ({ table }: { table: string }) => ({
+    isLive: !notLiveTables.includes(table),
+    lastEvent: null,
+  }),
 }));
 
 vi.mock("recharts", async importOriginal => {
@@ -81,7 +85,10 @@ vi.mock("wouter", () => ({
 Element.prototype.scrollIntoView =
   Element.prototype.scrollIntoView || (() => {});
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  notLiveTables = [];
+});
 
 async function loadPage() {
   vi.resetModules();
@@ -97,6 +104,77 @@ describe("CommandCenter", () => {
       ".grid.grid-cols-2.md\\:grid-cols-4"
     );
     expect(statsGrid).toBeTruthy();
+  });
+
+  describe("Live badge", () => {
+    it.each(["projects", "ledger_entries", "materials", "field_reports"])(
+      "shows Reconnecting when only the %s channel is down",
+      async table => {
+        notLiveTables = [table];
+        const CommandCenter = await loadPage();
+        render(<CommandCenter />);
+        expect(
+          screen.getByLabelText("Realtime updates reconnecting")
+        ).toBeTruthy();
+      }
+    );
+
+    it("shows Live when every channel is subscribed", async () => {
+      const CommandCenter = await loadPage();
+      render(<CommandCenter />);
+      expect(screen.getByLabelText("Realtime updates live")).toBeTruthy();
+    });
+  });
+
+  describe("KPI accuracy", () => {
+    it("charts a lone punch-list project instead of 'No project data yet'", async () => {
+      statsData = {
+        total: 1,
+        byStatus: {
+          lead: 0,
+          estimateSent: 0,
+          contracted: 0,
+          active: 0,
+          punchList: 1,
+          complete: 0,
+          onHold: 0,
+        },
+        totalEstimated: 0,
+        totalActual: 0,
+        costedBasis: 0,
+      };
+      const CommandCenter = await loadPage();
+      render(<CommandCenter />);
+      expect(screen.queryByText("No project data yet")).toBeNull();
+    });
+
+    it("renders a multi-million pipeline as $2.4M, not $2400k", async () => {
+      statsData = {
+        total: 1,
+        byStatus: { lead: 1, contracted: 0, active: 0, complete: 0 },
+        totalEstimated: 2_400_000,
+        totalActual: 0,
+        costedBasis: 0,
+      };
+      const CommandCenter = await loadPage();
+      render(<CommandCenter />);
+      expect(screen.getAllByText("$2.4M").length).toBeGreaterThan(0);
+      expect(screen.queryByText("$2400k")).toBeNull();
+    });
+
+    it("uses lining numerals on the KPI value so '1' isn't drawn like 'I'", async () => {
+      statsData = {
+        total: 1,
+        byStatus: { lead: 1, contracted: 0, active: 0, complete: 0 },
+        totalEstimated: 0,
+        totalActual: 0,
+        costedBasis: 0,
+      };
+      const CommandCenter = await loadPage();
+      render(<CommandCenter />);
+      const kpi = screen.getAllByText("1").find(el => el.tagName === "P");
+      expect(kpi?.className).toContain("lining-nums");
+    });
   });
 
   describe("Gross Margin card", () => {

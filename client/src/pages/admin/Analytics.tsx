@@ -62,10 +62,58 @@ export const CHART_COLORS = {
 /** Project-status colors, identical on both dashboards. */
 export const STATUS_COLORS = {
   lead: CHART_COLORS.neutral,
+  estimateSent: CHART_COLORS.warning,
   contracted: CHART_COLORS.primary,
   active: CHART_COLORS.positive,
+  punchList: CHART_COLORS.positive,
   complete: CHART_COLORS.info,
+  onHold: CHART_COLORS.danger,
 } as const;
+
+/**
+ * Project-status series for the dashboards' bar charts, in pipeline order.
+ * Every status the server counts is listed so the bars sum to the project
+ * total; `?? 0` keeps older/partial `byStatus` payloads renderable.
+ */
+export function projectStatusSeries(byStatus: {
+  lead: number;
+  estimateSent?: number;
+  contracted: number;
+  active: number;
+  punchList?: number;
+  complete: number;
+  onHold?: number;
+}) {
+  return [
+    { name: "Leads", value: byStatus.lead, fill: STATUS_COLORS.lead },
+    {
+      name: "Estimated",
+      value: byStatus.estimateSent ?? 0,
+      fill: STATUS_COLORS.estimateSent,
+    },
+    {
+      name: "Contracted",
+      value: byStatus.contracted,
+      fill: STATUS_COLORS.contracted,
+    },
+    { name: "Active", value: byStatus.active, fill: STATUS_COLORS.active },
+    {
+      name: "Punch List",
+      value: byStatus.punchList ?? 0,
+      fill: STATUS_COLORS.punchList,
+    },
+    {
+      name: "Complete",
+      value: byStatus.complete,
+      fill: STATUS_COLORS.complete,
+    },
+    {
+      name: "On Hold",
+      value: byStatus.onHold ?? 0,
+      fill: STATUS_COLORS.onHold,
+    },
+  ];
+}
 
 /** Recharts `<Tooltip contentStyle>` chrome, shared by both dashboards. */
 export const CHART_TOOLTIP_STYLE = {
@@ -201,28 +249,7 @@ export default function Analytics() {
 
   // Pipeline by status
   const statusData = stats
-    ? [
-        {
-          name: "Leads",
-          value: stats.byStatus.lead,
-          fill: STATUS_COLORS.lead,
-        },
-        {
-          name: "Contracted",
-          value: stats.byStatus.contracted,
-          fill: STATUS_COLORS.contracted,
-        },
-        {
-          name: "Active",
-          value: stats.byStatus.active,
-          fill: STATUS_COLORS.active,
-        },
-        {
-          name: "Complete",
-          value: stats.byStatus.complete,
-          fill: STATUS_COLORS.complete,
-        },
-      ].filter(d => d.value > 0)
+    ? projectStatusSeries(stats.byStatus).filter(d => d.value > 0)
     : [];
 
   // Per-project budget list. Actual cost comes from the server profitability
