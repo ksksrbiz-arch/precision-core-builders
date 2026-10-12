@@ -627,7 +627,7 @@ export default function CommandCenter() {
   );
 
   // ── Supabase Realtime subscription ─────────────────────────────────────────
-  const { isLive } = useRealtimeTable({
+  const { isLive: projectsLive } = useRealtimeTable({
     table: "projects",
     enabled: authReady,
     onUpdate: () => {
@@ -642,19 +642,19 @@ export default function CommandCenter() {
   });
   // Actual cost (stats.totalActual) is derived from cost_adjustment ledger
   // entries, not a projects column — a new entry needs its own refetch.
-  useRealtimeTable({
+  const { isLive: ledgerLive } = useRealtimeTable({
     table: "ledger_entries",
     enabled: authReady,
     onUpdate: () => refetchStats(),
   });
   // The Shortages tile and the recent/weekly field-report panels read other
   // tables; without these they'd go stale under a "LIVE" badge until reload.
-  useRealtimeTable({
+  const { isLive: materialsLive } = useRealtimeTable({
     table: "materials",
     enabled: authReady,
     onUpdate: () => utils.materials.list.invalidate(),
   });
-  useRealtimeTable({
+  const { isLive: reportsLive } = useRealtimeTable({
     table: "field_reports",
     enabled: authReady,
     onUpdate: () => {
@@ -662,6 +662,9 @@ export default function CommandCenter() {
       utils.fieldReports.weeklyStats.invalidate();
     },
   });
+  // "Live" only while every channel feeding the dashboard is subscribed; one
+  // dropped channel would otherwise leave a tile stale under a green badge.
+  const isLive = projectsLive && ledgerLive && materialsLive && reportsLive;
 
   const budgetData = [
     {

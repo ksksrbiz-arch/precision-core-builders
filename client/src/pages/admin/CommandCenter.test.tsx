@@ -5,13 +5,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
 let statsData: unknown = undefined;
+let notLiveTables: string[] = [];
 
 vi.mock("@/_core/hooks/useAuth", () => ({
   useAuth: () => ({ loading: false, isAuthenticated: true, isAdmin: true }),
 }));
 
 vi.mock("@/hooks/useRealtimeTable", () => ({
-  useRealtimeTable: () => ({ isLive: true, lastEvent: null }),
+  useRealtimeTable: ({ table }: { table: string }) => ({
+    isLive: !notLiveTables.includes(table),
+    lastEvent: null,
+  }),
 }));
 
 vi.mock("recharts", async importOriginal => {
@@ -81,7 +85,10 @@ vi.mock("wouter", () => ({
 Element.prototype.scrollIntoView =
   Element.prototype.scrollIntoView || (() => {});
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  notLiveTables = [];
+});
 
 async function loadPage() {
   vi.resetModules();
@@ -97,6 +104,26 @@ describe("CommandCenter", () => {
       ".grid.grid-cols-2.md\\:grid-cols-4"
     );
     expect(statsGrid).toBeTruthy();
+  });
+
+  describe("Live badge", () => {
+    it.each(["projects", "ledger_entries", "materials", "field_reports"])(
+      "shows Reconnecting when only the %s channel is down",
+      async table => {
+        notLiveTables = [table];
+        const CommandCenter = await loadPage();
+        render(<CommandCenter />);
+        expect(
+          screen.getByLabelText("Realtime updates reconnecting")
+        ).toBeTruthy();
+      }
+    );
+
+    it("shows Live when every channel is subscribed", async () => {
+      const CommandCenter = await loadPage();
+      render(<CommandCenter />);
+      expect(screen.getByLabelText("Realtime updates live")).toBeTruthy();
+    });
   });
 
   describe("KPI accuracy", () => {
