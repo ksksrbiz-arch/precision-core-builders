@@ -1145,7 +1145,9 @@ export default function CommandCenter() {
         </div>
 
         {/* Field Report Activity Chart */}
-        {weeklyReports && weeklyReports.length > 0 && (
+        {/* weeklyStats always returns 8 (zero-filled) weeks, so gate on there
+            being activity at all rather than on the array length. */}
+        {weeklyReports && weeklyReports.some(w => w.reports > 0) && (
           <div className="bg-card border border-border/60 p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
               <p

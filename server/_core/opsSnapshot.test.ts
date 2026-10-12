@@ -6,13 +6,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const tables: Record<string, unknown[]> = {};
+/** Exact counts the mocked DB reports for head/count queries, by table. */
+const counts: Record<string, number> = {};
+/** Every `.is(col, null)` filter applied, by table. */
+const isFilters: Record<string, string[]> = {};
 
 vi.mock("../db", () => {
   function chain(table: string): any {
-    const result = Promise.resolve({ data: tables[table] ?? [], error: null });
+    const result = Promise.resolve({
+      data: tables[table] ?? [],
+      error: null,
+      count: counts[table],
+    });
     const proxy: any = new Proxy(result, {
       get(target, prop) {
         if (prop === "then") return target.then.bind(target);
+        if (prop === "is") {
+          return (col: string) => {
+            (isFilters[table] ??= []).push(col);
+            return proxy;
+          };
+        }
         // Every builder method (select/order/limit/eq/neq/...) is chainable.
         return () => proxy;
       },
@@ -31,6 +45,8 @@ import { buildOpsSnapshot } from "./opsSnapshot";
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k];
+  for (const k of Object.keys(counts)) delete counts[k];
+  for (const k of Object.keys(isFilters)) delete isFilters[k];
   getCostAdjustmentTotals.mockReset();
   tables.projects = [
     {
@@ -82,5 +98,32 @@ describe("buildOpsSnapshot", () => {
 
     expect(snap.rollups.totalActualCost).toBe(0);
     expect(snap.rollups.projectsOverBudget).toEqual([]);
+  });
+
+  it("excludes archived projects, like the Command Center does", async () => {
+    getCostAdjustmentTotals.mockResolvedValue(new Map());
+    await buildOpsSnapshot();
+    // One filter for the project list, one for the project count.
+    expect(isFilters.projects).toEqual(["archived_at", "archived_at"]);
+  });
+
+  it("reports exact counts, not the length of the capped lists", async () => {
+    getCostAdjustmentTotals.mockResolvedValue(new Map());
+    // The lists are capped at 40 / 20 / 25 rows but the real totals are larger.
+    counts.projects = 52;
+    counts.leads = 87;
+    counts.materials = 131;
+
+    const snap = await buildOpsSnapshot();
+
+    expect(snap.rollups.projectCount).toBe(52);
+    expect(snap.rollups.openLeads).toBe(87);
+    expect(snap.rollups.materialShortages).toBe(131);
+  });
+
+  it("falls back to the list length when a count query is unavailable", async () => {
+    getCostAdjustmentTotals.mockResolvedValue(new Map());
+    const snap = await buildOpsSnapshot();
+    expect(snap.rollups.projectCount).toBe(2);
   });
 });

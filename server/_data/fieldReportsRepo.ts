@@ -131,14 +131,20 @@ export async function listPublishedFieldReports(projectId: number) {
   return rows ?? [];
 }
 
-export async function getWeeklyStatsRows() {
+/**
+ * Field-report rows for the weekly activity chart. `sinceIso` is the start of
+ * the first week bucket; the old fixed "now − 56 days" cut the oldest week
+ * mid-week and undercounted it.
+ */
+export async function getWeeklyStatsRows(
+  sinceIso: string = new Date(
+    Date.now() - 56 * 24 * 60 * 60 * 1000
+  ).toISOString()
+) {
   const { data: rows } = await data
     .from("field_reports")
     .select("report_date,published_to_client,issues_flagged")
     .order("report_date", { ascending: true })
-    .gte(
-      "report_date",
-      new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString()
-    );
+    .gte("report_date", sinceIso);
   return rows ?? [];
 }

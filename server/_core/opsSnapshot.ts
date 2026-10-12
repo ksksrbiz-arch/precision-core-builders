@@ -48,6 +48,20 @@ async function safeSelect(
   }
 }
 
+/** Exact row count for a head-only count query; null when it can't be had so
+ *  the caller can fall back to the (possibly capped) list length. */
+async function safeCount(
+  build: () => PromiseLike<{ count?: number | null; error: unknown }>
+): Promise<number | null> {
+  try {
+    const { count, error } = await build();
+    if (error || count == null) return null;
+    return count;
+  } catch {
+    return null;
+  }
+}
+
 const num = (v: unknown): number => {
   const n = typeof v === "string" ? parseFloat(v) : (v as number);
   return Number.isFinite(n) ? n : 0;
@@ -92,13 +106,20 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
     shortages,
     reports,
     actualCosts,
+    projectTotal,
+    leadTotal,
+    shortageTotal,
   ] = await Promise.all([
+    // Live book of business only — archived jobs are out, matching the
+    // Command Center's totals (otherwise the Co-pilot counts and flags jobs the
+    // dashboard no longer shows).
     safeSelect(() =>
       db
         .from("projects")
         .select(
           "id,name,status,project_type,city,estimated_budget,contracted_budget,completion_percent,estimated_start_date,estimated_end_date"
         )
+        .is("archived_at", null)
         .order("updated_at", { ascending: false })
         .limit(40)
     ),
@@ -159,6 +180,23 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
     // `projects.actual_cost` column is no longer kept in sync, so reading it
     // made every project look free and "over budget" never fired.
     getCostAdjustmentTotals().catch(() => new Map<number, number>()),
+    // Headline counts must be real counts: the lists above are capped (40 / 20
+    // / 25 rows), so `.length` would silently top out at the cap.
+    safeCount(() =>
+      db
+        .from("projects")
+        .select("id", { count: "exact", head: true })
+        .is("archived_at", null)
+    ),
+    safeCount(() =>
+      db.from("leads").select("id", { count: "exact", head: true })
+    ),
+    safeCount(() =>
+      db
+        .from("materials")
+        .select("id", { count: "exact", head: true })
+        .eq("is_shortage", true)
+    ),
   ]);
 
   const projectName = new Map<number, string>(
@@ -199,13 +237,13 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
     }));
 
   const rollups: OpsRollups = {
-    projectCount: projects.length,
+    projectCount: projectTotal ?? projects.length,
     totalContracted: Math.round(totalContracted),
     totalActualCost: Math.round(totalActual),
     projectsOverBudget: overBudget,
     overdueTasks: overdue,
-    openLeads: leads.length,
-    materialShortages: shortages.length,
+    openLeads: leadTotal ?? leads.length,
+    materialShortages: shortageTotal ?? shortages.length,
   };
 
   const snapshot = {
