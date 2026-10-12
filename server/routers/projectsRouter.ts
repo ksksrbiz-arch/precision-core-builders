@@ -279,9 +279,15 @@ export const projectsRouter = router({
       total: all.length,
       byStatus: {
         lead: all.filter(p => p.status === "lead").length,
-        active: all.filter(p => p.status === "in_progress").length,
+        // The remaining three statuses used to be dropped, so the status
+        // chart's bars didn't add up to `total` (and a lone punch-list or
+        // on-hold project read as "No project data yet").
+        estimateSent: all.filter(p => p.status === "estimate_sent").length,
         contracted: all.filter(p => p.status === "contracted").length,
+        active: all.filter(p => p.status === "in_progress").length,
+        punchList: all.filter(p => p.status === "punch_list").length,
         complete: all.filter(p => p.status === "complete").length,
+        onHold: all.filter(p => p.status === "on_hold").length,
       },
       totalEstimated: all.reduce(
         (s, p) => s + Number(p.estimated_budget ?? 0),

@@ -24,7 +24,12 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useMutationWithToast } from "@/_core/hooks/useMutationWithToast";
 import { trpc } from "@/lib/trpc";
-import { formatCurrency, formatPercent, fmtDate } from "@/lib/formatters";
+import {
+  formatCompactCurrency,
+  formatCurrency,
+  formatPercent,
+  fmtDate,
+} from "@/lib/formatters";
 import {
   AlertTriangle,
   BarChart3,
@@ -49,7 +54,7 @@ import { useLocation } from "wouter";
 import {
   CHART_COLORS,
   CHART_TOOLTIP_STYLE,
-  STATUS_COLORS,
+  projectStatusSeries,
 } from "@/pages/admin/Analytics";
 import {
   BarChart,
@@ -89,8 +94,10 @@ function StatCard({
           <Icon className="h-4 w-4 md:h-5 md:w-5 text-primary" />
         </div>
       </div>
+      {/* lining-nums: Cormorant's default old-style figures draw "1" like a
+          small-cap "I" (a lone project read "I"). */}
       <p
-        className="text-3xl font-bold text-foreground mb-1"
+        className="text-3xl font-bold text-foreground mb-1 lining-nums"
         style={{ fontFamily: "var(--font-heading)" }}
       >
         {value}
@@ -640,6 +647,21 @@ export default function CommandCenter() {
     enabled: authReady,
     onUpdate: () => refetchStats(),
   });
+  // The Shortages tile and the recent/weekly field-report panels read other
+  // tables; without these they'd go stale under a "LIVE" badge until reload.
+  useRealtimeTable({
+    table: "materials",
+    enabled: authReady,
+    onUpdate: () => utils.materials.list.invalidate(),
+  });
+  useRealtimeTable({
+    table: "field_reports",
+    enabled: authReady,
+    onUpdate: () => {
+      utils.fieldReports.list.invalidate();
+      utils.fieldReports.weeklyStats.invalidate();
+    },
+  });
 
   const budgetData = [
     {
@@ -652,30 +674,7 @@ export default function CommandCenter() {
     },
   ];
 
-  const statusData = stats
-    ? [
-        {
-          name: "Leads",
-          value: stats.byStatus.lead,
-          fill: STATUS_COLORS.lead,
-        },
-        {
-          name: "Contracted",
-          value: stats.byStatus.contracted,
-          fill: STATUS_COLORS.contracted,
-        },
-        {
-          name: "Active",
-          value: stats.byStatus.active,
-          fill: STATUS_COLORS.active,
-        },
-        {
-          name: "Complete",
-          value: stats.byStatus.complete,
-          fill: STATUS_COLORS.complete,
-        },
-      ]
-    : [];
+  const statusData = stats ? projectStatusSeries(stats.byStatus) : [];
 
   // An all-zero series makes Recharts draw bare axes and tick labels with no
   // bars, which reads as "the chart is broken" rather than "nothing recorded
@@ -684,8 +683,9 @@ export default function CommandCenter() {
   const hasBudgetData =
     (stats?.totalEstimated ?? 0) > 0 || (stats?.totalActual ?? 0) > 0;
 
-  const fmt = (n: number) =>
-    n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
+  // Compact money: $950 · $248K · $2.4M. The old inline `${n/1000}k` rendered
+  // a $2.4M pipeline as "$2400k" and rounded $1,499 down to "$1k".
+  const fmt = (n: number) => formatCompactCurrency(n);
 
   // A brand-new workspace has no measurements at all, so a literal 0 would
   // claim a measured result. `??` alone cannot tell those apart — a resolved
@@ -872,7 +872,7 @@ export default function CommandCenter() {
                 Revenue Pipeline
               </p>
               <p
-                className="text-2xl font-bold text-foreground"
+                className="text-2xl font-bold text-foreground lining-nums"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 {fmt(stats.totalEstimated)}
@@ -889,7 +889,7 @@ export default function CommandCenter() {
                 Reported Costs
               </p>
               <p
-                className="text-2xl font-bold text-foreground"
+                className="text-2xl font-bold text-foreground lining-nums"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 {fmt(stats.totalActual)}
@@ -925,7 +925,7 @@ export default function CommandCenter() {
                     Gross Margin
                   </p>
                   <p
-                    className={`text-2xl font-bold ${
+                    className={`text-2xl font-bold lining-nums ${
                       tone === "good"
                         ? "text-green-400"
                         : tone === "bad"
