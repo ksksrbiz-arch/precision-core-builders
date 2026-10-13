@@ -5,6 +5,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { trpc } from "@/lib/trpc";
+import { resolvePaymentBasis } from "@/lib/paymentBasis";
 import { fmtDate } from "@/lib/formatters";
 import { SITE } from "@/const";
 import { PortalLayout } from "@/components/layout/PortalLayout";
@@ -99,8 +100,11 @@ export default function PortalPayments() {
   const estimates = estimatesResult?.data ?? [];
   const latestEstimate = estimates[0];
 
-  // Derive milestone payment schedule from the latest approved estimate
-  const midValue = latestEstimate?.estimated_mid ?? 0;
+  // The payment schedule is built from the contract (or, failing that, the
+  // latest estimate the client has APPROVED) — never from a draft or a
+  // still-pending estimate. See `resolvePaymentBasis`.
+  const paymentBasis = resolvePaymentBasis(project, estimates);
+  const midValue = paymentBasis?.amount ?? 0;
   const milestones = Object.entries(MILESTONE_LABELS).map(([idx, m]) => ({
     ...m,
     idx: Number(idx),
@@ -394,7 +398,9 @@ export default function PortalPayments() {
                     className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground"
                     style={{ fontFamily: "var(--font-condensed)" }}
                   >
-                    Total Contract Value
+                    {paymentBasis?.source === "contract"
+                      ? "Total Contract Value"
+                      : "Approved Estimate Total"}
                   </span>
                   <span
                     className="text-base font-bold text-primary"
