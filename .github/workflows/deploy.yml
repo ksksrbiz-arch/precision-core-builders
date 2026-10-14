@@ -18,7 +18,7 @@ jobs:
 
       # pnpm version read from packageManager in package.json
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
