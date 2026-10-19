@@ -129,7 +129,11 @@
       "wouter@3.7.1": "patches/wouter@3.7.1.patch"
     },
     "overrides": {
-      "dompurify": ">=3.4.13",
+      "proxy-addr": ">=2.0.8",
+      "source-map-js": ">=1.2.2",
+      "dompurify": ">=3.4.16",
+      "postcss-selector-parser": ">=7.1.6",
+      "katex": ">=0.18.2",
       "path-to-regexp": ">=0.1.13",
       "picomatch": ">=4.0.4",
       "nanoid": ">=5.1.16",
@@ -140,7 +144,7 @@
       "tar": ">=7.5.21",
       "esbuild": ">=0.28.1",
       "mermaid": ">=11.16.1",
-      "undici": ">=7.29.0 <8",
+      "undici": ">=7.29.1 <8",
       "vite": "^8.3.1",
       "@babel/core": ">=7.29.6",
       "drizzle-orm": ">=0.45.2",
