@@ -4,14 +4,16 @@
  * and JSON-LD URLs never drift between pages.
  */
 import { SITE } from "@/const";
+import { indexableUrlPath } from "@shared/siteRoutes";
 
 /**
- * Absolute canonical URL for a route path.
+ * Absolute canonical URL for a page route — the trailing-slash form Netlify
+ * actually serves with a 200 (see indexableUrlPath).
  * canonicalUrl("/") → "https://precisioncorebuilders.com/"
- * canonicalUrl("/about") → "https://precisioncorebuilders.com/about"
+ * canonicalUrl("/about") → "https://precisioncorebuilders.com/about/"
  */
 export function canonicalUrl(path: string): string {
-  return `${SITE.url}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${SITE.url}${indexableUrlPath(path)}`;
 }
 
 /**
@@ -20,7 +22,8 @@ export function canonicalUrl(path: string): string {
  * root-relative paths ("/portfolio/…"), CDN assets are already absolute.
  */
 export function absoluteAssetUrl(url: string): string {
-  return /^https?:\/\//i.test(url) ? url : canonicalUrl(url);
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${SITE.url}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
 export interface Breadcrumb {

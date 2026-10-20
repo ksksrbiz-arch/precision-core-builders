@@ -26,6 +26,18 @@ export const CANONICAL_HOST = "precisioncorebuilders.com";
  */
 export const SPA_SHELL = "/app-shell.html";
 
+/**
+ * The indexable form of a route: Netlify serves each prerendered page from
+ * `<path>/index.html`, so `/about` 301s to `/about/`. Canonicals, the sitemap,
+ * JSON-LD and llms.txt must all name the URL that answers 200, or every page
+ * tells Google to index a redirect. The homepage is already "/".
+ */
+export function indexableUrlPath(path: string): string {
+  const clean = path.split(/[?#]/)[0].replace(/\/{2,}/g, "/");
+  const rooted = clean.startsWith("/") ? clean : `/${clean}`;
+  return rooted.endsWith("/") ? rooted : `${rooted}/`;
+}
+
 export type ChangeFreq = "weekly" | "monthly" | "yearly";
 export type PublicRoute = {
   path: string;

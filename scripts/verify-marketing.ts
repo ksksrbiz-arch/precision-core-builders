@@ -11,7 +11,8 @@ const urls = [
 let homeH1: string | undefined;
 for (const url of urls) {
   const path = new URL(url).pathname;
-  const file = path === "/" ? "index.html" : `${path.slice(1)}/index.html`;
+  const file = path === "/" ? "index.html" : `${path.slice(1)}index.html`;
+  assert.ok(path.endsWith("/"), `Sitemap URL must be the 200 form: ${url}`);
   const doc = new JSDOM(readFileSync(resolve(out, file), "utf8")).window
     .document;
   assert.equal(doc.querySelectorAll('link[rel="canonical"]').length, 1, path);
