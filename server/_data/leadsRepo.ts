@@ -1,5 +1,6 @@
 /**
- * leadsRepo — data-access for the `leads` table.
+ * leadsRepo — data-access for the `pcb_leads` table (migration 0016; the plain
+ * `leads` table in production is a legacy one with a different shape).
  *
  * Holds the Supabase query chains for the lead prioritization board. Routers
  * own validation + shaping; queries (columns, filters, ordering) live here and
@@ -25,7 +26,7 @@ export type LeadInsert = {
 export const leadsRepo = {
   async list(limit: number) {
     const { data: rows, error } = await data
-      .from("leads")
+      .from("pcb_leads")
       .select(
         "id,name,project_type,budget,location,timeline,message,score,priority,reasoning,suggested_action,estimated_value,created_at"
       )
@@ -37,7 +38,7 @@ export const leadsRepo = {
 
   async create(values: LeadInsert) {
     const { data: row, error } = await data
-      .from("leads")
+      .from("pcb_leads")
       .insert(values)
       .select()
       .single();
@@ -46,13 +47,13 @@ export const leadsRepo = {
   },
 
   async delete(id: number) {
-    const { error } = await data.from("leads").delete().eq("id", id);
+    const { error } = await data.from("pcb_leads").delete().eq("id", id);
     if (error) throw new Error(error.message);
     return { success: true };
   },
 
   async clear() {
-    const { error } = await data.from("leads").delete().gte("id", 0);
+    const { error } = await data.from("pcb_leads").delete().gte("id", 0);
     if (error) throw new Error(error.message);
     return { success: true };
   },

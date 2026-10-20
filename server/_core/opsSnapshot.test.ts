@@ -111,7 +111,7 @@ describe("buildOpsSnapshot", () => {
     getCostAdjustmentTotals.mockResolvedValue(new Map());
     // The lists are capped at 40 / 20 / 25 rows but the real totals are larger.
     counts.projects = 52;
-    counts.leads = 87;
+    counts.pcb_leads = 87;
     counts.materials = 131;
 
     const snap = await buildOpsSnapshot();

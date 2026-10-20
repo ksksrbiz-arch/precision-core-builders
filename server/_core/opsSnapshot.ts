@@ -151,7 +151,7 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
     ),
     safeSelect(() =>
       db
-        .from("leads")
+        .from("pcb_leads")
         .select(
           "id,name,project_type,budget,location,timeline,score,priority,estimated_value,suggested_action,created_at"
         )
@@ -189,7 +189,7 @@ export async function buildOpsSnapshot(): Promise<OpsSnapshot> {
         .is("archived_at", null)
     ),
     safeCount(() =>
-      db.from("leads").select("id", { count: "exact", head: true })
+      db.from("pcb_leads").select("id", { count: "exact", head: true })
     ),
     safeCount(() =>
       db
