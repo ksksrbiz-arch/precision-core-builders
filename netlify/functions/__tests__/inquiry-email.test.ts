@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { sendInquiryEmails } from "../_utils/inquiryEmail";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 function enableSending() {
   vi.stubGlobal("Netlify", {
@@ -53,5 +56,34 @@ describe("inquiry emails", () => {
       sendInquiryEmails("123", { email: "customer@example.com" })
     ).rejects.toThrow("delivery failed");
     expect(mock).toHaveBeenCalledTimes(2);
+  });
+
+  it("reads its settings from process.env when there is no Netlify global (the production case)", async () => {
+    // Legacy-style serverless functions have no `Netlify` global; the flag and the
+    // API key are only visible through process.env. This failed silently in prod.
+    expect((globalThis as { Netlify?: unknown }).Netlify).toBeUndefined();
+    vi.stubEnv("RESEND_INQUIRY_EMAILS_ENABLED", "true");
+    vi.stubEnv("RESEND_API_KEY", "test-only-key");
+    const mock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", mock);
+    await sendInquiryEmails("submission-456", {
+      email: "customer@example.com",
+    });
+    expect(mock).toHaveBeenCalledTimes(2);
+    expect(mock.mock.calls[0][1].headers.Authorization).toBe(
+      "Bearer test-only-key"
+    );
+  });
+
+  it("says so in the logs when sending is switched off", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const mock = vi.fn();
+    vi.stubGlobal("fetch", mock);
+    await sendInquiryEmails("789", { email: "customer@example.com" });
+    expect(mock).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("RESEND_INQUIRY_EMAILS_ENABLED")
+    );
+    warn.mockRestore();
   });
 });

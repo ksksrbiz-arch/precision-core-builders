@@ -360,3 +360,18 @@ or leads) — even though Netlify Forms showed inquiries as recent as 2026-10-19
   early-exit path in the handler, or the function not running). That needs the
   Netlify function logs for `submission-created`. Until it is understood, treat
   the lead board as unproven and send one real test inquiry after deploy.
+
+### 12.1 Resolved: the "unexplained" part, and why Eric's inbox stayed empty
+
+With the Netlify connector re-authorized (2026-10-20): `submission-created` ran once
+in 7 days, today, for the first real post-fix test. It produced `pcb_leads` row 3, so the
+lead board path works end to end. The earlier Oct 15/17/19 submissions never fired the
+function at all (consistent with Netlify's spam filter; check the form's **Spam** tab).
+
+**Inquiry emails were never sent, even though `RESEND_INQUIRY_EMAILS_ENABLED=true` and
+`RESEND_API_KEY` are both set in production.** `inquiryEmail.ts` read its settings only
+from the `Netlify` global, which Netlify documents for edge functions. The legacy-style
+`submission-created` handler has no such global, so the flag always read as unset and the
+function returned without logging. Its tests passed because they faked the global. It now
+reads `process.env` first (the global as a fallback), logs when sending is disabled, and
+`inquiry-email.test.ts` covers the no-global production case.
