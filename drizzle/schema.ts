@@ -788,8 +788,10 @@ export type InsertBlueprintArtifact = typeof blueprintArtifacts.$inferInsert;
 // previous localStorage-only board so scored leads survive across devices and
 // sessions.
 
+// Table is `pcb_leads` (migration 0016): production has an unrelated legacy
+// `leads` table with a different shape, so ours is namespaced.
 export const leads = pgTable(
-  "leads",
+  "pcb_leads",
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 200 }).notNull(),
@@ -809,8 +811,8 @@ export const leads = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   t => [
-    index("idx_leads_priority").on(t.priority),
-    index("idx_leads_created").on(t.createdAt),
+    index("idx_pcb_leads_priority").on(t.priority),
+    index("idx_pcb_leads_created").on(t.createdAt),
   ]
 );
 

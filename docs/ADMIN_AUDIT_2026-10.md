@@ -330,3 +330,33 @@ them — probably another app sharing the project; left alone.)
 
 Still open and separate: the portal's finish selection **server** path writes a
 client-supplied `budgetImpact` into the immutable ledger (audit §4 item 2).
+
+## 12. Website inquiries never reached the lead board (`leads` table collision)
+
+**Found** while checking whether the admin platform holds any real data (it
+didn't: production had 0 projects, clients, estimates, field reports, ledger rows
+or leads) — even though Netlify Forms showed inquiries as recent as 2026-10-19.
+
+- **Cause:** production already had a `leads` table that is not ours — a legacy
+  one with a uuid `id`, `email TEXT NOT NULL` and a `status` column. Migration
+  0004 used `CREATE TABLE IF NOT EXISTS`, which silently did nothing against it.
+  `submission-created.ts` inserts no `email`, so every insert would have been
+  rejected, and the handler logs the error and returns 200 — invisible. The
+  board's delete/clear also compared integer ids against a uuid column.
+- **Fix:** `drizzle/migrations/0016_pcb_leads.sql` creates this app's own
+  `pcb_leads` table (same shape as 0004, admin-only RLS via `is_admin()`); the
+  lead repo, Ops Co-pilot snapshot, inquiry handler and Drizzle schema now use
+  it. The legacy `leads` table is left alone (0 rows). `leadsRepo.test.ts` pins
+  the table name and fails if any server/function/client code references
+  `.from("leads")` again.
+- **Production:** applied 2026-10-20 through the Supabase connector in two
+  statements (table + indexes + RLS, then the policy) because the connector
+  stalls on `DROP POLICY`; the file in the repo is the whole idempotent version.
+  Verified in a rolled-back transaction: the handler's exact insert succeeds,
+  `anon` sees 0 rows and cannot insert, a non-admin `authenticated` session sees
+  0 rows.
+- **Still unexplained:** no write to `leads` reached Supabase for the 2026-10-19
+  submission, so something upstream also stopped it (Netlify spam filtering, an
+  early-exit path in the handler, or the function not running). That needs the
+  Netlify function logs for `submission-created`. Until it is understood, treat
+  the lead board as unproven and send one real test inquiry after deploy.

@@ -4,7 +4,7 @@
  * Fires automatically whenever a Netlify Form is submitted. For the lead-capture
  * forms — the contact "project-inquiry" form and the public "estimator-lead"
  * form — it AI-scores the lead (free-first LLM chain) and persists it to the
- * leads table so it appears, prioritized, on the Command Center lead board —
+ * pcb_leads table so it appears, prioritized, on the Command Center lead board —
  * no manual entry required. Estimator submissions are the highest-intent leads
  * (they just saw a price), so they must never be dropped.
  *
@@ -69,7 +69,7 @@ type NormalizedLead = {
   scoreInput: LeadInput;
 };
 
-/** Fold contact details into the message (leads has no email/phone columns). */
+/** Fold contact details into the message (pcb_leads has no email/phone columns). */
 function contactBits(data: FormData): string {
   return [
     data.email && `Email: ${data.email}`,
@@ -190,7 +190,7 @@ export const handler: Handler = async event => {
     }
 
     // No auth is possible here (Netlify Forms triggers aren't signed), but
-    // this endpoint writes directly to the leads table and calls an LLM via
+    // this endpoint writes directly to the pcb_leads table and calls an LLM via
     // scoreLead — rate limit by IP so it can't be hammered, and bound every
     // field below before it reaches scoreLead or the DB insert.
     const ip = getClientIp(event.headers);
@@ -289,7 +289,7 @@ export const handler: Handler = async event => {
       };
     }
 
-    const { error } = await db.from("leads").insert({
+    const { error } = await db.from("pcb_leads").insert({
       name: name ?? "Website inquiry",
       project_type: projectType ?? null,
       budget: lead.budget ?? null,

@@ -1,3 +1,7 @@
+-- NOTE: superseded by 0016_pcb_leads.sql. Production already had an unrelated
+-- legacy `leads` table, so the CREATE TABLE IF NOT EXISTS below was a no-op there.
+-- Fresh databases are fine either way; the app now reads/writes `pcb_leads`.
+--
 -- Leads — persisted AI-scored lead prioritization board (Command Center).
 -- Replaces the prior localStorage-only board. Apply via Supabase SQL editor
 -- or `pnpm db:push`. Idempotent.
