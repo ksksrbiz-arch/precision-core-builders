@@ -50,7 +50,15 @@ try {
         );
       }, path);
       if (path !== "/") {
-        await page.locator(".marketing-page").waitFor();
+        // The prerendered tree and the hydrated one briefly coexist during the
+        // hand-off; wait for exactly one visible page before asserting on it.
+        await page.waitForFunction(() => {
+          const pages = [...document.querySelectorAll(".marketing-page")];
+          return (
+            pages.length === 1 &&
+            (pages[0] as HTMLElement).offsetParent !== null
+          );
+        });
         assert.equal(
           await page.locator(".marketing-page main h1").count(),
           1,

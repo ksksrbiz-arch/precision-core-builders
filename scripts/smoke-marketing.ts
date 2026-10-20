@@ -75,7 +75,7 @@ try {
         !!document.querySelector("main h1") &&
         new URL(
           document.querySelector<HTMLLinkElement>('link[rel="canonical"]')!.href
-        ).pathname === `${expected}/`,
+        ).pathname === (expected === "/" ? "/" : `${expected}/`),
       path
     );
     assert.equal(await page.locator("main h1").count(), 1, path);

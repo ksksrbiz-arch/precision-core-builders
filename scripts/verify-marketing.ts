@@ -76,6 +76,21 @@ for (const url of urls) {
     1,
     path
   );
+  // Search results truncate around 60 characters (title) and 160 (description).
+  const titleLength = doc.title.trim().length;
+  assert.ok(
+    titleLength >= 20 && titleLength <= 65,
+    `Title length ${titleLength} (want 20-65): ${path} — ${doc.title}`
+  );
+  const descriptionLength =
+    doc
+      .querySelector('meta[name="description"]')
+      ?.getAttribute("content")
+      ?.trim().length ?? 0;
+  assert.ok(
+    descriptionLength >= 70 && descriptionLength <= 160,
+    `Description length ${descriptionLength} (want 70-160): ${path}`
+  );
   assert.equal(
     doc.querySelectorAll('script[src*="googletagmanager"]').length,
     0,

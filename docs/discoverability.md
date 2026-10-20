@@ -30,6 +30,17 @@ soft-404 200. `shared/siteRoutes.test.ts` fails if `_redirects` is stale or an
 `App.tsx` route isn't covered. To add a page: add the `<Route>`, add it to
 `PUBLIC_ROUTES` (or `APP_ROUTES`), run `pnpm redirects` and `pnpm sitemap`.
 
+**Indexable URLs.** Netlify serves each prerendered page from `<path>/index.html`, so
+`/about` answers 301 → `/about/`. Every canonical, `og:url`, JSON-LD URL, sitemap
+`<loc>` and `llms*.txt` link therefore uses the trailing-slash form via
+`indexableUrlPath()` (`shared/siteRoutes.ts`); asset URLs (`/og-image.jpg`) never get a
+slash. `pnpm check:marketing` fails if a sitemap URL isn't that form or doesn't equal
+the page's canonical.
+
+**Search-result budgets.** `pnpm check:marketing` also requires every page title to be
+20–65 characters and every meta description 70–160. `useSEO` trims over-long
+descriptions on a word boundary (`fitDescription`), but write them to fit.
+
 ## IndexNow usage
 
 `scripts/indexnow.mjs` reads every URL from `client/public/sitemap.xml` and
