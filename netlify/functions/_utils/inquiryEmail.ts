@@ -1,9 +1,20 @@
 type EmailEnvironment = { env: { get(key: string): string | undefined } };
 
+/**
+ * Read a setting. Netlify's serverless functions expose environment variables
+ * through `process.env`; the `Netlify` global is only documented for edge
+ * functions. This code originally read only the global, which does not exist in
+ * the legacy-style `submission-created` handler, so in production the opt-in
+ * flag always read as unset and no inquiry email was ever sent (the tests
+ * passed because they faked the global). `process.env` first, global second.
+ */
 function env(key: string) {
   return (
-    globalThis as typeof globalThis & { Netlify?: EmailEnvironment }
-  ).Netlify?.env.get(key);
+    process.env[key] ??
+    (
+      globalThis as typeof globalThis & { Netlify?: EmailEnvironment }
+    ).Netlify?.env.get(key)
+  );
 }
 
 function escapeHtml(value: string) {
@@ -26,7 +37,12 @@ export async function sendInquiryEmails(
   data: Record<string, string>
 ) {
   // Explicit production-only opt-in prevents preview/test deploys emailing real leads.
-  if (env("RESEND_INQUIRY_EMAILS_ENABLED") !== "true") return;
+  if (env("RESEND_INQUIRY_EMAILS_ENABLED") !== "true") {
+    console.warn(
+      '[inquiry-email] sending disabled: RESEND_INQUIRY_EMAILS_ENABLED is not "true"'
+    );
+    return;
+  }
   const key = env("RESEND_API_KEY");
   if (!key) {
     console.warn("[inquiry-email] RESEND_API_KEY missing; sending disabled");
