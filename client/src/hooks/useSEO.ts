@@ -14,6 +14,16 @@ interface SEOOptions {
 }
 
 const SITE_NAME = "Precision Core Builders";
+/** Google truncates meta descriptions around 160 characters. */
+const MAX_DESCRIPTION = 160;
+
+/** Trim to MAX_DESCRIPTION on a word boundary, never mid-word. */
+export function fitDescription(text: string): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= MAX_DESCRIPTION) return clean;
+  const cut = clean.slice(0, MAX_DESCRIPTION - 1);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,;:.\-—–]+$/, "")}…`;
+}
 
 function getOrCreateMeta(
   selector: string,
@@ -97,18 +107,19 @@ export function useSEO({
     setMeta('meta[name="twitter:title"]', "name", "twitter:title", fullTitle);
 
     if (description) {
-      setMeta('meta[name="description"]', "name", "description", description);
+      const fitted = fitDescription(description);
+      setMeta('meta[name="description"]', "name", "description", fitted);
       setMeta(
         'meta[property="og:description"]',
         "property",
         "og:description",
-        description
+        fitted
       );
       setMeta(
         'meta[name="twitter:description"]',
         "name",
         "twitter:description",
-        description
+        fitted
       );
     }
 

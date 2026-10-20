@@ -40,7 +40,7 @@ type Filter = "All" | string;
 
 export default function Showroom() {
   useSEO({
-    title: "Finish Showroom — Flooring, Countertops & Cabinets in Eugene, OR",
+    title: "Finish Showroom: Flooring & Cabinets",
     description:
       "Browse finish options for your Precision Core Builders project — flooring, countertops, cabinets, fixtures, and more. Serving Eugene and Lane County, OR.",
     canonical: canonicalUrl("/showroom"),

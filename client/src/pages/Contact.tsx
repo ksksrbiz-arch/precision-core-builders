@@ -77,7 +77,7 @@ const inputCls =
 
 export default function Contact() {
   useSEO({
-    title: "Contact Us — Consultations in Eugene, OR",
+    title: "Request a Consultation — Eugene, OR",
     description:
       "Contact Precision Core Builders for a on-site consultation. Call Eric Tadlock at 541-852-5144 or send a message. Serving Eugene, Springfield & Lane County, OR.",
     canonical: canonicalUrl("/contact"),
@@ -479,7 +479,7 @@ export default function Contact() {
                     <div className="h-9 w-9 border border-primary/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Icon className="h-4 w-4 text-primary" aria-hidden />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p
                         className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground/60 mb-1 font-semibold"
                         style={{ fontFamily: "var(--font-condensed)" }}
@@ -489,9 +489,18 @@ export default function Contact() {
                       {href ? (
                         <a
                           href={href}
-                          className="text-sm font-semibold text-foreground hover:text-primary transition-colors break-all"
+                          className="text-sm font-semibold text-foreground hover:text-primary transition-colors [overflow-wrap:anywhere]"
                         >
-                          {value}
+                          {/* Offer a break after "@" so a narrow card wraps
+                              at the domain, not mid-word. */}
+                          {value.includes("@") ? (
+                            <>
+                              {value.split("@")[0]}@<wbr />
+                              {value.split("@")[1]}
+                            </>
+                          ) : (
+                            value
+                          )}
                         </a>
                       ) : (
                         <p className="text-sm font-semibold text-foreground">
