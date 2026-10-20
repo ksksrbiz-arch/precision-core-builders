@@ -8,6 +8,7 @@ import {
   PUBLIC_ROUTES,
   SPA_SHELL,
   buildRedirectRules,
+  indexableUrlPath,
   renderRedirects,
 } from "./siteRoutes";
 
@@ -169,6 +170,26 @@ describe("generated _redirects", () => {
       expect(
         APP_ROUTES.some(a => p.startsWith(a.replace("/*", "")) && a !== "/")
       ).toBe(false);
+    }
+  });
+});
+
+describe("indexableUrlPath", () => {
+  it("returns the trailing-slash form Netlify serves with a 200", () => {
+    expect(indexableUrlPath("/")).toBe("/");
+    expect(indexableUrlPath("/about")).toBe("/about/");
+    expect(indexableUrlPath("/about/")).toBe("/about/");
+    expect(indexableUrlPath("blog/x")).toBe("/blog/x/");
+    expect(indexableUrlPath("/contact?utm_source=x#form")).toBe("/contact/");
+  });
+
+  it("is what every sitemap entry uses", () => {
+    const xml = readFileSync(
+      resolve(root, "client/public/sitemap.xml"),
+      "utf8"
+    );
+    for (const [, loc] of xml.matchAll(/<loc>(.*?)<\/loc>/g)) {
+      expect(loc.endsWith("/"), loc).toBe(true);
     }
   });
 });

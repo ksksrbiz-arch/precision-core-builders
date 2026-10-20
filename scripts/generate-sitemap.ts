@@ -10,7 +10,11 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { PROJECTS } from "../client/src/data/projects";
-import { CANONICAL_HOST, PUBLIC_ROUTES } from "../shared/siteRoutes";
+import {
+  CANONICAL_HOST,
+  PUBLIC_ROUTES,
+  indexableUrlPath,
+} from "../shared/siteRoutes";
 
 // Production domain (www 301-redirects to the apex). Priority scheme:
 // home 1.0 · estimator/contact 0.9 · services/portfolio/about/faq 0.8 ·
@@ -38,7 +42,7 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 ${entries
   .map(
     e => `  <url>
-    <loc>${BASE}${e.path}</loc>
+    <loc>${BASE}${indexableUrlPath(e.path)}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>${e.changefreq}</changefreq>
     <priority>${e.priority.toFixed(1)}</priority>

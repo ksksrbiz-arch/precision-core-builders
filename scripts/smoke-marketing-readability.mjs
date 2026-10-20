@@ -21,15 +21,22 @@ try {
     );
     for (const path of [
       "/",
-      "/services",
-      "/about",
-      "/contact",
-      "/faq",
-      "/services/remodels",
-      "/blog/kitchen-remodel-cost-eugene-oregon",
+      "/services/",
+      "/about/",
+      "/contact/",
+      "/faq/",
+      "/services/remodels/",
+      "/blog/kitchen-remodel-cost-eugene-oregon/",
     ]) {
+      // Trailing-slash URLs are what Netlify serves (and the sitemap lists);
+      // `vite preview` answers slash-less paths with the homepage shell.
       await page.goto("http://127.0.0.1:4198" + path);
-      await page.locator(".marketing-site main h1").waitFor();
+      // Prerendered and hydrated trees briefly coexist; wait for exactly one
+      // visible heading before measuring it.
+      await page.waitForFunction(() => {
+        const h1s = [...document.querySelectorAll(".marketing-site main h1")];
+        return h1s.length === 1 && h1s[0].offsetParent !== null;
+      });
       await page.waitForTimeout(900);
       const result = await page.evaluate(() => {
         const heading = document.querySelector("main h1");
@@ -49,11 +56,11 @@ try {
         Number(result.weight) >= 500,
         `${width} ${path} heading weight`
       );
-      if (path === "/" || path === "/services")
+      if (path === "/" || path === "/services/")
         await page.screenshot({
           path: `audit/readability/${width}-${path === "/" ? "home" : "services"}.png`,
         });
-      if (path === "/services") {
+      if (path === "/services/") {
         await page.evaluate(() => scrollTo(0, 700));
         await page.waitForTimeout(300);
         const top = await page

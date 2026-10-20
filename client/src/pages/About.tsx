@@ -104,7 +104,7 @@ const MILESTONES = [
 
 export default function About() {
   useSEO({
-    title: "Meet Eric & Mitch Tadlock — Eugene, OR Contractors",
+    title: "Eric & Mitch Tadlock — Eugene Builders",
     description:
       "Meet the Tadlock brothers — Eric and Mitch — the veteran carpenters behind Precision Core Builders. 20+ years of construction experience in Eugene, Oregon.",
     canonical: canonicalUrl("/about"),

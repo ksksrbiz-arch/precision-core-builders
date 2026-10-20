@@ -483,7 +483,7 @@ export function SiteFooter() {
                 { label: "FAQ", href: "/faq" },
                 { label: "Contact", href: "/contact" },
               ].map(l => (
-                <li key={l.href}>
+                <li key={l.label}>
                   <a
                     href={l.href}
                     className="link-underline text-sm text-muted-foreground hover:text-primary focus-visible:text-primary focus-visible:outline-none transition-colors"

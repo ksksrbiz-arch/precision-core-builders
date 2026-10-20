@@ -11,7 +11,8 @@ const urls = [
 let homeH1: string | undefined;
 for (const url of urls) {
   const path = new URL(url).pathname;
-  const file = path === "/" ? "index.html" : `${path.slice(1)}/index.html`;
+  const file = path === "/" ? "index.html" : `${path.slice(1)}index.html`;
+  assert.ok(path.endsWith("/"), `Sitemap URL must be the 200 form: ${url}`);
   const doc = new JSDOM(readFileSync(resolve(out, file), "utf8")).window
     .document;
   assert.equal(doc.querySelectorAll('link[rel="canonical"]').length, 1, path);
@@ -74,6 +75,21 @@ for (const url of urls) {
     doc.querySelectorAll('meta[name="description"]').length,
     1,
     path
+  );
+  // Search results truncate around 60 characters (title) and 160 (description).
+  const titleLength = doc.title.trim().length;
+  assert.ok(
+    titleLength >= 20 && titleLength <= 65,
+    `Title length ${titleLength} (want 20-65): ${path} — ${doc.title}`
+  );
+  const descriptionLength =
+    doc
+      .querySelector('meta[name="description"]')
+      ?.getAttribute("content")
+      ?.trim().length ?? 0;
+  assert.ok(
+    descriptionLength >= 70 && descriptionLength <= 160,
+    `Description length ${descriptionLength} (want 70-160): ${path}`
   );
   assert.equal(
     doc.querySelectorAll('script[src*="googletagmanager"]').length,

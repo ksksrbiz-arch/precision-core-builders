@@ -41,7 +41,7 @@ const FILTERS: Filter[] = ["All", ...CATEGORIES];
 
 export default function Portfolio() {
   useSEO({
-    title: "Portfolio — Custom Homes & Remodels in Eugene, OR",
+    title: "Portfolio: Eugene Homes & Remodels",
     description:
       "Real projects by Precision Core Builders in Eugene and Lane County, OR — custom homes, restorations, kitchens, baths, decks, and structures. CCB #246527.",
     canonical: canonicalUrl("/portfolio"),
