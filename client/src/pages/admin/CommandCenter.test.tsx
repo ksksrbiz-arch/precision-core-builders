@@ -2,26 +2,55 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 let statsData: unknown = undefined;
 let notLiveTables: string[] = [];
+let queryErrors: string[] = [];
+let authReady = true;
+const refetches = new Map<string, ReturnType<typeof vi.fn>>();
+const queryOptions = new Map<string, { enabled?: boolean }>();
+const realtimeCallbacks = new Map<string, () => void>();
+const chartData: unknown[] = [];
+const createLead = vi.fn();
+let createOptions: { onError?: () => void; onSuccess?: () => unknown } = {};
 
 vi.mock("@/_core/hooks/useAuth", () => ({
-  useAuth: () => ({ loading: false, isAuthenticated: true, isAdmin: true }),
+  useAuth: () => ({
+    loading: false,
+    isAuthenticated: true,
+    isAdmin: authReady,
+  }),
 }));
 
 vi.mock("@/hooks/useRealtimeTable", () => ({
-  useRealtimeTable: ({ table }: { table: string }) => ({
-    isLive: !notLiveTables.includes(table),
-    lastEvent: null,
-  }),
+  useRealtimeTable: ({
+    table,
+    onUpdate,
+  }: {
+    table: string;
+    onUpdate: () => void;
+  }) => {
+    realtimeCallbacks.set(table, onUpdate);
+    return { isLive: !notLiveTables.includes(table), lastEvent: null };
+  },
 }));
 
 vi.mock("recharts", async importOriginal => {
   const actual = await importOriginal<typeof import("recharts")>();
   return {
     ...actual,
+    BarChart: (props: React.ComponentProps<typeof actual.BarChart>) => {
+      chartData.push(props.data);
+      return <actual.BarChart {...props} />;
+    },
     ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
       <div style={{ width: 400, height: 300 }}>{children}</div>
     ),
@@ -29,22 +58,32 @@ vi.mock("recharts", async importOriginal => {
 });
 
 vi.mock("@/lib/trpc", () => {
-  const passthrough = () => ({
-    useQuery: () => ({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    }),
-    useMutation: () => ({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
-      isPending: false,
-    }),
+  const procedure = (key: string) => ({
+    useQuery: (_input: unknown, options: { enabled?: boolean } = {}) => {
+      queryOptions.set(key, options);
+      if (!refetches.has(key)) refetches.set(key, vi.fn());
+      return {
+        data: key === "projects.stats" ? statsData : undefined,
+        isLoading: false,
+        isError: queryErrors.includes(key),
+        refetch: refetches.get(key),
+      };
+    },
+    useMutation: (options = {}) => {
+      if (key === "leads.create") createOptions = options;
+      return {
+        mutate: key === "leads.create" ? createLead : vi.fn(),
+        mutateAsync: vi.fn(),
+        isPending: false,
+      };
+    },
   });
   const base = {
     useUtils: () =>
-      new Proxy({}, { get: () => new Proxy({}, { get: () => vi.fn() }) }),
+      new Proxy(
+        {},
+        { get: () => new Proxy({}, { get: () => ({ invalidate: vi.fn() }) }) }
+      ),
   };
   const trpcProxy = new Proxy(base, {
     get(target, routerName: string) {
@@ -52,23 +91,16 @@ vi.mock("@/lib/trpc", () => {
       return new Proxy(
         {},
         {
-          get: (_t, procName: string) =>
-            routerName === "projects" && procName === "stats"
-              ? {
-                  useQuery: () => ({
-                    data: statsData,
-                    isLoading: false,
-                    isError: false,
-                    refetch: vi.fn(),
-                  }),
-                }
-              : passthrough(),
+          get: (_t, procName: string) => procedure(`${routerName}.${procName}`),
         }
       );
     },
   });
   return { trpc: trpcProxy };
 });
+
+vi.mock("@/components/OpsCopilot", () => ({ default: () => null }));
+vi.mock("@/components/AIChatBox", () => ({ default: () => null }));
 
 vi.mock("@/components/ToastProvider", () => ({
   useToast: () => ({ addToast: vi.fn() }),
@@ -88,6 +120,16 @@ Element.prototype.scrollIntoView =
 afterEach(() => {
   cleanup();
   notLiveTables = [];
+  statsData = undefined;
+  queryErrors = [];
+  authReady = true;
+  refetches.clear();
+  queryOptions.clear();
+  realtimeCallbacks.clear();
+  chartData.length = 0;
+  createLead.mockReset();
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 async function loadPage() {
@@ -224,5 +266,204 @@ describe("CommandCenter", () => {
       expect(screen.getByText("Review project costs")).toBeTruthy();
       expect(screen.getByText("-20.0%").className).toContain("text-red-400");
     });
+  });
+});
+
+describe("Command Center audit regressions", () => {
+  async function openLeadPanel() {
+    const CommandCenter = await loadPage();
+    render(<CommandCenter />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /AI Lead Intelligence/ })
+    );
+    fireEvent.change(screen.getByLabelText("Lead name"), {
+      target: { value: "Remodel inquiry" },
+    });
+  }
+
+  it.each([
+    ["projects.list", "Couldn't load recent projects."],
+    ["fieldReports.list", "Couldn't load recent field reports."],
+    ["materials.list", "Couldn't load material shortages."],
+    ["fieldReports.weeklyStats", "Couldn't load field report activity."],
+  ])(
+    "surfaces %s failures and retries the failed query",
+    async (key, message) => {
+      queryErrors = [key];
+      const CommandCenter = await loadPage();
+      render(<CommandCenter />);
+      expect(screen.getByText(message)).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "Try Again" }));
+      expect(refetches.get(key)).toHaveBeenCalledOnce();
+    }
+  );
+
+  it("doesn't label failed metrics as an empty workspace", async () => {
+    queryErrors = ["projects.stats"];
+    const CommandCenter = await loadPage();
+    render(<CommandCenter />);
+    expect(screen.getByText("Project metrics unavailable")).toBeTruthy();
+    expect(screen.getByText("Budget metrics unavailable")).toBeTruthy();
+    expect(screen.queryByText("No project data yet")).toBeNull();
+  });
+
+  it("retains sub-$500 amounts in the budget chart", async () => {
+    statsData = {
+      total: 1,
+      byStatus: {},
+      totalEstimated: 250,
+      totalActual: 125,
+    };
+    const CommandCenter = await loadPage();
+    render(<CommandCenter />);
+    expect(chartData).toContainEqual([
+      { name: "Estimated", value: 0.25 },
+      { name: "Actual", value: 0.125 },
+    ]);
+  });
+
+  it("gates the lead board query until admin auth is ready", async () => {
+    authReady = false;
+    const CommandCenter = await loadPage();
+    render(<CommandCenter />);
+    expect(queryOptions.get("leads.list")).toMatchObject({ enabled: false });
+  });
+
+  it("shows an unavailable board with a retry instead of implying it is empty", async () => {
+    queryErrors = ["leads.list"];
+    await openLeadPanel();
+    expect(
+      screen.getByText("Couldn't load the prioritization board.")
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Try Again" }));
+    expect(refetches.get("leads.list")).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [429, "Rate limit reached. Please wait before scoring another lead."],
+    [503, "AI scoring service is temporarily unavailable. Please try again."],
+  ])(
+    "doesn't invent a low-priority score for HTTP %s (even with a non-JSON body)",
+    async (status, message) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(new Response("unavailable", { status }))
+      );
+      await openLeadPanel();
+      fireEvent.click(screen.getByRole("button", { name: "Score This Lead" }));
+      expect((await screen.findByRole("alert")).textContent).toBe(message);
+      expect(screen.queryByText("Next Action")).toBeNull();
+      expect(createLead).not.toHaveBeenCalled();
+    }
+  );
+
+  it("rejects malformed success responses without crashing or saving a lead", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ score: 999, reasoning: "bad result" })
+        )
+    );
+    await openLeadPanel();
+    fireEvent.click(screen.getByRole("button", { name: "Score This Lead" }));
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "temporarily unavailable"
+    );
+    expect(createLead).not.toHaveBeenCalled();
+    expect(screen.queryByText("999")).toBeNull();
+  });
+
+  it("persists a valid score, but clearly reports a subsequent save failure", async () => {
+    const score = {
+      score: 85,
+      priority: "urgent",
+      reasoning: "Detailed project",
+      suggestedAction: "Call the lead",
+      estimatedValue: null,
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(score)));
+    await openLeadPanel();
+    fireEvent.click(screen.getByRole("button", { name: "Score This Lead" }));
+    await waitFor(() =>
+      expect(createLead).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Remodel inquiry", ...score })
+      )
+    );
+    act(() => createOptions.onError?.());
+    expect(screen.getByRole("alert").textContent).toContain(
+      "could not be saved"
+    );
+    expect(screen.getByText("Call the lead")).toBeTruthy();
+  });
+
+  it("aborts a pending score on unmount and never persists its late response", async () => {
+    let resolveResponse!: (response: Response) => void;
+    const pending = new Promise<Response>(resolve => {
+      resolveResponse = resolve;
+    });
+    const fetchMock = vi.fn().mockReturnValue(pending);
+    vi.stubGlobal("fetch", fetchMock);
+    const CommandCenter = await loadPage();
+    const { unmount } = render(<CommandCenter />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /AI Lead Intelligence/ })
+    );
+    fireEvent.change(screen.getByLabelText("Lead name"), {
+      target: { value: "Inquiry" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Score This Lead" }));
+    const signal = fetchMock.mock.calls[0][1].signal as AbortSignal;
+    unmount();
+    expect(signal.aborted).toBe(true);
+    await act(async () => {
+      resolveResponse(
+        Response.json({
+          score: 85,
+          priority: "urgent",
+          reasoning: "Details",
+          suggestedAction: "Call",
+          estimatedValue: null,
+        })
+      );
+      await pending;
+    });
+    expect(createLead).not.toHaveBeenCalled();
+  });
+
+  it("doesn't submit whitespace-only names", async () => {
+    await openLeadPanel();
+    fireEvent.change(screen.getByLabelText("Lead name"), {
+      target: { value: "   " },
+    });
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Score This Lead",
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true);
+    expect(
+      screen
+        .getByLabelText("Project type (remodel, new build…)")
+        .getAttribute("maxlength")
+    ).toBe("120");
+  });
+
+  it("restarts the realtime flash for a new event and cleans its timer on unmount", async () => {
+    const CommandCenter = await loadPage();
+    vi.useFakeTimers();
+    const { unmount } = render(<CommandCenter />);
+    act(() => realtimeCallbacks.get("projects")?.());
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => realtimeCallbacks.get("projects")?.());
+    act(() => vi.advanceTimersByTime(500));
+    expect(screen.getByLabelText("Realtime updates live").className).toContain(
+      "ring-1"
+    );
+    const timerCount = vi.getTimerCount();
+    unmount();
+    expect(vi.getTimerCount()).toBeLessThan(timerCount);
   });
 });

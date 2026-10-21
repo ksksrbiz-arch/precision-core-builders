@@ -127,10 +127,11 @@ export async function deleteProject(id: number) {
 
 export async function getProjectsStats() {
   // The dashboard counts the live book of business; archived jobs are out.
-  const { data: rows } = await data
+  const { data: rows, error } = await data
     .from("projects")
     .select("id, status, estimated_budget, contracted_budget")
     .is("archived_at", null);
+  if (error) throw new Error(error.message);
   return rows ?? [];
 }
 
@@ -176,11 +177,12 @@ export async function getPortfolioProfitability() {
  * can't silently drift stale the way a hand-typed number would.
  */
 export async function getCostAdjustmentTotals(): Promise<Map<number, number>> {
-  const { data: rows } = await data
+  const { data: rows, error } = await data
     .from("ledger_entries")
     .select("project_id,amount_delta")
     .eq("entry_type", "cost_adjustment");
 
+  if (error) throw new Error(error.message);
   const totals = new Map<number, number>();
   for (const row of rows ?? []) {
     const projectId = row.project_id as number;
@@ -196,11 +198,12 @@ export async function getCostAdjustmentTotals(): Promise<Map<number, number>> {
  * one project don't scan every cost entry.
  */
 export async function getProjectActualCost(projectId: number): Promise<number> {
-  const { data: rows } = await data
+  const { data: rows, error } = await data
     .from("ledger_entries")
     .select("amount_delta")
     .eq("project_id", projectId)
     .eq("entry_type", "cost_adjustment");
+  if (error) throw new Error(error.message);
   return (rows ?? []).reduce(
     (sum: number, row: { amount_delta: unknown }) =>
       sum + Number(row.amount_delta ?? 0),
