@@ -49,7 +49,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { useLocation } from "wouter";
 import {
   CHART_COLORS,
@@ -109,13 +110,14 @@ function StatCard({
 
 // ─── Lead Scoring Panel ────────────────────────────────────────────────────────
 
-type LeadScore = {
-  score: number;
-  priority: "low" | "medium" | "high" | "urgent";
-  reasoning: string;
-  suggestedAction: string;
-  estimatedValue: number | null;
-};
+const LeadScoreSchema = z.object({
+  score: z.number().int().min(0).max(100),
+  priority: z.enum(["low", "medium", "high", "urgent"]),
+  reasoning: z.string(),
+  suggestedAction: z.string(),
+  estimatedValue: z.number().nonnegative().nullable(),
+});
+type LeadScore = z.infer<typeof LeadScoreSchema>;
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: "text-muted-foreground border-border/60",
@@ -196,10 +198,14 @@ function formatRelativeTime(ts: number): string {
   return fmtDate(ts);
 }
 
-function LeadScoringPanel() {
+function LeadScoringPanel({ enabled }: { enabled: boolean }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<LeadScore | null>(null);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState(false);
+  const scoreRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => scoreRequest.current?.abort(), []);
   const [form, setForm] = useState({
     name: "",
     projectType: "",
@@ -210,25 +216,23 @@ function LeadScoringPanel() {
   });
   const [expandedSavedId, setExpandedSavedId] = useState<number | null>(null);
 
-  // Persisted lead board (admin-only). Degrades gracefully: if the query fails
-  // (e.g. the leads table hasn't been migrated yet) the board just shows empty
-  // and lead scoring still works.
+  // Scoring remains usable when the persisted board is unavailable, but the
+  // failure must stay visible so an empty board isn't mistaken for saved data.
   const utils = trpc.useUtils();
   const leadsQuery = trpc.leads.list.useQuery(
     { limit: SAVED_LEADS_MAX },
-    { retry: false }
+    { retry: false, enabled }
   );
   const saved: SavedLead[] = (leadsQuery.data ?? []).map(rowToSavedLead);
 
-  // Best-effort background persist of the scored lead. It runs automatically
-  // after every successful score, so it must NOT toast — a failure here (e.g.
-  // the leads table isn't migrated yet) shouldn't surface a "Could not save
-  // lead" error when scoring itself succeeded and the result is on screen.
+  // Keep the score visible if persistence fails, and make the unsaved state
+  // explicit rather than losing the lead behind a successful scoring result.
   const createLead = trpc.leads.create.useMutation({
-    onSuccess: () => utils.leads.list.invalidate(),
-    onError: () => {
-      /* silent — persistence is best-effort */
+    onSuccess: () => {
+      setSaveError(false);
+      return utils.leads.list.invalidate();
     },
+    onError: () => setSaveError(true),
   });
   const deleteLead = useMutationWithToast(trpc.leads.delete.useMutation(), {
     success: "Lead removed",
@@ -244,21 +248,26 @@ function LeadScoringPanel() {
   const scoreALead = async () => {
     setLoading(true);
     setResult(null);
+    setScoreError(null);
+    setSaveError(false);
+    const request = new AbortController();
+    scoreRequest.current = request;
     try {
       const res = await fetch("/api/lead-score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
+        signal: request.signal,
       });
-      const data = await res.json();
       if (!res.ok) {
-        throw new Error(
-          res.status === 429 ? "HTTP 429" : (data.error ?? `HTTP ${res.status}`)
-        );
+        throw new Error(`HTTP ${res.status}`);
       }
-      setResult(data);
+      // A malformed success response must never render a fabricated score or
+      // reach the board (e.g. a missing priority previously crashed rendering).
+      const score = LeadScoreSchema.parse(await res.json());
+      if (request.signal.aborted) return;
+      setResult(score);
       // Persist the scored lead to the shared prioritization board.
-      const score = data as LeadScore;
       createLead.mutate({
         name: form.name || "Unnamed lead",
         projectType: form.projectType || undefined,
@@ -273,19 +282,15 @@ function LeadScoringPanel() {
         estimatedValue: score.estimatedValue,
       });
     } catch (err) {
-      setResult({
-        score: 0,
-        priority: "low",
-        reasoning:
-          err instanceof Error && err.message.startsWith("HTTP 429")
-            ? "Rate limit reached. Please wait before scoring another lead."
-            : "AI scoring service is temporarily unavailable. Please try again.",
-        suggestedAction:
-          "Retry in a moment or score manually based on project details.",
-        estimatedValue: null,
-      });
+      if (request.signal.aborted) return;
+      setScoreError(
+        err instanceof Error && err.message === "HTTP 429"
+          ? "Rate limit reached. Please wait before scoring another lead."
+          : "AI scoring service is temporarily unavailable. Please try again."
+      );
     } finally {
-      setLoading(false);
+      if (!request.signal.aborted) setLoading(false);
+      if (scoreRequest.current === request) scoreRequest.current = null;
     }
   };
 
@@ -311,6 +316,7 @@ function LeadScoringPanel() {
     <div className="bg-card border border-border/60">
       <button
         onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between p-5 md:p-6 min-h-14"
       >
         <div className="flex items-center gap-2">
@@ -338,26 +344,34 @@ function LeadScoringPanel() {
 
           <div className="grid sm:grid-cols-2 gap-3 mb-3">
             {[
-              { key: "name", placeholder: "Lead name" },
+              { key: "name", placeholder: "Lead name", maxLength: 200 },
               {
                 key: "projectType",
                 placeholder: "Project type (remodel, new build…)",
+                maxLength: 120,
               },
-              { key: "budget", placeholder: "Budget range ($)" },
+              {
+                key: "budget",
+                placeholder: "Budget range ($)",
+                maxLength: 100,
+              },
               {
                 key: "location",
                 placeholder: "Location (Eugene, Lane County…)",
+                maxLength: 200,
               },
               {
                 key: "timeline",
                 placeholder: "Timeline (start date or 'ASAP')",
+                maxLength: 100,
               },
-            ].map(({ key, placeholder }) => (
+            ].map(({ key, placeholder, maxLength }) => (
               <input
                 key={key}
                 value={(form as any)[key]}
                 onChange={f(key as keyof typeof form)}
                 placeholder={placeholder}
+                maxLength={maxLength}
                 aria-label={placeholder}
                 className="px-3 py-3 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
               />
@@ -368,13 +382,16 @@ function LeadScoringPanel() {
               placeholder="Lead message or project description…"
               aria-label="Lead message or project description"
               rows={2}
+              maxLength={3000}
               className="sm:col-span-2 px-3 py-3 bg-input border border-border text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors"
             />
           </div>
 
           <button
             onClick={scoreALead}
-            disabled={loading || !form.name}
+            disabled={
+              !enabled || loading || createLead.isPending || !form.name.trim()
+            }
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 min-h-11 text-[11px] md:text-xs font-bold tracking-widest uppercase hover:bg-primary/85 disabled:opacity-50 transition-colors"
             style={{ fontFamily: "var(--font-condensed)" }}
           >
@@ -386,6 +403,25 @@ function LeadScoringPanel() {
             {loading ? "Scoring…" : "Score This Lead"}
           </button>
 
+          {scoreError && (
+            <p role="alert" className="mt-4 text-sm text-red-400">
+              {scoreError}
+            </p>
+          )}
+          {saveError && (
+            <p role="alert" className="mt-4 text-sm text-red-400">
+              Lead scored, but could not be saved to the board. Keep these
+              details and try again.
+            </p>
+          )}
+          {leadsQuery.isError && (
+            <div className="mt-4">
+              <QueryError
+                message="Couldn't load the prioritization board."
+                onRetry={() => leadsQuery.refetch()}
+              />
+            </div>
+          )}
           {result && (
             <div className="mt-4 border border-border/60 p-4 bg-background/40">
               {/* Score gauge */}
@@ -469,6 +505,7 @@ function LeadScoringPanel() {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <button
+                      disabled={clearLeads.isPending}
                       className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
                       style={{ fontFamily: "var(--font-condensed)" }}
                     >
@@ -482,15 +519,16 @@ function LeadScoringPanel() {
                         Clear prioritization board?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This permanently removes all {sortedSaved.length} saved
-                        lead{sortedSaved.length === 1 ? "" : "s"} from the
-                        prioritization board for everyone.
+                        This permanently removes every saved lead from the
+                        prioritization board for everyone, including any leads
+                        beyond the {SAVED_LEADS_MAX} shown here.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={clearAllSaved}
+                        disabled={clearLeads.isPending}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Clear all
@@ -557,6 +595,7 @@ function LeadScoringPanel() {
                         </button>
                         <button
                           onClick={() => removeSaved(lead.id)}
+                          disabled={deleteLead.isPending}
                           aria-label={`Remove ${lead.name} from prioritization board`}
                           className="shrink-0 p-1 text-muted-foreground/60 hover:text-red-400 transition-colors"
                         >
@@ -601,6 +640,13 @@ function LeadScoringPanel() {
 export default function CommandCenter() {
   const [, setLocation] = useLocation();
   const [realtimeFlash, setRealtimeFlash] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (flashTimer.current !== null) clearTimeout(flashTimer.current);
+    },
+    []
+  );
   const { loading: authLoading, isAuthenticated, isAdmin } = useAuth();
   const authReady = !authLoading && isAuthenticated && isAdmin;
 
@@ -611,20 +657,29 @@ export default function CommandCenter() {
     isError: statsError,
     refetch: refetchStats,
   } = trpc.projects.stats.useQuery(undefined, { enabled: authReady });
-  const { data: recentProjects, refetch: refetchProjects } =
-    trpc.projects.list.useQuery({ pageSize: 5 }, { enabled: authReady });
-  const { data: recentReports } = trpc.fieldReports.list.useQuery(
-    { pageSize: 5 },
-    { enabled: authReady }
-  );
-  const { data: shortages } = trpc.materials.list.useQuery(
+  const {
+    data: recentProjects,
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = trpc.projects.list.useQuery({ pageSize: 5 }, { enabled: authReady });
+  const {
+    data: recentReports,
+    isError: reportsError,
+    refetch: refetchReports,
+  } = trpc.fieldReports.list.useQuery({ pageSize: 5 }, { enabled: authReady });
+  const {
+    data: shortages,
+    isError: shortagesError,
+    refetch: refetchShortages,
+  } = trpc.materials.list.useQuery(
     { shortagesOnly: true, pageSize: 10 },
     { enabled: authReady }
   );
-  const { data: weeklyReports } = trpc.fieldReports.weeklyStats.useQuery(
-    undefined,
-    { enabled: authReady }
-  );
+  const {
+    data: weeklyReports,
+    isError: weeklyError,
+    refetch: refetchWeekly,
+  } = trpc.fieldReports.weeklyStats.useQuery(undefined, { enabled: authReady });
 
   // ── Supabase Realtime subscription ─────────────────────────────────────────
   const { isLive: projectsLive } = useRealtimeTable({
@@ -635,9 +690,14 @@ export default function CommandCenter() {
       refetchStats();
       refetchProjects();
       utils.materials.list.invalidate();
+      utils.fieldReports.list.invalidate();
       utils.fieldReports.weeklyStats.invalidate();
       setRealtimeFlash(true);
-      setTimeout(() => setRealtimeFlash(false), 1500);
+      if (flashTimer.current !== null) clearTimeout(flashTimer.current);
+      flashTimer.current = setTimeout(() => {
+        setRealtimeFlash(false);
+        flashTimer.current = null;
+      }, 1500);
     },
   });
   // Actual cost (stats.totalActual) is derived from cost_adjustment ledger
@@ -669,11 +729,11 @@ export default function CommandCenter() {
   const budgetData = [
     {
       name: "Estimated",
-      value: stats ? Math.round((stats.totalEstimated ?? 0) / 1000) : 0,
+      value: stats ? (stats.totalEstimated ?? 0) / 1000 : 0,
     },
     {
       name: "Actual",
-      value: stats ? Math.round((stats.totalActual ?? 0) / 1000) : 0,
+      value: stats ? (stats.totalActual ?? 0) / 1000 : 0,
     },
   ];
 
@@ -837,12 +897,20 @@ export default function CommandCenter() {
             />
           </div>
         )}
+        {shortagesError && (
+          <div className="mb-6">
+            <QueryError
+              message="Couldn't load material shortages."
+              onRetry={() => refetchShortages()}
+            />
+          </div>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard
             icon={ClipboardList}
             label="Total Projects"
             value={kpiCount(stats?.total)}
-            sub="All time"
+            sub="Unarchived projects"
           />
           <StatCard
             icon={TrendingUp}
@@ -963,7 +1031,9 @@ export default function CommandCenter() {
             </p>
             {!hasStatusData ? (
               <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-                No project data yet
+                {statsError
+                  ? "Project metrics unavailable"
+                  : "No project data yet"}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={160}>
@@ -1000,7 +1070,9 @@ export default function CommandCenter() {
             </p>
             {!hasBudgetData ? (
               <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-                No budget data yet
+                {statsError
+                  ? "Budget metrics unavailable"
+                  : "No budget data yet"}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={160}>
@@ -1019,7 +1091,7 @@ export default function CommandCenter() {
                   />
                   <Tooltip
                     contentStyle={CHART_TOOLTIP_STYLE}
-                    formatter={(v: number) => [`$${v}k`, ""]}
+                    formatter={(v: number) => [formatCurrency(v * 1000), ""]}
                   />
                   <Bar
                     dataKey="value"
@@ -1034,7 +1106,7 @@ export default function CommandCenter() {
 
         {/* AI Lead Scoring */}
         <div className="mb-6">
-          <LeadScoringPanel />
+          <LeadScoringPanel enabled={authReady} />
         </div>
 
         {/* Recent activity */}
@@ -1056,7 +1128,12 @@ export default function CommandCenter() {
                 View all →
               </button>
             </div>
-            {recentProjects?.data.length === 0 ? (
+            {projectsError ? (
+              <QueryError
+                message="Couldn't load recent projects."
+                onRetry={() => refetchProjects()}
+              />
+            ) : recentProjects?.data.length === 0 ? (
               <p className="text-sm text-muted-foreground font-light py-4 text-center">
                 No projects yet
               </p>
@@ -1098,7 +1175,12 @@ export default function CommandCenter() {
                 View all →
               </button>
             </div>
-            {recentReports?.data.length === 0 ? (
+            {reportsError ? (
+              <QueryError
+                message="Couldn't load recent field reports."
+                onRetry={() => refetchReports()}
+              />
+            ) : recentReports?.data.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="text-sm text-muted-foreground font-light mb-3">
                   No field reports yet
@@ -1147,6 +1229,14 @@ export default function CommandCenter() {
         {/* Field Report Activity Chart */}
         {/* weeklyStats always returns 8 (zero-filled) weeks, so gate on there
             being activity at all rather than on the array length. */}
+        {weeklyError && (
+          <div className="mb-6">
+            <QueryError
+              message="Couldn't load field report activity."
+              onRetry={() => refetchWeekly()}
+            />
+          </div>
+        )}
         {weeklyReports && weeklyReports.some(w => w.reports > 0) && (
           <div className="bg-card border border-border/60 p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
